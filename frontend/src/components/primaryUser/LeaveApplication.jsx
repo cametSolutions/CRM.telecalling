@@ -32,6 +32,8 @@ import {
 function LeaveApplication() {
   const [events, setEvents] = useState([])
   const [edit, setEdit] = useState(null)
+ const [activeUserId, setActiveUserId] = useState(null)
+
   const [showTypeSelector, setShowTypeSelector] = useState(false)
   const [selectedType, setSelectedType] = useState("")
   const [isHaveCompensatoryleave, setcompensatoryLeave] = useState(false)
@@ -61,7 +63,8 @@ console.log(errors)
   const [selectedUserName, setselecteduserName] = useState(null)
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
-  const [selectedYear, setSelectedYear] = useState(null)
+const now=new Date()
+  const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   const [periodMode, setperiodMode] = useState("all")
   const [targetData, settargetData] = useState([])
   console.log(targetData)
@@ -159,7 +162,65 @@ console.log(errors)
     const month = String(currentDate.getMonth() + 1).padStart(2, "0")
     setCurrentMonth(`${year}-${month}`)
   }, [currentDate])
+  useEffect(() => {
+    if (selectedCategory) {
+      console.log("jj")
+      const Datas = targetData?.userWiseResults
 
+      const filteredList = branchProduct
+        .filter(
+          (item) =>
+            item.selected?.some(
+              (selectedItem) =>
+                String(selectedItem.category_id) ===
+                String(selectedCategory?.Id)
+            ) || String(item.category_id) === String(selectedCategory?.Id)
+        )
+        .map((item) => item.productName || item.serviceName)
+      console.log(filteredList)
+      setproductList(filteredList)
+      console.log("J")
+      console.log(targetData)
+     
+      console.log("hhh")
+
+      console.log(Datas)
+      console.log("hhhh")
+
+      const filteredselectedCategory = Datas.flatMap(
+        (user) => user.categories || []
+      ).filter((item) => item.categoryId === selectedCategory?.Id)
+console.log(filteredselectedCategory)
+      console.log("Hh")
+      const summary = filteredselectedCategory.reduce(
+        (acc, cur) => {
+          acc.target += Number(cur.target || 0)
+          acc.achieved += Number(cur.achieved || 0)
+          acc.balance += Number(cur.balance || 0)
+          return acc
+        },
+        { target: 0, achieved: 0, balance: 0 }
+      )
+      console.log("hhh")
+      setselectedDataPopup(summary)
+      console.log(filteredselectedCategory && filteredselectedCategory.length)
+      if (filteredselectedCategory && filteredselectedCategory.length) {
+console.log("hh")
+console.log(filteredselectedCategory)
+        setacheivedProducts((prev) => [
+          ...prev,
+          ...filteredselectedCategory.flatMap((item) =>
+            (item?.products || []).map((product) => ({
+              productname: product.name,
+              amount: product.achieved
+            }))
+          )
+        ])
+      } else {
+        setacheivedProducts([])
+      }
+    }
+  }, [targetData])
   useEffect(() => {
     console.log("hh")
     const filteredcurrentmonthlyLeaves = allleaves?.filter((leave) => {
@@ -551,19 +612,7 @@ console.log(errors)
     console.log("J")
     console.log(targetData)
     console.log(user?._id)
-    const filteredloggedUserItem = Datas.filter(
-      (item) => item.userId === user._id
-    )
-    console.log("hhh")
-
-    console.log(Datas)
-    console.log("hhhh")
-    console.log(filteredloggedUserItem)
-    console.log(id)
-    // const filteredselectedCategory =
-    //   filteredloggedUserItem[0].categories.filter(
-    //     (item) => item.categoryId === id
-    //   )
+   
     const filteredselectedCategory = Datas.flatMap(
       (user) => user.categories || []
     ).filter((item) => item.categoryId === id)
@@ -596,12 +645,13 @@ console.log(errors)
     setOpenModal(true)
   }
   const handleSelectedUser = (category, userId, userName) => {
+setActiveUserId(userId)
     setselecteduserName(userName)
     setselectedCategory({
       Id: category.Id,
       categoryName: category.categoryName
     })
-    const filteredloggedUserItem = data?.userWiseResults.filter(
+    const filteredloggedUserItem = targetData?.userWiseResults.filter(
       (item) => item.userId === userId
     )
     const filteredselectedCategory =
@@ -620,11 +670,19 @@ console.log(errors)
 
     setselectedDataPopup(summary)
     if (filteredselectedCategory && filteredselectedCategory.length) {
-      setacheivedProducts(
-        filteredselectedCategory[0]?.products?.map((product) => ({
-          productname: product.name,
-          amount: product.achieved
-        })) || []
+      // setacheivedProducts(
+      //   filteredselectedCategory[0]?.products?.map((product) => ({
+      //     productname: product.name,
+      //     amount: product.achieved
+      //   })) || []
+      // )
+ setacheivedProducts(
+        filteredselectedCategory.flatMap((item) =>
+          (item.products || []).map((product) => ({
+            productname: product.name,
+            amount: product.achieved
+          }))
+        )
       )
     } else {
       setacheivedProducts([])
@@ -2367,8 +2425,8 @@ console.log("hhh")
           selectedCompanyBranch={selectedcompanyBranch}
           setselectedCompanyBranch={setselectedcompanyBranch}
           parenttargetData={settargetData}
-          parentperiodmode={setperiodMode}
-          parentyear={setSelectedYear}
+          parentperiodmode={periodMode}
+          parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
         />
         <div className="flex flex-1 flex-col overflow-hidden">
@@ -2535,11 +2593,11 @@ console.log("hhh")
             setSelectedType("")
             setShowTypeSelector(true)
           }}
-          className="group cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+          className="group cursor-pointer rounded-2xl border border-slate-200 bg-white p-2 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
         >
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex min-w-0 items-center gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-center text-sm font-bold text-white shadow-sm sm:h-16 sm:w-16 sm:text-base">
+              <div className="flex  shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-center text-sm font-bold text-white shadow-sm sm:h-8 sm:w-32 sm:text-base">
                 {date.fullMonthDay}
               </div>
 
@@ -2549,13 +2607,13 @@ console.log("hhh")
                     weekday: "long"
                   })}
                 </div>
-                <div className="mt-1 text-sm text-slate-500">
+                {/* <div className="mt-1 text-sm text-slate-500">
                   {new Date(date.fullDate).toLocaleDateString("en-IN", {
                     day: "2-digit",
                     month: "long",
                     year: "numeric"
                   })}
-                </div>
+                </div> */}
               </div>
             </div>
 
@@ -2846,22 +2904,23 @@ console.log("hhh")
             setselectedPeriod(val)
           }}
           onMonthChange={(val) => {
-            setcategorylist([])
             setacheivedProducts([])
             setselectedDataPopup([])
             setperiodMode(val)
+  setselecteduserName(null)
           }}
           onYearChange={(val) => {
-            setcategorylist([])
             setacheivedProducts([])
             setselectedDataPopup([])
             setSelectedYear(val)
+  setselecteduserName(null)
           }}
           productlist={productlist}
           onClose={() => {
-            setselecteduserName(user?.name)
+            setselecteduserName(null)
             setacheivedProducts([])
             setOpenModal(false)
+ setActiveUserId(null)
           }}
           selectedMonth={periodMode}
           selectedYear={selectedYear}
@@ -2879,6 +2938,7 @@ console.log("hhh")
           selectedUser={selectedUserName}
           category={selectedCategory}
           handleSelectedUser={handleSelectedUser}
+ activeUserId={activeUserId}
         />
       </div>
     </div>

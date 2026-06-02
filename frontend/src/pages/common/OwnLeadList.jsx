@@ -38,7 +38,9 @@ console.log(dates)
   console.log(targetData)
   const [periodMode, setperiodMode] = useState("all")
   const [productlist, setproductList] = useState([])
-  const [selectedYear, setSelectedYear] = useState(null)
+ const now = new Date()
+  const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
+console.log(selectedYear)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
   const [selectedPeriod, setselectedPeriod] = useState("")
   const [openModal, setOpenModal] = useState(false)
@@ -51,6 +53,7 @@ console.log(dates)
   const [showhistoryModal, sethistoryModal] = useState(false)
   const [historyList, setHistoryList] = useState([])
   const [openRow, setOpenRow] = useState(null)
+const [activeUserId, setActiveUserId] = useState(null)
 
   const location = useLocation()
   const navigate = useNavigate()
@@ -85,6 +88,59 @@ console.log(ownedlead)
   const today = formatDate(now)
     setDates({ startDate:now, endDate: now})
   }, [])
+useEffect(() => {
+    if (selectedCategory) {
+      console.log("jj")
+      const Datas = targetData?.userWiseResults
+
+      const filteredList = branchProduct
+        .filter(
+          (item) =>
+            item.selected?.some(
+              (selectedItem) =>
+                String(selectedItem.category_id) ===
+                String(selectedCategory?.Id)
+            ) || String(item.category_id) === String(selectedCategory?.Id)
+        )
+        .map((item) => item.productName || item.serviceName)
+      console.log(filteredList)
+      setproductList(filteredList)
+      console.log("J")
+      console.log(targetData)
+      console.log(loggedUser?._id)
+    
+
+      const filteredselectedCategory = Datas.flatMap(
+        (user) => user.categories || []
+      ).filter((item) => item.categoryId === selectedCategory?.Id)
+      console.log("Hh")
+      const summary = filteredselectedCategory.reduce(
+        (acc, cur) => {
+          acc.target += Number(cur.target || 0)
+          acc.achieved += Number(cur.achieved || 0)
+          acc.balance += Number(cur.balance || 0)
+          return acc
+        },
+        { target: 0, achieved: 0, balance: 0 }
+      )
+      console.log("hhh")
+      setselectedDataPopup(summary)
+      console.log(filteredselectedCategory && filteredselectedCategory.length)
+      if (filteredselectedCategory && filteredselectedCategory.length) {
+        setacheivedProducts((prev) => [
+          ...prev,
+          ...filteredselectedCategory.flatMap((item) =>
+            (item?.products || []).map((product) => ({
+              productname: product.name,
+              amount: product.achieved
+            }))
+          )
+        ])
+      } else {
+        setacheivedProducts([])
+      }
+    }
+  }, [targetData])
 console.log(dates)
   useEffect(() => {
     if (companybranches && companybranches.length > 0) {
@@ -135,12 +191,13 @@ console.log(dates)
     sethistoryModal(true)
   }
   const handleSelectedUser = (category, userId, userName) => {
+setActiveUserId(userId)
     setselecteduserName(userName)
     setselectedCategory({
       Id: category.Id,
       categoryName: category.categoryName
     })
-    const filteredloggedUserItem = data?.userWiseResults.filter(
+    const filteredloggedUserItem = targetData?.userWiseResults.filter(
       (item) => item.userId === userId
     )
     const filteredselectedCategory =
@@ -159,11 +216,19 @@ console.log(dates)
 
     setselectedDataPopup(summary)
     if (filteredselectedCategory && filteredselectedCategory.length) {
-      setacheivedProducts(
-        filteredselectedCategory[0]?.products?.map((product) => ({
-          productname: product.name,
-          amount: product.achieved
-        })) || []
+      // setacheivedProducts(
+      //   filteredselectedCategory[0]?.products?.map((product) => ({
+      //     productname: product.name,
+      //     amount: product.achieved
+      //   })) || []
+      // )
+   setacheivedProducts(
+        filteredselectedCategory.flatMap((item) =>
+          (item.products || []).map((product) => ({
+            productname: product.name,
+            amount: product.achieved
+          }))
+        )
       )
     } else {
       setacheivedProducts([])
@@ -403,222 +468,7 @@ console.log(dates)
     )
   console.log(selectedCompanyBranch)
   return (
-    // <div className="h-full bg-[#ADD8E6]  overflow-hidden">
-    //   <div className="flex h-full  lg:flex-row">
-    //     {selectedCompanyBranch && (
-    //       <StaticSidebar
-    //         handleMoreClick={handleMoreClick}
-    //         selectedCompanyBranch={selectedCompanyBranch}
-    //         setselectedCompanyBranch={setselectedCompanyBranch}
-    //         parenttargetData={settargetData}
-    //         parentperiodmode={setperiodMode}
-    //         parentyear={setSelectedYear}
-    //         setselectedPeriod={setselectedPeriod}
-    //       />
-    //     )}
-
-    //     <div className="flex min-h-0 flex-1 flex-col overflow-hidden ">
-    //       <header className="flex items-center justify-between border-b border-white/10 bg-[#0F172A]/95 ">
-    //         {loggedUser?.role?.toLowerCase() === "admin" ? (
-    //           <AdminHeader hide={true} />
-    //         ) : (
-    //           <StaffHeader hide={true} />
-    //         )}
-
-    //         <div className="flex items-center gap-1.5  border-b border-white/10 bg-[#0F172A]/95 pr-3 h-full">
-    //           <button className="rounded-full p-1.5 transition bg-slate-100">
-    //             <Mail size={15} strokeWidth={2.2} />
-    //           </button>
-    //           <div className="relative">
-    //             <button className="rounded-full p-1.5 transition bg-slate-100">
-    //               <MessageSquareText size={15} strokeWidth={2.2} />
-    //             </button>
-    //             <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />
-    //           </div>
-    //           <button className="rounded-full p-1.5 transition bg-slate-100">
-    //             <Settings size={15} strokeWidth={2.2} />
-    //           </button>
-    //           {/* <button className="rounded-full p-1.5 transition bg-slate-100">
-    //             <User size={15} strokeWidth={2.2} />
-    //           </button> */}
-
-    //           <div className="relative">
-    //             <button
-    //               onClick={(e) => {
-    //                 e.stopPropagation()
-    //                 setShowUserMenu((prev) => !prev)
-    //               }}
-    //               className="rounded-full p-1.5 transition bg-slate-100"
-    //             >
-    //               <User size={15} strokeWidth={2.2} />
-    //             </button>
-
-    //             {/* {showUserMenu && (
-    //               <div
-    //                 onClick={(e) => e.stopPropagation()} 
-    //                 className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
-    //               >
-    //                 <button
-    //                   onClick={handleLogout}
-    //                   className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
-    //                 >
-    //                   Logout
-    //                 </button>
-    //               </div>
-    //             )} */}
-    //           </div>
-    //         </div>
-    //       </header>
-    //       <div className="flex-1">
-           
-    //         <div className="m-4 rounded-xl border border-slate-200 bg-white/70 px-4 py-3 shadow-sm">
-    //           <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-    //             {/* Left section */}
-    //             <div className="flex min-w-0 flex-wrap items-center gap-3">
-    //               <h2 className="shrink-0 text-lg font-bold tracking-tight text-slate-800">
-    //                 {ownLead ? "Own Lead" : "All Lead"}
-    //               </h2>
-
-    //               {loggedUser?.role !== "Staff" && (
-    //                 <div className="flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5">
-    //                   <span className="text-xs font-medium text-slate-600">
-    //                     {ownLead ? "Own" : "All"}
-    //                   </span>
-
-    //                   <button
-    //                     onClick={() => {
-    //                       setTableData([])
-    //                       setownLead((prev) => !prev)
-    //                     }}
-    //                     className={`relative h-6 w-11 rounded-full transition-colors duration-300 ${
-    //                       ownLead ? "bg-emerald-500" : "bg-slate-300"
-    //                     }`}
-    //                   >
-    //                     <div
-    //                       className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-md transition-transform duration-300 ${
-    //                         ownLead ? "translate-x-5" : "translate-x-0.5"
-    //                       }`}
-    //                     />
-    //                   </button>
-    //                 </div>
-    //               )}
-    //             </div>
-
-    //             {/* Right section */}
-    //             <div className="flex flex-wrap items-center justify-start gap-3 xl:justify-end">
-    //               {dates.startDate && (
-    //                 <div className="min-w-[240px]">
-    //                   <MyDatePicker setDates={setDates} dates={dates} />
-    //                 </div>
-    //               )}
-
-    //               <button
-    //                 onClick={() =>
-    //                   loggedUser?.role === "Admin"
-    //                     ? navigate("/admin/transaction/lead")
-    //                     : navigate("/staff/transaction/lead")
-    //                 }
-    //                 className="inline-flex h-10 items-center justify-center rounded-lg bg-slate-900 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700"
-    //               >
-    //                 New Lead
-    //               </button>
-    //             </div>
-    //           </div>
-    //         </div>
-    //         {/* ── Table container ── */}
-    //         <div className="flex-1 mx-2 md:mx-3 mb-2 bg-white rounded-lg shadow-xl  flex flex-col overflow-auto">
-    //           {loading ? (
-    //             <div className="p-4">
-    //               <SkeletonTable rows={5} columns={8} />
-    //             </div>
-    //           ) : !hasLeads ? (
-    //             <div className="p-4">
-    //               <NodataAvailable
-    //                 title="No Lead Available"
-    //                 message="There are no leads to display for the selected filters."
-    //               />
-    //             </div>
-    //           ) : (
-    //             /* overflow-auto here makes the table scroll; sticky thead works inside */
-    //             <div className="overflow-auto flex-1">
-    //               {tableData.map(({ staffName, leads }, index) => (
-    //                 <div key={staffName || `group-${index}`}>
-    //                   {staffName && (
-    //                     <h3 className="text-sm font-semibold text-gray-800 px-3 pt-3 pb-1">
-    //                       {staffName}{" "}
-    //                       <span className="text-xs text-gray-500 font-normal">
-    //                         ({leads?.length || 0} Leads)
-    //                       </span>
-    //                     </h3>
-    //                   )}
-    //                   {Array.isArray(leads) && leads.length > 0 ? (
-    //                     renderTable(leads)
-    //                   ) : (
-    //                     <p className="text-center text-gray-400 py-3 text-xs">
-    //                       No leads under {staffName || "this group"}.
-    //                     </p>
-    //                   )}
-    //                 </div>
-    //               ))}
-    //             </div>
-    //           )}
-    //         </div>
-    //       </div>
-    //     </div>
-
-    //     {showhistoryModal && historyList.length > 0 && (
-    //       <LeadhistoryModal
-    //         selectedLeadId={selectedLeadId}
-    //         historyList={historyList}
-    //         handlecloseModal={() => sethistoryModal(false)}
-    //       />
-    //     )}
-    //     <PerformanceModal
-    //       modalOpen={openModal}
-    //       splitType={targetData?.selectedMeasurementType}
-    //       selectedperiod={selectedPeriod}
-    //       allperiods={targetData?.periods}
-    //       onselectedPeriodChange={(val, val2) => {
-    //         setSelectedMonth(val2)
-    //         setselectedPeriod(val)
-    //       }}
-    //       onMonthChange={(val) => {
-    //         setcategorylist([])
-    //         setacheivedProducts([])
-    //         setselectedDataPopup([])
-    //         setperiodMode(val)
-    //       }}
-    //       onYearChange={(val) => {
-    //         setcategorylist([])
-    //         setacheivedProducts([])
-    //         setselectedDataPopup([])
-    //         setSelectedYear(val)
-    //       }}
-    //       productlist={productlist}
-    //       onClose={() => {
-    //         setselecteduserName(loggedUser?.name)
-    //         setacheivedProducts([])
-    //         setOpenModal(false)
-    //       }}
-    //       selectedMonth={periodMode}
-    //       selectedYear={selectedYear}
-    //       summary={{
-    //         target: selectedDatapopup?.target,
-    //         achieved: selectedDatapopup?.achieved,
-    //         balance:
-    //           selectedDatapopup?.achieved > selectedDatapopup?.target
-    //             ? 0
-    //             : selectedDatapopup?.balance
-    //       }}
-    //       products={achievedproducts}
-    //       targetData={targetData?.userWiseResults}
-    //       loggedUser={loggedUser}
-    //       selectedUser={selectedUserName}
-    //       category={selectedCategory}
-    //       handleSelectedUser={handleSelectedUser}
-    //     />
-    //   </div>
-    // </div>
+   
 <div className="h-full overflow-hidden bg-[#ADD8E6]">
   <div className="flex h-full overflow-hidden lg:flex-row">
     {selectedCompanyBranch && (
@@ -627,8 +477,8 @@ console.log(dates)
         selectedCompanyBranch={selectedCompanyBranch}
         setselectedCompanyBranch={setselectedCompanyBranch}
         parenttargetData={settargetData}
-        parentperiodmode={setperiodMode}
-        parentyear={setSelectedYear}
+        parentperiodmode={periodMode}
+        parentyear={selectedYear}
         setselectedPeriod={setselectedPeriod}
       />
     )}
@@ -780,22 +630,23 @@ console.log(dates)
         setselectedPeriod(val)
       }}
       onMonthChange={(val) => {
-        setcategorylist([])
         setacheivedProducts([])
         setselectedDataPopup([])
         setperiodMode(val)
+            setselecteduserName(null)
       }}
       onYearChange={(val) => {
-        setcategorylist([])
         setacheivedProducts([])
         setselectedDataPopup([])
         setSelectedYear(val)
+            setselecteduserName(null)
       }}
       productlist={productlist}
       onClose={() => {
-        setselecteduserName(loggedUser?.name)
+        setselecteduserName(null)
         setacheivedProducts([])
         setOpenModal(false)
+    setActiveUserId(null)
       }}
       selectedMonth={periodMode}
       selectedYear={selectedYear}
@@ -813,6 +664,7 @@ console.log(dates)
       selectedUser={selectedUserName}
       category={selectedCategory}
       handleSelectedUser={handleSelectedUser}
+activeUserId={activeUserId}
     />
   </div>
 </div>

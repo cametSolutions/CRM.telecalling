@@ -42,9 +42,11 @@ function LeadEdit() {
   const [selectedcompanyBranch, setselectedcompanyBranch] = useState(
     userData?.selected[0]?.branch_id
   )
+  const [activeUserId, setActiveUserId] = useState(null)
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
-  const [selectedYear, setSelectedYear] = useState(null)
+const now=new Date()
+  const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   const [periodMode, setperiodMode] = useState("all")
   const [targetData, settargetData] = useState([])
   console.log(targetData)
@@ -57,6 +59,65 @@ function LeadEdit() {
     selectedcompanyBranch &&
       `/product/getallbranchProduct?branch=${selectedcompanyBranch}`
   )
+ useEffect(() => {
+    if (selectedCategory) {
+      console.log("jj")
+      const Datas = targetData?.userWiseResults
+
+      const filteredList = branchProduct
+        .filter(
+          (item) =>
+            item.selected?.some(
+              (selectedItem) =>
+                String(selectedItem.category_id) ===
+                String(selectedCategory?.Id)
+            ) || String(item.category_id) === String(selectedCategory?.Id)
+        )
+        .map((item) => item.productName || item.serviceName)
+      console.log(filteredList)
+      setproductList(filteredList)
+      console.log("J")
+      console.log(targetData)
+     
+      console.log("hhh")
+
+      console.log(Datas)
+      console.log("hhhh")
+
+      const filteredselectedCategory = Datas.flatMap(
+        (user) => user.categories || []
+      ).filter((item) => item.categoryId === selectedCategory?.Id)
+console.log(filteredselectedCategory)
+      console.log("Hh")
+      const summary = filteredselectedCategory.reduce(
+        (acc, cur) => {
+          acc.target += Number(cur.target || 0)
+          acc.achieved += Number(cur.achieved || 0)
+          acc.balance += Number(cur.balance || 0)
+          return acc
+        },
+        { target: 0, achieved: 0, balance: 0 }
+      )
+      console.log("hhh")
+      setselectedDataPopup(summary)
+      console.log(filteredselectedCategory && filteredselectedCategory.length)
+      if (filteredselectedCategory && filteredselectedCategory.length) {
+console.log("hh")
+console.log(filteredselectedCategory)
+        setacheivedProducts((prev) => [
+          ...prev,
+          ...filteredselectedCategory.flatMap((item) =>
+            (item?.products || []).map((product) => ({
+              productname: product.name,
+              amount: product.achieved
+            }))
+          )
+        ])
+      } else {
+        setacheivedProducts([])
+      }
+    }
+  }, [targetData])
   useEffect(() => {
     console.log("hhhh")
     if (leadId) {
@@ -65,6 +126,8 @@ function LeadEdit() {
         const response = await api.get(`/lead/getSelectedLead?leadId=${leadId}`)
 
         if (response.status >= 200 && response.status < 300) {
+console.log("hhhh")
+console.log(response.data.data)
           setfetchedData(response.data.data)
         }
       }
@@ -90,15 +153,7 @@ function LeadEdit() {
     console.log("J")
     console.log(targetData)
     console.log(userData?._id)
-    const filteredloggedUserItem = Datas.filter(
-      (item) => item.userId === userData._id
-    )
-    console.log("hhh")
-
-    console.log(Datas)
-    console.log("hhhh")
-    console.log(filteredloggedUserItem)
-    console.log(id)
+  
     // const filteredselectedCategory =
     //   filteredloggedUserItem[0].categories.filter(
     //     (item) => item.categoryId === id
@@ -135,6 +190,7 @@ function LeadEdit() {
     setOpenModal(true)
   }
   const handleSelectedUser = (category, userId, userName) => {
+setActiveUserId(userId)
     setselecteduserName(userName)
     setselectedCategory({
       Id: category.Id,
@@ -203,8 +259,8 @@ navigate(-1)
           selectedCompanyBranch={selectedcompanyBranch}
           setselectedCompanyBranch={setselectedcompanyBranch}
           parenttargetData={settargetData}
-          parentperiodmode={setperiodMode}
-          parentyear={setSelectedYear}
+          parentperiodmode={periodMode}
+          parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
         />
         <div className="flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden justify-center">
@@ -258,6 +314,7 @@ navigate(-1)
               seteditLoadingState={setLoader}
               Data={fetcheddata}
               isReadOnly={isReadOnly}
+selectedcompanyBranch={selectedcompanyBranch}
             />
           </div>
         </div>
@@ -271,22 +328,23 @@ navigate(-1)
             setselectedPeriod(val)
           }}
           onMonthChange={(val) => {
-            setcategorylist([])
             setacheivedProducts([])
             setselectedDataPopup([])
             setperiodMode(val)
+setselecteduserName(null)
           }}
           onYearChange={(val) => {
-            setcategorylist([])
             setacheivedProducts([])
             setselectedDataPopup([])
             setSelectedYear(val)
+setselecteduserName(null)
           }}
           productlist={productlist}
           onClose={() => {
-            setselecteduserName(userData?.name)
+            setselecteduserName(null)
             setacheivedProducts([])
             setOpenModal(false)
+  setActiveUserId(null)
           }}
           selectedMonth={periodMode}
           selectedYear={selectedYear}
@@ -304,6 +362,7 @@ navigate(-1)
           selectedUser={selectedUserName}
           category={selectedCategory}
           handleSelectedUser={handleSelectedUser}
+  activeUserId={activeUserId}
         />
       </div>
     </div>

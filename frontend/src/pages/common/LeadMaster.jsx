@@ -445,6 +445,7 @@ const LeadMaster = ({
   showpopupMessage,
 selectedcompanyBranch
 }) => {
+console.log(selectedcompanyBranch)
   console.log(Data)
   const {
     register: registerMain,
@@ -623,10 +624,11 @@ useEffect(() => {
       if (Data && Data.length) {
         const customerBranch = Data[0].leadBranch
         // setSelectedBranch([customerBranch])
-        setValueMain("leadBranch", customerBranch)
+        setValueMain("leadBranch", selectedBranch)
       } else if (defaultBranch) {
+console.log("hh")
         // setSelectedBranch([defaultBranch])
-        setValueMain("leadBranch", defaultBranch)
+        setValueMain("leadBranch", selectedBranch)
       }
     }
   }, [companybranches, Data])
@@ -683,7 +685,8 @@ useEffect(() => {
       }
     }
   }, [loggeduser, setValueMain])
-
+console.log(loggeduser)
+console.log(customerOptions)
   useEffect(() => {
     if (
       Data &&
@@ -825,8 +828,9 @@ console.log(selectedBranch)
     if (customerData && customerData.length && selectedBranch) {
       const options = customerData.map((item) => {
         const matchingSelected = item.selected?.find(
-          (sel) => sel.branch_id === selectedBranch[0]
+          (sel) => sel.branch_id === selectedBranch
         )
+// console.log(matchingSelected)
         return {
           value: item?._id,
           label: item?.customerName,
@@ -1215,7 +1219,7 @@ console.log(selectedBranch)
 
     resetMain({
       customerName: "",
-      leadBranch: defaultBranch || "",
+      leadBranch: selectedBranch || "",
       email: "",
       phone: "",
       mobile: "",
@@ -1248,10 +1252,11 @@ console.log(selectedBranch)
 
     if (defaultBranch) {
       // setSelectedBranch([defaultBranch])
-      setValueMain("leadBranch", defaultBranch)
+      setValueMain("leadBranch", selectedBranch)
     }
   }
   const onSubmit = async (data) => {
+console.log(data)
     if (submitLoading) return
     setsubmitLoading(true)
     if (submitLoading) return
@@ -1335,8 +1340,14 @@ console.log("Hhh")
       setsubmitLoading(false)
     }
   }
-
+console.log(formData)
   const handlePopupOk = async (ischek = false, leadData = null) => {
+console.log(leadData)
+console.log(formData)
+console.log(isEligible)
+console.log(ischek)
+// return
+console.log(formData)
     setPopupOpen(false)
     const filteredleadlist = selectedleadlist.filter(
       (item) => item.productorServiceId && item.productorServiceId !== ""
@@ -1345,6 +1356,7 @@ console.log("Hhh")
     if (isEligible && leadData === null) {
 console.log(
 "pppp")
+
       response = await handleleadData(
         formData,
         filteredleadlist,
@@ -1523,7 +1535,7 @@ console.log(
                 <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1.8fr)_auto] gap-3">
                   <div className="flex flex-col">
                     <label className="block text-xs font-semibold text-gray-600 mb-1">
-                      Customer Name
+                      Customer Names
                     </label>
                     <div className="flex gap-2 items-stretch">
                       <div className="flex-1 min-w-0">
@@ -1571,7 +1583,7 @@ console.log(
                               cursor: state.isDisabled
                                 ? "not-allowed"
                                 : "pointer",
-                              opacity: state.isDisabled ? 0.7 : 1
+                              opacity: state.isDisabled ? 1 : 1
                             }),
                             menuList: (base) => ({
                               ...base,

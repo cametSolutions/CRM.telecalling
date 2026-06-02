@@ -20,6 +20,7 @@ const Sidebar = ({
   SkeletonTable,
   setAvatarOpen
 }) => {
+console.log()
   console.log(selectedBranch)
   console.log(categorylist)
   const [modalOpen, setModalOpen] = useState(false)

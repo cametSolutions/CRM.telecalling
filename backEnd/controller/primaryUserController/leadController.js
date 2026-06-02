@@ -1234,12 +1234,18 @@ export const GetAllservices = async (req, res) => {
 };
 export const GetallselectedproductFollowup = async (req, res) => {
   try {
+
     // const { loggeduserid, branchSelected, role, pendingfollowup, selectedproductId } = req.query;
     const { loggeduserid, branchSelected, role, pendingfollowup, selectedproductId, viewmode = null, header = null } = req.query
+console.log("loggeuserid",loggeduserid)
+console.log("brnch",branchSelected)
+console.log("selctedprodctid",selectedproductId)
     const userObjectId = new mongoose.Types.ObjectId(loggeduserid)
     const branchObjectId = new mongoose.Types.ObjectId(branchSelected)
     const productObjectId = selectedproductId ? new mongoose.Types.ObjectId(selectedproductId) : null
-
+console.log("userobjectid",userObjectId)
+console.log("brnchoj",branchObjectId)
+console.log("productobjet",productObjectId)
     let query
     if (viewmode) {
       query = {
@@ -1516,7 +1522,8 @@ export const GetallselectedproductFollowup = async (req, res) => {
 
 
   } catch (error) {
-    console.log("error", error)
+    // console.log("error", error)
+console.log("eroorrr",error.message)
     return res.status(500).json({ message: "Internal server error" })
   }
 }
@@ -2301,14 +2308,14 @@ export const GetallfollowupList = async (req, res) => {
     console.log("MODE:", isNewMode ? "NEW" : "OLD");
 
     if (followupLeads.length > 0) {
+console.log("get dataaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",branchObjectId)
       return res.status(201).json({
         messge: "leadfollowup found",
         data: { followupLeads, ischekCollegueLeads },
       });
     } else {
-      return res
-        .status(404)
-        .json({ message: "leadfollowp not found", data: {} });
+console.log("nod dataaaaaaaaaaaaaaaaaaaaaaa",branchObjectId)
+      return res.status(200).json({ message: "leadfollowp not found", data: {followupLeads,ischekCollegueLeads} });
     }
   } catch (error) {
     console.log("error:", error.message);

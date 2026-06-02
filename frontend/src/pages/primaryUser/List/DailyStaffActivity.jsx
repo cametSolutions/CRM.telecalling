@@ -40,10 +40,12 @@ export default function DailyStaffActivity() {
     firstDay: null,
     lastDay: null
   })
+  const [activeUserId, setActiveUserId] = useState(null)
   const [selectedUserName, setselecteduserName] = useState(null)
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
-  const [selectedYear, setSelectedYear] = useState(null)
+const now=new Date()
+  const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   const [periodMode, setperiodMode] = useState("all")
   const [targetData, settargetData] = useState([])
   console.log(targetData)
@@ -67,6 +69,65 @@ export default function DailyStaffActivity() {
   const { data: branchProduct } = UseFetch(
     `/product/getallbranchProduct?branch=${selectedcompanyBranch}`
   )
+  useEffect(() => {
+    if (selectedCategory) {
+      console.log("jj")
+      const Datas = targetData?.userWiseResults
+
+      const filteredList = branchProduct
+        .filter(
+          (item) =>
+            item.selected?.some(
+              (selectedItem) =>
+                String(selectedItem.category_id) ===
+                String(selectedCategory?.Id)
+            ) || String(item.category_id) === String(selectedCategory?.Id)
+        )
+        .map((item) => item.productName || item.serviceName)
+      console.log(filteredList)
+      setproductList(filteredList)
+      console.log("J")
+      console.log(targetData)
+     
+      console.log("hhh")
+
+      console.log(Datas)
+      console.log("hhhh")
+
+      const filteredselectedCategory = Datas.flatMap(
+        (user) => user.categories || []
+      ).filter((item) => item.categoryId === selectedCategory?.Id)
+console.log(filteredselectedCategory)
+      console.log("Hh")
+      const summary = filteredselectedCategory.reduce(
+        (acc, cur) => {
+          acc.target += Number(cur.target || 0)
+          acc.achieved += Number(cur.achieved || 0)
+          acc.balance += Number(cur.balance || 0)
+          return acc
+        },
+        { target: 0, achieved: 0, balance: 0 }
+      )
+      console.log("hhh")
+      setselectedDataPopup(summary)
+      console.log(filteredselectedCategory && filteredselectedCategory.length)
+      if (filteredselectedCategory && filteredselectedCategory.length) {
+console.log("hh")
+console.log(filteredselectedCategory)
+        setacheivedProducts((prev) => [
+          ...prev,
+          ...filteredselectedCategory.flatMap((item) =>
+            (item?.products || []).map((product) => ({
+              productname: product.name,
+              amount: product.achieved
+            }))
+          )
+        ])
+      } else {
+        setacheivedProducts([])
+      }
+    }
+  }, [targetData])
 
   useEffect(() => {
     const userData = getLocalStorageItem("user")
@@ -114,12 +175,13 @@ export default function DailyStaffActivity() {
     // Fetch data from your Node.js API: /api/leads?start=${range.startDate}&end=${range.endDate}
   }
   const handleSelectedUser = (category, userId, userName) => {
+setActiveUserId(userId)
     setselecteduserName(userName)
     setselectedCategory({
       Id: category.Id,
       categoryName: category.categoryName
     })
-    const filteredloggedUserItem = data?.userWiseResults.filter(
+    const filteredloggedUserItem = targetData?.userWiseResults.filter(
       (item) => item.userId === userId
     )
     const filteredselectedCategory =
@@ -138,11 +200,19 @@ export default function DailyStaffActivity() {
 
     setselectedDataPopup(summary)
     if (filteredselectedCategory && filteredselectedCategory.length) {
-      setacheivedProducts(
-        filteredselectedCategory[0]?.products?.map((product) => ({
-          productname: product.name,
-          amount: product.achieved
-        })) || []
+      // setacheivedProducts(
+      //   filteredselectedCategory[0]?.products?.map((product) => ({
+      //     productname: product.name,
+      //     amount: product.achieved
+      //   })) || []
+      // )
+  setacheivedProducts(
+        filteredselectedCategory.flatMap((item) =>
+          (item.products || []).map((product) => ({
+            productname: product.name,
+            amount: product.achieved
+          }))
+        )
       )
     } else {
       setacheivedProducts([])
@@ -167,19 +237,7 @@ export default function DailyStaffActivity() {
     console.log("J")
     console.log(targetData)
     console.log(loggedUser?._id)
-    const filteredloggedUserItem = Datas.filter(
-      (item) => item.userId === loggedUser._id
-    )
-    console.log("hhh")
-
-    console.log(Datas)
-    console.log("hhhh")
-    console.log(filteredloggedUserItem)
-    console.log(id)
-    // const filteredselectedCategory =
-    //   filteredloggedUserItem[0].categories.filter(
-    //     (item) => item.categoryId === id
-    //   )
+  
     const filteredselectedCategory = Datas.flatMap(
       (user) => user.categories || []
     ).filter((item) => item.categoryId === id)
@@ -348,8 +406,8 @@ export default function DailyStaffActivity() {
           selectedCompanyBranch={selectedcompanyBranch}
           setselectedCompanyBranch={setselectedcompanyBranch}
           parenttargetData={settargetData}
-          parentperiodmode={setperiodMode}
-          parentyear={setSelectedYear}
+          parentperiodmode={periodMode}
+          parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
         />
 
@@ -483,22 +541,23 @@ export default function DailyStaffActivity() {
             setselectedPeriod(val)
           }}
           onMonthChange={(val) => {
-            setcategorylist([])
             setacheivedProducts([])
             setselectedDataPopup([])
             setperiodMode(val)
+  setselecteduserName(null)
           }}
           onYearChange={(val) => {
-            setcategorylist([])
             setacheivedProducts([])
             setselectedDataPopup([])
             setSelectedYear(val)
+ setselecteduserName(null)
           }}
           productlist={productlist}
           onClose={() => {
-            setselecteduserName(loggedUser?.name)
+            setselecteduserName(null)
             setacheivedProducts([])
             setOpenModal(false)
+ setActiveUserId(null)
           }}
           selectedMonth={periodMode}
           selectedYear={selectedYear}
@@ -516,6 +575,7 @@ export default function DailyStaffActivity() {
           selectedUser={selectedUserName}
           category={selectedCategory}
           handleSelectedUser={handleSelectedUser}
+  activeUserId={activeUserId}
         />
       </div>
     </div>
