@@ -576,7 +576,7 @@
 // export default React.memo(ResponsiveTable)
 
 import React from "react"
-
+import Tooltip from "@mui/material/Tooltip"
 const ResponsiveTable = ({
   attendee,
   user,
@@ -934,7 +934,7 @@ const ResponsiveTable = ({
                         </td>
                       </>
                     )}
-                    <td
+                    {/* <td
                       className="border border-gray-400 p-2 hover:cursor-pointer"
                       onClick={() => {
                         if (
@@ -950,15 +950,70 @@ const ResponsiveTable = ({
                             <div key={index}>{item.place || "-"}</div>
                           ))
                         : "-"}
-                    </td>
+                    </td> */}
+                   
+<td
+  className="border border-gray-400 p-2 hover:cursor-pointer max-w-[120px] w-[120px]"
+  onClick={() => {
+    if (
+      user?.role === "Admin" &&
+      details?.onsite?.length > 0
+    ) {
+      handleOnsite(date, "Onsite", details?.onsite);
+    }
+  }}
+>
+  {details?.onsite?.length > 0 ? (
+    <Tooltip
+      arrow
+      title={
+        <div>
+          {details.onsite.map((item, index) => (
+            <div key={index}>{item.place || "-"}</div>
+          ))}
+        </div>
+      }
+    >
+      <span className="block truncate">
+        {details.onsite[0]?.place || "-"}
+        {details.onsite.length > 1 &&
+          ` +${details.onsite.length - 1}`}
+      </span>
+    </Tooltip>
+  ) : (
+    "-"
+  )}
+</td>
 
-                    <td className="border border-gray-400 p-2 hover:cursor-pointer">
+                    {/* <td className="border border-gray-400 p-2 hover:cursor-pointer">
                       {details?.onsite?.length > 0
                         ? details.onsite.map((item, index) => (
                             <div key={index}>{item.siteName || "-"}</div>
                           ))
                         : "-"}
-                    </td>
+                    </td> */}
+<td className="border border-gray-400 p-2 hover:cursor-pointer max-w-[120px] w-[120px]">
+  {details?.onsite?.length > 0 ? (
+    <Tooltip
+      arrow
+      title={
+        <div>
+          {details.onsite.map((item, index) => (
+            <div key={index}>{item.siteName || "-"}</div>
+          ))}
+        </div>
+      }
+    >
+      <span className="block truncate">
+        {details.onsite[0]?.siteName || "-"}
+        {details.onsite.length > 1 &&
+          ` +${details.onsite.length - 1}`}
+      </span>
+    </Tooltip>
+  ) : (
+    "-"
+  )}
+</td>
 
                     <td className="border border-gray-400 p-2 hover:cursor-pointer">
                       {details?.onsite?.length > 0

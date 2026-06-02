@@ -488,6 +488,8 @@ console.log(filteredselectedCategory)
           toast.error("error in updating")
         }
       } else if (type === "Onsite") {
+console.log(selected)
+console.log(staffId)
         const response = await api.post(
           `/auth/editOnsite?userid=${staffId}`,
           selected

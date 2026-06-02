@@ -12544,7 +12544,10 @@ export const EditOnsite = async (req, res) => {
     const { onsiteDate, ...updatedFeild } = formData
 
     const dateObj = new Date(onsiteDate)
-
+console.log("userid",userid)
+console.log("formdata",formData)
+console.log("onsitedatae,",onsiteDate)
+console.log("updatedfirle",updatedFeild)
     // Extract year and month (without leading zero)
     const year = dateObj.getFullYear() // "2025"
     const month = dateObj.getMonth() + 1
