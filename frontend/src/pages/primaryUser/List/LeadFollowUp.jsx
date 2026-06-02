@@ -108,8 +108,8 @@ const LeadFollowUp = () => {
   const [ownFollowUp, setOwnFollowUp] = useState(
     safeState?.ownlead ? true : false
   )
-console.log(safeState)
-console.log(ownFollowUp)
+  console.log(safeState)
+  console.log(ownFollowUp)
   console.log(ownFollowUp)
   console.log(safeState?.staffId ? false : true)
   console.log(safeState)
@@ -1765,7 +1765,11 @@ console.log(ownFollowUp)
           }
         }
       }
-      // setOwnFollowUp(true)
+      if (!safeState.staffId) {
+console.log("hhhh")
+        setOwnFollowUp(true)
+      }
+
       console.log("hhhhdd")
       setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
     } else {
