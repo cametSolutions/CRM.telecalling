@@ -1605,6 +1605,7 @@ console.log(selectedBranch)
                   <div className="flex md:justify-end items-end">
                     <select
                       {...registerMain("leadBranch")}
+value={selectedBranch}
                       disabled={!iscustomerchangeandbranch}
                       onChange={(e) => {
                         setSelectedBranch([e.target.value])
