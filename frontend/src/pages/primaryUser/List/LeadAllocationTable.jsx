@@ -679,7 +679,7 @@ console.log(filteredloggedUserItem)
           </div>
 
           {/* Scrollable Content */}
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1 overflow-auto mb-3">
             <div className="mx-5">
               {loading || toggleLoading ? (
                 <SkeletonTable rows={5} columns={8} />

@@ -51,7 +51,7 @@ const ReallocationTable = () => {
   const [selectedAllocationtypeNames, setselectedallocatiotypeNames] = useState(
     {}
   )
- const [activeUserId, setActiveUserId] = useState(null)
+  const [activeUserId, setActiveUserId] = useState(null)
   const [validateError, setValidateError] = useState({})
   const [validatetypeError, setValidatetypeError] = useState({})
   const [loggedUserBranches, setLoggeduserBranches] = useState([])
@@ -67,7 +67,7 @@ const ReallocationTable = () => {
   const [tableData, setTableData] = useState([])
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
-const now =new Date()
+  const now = new Date()
   const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   const [periodMode, setperiodMode] = useState("all")
   const [targetData, settargetData] = useState([])
@@ -108,7 +108,7 @@ const now =new Date()
     const user = JSON.parse(userData)
     setLoggedUser(user)
   }, [])
-useEffect(() => {
+  useEffect(() => {
     if (selectedCategory) {
       console.log("jj")
       const Datas = targetData?.userWiseResults
@@ -127,12 +127,11 @@ useEffect(() => {
       setproductList(filteredList)
       console.log("J")
       console.log(targetData)
-    
 
       const filteredselectedCategory = Datas.flatMap(
         (user) => user.categories || []
       ).filter((item) => item.categoryId === selectedCategory?.Id)
-console.log(filteredselectedCategory)
+      console.log(filteredselectedCategory)
       console.log("Hh")
       const summary = filteredselectedCategory.reduce(
         (acc, cur) => {
@@ -147,8 +146,8 @@ console.log(filteredselectedCategory)
       setselectedDataPopup(summary)
       console.log(filteredselectedCategory && filteredselectedCategory.length)
       if (filteredselectedCategory && filteredselectedCategory.length) {
-console.log("hh")
-console.log(filteredselectedCategory)
+        console.log("hh")
+        console.log(filteredselectedCategory)
         setacheivedProducts((prev) => [
           ...prev,
           ...filteredselectedCategory.flatMap((item) =>
@@ -386,7 +385,7 @@ console.log(filteredselectedCategory)
     setOpenModal(true)
   }
   const handleSelectedUser = (category, userId, userName) => {
-  setActiveUserId(userId)
+    setActiveUserId(userId)
     setselecteduserName(userName)
     setselectedCategory({
       Id: category.Id,
@@ -417,7 +416,7 @@ console.log(filteredselectedCategory)
       //     amount: product.achieved
       //   })) || []
       // )
-  setacheivedProducts(
+      setacheivedProducts(
         filteredselectedCategory.flatMap((item) =>
           (item.products || []).map((product) => ({
             productname: product.name,
@@ -441,7 +440,7 @@ console.log(filteredselectedCategory)
           parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
         />
-        <div className="flex flex-1 flex-col overflow-hidden ">
+        <div className="flex flex-1 flex-col overflow-hidden min-h-0">
           <header className="flex items-center justify-between bg-[#ADD8E6]">
             {loggedUser?.role?.toLowerCase() === "admin" ? (
               <AdminHeader hide={true} />
@@ -499,12 +498,10 @@ console.log(filteredselectedCategory)
               color="#4A90E2" // Change color as needed
             />
           )}
-          <div className="flex flex-col flex-1 bg-[#ADD8E6]">
+          <div className="flex flex-col flex-1 bg-[#ADD8E6] min-h-0">
             <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3 ">
               <h2 className="text-lg font-bold ml-5 mt-3">ReAllocation List</h2>
               <div className="flex justify-end  ml-auto gap-6 items-center">
-               
-
                 <button
                   onClick={() =>
                     loggedUser.role === "Admin"
@@ -517,6 +514,7 @@ console.log(filteredselectedCategory)
                 </button>
               </div>
             </div>
+
             {/* Responsive Table Container */}
             <div className=" overflow-auto rounded-lg text-center overflow-y-auto border  shadow-xl mx-3 md:mx-5 mb-3 bg-white">
               <table className="w-full text-sm">
@@ -961,20 +959,20 @@ console.log(filteredselectedCategory)
             setacheivedProducts([])
             setselectedDataPopup([])
             setperiodMode(val)
-  setselecteduserName(null)
+            setselecteduserName(null)
           }}
           onYearChange={(val) => {
             setacheivedProducts([])
             setselectedDataPopup([])
             setSelectedYear(val)
-  setselecteduserName(null)
+            setselecteduserName(null)
           }}
           productlist={productlist}
           onClose={() => {
             setselecteduserName(null)
             setacheivedProducts([])
             setOpenModal(false)
-   setActiveUserId(null)
+            setActiveUserId(null)
           }}
           selectedMonth={periodMode}
           selectedYear={selectedYear}
@@ -992,7 +990,7 @@ console.log(filteredselectedCategory)
           selectedUser={selectedUserName}
           category={selectedCategory}
           handleSelectedUser={handleSelectedUser}
-  activeUserId={activeUserId}
+          activeUserId={activeUserId}
         />
       </div>
     </div>
