@@ -61,7 +61,7 @@ const Reallocation = () => {
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
   const [activeUserId, setActiveUserId] = useState(null)
-const now=new Date()
+  const now = new Date()
   const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   const [periodMode, setperiodMode] = useState("all")
   const [targetData, settargetData] = useState([])
@@ -88,9 +88,9 @@ const now=new Date()
       selectedCompanyBranch &&
       `/lead/getallreallocatedLead?selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
   )
-console.log(leadreallocation)
-const a=leadreallocation?.map((it)=>it.leadId)
-console.log(a)
+  console.log(leadreallocation)
+  const a = leadreallocation?.map((it) => it.leadId)
+  console.log(a)
   const { data } = UseFetch("/auth/getallUsers")
   const navigate = useNavigate()
   // console.log(getallreallocatedLead);
@@ -118,7 +118,7 @@ console.log(a)
       setproductList(filteredList)
       console.log("J")
       console.log(targetData)
-     
+
       console.log("hhh")
 
       console.log(Datas)
@@ -127,7 +127,7 @@ console.log(a)
       const filteredselectedCategory = Datas.flatMap(
         (user) => user.categories || []
       ).filter((item) => item.categoryId === selectedCategory?.Id)
-console.log(filteredselectedCategory)
+      console.log(filteredselectedCategory)
       console.log("Hh")
       const summary = filteredselectedCategory.reduce(
         (acc, cur) => {
@@ -142,8 +142,8 @@ console.log(filteredselectedCategory)
       setselectedDataPopup(summary)
       console.log(filteredselectedCategory && filteredselectedCategory.length)
       if (filteredselectedCategory && filteredselectedCategory.length) {
-console.log("hh")
-console.log(filteredselectedCategory)
+        console.log("hh")
+        console.log(filteredselectedCategory)
         setacheivedProducts((prev) => [
           ...prev,
           ...filteredselectedCategory.flatMap((item) =>
@@ -259,11 +259,7 @@ console.log(filteredselectedCategory)
     console.log("J")
     console.log(targetData)
     console.log(loggedUser?._id)
-  
-    // const filteredselectedCategory =
-    //   filteredloggedUserItem[0].categories.filter(
-    //     (item) => item.categoryId === id
-    //   )
+
     const filteredselectedCategory = Datas.flatMap(
       (user) => user.categories || []
     ).filter((item) => item.categoryId === id)
@@ -296,7 +292,7 @@ console.log(filteredselectedCategory)
     setOpenModal(true)
   }
   const handleSelectedUser = (category, userId, userName) => {
-setActiveUserId(userId)
+    setActiveUserId(userId)
     setselecteduserName(userName)
     setselectedCategory({
       Id: category.Id,
@@ -327,7 +323,7 @@ setActiveUserId(userId)
       //     amount: product.achieved
       //   })) || []
       // )
-   setacheivedProducts(
+      setacheivedProducts(
         filteredselectedCategory.flatMap((item) =>
           (item.products || []).map((product) => ({
             productname: product.name,
@@ -415,7 +411,7 @@ setActiveUserId(userId)
         <div className="flex flex-1 flex-col overflow-hidden">
           <header className="flex items-center justify-between bg-[#ADD8E6]">
             {loggedUser?.role?.toLowerCase() === "admin" ? (
-              <AdminHeader hide={true}/>
+              <AdminHeader hide={true} />
             ) : (
               <StaffHeader hide={true} />
             )}
@@ -551,20 +547,20 @@ setActiveUserId(userId)
             setacheivedProducts([])
             setselectedDataPopup([])
             setperiodMode(val)
-    setselecteduserName(null)
+            setselecteduserName(null)
           }}
           onYearChange={(val) => {
             setacheivedProducts([])
             setselectedDataPopup([])
             setSelectedYear(val)
-    setselecteduserName(null)
+            setselecteduserName(null)
           }}
           productlist={productlist}
           onClose={() => {
             setselecteduserName(null)
             setacheivedProducts([])
             setOpenModal(false)
-  setActiveUserId(null)
+            setActiveUserId(null)
           }}
           selectedMonth={periodMode}
           selectedYear={selectedYear}
@@ -582,8 +578,7 @@ setActiveUserId(userId)
           selectedUser={selectedUserName}
           category={selectedCategory}
           handleSelectedUser={handleSelectedUser}
-  activeUserId={activeUserId}
-
+          activeUserId={activeUserId}
         />
       </div>
     </div>

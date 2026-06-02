@@ -35,6 +35,7 @@ PhoneCall, PhoneMissed, PhoneIncoming, BadgeCheck
 } from "lucide-react"
 const CallregistrationList = () => {
   const navigate = useNavigate()
+const [activeUserId, setActiveUserId] = useState(null)
   const [loggedUserBranches, setLoggeduserBranches] = useState([])
   const [today, setToday] = useState(null)
   const [userBranch, setUserBranch] = useState(null)
@@ -56,7 +57,8 @@ const CallregistrationList = () => {
   const [selectedUserName, setselecteduserName] = useState(null)
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
-  const [selectedYear, setSelectedYear] = useState(null)
+const now=new Date()
+  const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   const [periodMode, setperiodMode] = useState("all")
   const [targetData, settargetData] = useState([])
   console.log(targetData)
@@ -71,8 +73,11 @@ const CallregistrationList = () => {
     "/customer/getcallregistrationlist"
   )
   const { data: branchProduct } = UseFetch(
-    `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
+selectedcompanybranchId&&
+    `/product/getallbranchProduct?branch=${selectedcompanybranchId}`
   )
+console.log(selectedCompanyBranch)
+console.log(branchProduct)
 
   // const socketRef = useRef(null)
   // useEffect(() => {
@@ -104,6 +109,65 @@ const CallregistrationList = () => {
   //     socket.disconnect()
   //   }
   // }, [])
+ useEffect(() => {
+    if (selectedCategory) {
+      console.log("jj")
+      const Datas = targetData?.userWiseResults
+
+      const filteredList = branchProduct
+        .filter(
+          (item) =>
+            item.selected?.some(
+              (selectedItem) =>
+                String(selectedItem.category_id) ===
+                String(selectedCategory?.Id)
+            ) || String(item.category_id) === String(selectedCategory?.Id)
+        )
+        .map((item) => item.productName || item.serviceName)
+      console.log(filteredList)
+      setproductList(filteredList)
+      console.log("J")
+      console.log(targetData)
+     
+      console.log("hhh")
+
+      console.log(Datas)
+      console.log("hhhh")
+
+      const filteredselectedCategory = Datas.flatMap(
+        (user) => user.categories || []
+      ).filter((item) => item.categoryId === selectedCategory?.Id)
+console.log(filteredselectedCategory)
+      console.log("Hh")
+      const summary = filteredselectedCategory.reduce(
+        (acc, cur) => {
+          acc.target += Number(cur.target || 0)
+          acc.achieved += Number(cur.achieved || 0)
+          acc.balance += Number(cur.balance || 0)
+          return acc
+        },
+        { target: 0, achieved: 0, balance: 0 }
+      )
+      console.log("hhh")
+      setselectedDataPopup(summary)
+      console.log(filteredselectedCategory && filteredselectedCategory.length)
+      if (filteredselectedCategory && filteredselectedCategory.length) {
+console.log("hh")
+console.log(filteredselectedCategory)
+        setacheivedProducts((prev) => [
+          ...prev,
+          ...filteredselectedCategory.flatMap((item) =>
+            (item?.products || []).map((product) => ({
+              productname: product.name,
+              amount: product.achieved
+            }))
+          )
+        ])
+      } else {
+        setacheivedProducts([])
+      }
+    }
+  }, [targetData])
   useEffect(() => {
     if (branches && branches.length > 0) {
       const userData = getLocalStorageItem("user")
@@ -143,6 +207,7 @@ const CallregistrationList = () => {
     console.log(id)
     console.log(name)
     console.log("hh")
+console.log(branchProduct)
     const filteredList = branchProduct
       .filter(
         (item) =>
@@ -157,19 +222,8 @@ const CallregistrationList = () => {
     console.log("J")
     console.log(targetData)
     console.log(users?._id)
-    const filteredloggedUserItem = Datas.filter(
-      (item) => item.userId === users._id
-    )
-    console.log("hhh")
-
-    console.log(Datas)
-    console.log("hhhh")
-    console.log(filteredloggedUserItem)
-    console.log(id)
-    // const filteredselectedCategory =
-    //   filteredloggedUserItem[0].categories.filter(
-    //     (item) => item.categoryId === id
-    //   )
+   
+  
     const filteredselectedCategory = Datas.flatMap(
       (user) => user.categories || []
     ).filter((item) => item.categoryId === id)
@@ -202,6 +256,7 @@ const CallregistrationList = () => {
     setOpenModal(true)
   }
   const handleSelectedUser = (category, userId, userName) => {
+setActiveUserId(userId)
     setselecteduserName(userName)
     setselectedCategory({
       Id: category.Id,
@@ -2053,8 +2108,8 @@ const CallregistrationList = () => {
           selectedCompanyBranch={selectedcompanybranchId}
           setselectedCompanyBranch={setselectedcompanybranchId}
           parenttargetData={settargetData}
-          parentperiodmode={setperiodMode}
-          parentyear={setSelectedYear}
+          parentperiodmode={periodMode}
+          parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
         />
 
@@ -2949,6 +3004,52 @@ const CallregistrationList = () => {
             </div>
           </div>
         </div>
+ <PerformanceModal
+          modalOpen={openModal}
+          splitType={targetData?.selectedMeasurementType}
+          selectedperiod={selectedPeriod}
+          allperiods={targetData?.periods}
+          onselectedPeriodChange={(val, val2) => {
+            setSelectedMonth(val2)
+            setselectedPeriod(val)
+          }}
+          onMonthChange={(val) => {
+            setacheivedProducts([])
+            setselectedDataPopup([])
+            setperiodMode(val)
+            setselecteduserName(null)
+          }}
+          onYearChange={(val) => {
+            setacheivedProducts([])
+            setselectedDataPopup([])
+            setSelectedYear(val)
+            setselecteduserName(null)
+          }}
+          productlist={productlist}
+          onClose={() => {
+            setselecteduserName(null)
+            setacheivedProducts([])
+            setOpenModal(false)
+            setActiveUserId(null)
+          }}
+          selectedMonth={periodMode}
+          selectedYear={selectedYear}
+          summary={{
+            target: selectedDatapopup?.target,
+            achieved: selectedDatapopup?.achieved,
+            balance:
+              selectedDatapopup?.achieved > selectedDatapopup?.target
+                ? 0
+                : selectedDatapopup?.balance
+          }}
+          products={achievedproducts}
+          targetData={targetData?.userWiseResults}
+          loggedUser={users}
+          selectedUser={selectedUserName}
+          category={selectedCategory}
+          handleSelectedUser={handleSelectedUser}
+          activeUserId={activeUserId}
+        />
       </div>
     </div>
   )
