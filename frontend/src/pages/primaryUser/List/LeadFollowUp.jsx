@@ -106,8 +106,10 @@ const LeadFollowUp = () => {
   const [selectedTab, setselectedTab] = useState("")
   const [hasOwnLeads, setHasownLeads] = useState(false)
   const [ownFollowUp, setOwnFollowUp] = useState(
-    safeState?.staffId ? false : true
+    safeState?.ownlead ? true : false
   )
+console.log(safeState)
+console.log(ownFollowUp)
   console.log(ownFollowUp)
   console.log(safeState?.staffId ? false : true)
   console.log(safeState)

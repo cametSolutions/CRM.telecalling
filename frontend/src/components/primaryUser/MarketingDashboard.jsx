@@ -409,6 +409,7 @@ console.log(updatedCategories)
         state: {
           staffId: user?._id,
           dueToday: true,
+ownlead:true,
           branchId: selectedBranch,
           viewMode: "dueToday",
           from: "followupReport",
@@ -421,6 +422,7 @@ console.log(updatedCategories)
         state: {
           staffId: user?._id,
           overdue: true,
+ownlead:true,
           branchId: selectedBranch,
           viewMode: "overDue",
           from: "followupReport",
@@ -433,6 +435,8 @@ console.log(updatedCategories)
         state: {
           staffId: user?._id,
           future: true,
+ownlead:true,
+
           branchId: selectedBranch,
           viewMode: "future",
           from: "followupReport",
@@ -448,6 +452,8 @@ console.log(updatedCategories)
           branchId: selectedBranch,
           viewMode: "converted",
           from: "followupReport",
+ownlead:true,
+
           istotal: true,
           filterRange: date
         }
@@ -460,6 +466,8 @@ console.log(updatedCategories)
           branchId: selectedBranch,
           viewMode: "neverfollowup",
           from: "followupReport",
+ownlead:true,
+
           istotal: true,
           filterRange: date
         }
@@ -473,6 +481,8 @@ console.log(updatedCategories)
           viewMode: "followup",
           istotal: true,
           header: "Total Leads",
+ownlead:true,
+
           branchId: selectedBranch
         }
       })

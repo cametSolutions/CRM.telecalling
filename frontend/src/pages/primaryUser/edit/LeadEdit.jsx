@@ -31,6 +31,7 @@ import {
 import UseFetch from "../../../hooks/useFetch"
 function LeadEdit() {
   const [fetcheddata, setfetchedData] = useState([])
+console.log(fetcheddata)
   const [loader, setLoader] = useState(false)
   const navigate = useNavigate()
 
@@ -42,6 +43,7 @@ function LeadEdit() {
   const [selectedcompanyBranch, setselectedcompanyBranch] = useState(
     userData?.selected[0]?.branch_id
   )
+const [selectedleadbranch,setselectedleadbranch]=useState(null)
   const [activeUserId, setActiveUserId] = useState(null)
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
@@ -59,6 +61,7 @@ const now=new Date()
     selectedcompanyBranch &&
       `/product/getallbranchProduct?branch=${selectedcompanyBranch}`
   )
+console.log(selectedcompanyBranch)
  useEffect(() => {
     if (selectedCategory) {
       console.log("jj")
@@ -128,6 +131,7 @@ console.log(filteredselectedCategory)
         if (response.status >= 200 && response.status < 300) {
 console.log("hhhh")
 console.log(response.data.data)
+setselectedleadbranch(response.data.data[0].leadBranch)
           setfetchedData(response.data.data)
         }
       }
@@ -314,7 +318,7 @@ navigate(-1)
               seteditLoadingState={setLoader}
               Data={fetcheddata}
               isReadOnly={isReadOnly}
-selectedcompanyBranch={selectedcompanyBranch}
+selectedcompanyBranch={selectedleadbranch}
             />
           </div>
         </div>
