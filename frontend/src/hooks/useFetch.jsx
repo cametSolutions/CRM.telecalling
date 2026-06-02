@@ -78,7 +78,7 @@ const UseFetch = (url) => {
 
       try {
         const result = await fetchDataFromApi(url)
-
+console.log(result?.data)
         // if fetchDataFromApi is axios-style, result.data is the full JSON body
         setData(result.data)
       } catch (err) {

@@ -43,6 +43,7 @@ const LeadFollowUp = () => {
   const navigate = useNavigate()
 
   const safeState = location?.state || {}
+  console.log(safeState)
 
   const [selectedLeadId, setSelectedLeadId] = useState(null)
   const [demoerror, setDemoError] = useState({
@@ -53,7 +54,9 @@ const LeadFollowUp = () => {
   const [selectedUserName, setselecteduserName] = useState(null)
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
-  const [selectedYear, setSelectedYear] = useState(null)
+  const now = new Date()
+  const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
+  console.log(selectedYear)
   const [periodMode, setperiodMode] = useState("all")
   const [targetData, settargetData] = useState([])
   console.log(targetData)
@@ -61,7 +64,6 @@ const LeadFollowUp = () => {
   const [productlist, setproductList] = useState([])
   const [achievedproducts, setacheivedProducts] = useState([])
   const [selectedPeriod, setselectedPeriod] = useState("")
-
 
   const [expandedRows, setExpandedRows] = useState(new Set())
   const [selectedData, setselectedData] = useState(null)
@@ -106,9 +108,13 @@ const LeadFollowUp = () => {
   const [ownFollowUp, setOwnFollowUp] = useState(
     safeState?.staffId ? false : true
   )
+  console.log(ownFollowUp)
+  console.log(safeState?.staffId ? false : true)
+  console.log(safeState)
   const [historyList, setHistoryList] = useState([])
   const [loggedUser, setloggedUser] = useState(null)
   const [originalloggeduser, setoriginalloggeduser] = useState(null)
+  console.log(originalloggeduser)
   const [loggedUserBranches, setloggedUserBranches] = useState([])
   const [followupDateLoader, setfollowupDateLoader] = useState(false)
   const [input, setInput] = useState("")
@@ -123,7 +129,7 @@ const LeadFollowUp = () => {
   const [selectedLead, setselectedLead] = useState([])
   const dropdownRef = useRef(null)
   const [tableData, setTableData] = useState([])
-
+  const [activeUserId, setActiveUserId] = useState(null)
   // NEW: Track if payment was updated in current session
   const [paymentUpdatedInSession, setPaymentUpdatedInSession] = useState(false)
 
@@ -149,35 +155,93 @@ const LeadFollowUp = () => {
   const { data: branches } = UseFetch("/branch/getBranch")
   const { data } = UseFetch("/auth/getallUsers")
   const { data: branchProduct } = UseFetch(
-selectedCompanyBranch&&
-    `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
+    selectedCompanyBranch &&
+      `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
   )
-console.log(selectedCompanyBranch)
+  console.log(selectedCompanyBranch)
   // [Keep all your existing useEffect hooks here - they remain the same]
   // ... (all the existing useEffect hooks from line 92 to line 600+)
-console.log(ownFollowUp)
-console.log(pending)
+  console.log(ownFollowUp)
+  console.log(pending)
+  useEffect(() => {
+    if (selectedCategory) {
+      console.log("jj")
+      const Datas = targetData?.userWiseResults
+      console.log(selectedCategory)
+      const filteredList = branchProduct
+        .filter(
+          (item) =>
+            item.selected?.some(
+              (selectedItem) =>
+                String(selectedItem.category_id) ===
+                String(selectedCategory?.Id)
+            ) || String(item.category_id) === String(selectedCategory?.Id)
+        )
+        .map((item) => item.productName || item.serviceName)
+      console.log(filteredList)
+      setproductList(filteredList)
+      console.log("J")
+      console.log(targetData)
+      console.log(loggedUser?._id)
+      console.log(Datas)
+
+      const filteredselectedCategory = Datas.flatMap(
+        (user) => user.categories || []
+      ).filter((item) => item.categoryId === selectedCategory?.Id)
+      console.log("Hh")
+      const summary = filteredselectedCategory.reduce(
+        (acc, cur) => {
+          acc.target += Number(cur.target || 0)
+          acc.achieved += Number(cur.achieved || 0)
+          acc.balance += Number(cur.balance || 0)
+          return acc
+        },
+        { target: 0, achieved: 0, balance: 0 }
+      )
+      console.log("hhh")
+      setselectedDataPopup(summary)
+      console.log(filteredselectedCategory && filteredselectedCategory.length)
+      if (filteredselectedCategory && filteredselectedCategory.length) {
+        setacheivedProducts((prev) => [
+          ...prev,
+          ...filteredselectedCategory.flatMap((item) =>
+            (item?.products || []).map((product) => ({
+              productname: product.name,
+              amount: product.achieved
+            }))
+          )
+        ])
+      } else {
+        setacheivedProducts([])
+      }
+    }
+  }, [targetData])
+  console.log(safeState?.viewMode !== "product")
+  console.log(safeState?.viewMode !== "product" || !loggedUser)
+  console.log(safeState?.viewMode)
   useEffect(() => {
     // run only when location.state or selectedCompanyBranch / loggedUser change
     //this from productwisereport
     if (safeState?.viewMode !== "product" || !loggedUser) return
-console.log("HHH")
+    console.log("HHH")
     const selectedbranch = safeState?.branchId
 
     setselectedCompanyBranch(selectedbranch)
     const fetchFollowups = async () => {
+      console.log("hhhh")
       const staffIdFromState = location.state.staffId
       const pendingFromState = location.state.pending
       // console.log(location.state.istotal)
       // console.log(pendingFromState)
       const selectedproductId = location.state.productId
+      console.log(location.state)
       // console.log(staffIdFromState)
       // console.log(selectedproductId)
       // console.log(pendingFromState)
       setPending(pendingFromState)
       // keep full loggedUser object, just compare ids
       setOwnFollowUp(staffIdFromState === loggedUser._id)
-console.log(staffIdFromState === loggedUser._id)
+      console.log(staffIdFromState === loggedUser._id)
       setproductwiseloader(true)
       try {
         const res = await api.get(
@@ -189,6 +253,7 @@ console.log(staffIdFromState === loggedUser._id)
             `&viewmode=${safeState?.viewMode}` +
             `&header=${safeState?.header}`
         )
+        console.log(res.data)
         // console.log(res.data.followupLeads)
         const productwisedata = res.data.followupLeads
         const filteredLeads = productwisedata.filter((lead) => {
@@ -213,7 +278,7 @@ console.log(staffIdFromState === loggedUser._id)
             safeState?.staffId?.toString()
           )
         })
-
+        console.log(filteredLeads)
         if (
           filteredLeads &&
           filteredLeads.length &&
@@ -413,11 +478,12 @@ console.log(staffIdFromState === loggedUser._id)
               // console.log(productwisedata)
               // helpers
               const isFollowupActivity = (log) =>
-                log?.taskBy?.taskName === "Followup" &&
+                log?.taskId?.taskName === "Followup" &&
                 log?.followupClosed === true &&
                 log?.submissionDate
 
               const getLatestSubmissionDate = (lead) => {
+                console.log(lead)
                 const dates = (lead.activityLog || [])
                   .filter(isFollowupActivity)
                   .map((log) => new Date(log.submissionDate).getTime())
@@ -427,8 +493,10 @@ console.log(staffIdFromState === loggedUser._id)
 
               const followupLeads = filteredLeads || []
               const clearedLeads = []
+              console.log(followupLeads)
               followupLeads.forEach((lead) => {
                 const latest = getLatestSubmissionDate(lead)
+                console.log(latest)
                 if (latest) {
                   // cleared
                   clearedLeads.push({ ...lead, latestSubmissionTime: latest })
@@ -439,6 +507,7 @@ console.log(staffIdFromState === loggedUser._id)
               clearedLeads.sort(
                 (a, b) => b.latestSubmissionTime - a.latestSubmissionTime
               )
+              console.log(clearedLeads)
               // optional: group by allocatedTo
               const groupedLeads = {}
               let grandTotal = 0
@@ -450,6 +519,7 @@ console.log(staffIdFromState === loggedUser._id)
                 groupedLeads[assignedTo].push(lead)
               })
               const groupedData = normalizeTableData(groupedLeads)
+              console.log(groupedData)
               // console.log(groupedData)
               // then store it in state
               setnetTotalAmount(TotalAmount(clearedLeads))
@@ -488,7 +558,7 @@ console.log(staffIdFromState === loggedUser._id)
       setPending(pendingorcleared)
       if (!loggedUser) return // NEW: guard
       setOwnFollowUp(staffIdFromState === loggedUser._id)
-console.log(staffIdFromState === loggedUser._id)
+      console.log(staffIdFromState === loggedUser._id)
       setproductwiseloader(true)
       try {
         const res = await api.get(
@@ -825,7 +895,7 @@ console.log(staffIdFromState === loggedUser._id)
       `&endDate=${safeState?.viewMode ? dates.endDate : null}` +
       `&header=${safeState?.header}`
     : null
-console.log(shouldFetch)
+  console.log(shouldFetch)
   console.log(safeState)
   console.log(selectedCompanyBranch)
   console.log(safeState?.header)
@@ -839,12 +909,13 @@ console.log(shouldFetch)
   } = UseFetch(url)
   console.log(loggedusersallocatedleads)
   console.log(url)
-  console.log(loggedusersallocatedleads?.followupLeads)
+  console.log(loggedusersallocatedleads?.followupLeads?.length)
 
   // Initial loggedUser + branches from dashboard
   useEffect(() => {
     if (!safeState.branchId || !branches || !data) return
-console.log(safeState.branchId)
+    console.log(safeState.branchId)
+    console.log(safeState)
     console.log("Hhh")
     const { allusers = [], allAdmins = [] } = data
     const mergeduser = [...allusers, ...allAdmins]
@@ -975,8 +1046,8 @@ console.log(safeState.branchId)
     }, 2000)
     return () => clearTimeout(handler)
   }, [input])
-console.log(ownFollowUp)
-console.log(pending)
+  console.log(ownFollowUp)
+  console.log(pending)
   const formatdate = (date) => new Date(date).toISOString().split("T")[0]
   const getLocalDate = (date) => {
     const local = new Date(date)
@@ -984,12 +1055,14 @@ console.log(pending)
     return local.toISOString().split("T")[0]
   }
   const handleSelectedUser = (category, userId, userName) => {
+    console.log("hhh")
+    setActiveUserId(userId)
     setselecteduserName(userName)
     setselectedCategory({
       Id: category.Id,
       categoryName: category.categoryName
     })
-    const filteredloggedUserItem = data?.userWiseResults.filter(
+    const filteredloggedUserItem = targetData?.userWiseResults.filter(
       (item) => item.userId === userId
     )
     const filteredselectedCategory =
@@ -1008,12 +1081,16 @@ console.log(pending)
 
     setselectedDataPopup(summary)
     if (filteredselectedCategory && filteredselectedCategory.length) {
+      console.log("hh")
       setacheivedProducts(
-        filteredselectedCategory[0]?.products?.map((product) => ({
-          productname: product.name,
-          amount: product.achieved
-        })) || []
+        filteredselectedCategory.flatMap((item) =>
+          (item.products || []).map((product) => ({
+            productname: product.name,
+            amount: product.achieved
+          }))
+        )
       )
+      console.log("hhh")
     } else {
       setacheivedProducts([])
     }
@@ -1101,6 +1178,7 @@ console.log(pending)
         console.log(loggedUser)
         console.log(groupedData)
       } else {
+        console.log("HH")
         if (safeState?.viewMode === "overDue") {
           console.log("hhh")
           const today = new Date()
@@ -1317,6 +1395,11 @@ console.log(pending)
           setTableData(groupedData)
           console.log(groupedData)
         } else {
+          console.log(loggedusersallocatedleads?.followupLeads)
+          const a = loggedusersallocatedleads.followupLeads.map(
+            (item) => item.leadId
+          )
+          console.log(a)
           console.log(pending)
           console.log(ownFollowUp)
           if (pending && ownFollowUp) {
@@ -1680,8 +1763,8 @@ console.log(pending)
           }
         }
       }
-setOwnFollowUp(true)
-console.log("hhhhdd")
+      // setOwnFollowUp(true)
+      console.log("hhhhdd")
       setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
     } else {
       console.log("hh")
@@ -1818,12 +1901,12 @@ console.log("hhhhdd")
       ...formData,
       overwriteLastPayment: paymentUpdatedInSession // Send flag to backend
     }
-console.log(requestData)
+    console.log(requestData)
     console.log(requestData)
     setcollectionupdateData(requestData)
     setcollectionUpdateModal(false)
   }
-console.log(collectionData)
+  console.log(collectionData)
   const handleDemoSubmit = async () => {
     if (isdemofollownotClosed) {
       setDemoError((prev) => ({
@@ -1894,8 +1977,8 @@ console.log(collectionData)
   }
 
   const handleFollowUpDateSubmit = async () => {
-console.log(formData)
-console.log(collectionupdatedata)
+    console.log(formData)
+    console.log(collectionupdatedata)
 
     if (followupDateLoader) return
     try {
@@ -1919,7 +2002,7 @@ console.log(collectionupdatedata)
 
       const response = await api.put(
         `/lead/followupDateUpdate?selectedleaddocId=${selectedDocId}&loggeduserid=${loggedUser._id}`,
-       {formData,collectionupdatedata}
+        { formData, collectionupdatedata }
       )
 
       if (response.status === 200) {
@@ -2316,11 +2399,11 @@ console.log(collectionupdatedata)
       </tbody>
     </table>
   )
-console.log(tableData)
+  console.log(tableData)
   const currentData = statusAllocated ? allocatedLeads : tableData
-console.log(statusAllocated)
+  console.log(statusAllocated)
   console.log(loggedUser)
-console.log(ownFollowUp)
+  console.log(ownFollowUp)
   return (
     <div className="h-full  bg-[#ADD8E6] overflow-hidden">
       <div className="flex h-full  flex-row">
@@ -2329,14 +2412,15 @@ console.log(ownFollowUp)
           selectedCompanyBranch={selectedCompanyBranch}
           setselectedCompanyBranch={setselectedCompanyBranch}
           parenttargetData={settargetData}
-          parentperiodmode={setperiodMode}
-          parentyear={setSelectedYear}
+          parentperiodmode={periodMode}
+          parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
         />
-        <div className="flex flex-1 flex-col overflow-hidden ">
+
+        <div className="flex flex-1 flex-col overflow-hidden min-h-0">
           <header className="flex items-center justify-between ">
-            {loggedUser?.role?.toLowerCase() === "admin" ? (
-              <AdminHeader hide={true}/>
+            {originalloggeduser?.role?.toLowerCase() === "admin" ? (
+              <AdminHeader hide={true} />
             ) : (
               <StaffHeader hide={true} />
             )}
@@ -2392,7 +2476,7 @@ console.log(ownFollowUp)
               color="#4A90E2"
             />
           )}
-          <div className="flex flex-col flex-1 bg-[#ADD8E6]">
+          <div className="flex flex-col flex-1 bg-[#ADD8E6] min-h-0">
             <h2 className="text-lg font-bold mx-4">Lead Follow Up</h2>
 
             <div className="grid grid-cols-2 md:flex md:flex-nowrap md:gap-6 gap-3 md:items-center w-full md:w-auto mx-4">
@@ -2466,7 +2550,7 @@ console.log(ownFollowUp)
                           label: ownFollowUp ? "Own Followup" : "All Followup",
                           value: ownFollowUp,
                           toggle: () => {
-console.log(ownFollowUp)
+                            console.log(ownFollowUp)
                             setOwnFollowUp(!ownFollowUp)
                             setTableData([])
                             setAllocatedLeads([])
@@ -2564,12 +2648,14 @@ console.log(ownFollowUp)
               </div>
             </div>
 
-            <div className="h-auto overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3 bg-white">
+            {/* <div className="h-auto overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3 bg-white">
+              {renderTable(currentData)}
+            </div> */}
+            <div className="flex-1 min-h-0 overflow-auto rounded-lg shadow-xl mx-2 md:mx-3 mb-3 bg-white">
               {renderTable(currentData)}
             </div>
           </div>
         </div>
-
         {showModal && (
           <LeadhistoryModal
             open={showModal}
@@ -2942,22 +3028,23 @@ console.log(ownFollowUp)
             setselectedPeriod(val)
           }}
           onMonthChange={(val) => {
-            setcategorylist([])
             setacheivedProducts([])
             setselectedDataPopup([])
             setperiodMode(val)
+            setselecteduserName(null)
           }}
           onYearChange={(val) => {
-            setcategorylist([])
             setacheivedProducts([])
             setselectedDataPopup([])
             setSelectedYear(val)
+            setselecteduserName(null)
           }}
           productlist={productlist}
           onClose={() => {
-            setselecteduserName(loggedUser?.name)
+            setselecteduserName(null)
             setacheivedProducts([])
             setOpenModal(false)
+            setActiveUserId(null)
           }}
           selectedMonth={periodMode}
           selectedYear={selectedYear}
@@ -2975,6 +3062,7 @@ console.log(ownFollowUp)
           selectedUser={selectedUserName}
           category={selectedCategory}
           handleSelectedUser={handleSelectedUser}
+          activeUserId={activeUserId}
         />
       </div>
     </div>
