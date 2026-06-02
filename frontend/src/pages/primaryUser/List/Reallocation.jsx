@@ -88,6 +88,9 @@ const now=new Date()
       selectedCompanyBranch &&
       `/lead/getallreallocatedLead?selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
   )
+console.log(leadreallocation)
+const a=leadreallocation?.map((it)=>it.leadId)
+console.log(a)
   const { data } = UseFetch("/auth/getallUsers")
   const navigate = useNavigate()
   // console.log(getallreallocatedLead);

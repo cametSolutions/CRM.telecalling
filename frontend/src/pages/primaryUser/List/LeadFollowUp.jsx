@@ -2142,7 +2142,7 @@ const LeadFollowUp = () => {
             )}
           </td>
           <td className="px-3 py-2 font-semibold text-gray-900 text-sm border border-gray-300 whitespace-nowrap">
-            {item.customerName.customerName}
+            {item.customerName.customerName.toUpperCase()}
           </td>
           <td className="px-3 py-2 text-gray-700 text-sm border border-gray-300 whitespace-nowrap">
             {item?.mobile}
@@ -2611,7 +2611,7 @@ const LeadFollowUp = () => {
                 </div>
               )}
 
-              <select
+              {/* <select
                 value={selectedCompanyBranch || ""}
                 onChange={(e) => setselectedCompanyBranch(e.target.value)}
                 className="border border-gray-300 py-0.5 rounded-md px-2 focus:outline-none w-36 md:min-w-[120px] cursor-pointer"
@@ -2621,7 +2621,7 @@ const LeadFollowUp = () => {
                     {branch.label}
                   </option>
                 ))}
-              </select>
+              </select> */}
 
               <div className="flex justify-end">
                 <button
