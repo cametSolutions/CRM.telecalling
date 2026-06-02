@@ -443,9 +443,9 @@ const LeadMaster = ({
   seteditLoadingState,
   showmessage,
   showpopupMessage,
-selectedcompanyBranch
+  selectedcompanyBranch
 }) => {
-console.log(selectedcompanyBranch)
+  console.log(selectedcompanyBranch)
   console.log(Data)
   const {
     register: registerMain,
@@ -496,7 +496,7 @@ console.log(selectedcompanyBranch)
   const [selectedCountry, setSelectedCountry] = useState(null)
   const [licensewithoutProductSelection, setlicenseWithoutProductSelection] =
     useState({})
-  const [iscustomerchangeandbranch, setcutomerchangeandbranch] = useState(true)
+  const [iscustomerchangeandbranch, setcustomerchangeandbranch] = useState(true)
   const [selectedState, setSelectedState] = useState(null)
   const [selectedleadlist, setSelectedLeadList] = useState([])
   const [selectedCustomer, setSelectedCustomer] = useState(null)
@@ -511,8 +511,8 @@ console.log(selectedcompanyBranch)
   const [loggeduser, setloggedUser] = useState(null)
   const [allstaff, setallStaffs] = useState([])
   const [selectedBranch, setSelectedBranch] = useState(selectedcompanyBranch)
-console.log(selectedcompanyBranch)
-console.log(selectedBranch)
+  console.log(selectedcompanyBranch)
+  console.log(selectedBranch)
   const [tasklist, settasklist] = useState([])
   const [allcustomer, setallcustomer] = useState([])
   const [selectedUserName, setselecteduserName] = useState(null)
@@ -560,6 +560,7 @@ console.log(selectedBranch)
       selectedBranch &&
       `/customer/getallCustomer?branchSelected=${selectedBranch}`
   )
+console.log(selectedBranch)
 
   const emptyRow = {
     licenseNumber: "",
@@ -573,9 +574,9 @@ console.log(selectedBranch)
   const canSelfAllocate =
     loggeduser?.department?._id === "670c866552847bbebbd35748" ||
     loggeduser?.department?._id === "670c867352847bbebbd35750"
-useEffect(() => {
-  setSelectedBranch(selectedcompanyBranch)
-}, [selectedcompanyBranch])
+  useEffect(() => {
+    setSelectedBranch(selectedcompanyBranch)
+  }, [selectedcompanyBranch])
   useEffect(() => {
     if (!selectedleadlist || selectedleadlist.length === 0) {
       setSelectedLeadList([{ ...emptyRow }])
@@ -619,19 +620,15 @@ useEffect(() => {
   }, [showmessage])
 
   useEffect(() => {
-    if (companybranches && companybranches.length > 0) {
-      const defaultBranch = companybranches[0]._id
-      if (Data && Data.length) {
-        const customerBranch = Data[0].leadBranch
+    if (selectedBranch) {
+    
+       
         // setSelectedBranch([customerBranch])
+console.log(selectedBranch)
         setValueMain("leadBranch", selectedBranch)
-      } else if (defaultBranch) {
-console.log("hh")
-        // setSelectedBranch([defaultBranch])
-        setValueMain("leadBranch", selectedBranch)
-      }
+     
     }
-  }, [companybranches, Data])
+  }, [selectedBranch])
 
   useEffect(() => {
     if (
@@ -685,8 +682,8 @@ console.log("hh")
       }
     }
   }, [loggeduser, setValueMain])
-console.log(loggeduser)
-console.log(customerOptions)
+  console.log(loggeduser)
+  console.log(customerOptions)
   useEffect(() => {
     if (
       Data &&
@@ -700,13 +697,13 @@ console.log(customerOptions)
         setselfAllocationChangable(false)
       }
       if (Data[0].activityLog.length === 1) {
-        setcutomerchangeandbranch(true)
+        setcustomerchangeandbranch(true)
       } else if (Data[0].activityLog.length > 1) {
-        setcutomerchangeandbranch(false)
+        setcustomerchangeandbranch(false)
       }
       setValueMain("leadId", Data[0]?.leadId)
       setValueMain("partner", Data[0]?.partner)
-setValueMain("remark",Data[0].remark)
+      setValueMain("remark", Data[0].remark)
       setValueMain(
         "selfAllocation",
         Data[0]?.selfAllocation === true ? "true" : "false"
@@ -725,7 +722,7 @@ setValueMain("remark",Data[0].remark)
       setValueMain("mobile", Data[0]?.customerName?.mobile)
       setValueMain("phone", Data[0]?.customerName?.phone)
       setValueMain("email", Data[0]?.customerName?.email)
-setValueMain("remark",Data[0].remark)
+      setValueMain("remark", Data[0].remark)
       const leadData = Data[0]?.leadFor.map((item) => ({
         licenseNumber: item?.licenseNumber,
         productorServiceName:
@@ -823,14 +820,14 @@ setValueMain("remark",Data[0].remark)
   //     console.log("hh")
   //   }
   // }, [])
-console.log(selectedBranch)
+  console.log(selectedBranch)
   useEffect(() => {
     if (customerData && customerData.length && selectedBranch) {
       const options = customerData.map((item) => {
         const matchingSelected = item.selected?.find(
           (sel) => sel.branch_id === selectedBranch
         )
-// console.log(matchingSelected)
+        // console.log(matchingSelected)
         return {
           value: item?._id,
           label: item?.customerName,
@@ -945,7 +942,6 @@ console.log(selectedBranch)
       setValueModal("gstNo", Data[0]?.customerName?.gstNo)
 
       setValueModal("city", Data[0]?.customerName?.city)
-
     }
   }
   const Industries = [
@@ -1256,13 +1252,14 @@ console.log(selectedBranch)
     }
   }
   const onSubmit = async (data) => {
-console.log(data)
+    console.log(data)
+
     if (submitLoading) return
     setsubmitLoading(true)
     if (submitLoading) return
     try {
       if (hasDuplicateLeadRows(selectedleadlist)) {
-console.log("HHH")
+        console.log("HHH")
         setValidateError((prev) => ({
           ...prev,
           duplicate:
@@ -1271,14 +1268,12 @@ console.log("HHH")
         setsubmitLoading(false)
         return
       } else if (validateError.duplicate) {
-console.log(
-"LLL")
+        console.log("LLL")
         setValidateError((prev) => ({ ...prev, duplicate: "" }))
       }
 
       if (process === "Registration") {
-console.log(
-"hhh")
+        console.log("hhh")
         const filteredleadlist = selectedleadlist.filter(
           (item) => item.productorServiceId && item.productorServiceId !== ""
         )
@@ -1295,7 +1290,7 @@ console.log(
           filteredleadlist,
           loggeduser.role
         )
-console.log(validation.eligible)
+        console.log(validation.eligible)
         setFormData(data)
         setPopupMessage(validation.message)
         if (validation.message === "") {
@@ -1311,7 +1306,7 @@ console.log(validation.eligible)
             }
           }
         } else {
-console.log("Hhh")
+          console.log("Hhh")
           setPopupOpen(true)
         }
         setIseligible(validation.eligible)
@@ -1331,7 +1326,6 @@ console.log("Hhh")
           selectedleadlist,
           Data[0]?._id
         )
-       
       }
     } catch (error) {
       console.log("error on onsubmit:", error)
@@ -1340,22 +1334,21 @@ console.log("Hhh")
       setsubmitLoading(false)
     }
   }
-console.log(formData)
+  console.log(formData)
   const handlePopupOk = async (ischek = false, leadData = null) => {
-console.log(leadData)
-console.log(formData)
-console.log(isEligible)
-console.log(ischek)
-// return
-console.log(formData)
+    console.log(leadData)
+    console.log(formData)
+    console.log(isEligible)
+    console.log(ischek)
+    // return
+    console.log(formData)
     setPopupOpen(false)
     const filteredleadlist = selectedleadlist.filter(
       (item) => item.productorServiceId && item.productorServiceId !== ""
     )
     let response
     if (isEligible && leadData === null) {
-console.log(
-"pppp")
+      console.log("pppp")
 
       response = await handleleadData(
         formData,
@@ -1363,21 +1356,19 @@ console.log(
         loggeduser.role
       )
     } else if (ischek && leadData) {
-console.log(
-"Hhh")
+      console.log("Hhh")
       response = await handleleadData(
         leadData,
         filteredleadlist,
         loggeduser.role
       )
-console.log(response)
+      console.log(response)
     }
     if (response?.success) {
-console.log("hhhhh")
+      console.log("hhhhh")
       resetLeadForm()
     }
-console.log(
-"OOo")
+    console.log("OOo")
   }
 
   const normalizeMobile = (number) => {
@@ -1478,8 +1469,6 @@ console.log(
   console.log(tableRows)
 
   return (
-  
-
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#ADD8E6]">
       {(modalloader ||
         loadingState ||
@@ -1613,7 +1602,7 @@ console.log(
                     )}
                   </div>
 
-                  {/* <div className="flex md:justify-end items-end">
+                  <div className="flex md:justify-end items-end">
                     <select
                       {...registerMain("leadBranch")}
                       disabled={!iscustomerchangeandbranch}
@@ -1625,6 +1614,22 @@ console.log(
                         setSelectedLeadList([{ ...emptyRow }])
                         setValueMain("netAmount", "")
                         setSelectedLicense(null)
+                        resetMain({
+                          customerName: "",
+                          email: "",
+                          phone: "",
+                          mobile: "",
+                          source: "",
+                          partner: "",
+                          allocationType: "followup",
+                          dueDate: "",
+                          remark: "",
+                          taxableAmount: "",
+                          taxAmount: "",
+                          netAmount: "",
+                          selfAllocation: false,
+                          leadId: ""
+                        })
                       }}
                       className="border border-gray-300 rounded px-3 py-[6px] text-sm bg-[#1B2A4A] hover:bg-[#243660] text-white outline-none min-w-[140px] cursor-pointer"
                     >
@@ -1634,7 +1639,7 @@ console.log(
                         </option>
                       ))}
                     </select>
-                  </div> */}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -2133,7 +2138,9 @@ console.log(
                       type="submit"
                       className="bg-[#1B2A4A] hover:bg-[#243660] text-white py-2 px-8 rounded text-sm font-semibold tracking-wide transition-colors mt-1"
                     >
-                      {process === "Registration" ? "SUBMIT LEAD" : "UPDATE LEAD"}
+                      {process === "Registration"
+                        ? "SUBMIT LEAD"
+                        : "UPDATE LEAD"}
                     </button>
                   </div>
                 </div>

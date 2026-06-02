@@ -50,6 +50,7 @@ console.log(selectedYear)
   const [achievedproducts, setacheivedProducts] = useState([])
   const [companyBranches, setcompanyBranches] = useState(null)
   const [selectedCompanyBranch, setselectedCompanyBranch] = useState(null)
+const [selecteduserBranch,setselecteduserBranch]=useState([])
   const [showhistoryModal, sethistoryModal] = useState(false)
   const [historyList, setHistoryList] = useState([])
   const [openRow, setOpenRow] = useState(null)
@@ -62,13 +63,14 @@ const [activeUserId, setActiveUserId] = useState(null)
 
   const { data: ownedlead, loading } = UseFetch(
     loggedUser &&
-      selectedCompanyBranch &&dates.startDate&&
+      selecteduserBranch &&dates.startDate&&
       `/lead/ownregisteredLead?userId=${loggedUser._id}&role=${
         location?.state?.role ? location?.state?.role : loggedUser.role
-      }&selectedBranch=${selectedCompanyBranch}&ownlead=${
+      }&selectedBranch=${selecteduserBranch}&ownlead=${
         location?.state?.role ? false : ownLead
       }&startDate=${dates.startDate}&endDate=${dates.endDate}`
   )
+console.log(selecteduserBranch)
 console.log(selectedCompanyBranch)
 console.log(ownedlead)
   const { data: branchProduct } = UseFetch(
@@ -151,6 +153,7 @@ console.log(dates)
       }))
       console.log(branch)
       setcompanyBranches(branch)
+setselecteduserBranch(branch[0].value)
       setselectedCompanyBranch(branch[0].value)
       setLoggedUser(userData)
       setownLead(location?.state?.role ? false : true)
@@ -552,6 +555,24 @@ setActiveUserId(userId)
             </div>
 
             <div className="flex flex-wrap items-center justify-start gap-3 xl:justify-end">
+ <div className="flex md:justify-end items-end">
+                    <select
+value={selecteduserBranch}
+                      onChange={(e) => {
+console.log("hhh")
+console.log("Hhh")
+                        setselecteduserBranch([e.target.value])
+                       
+                      }}
+                      className="border border-gray-300 rounded px-3 py-[6px] text-sm bg-white hover:bg-slate-50 text-black outline-none min-w-[140px] cursor-pointer"
+                    >
+                      {companybranches?.map((b, i) => (
+                        <option key={i} value={b._id}>
+                          {b.branchName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
               {dates.startDate && (
                 <div className="min-w-[240px]">
                   <MyDatePicker setDates={setDates} dates={dates} />
