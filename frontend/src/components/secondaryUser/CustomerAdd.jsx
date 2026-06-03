@@ -15,6 +15,7 @@ const CustomerAdd = ({
   handleEditedData,
   customer
 }) => {
+console.log(customer)
   const {
     register,
     handleSubmit,
