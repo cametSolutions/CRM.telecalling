@@ -827,6 +827,7 @@ console.log(selectedBranch)
         const matchingSelected = item.selected?.find(
           (sel) => sel.branch_id === selectedBranch
         )
+console.log(matchingSelected)
         // console.log(matchingSelected)
         return {
           value: item?._id,
@@ -1524,7 +1525,7 @@ console.log(selectedBranch)
                 <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1.8fr)_auto] gap-3">
                   <div className="flex flex-col">
                     <label className="block text-xs font-semibold text-gray-600 mb-1">
-                      Customer Names
+                      Customer Name
                     </label>
                     <div className="flex gap-2 items-stretch">
                       <div className="flex-1 min-w-0">
@@ -1608,7 +1609,7 @@ console.log(selectedBranch)
 value={selectedBranch}
                       disabled={!iscustomerchangeandbranch}
                       onChange={(e) => {
-                        setSelectedBranch([e.target.value])
+                        setSelectedBranch(e.target.value)
                         setValueMain("customerName", "")
                         setSelectedCustomer(null)
                         setcustomerTableData([])
