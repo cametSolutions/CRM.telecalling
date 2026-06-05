@@ -56,6 +56,8 @@ const [activeUserId, setActiveUserId] = useState(null)
       selectedBranch &&
       `/lead/getfollowupsummaryReport?startDate=${date.startDate}&endDate=${date.endDate}&branchId=${selectedBranch}`
   )
+console.log(date.startDate)
+console.log(date.endDate)
   const { data: branchProduct } = UseFetch(
     selectedBranch && `/product/getallbranchProduct?branch=${selectedBranch}`
   )
@@ -185,6 +187,8 @@ console.log(filteredselectedCategory)
   console.log("hhhh")
   // navigation logic for metric cells
   const handleMetricClick = (row, header, key) => {
+console.log("hhhh")
+console.log(header)
     // row has: staffName, leadCount, dueToday, overDue, future, converted, lost, leadid[]
     const staffName = row.staffName
     console.log("hh")
@@ -385,7 +389,7 @@ setActiveUserId(userId)
           filterRange: date
         }
       })
-    } else if (header === "Never Follow Up") {
+    } else if (header === "New Lead") {
       console.log("hhhhhh")
       console.log("hhhhh")
       navigate("/admin/transaction/lead/leadFollowUp", {

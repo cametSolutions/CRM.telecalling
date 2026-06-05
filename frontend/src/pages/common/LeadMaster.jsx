@@ -1401,6 +1401,7 @@ console.log(matchingSelected)
   }
   console.log(Data)
   const onmodalsubmit = async (data) => {
+if(modalloader)return
     console.log(data)
 
     try {
@@ -1426,7 +1427,9 @@ console.log(matchingSelected)
           customerData: data
         })
       } else {
-        response = await api.post("/customer/customerRegistration", {
+const createdFrom="lead"
+console.log(createdFrom)
+        response = await api.post(`/customer/customerRegistration?createdfrom=${createdFrom}`, {
           customerData: data
         })
       }

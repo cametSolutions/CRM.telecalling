@@ -515,6 +515,9 @@ import {
   ChevronRight,
   X
 } from "lucide-react"
+import api from "../../../api/api"
+import { useQuery } from "@tanstack/react-query";
+import Breadcrumb from "../../../components/common/Breadcrumb"
 import { loggeduserBranches } from "../../../../slices/companyBranchSlice"
 export default function ProductWiseleadReport() {
   const [filterRange, setFilterRange] = useState({
@@ -530,13 +533,13 @@ export default function ProductWiseleadReport() {
   const [viewMode, setViewMode] = useState("staff") // "staff" | "product"
   const [selectedStaff, setSelectedStaff] = useState(null)
   const [drillDown, setDrillDown] = useState(false)
- const [activeUserId, setActiveUserId] = useState(null)
+  const [activeUserId, setActiveUserId] = useState(null)
   const [userbranches, setuserBranches] = useState([])
   const [selectedBranch, setselectedBranch] = useState(null)
   const [selectedUserName, setselecteduserName] = useState(null)
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
-const now=new Date()
+  const now = new Date()
   const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   const [periodMode, setperiodMode] = useState("all")
   const [targetData, settargetData] = useState([])
@@ -562,18 +565,72 @@ const now=new Date()
     }))
     setuserBranches(branches)
   }, [])
-
+  console.log("Hhhh")
   // API call – includes branchId and date range
-  const { data: report, loading } = UseFetch(
-    filterRange.firstDay &&
-      filterRange.lastDay &&
-      selectedBranch &&
-      `/lead/getallproductwisereport?startDate=${filterRange.firstDay}&endDate=${filterRange.lastDay}&branchId=${selectedBranch}`
-  )
-  const { data: branchProduct } = UseFetch(
-    `/product/getallbranchProduct?branch=${selectedBranch}`
-  )
- useEffect(() => {
+  // const { data: report, loading } = UseFetch(
+  //   filterRange.firstDay &&
+  //     filterRange.lastDay &&
+  //     selectedBranch &&
+  //     `/lead/getallproductwisereport?startDate=${filterRange.firstDay}&endDate=${filterRange.lastDay}&branchId=${selectedBranch}`
+  // )
+const { data: report, isLoading: loading } = useQuery({
+  queryKey: [
+    "productWiseReport",
+    selectedBranch,
+    filterRange.firstDay,
+    filterRange.lastDay,
+  ],
+
+  enabled:
+    !!selectedBranch &&
+    !!filterRange.firstDay &&
+    !!filterRange.lastDay,
+
+  queryFn: async () => {
+    const response = await api.get(
+      `/lead/getallproductwisereport`,
+      {
+        params: {
+          startDate: filterRange.firstDay,
+          endDate: filterRange.lastDay,
+          branchId: selectedBranch,
+        },
+      }
+    );
+
+    return response.data.data;
+  },
+
+  staleTime: 1000 * 60 * 5, // 5 minutes
+});
+
+
+  console.log(report)
+  console.log(filterRange.lastDay)
+  console.log(filterRange.firstDay)
+  // const { data: branchProduct } = UseFetch(
+  //   `/product/getallbranchProduct?branch=${selectedBranch}`
+  // )
+const { data: branchProduct = [] } = useQuery({
+  queryKey: ["branchProducts", selectedBranch],
+
+  enabled: !!selectedBranch,
+
+  queryFn: async () => {
+    const response = await api.get(
+      `/product/getallbranchProduct`,
+      {
+        params: {
+          branch: selectedBranch,
+        },
+      }
+    );
+
+    return response.data;
+  },
+  staleTime: 1000 * 60 * 5, // 5 minutes
+});
+  useEffect(() => {
     if (selectedCategory) {
       console.log("jj")
       const Datas = targetData?.userWiseResults
@@ -592,7 +649,7 @@ const now=new Date()
       setproductList(filteredList)
       console.log("J")
       console.log(targetData)
-     
+
       console.log("hhh")
 
       console.log(Datas)
@@ -601,7 +658,7 @@ const now=new Date()
       const filteredselectedCategory = Datas.flatMap(
         (user) => user.categories || []
       ).filter((item) => item.categoryId === selectedCategory?.Id)
-console.log(filteredselectedCategory)
+      console.log(filteredselectedCategory)
       console.log("Hh")
       const summary = filteredselectedCategory.reduce(
         (acc, cur) => {
@@ -616,8 +673,8 @@ console.log(filteredselectedCategory)
       setselectedDataPopup(summary)
       console.log(filteredselectedCategory && filteredselectedCategory.length)
       if (filteredselectedCategory && filteredselectedCategory.length) {
-console.log("hh")
-console.log(filteredselectedCategory)
+        console.log("hh")
+        console.log(filteredselectedCategory)
         setacheivedProducts((prev) => [
           ...prev,
           ...filteredselectedCategory.flatMap((item) =>
@@ -675,7 +732,7 @@ console.log(filteredselectedCategory)
       staffMap[staffKey].totalLostAmount += Number(row.lostNetAmount || 0)
       staffMap[staffKey].totalPendingAmount += Number(row.pendingNetAmount || 0)
     })
-
+    console.log(Object.values(staffMap))
     setData(Object.values(staffMap))
     setSelectedStaff(null)
     setDrillDown(false)
@@ -707,7 +764,7 @@ console.log(filteredselectedCategory)
   // Handle staff click - drill down to product view
   const handleStaffClick = (staffName) => {
     if (!report) return
-
+    console.log("hh")
     const rows = Array.isArray(report.mappeddata) ? report.mappeddata : []
 
     setSelectedStaff(staffName)
@@ -756,7 +813,7 @@ console.log(filteredselectedCategory)
     console.log("J")
     console.log(targetData)
     console.log(loggeduser?._id)
-    
+
     const filteredselectedCategory = Datas.flatMap(
       (user) => user.categories || []
     ).filter((item) => item.categoryId === id)
@@ -789,7 +846,7 @@ console.log(filteredselectedCategory)
     setOpenModal(true)
   }
   const handleSelectedUser = (category, userId, userName) => {
-setActiveUserId(userId)
+    setActiveUserId(userId)
     setselecteduserName(userName)
     setselectedCategory({
       Id: category.Id,
@@ -820,7 +877,7 @@ setActiveUserId(userId)
           amount: product.achieved
         })) || []
       )
-setacheivedProducts(
+      setacheivedProducts(
         filteredselectedCategory.flatMap((item) =>
           (item.products || []).map((product) => ({
             productname: product.name,
@@ -895,7 +952,8 @@ setacheivedProducts(
     setSelectedStaff(null)
     setDrillDown(false)
     setViewMode("product")
-
+    console.log("hhhh")
+    console.log(report.mappeddata)
     const rows = Array.isArray(report.mappeddata) ? report.mappeddata : []
 
     // Filter by selected branch and map to product view
@@ -938,7 +996,7 @@ setacheivedProducts(
         }
       })
     } else {
-console.log(headersName)
+      console.log(headersName)
       console.log(row)
       console.log()
       console.log(header)
@@ -947,9 +1005,19 @@ console.log(headersName)
           (row.totalPending > 0 && header !== "Converted") ||
           !row.totalConverted > 0
       )
+      console.log(filterRange)
       console.log(!row.totalConverted > 0)
-console.log(row.staffId)
-console.log(loggeduser?._id)
+      console.log(row.staffId)
+      console.log(loggeduser?._id)
+      const viewdate = true
+      const breadcrumb = [
+        { label: "Report", path: "" },
+        {
+          label: "Product-wise-lead-Report",
+          path: "/admin/reports/product-wise-report"
+        },
+        { label: "Lead Follow-Up", path: "" }
+      ]
       navigate("/admin/transaction/lead/leadFollowUp", {
         state: {
           staffId: row.staffId,
@@ -958,13 +1026,15 @@ console.log(loggeduser?._id)
             (row.totalPending > 0 && header !== "Converted") ||
             !row.totalConverted > 0,
           productId: row.productId,
-ownfollowup:row.staffId===loggeduser?._id,
+          ownfollowup: row.staffId === loggeduser?._id,
           branchId: row.branchId,
           viewMode,
           header,
           istotal: !drillDown,
           staffRole: row.staffRole,
-          filterRange
+          filterRange,
+          viewdate,
+          breadcrumb
         }
       })
     }
@@ -972,7 +1042,7 @@ ownfollowup:row.staffId===loggeduser?._id,
 
   const effectiveData = data
   console.log(data)
-console.log(loggeduser)
+  console.log(loggeduser)
   return (
     <div className="h-full bg-[#ADD8E6]">
       <div className="flex h-full flex-row">
@@ -1038,102 +1108,86 @@ console.log(loggeduser)
             </div>
           </header>
           {/* MAIN CONTAINER */}
-          <div className="h-full flex flex-col overflow-hidden p-2">
+          <div className="h-full flex flex-col overflow-hidden">
             {/* ================= HEADER ================= */}
-            
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-2">
-                {/* LEFT: TITLE */}
-                <div className="flex flex-col gap-1">
-                  <h1 className="text-xl font-semibold text-gray-800 tracking-tight">
-                    Product-Wise Lead Report
-                  </h1>
+            <Breadcrumb
+              items={[
+                { label: "Reports", path: "" },
+                { label: "Product Wise Report" }
+              ]}
+            />
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-2 px-3">
+              {/* LEFT: TITLE */}
+              <div className="flex flex-col gap-1">
+                <h1 className="text-xl font-semibold text-gray-800 tracking-tight">
+                  Product-Wise Lead Report
+                </h1>
 
-                  {formattedRange && (
-                    <p className="text-xs text-gray-500">
-                      Period{" "}
-                      <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">
-                        {formattedRange}
-                      </span>
-                    </p>
-                  )}
-                </div>
-
-                {/* RIGHT CONTROLS */}
-                <div className="flex flex-wrap items-end gap-4">
-                  {/* Branch */}
-                  {/* <div className="flex flex-col gap-1">
-                    <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
-                      Branch
+                {formattedRange && (
+                  <p className="text-xs text-gray-500">
+                    Period{" "}
+                    <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">
+                      {formattedRange}
                     </span>
-
-                    <select
-                      value={selectedBranch || ""}
-                      onChange={(e) => setselectedBranch(e.target.value)}
-                      className="h-9 min-w-[160px] rounded-lg border border-gray-300 bg-white cursor-pointer px-3 text-sm text-gray-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 outline-none"
-                    >
-                      {userbranches.map((b) => (
-                        <option key={b.id} value={b.id}>
-                          {b.branchName}
-                        </option>
-                      ))}
-                    </select>
-                  </div> */}
-
-                  {/* Toggle */}
-                  <div className="flex items-center bg-gray-100 rounded-full p-1 text-xs font-medium">
-                    <button
-                      onClick={handleSeeAll}
-                      className={`px-4 py-1.5 rounded-full transition-all ${
-                        viewMode === "staff"
-                          ? "bg-blue-600 text-white shadow"
-                          : "text-gray-600 hover:text-black"
-                      }`}
-                    >
-                      Staff
-                    </button>
-
-                    <button
-                      onClick={handleProductToggle}
-                      className={`px-4 py-1.5 rounded-full transition-all ${
-                        viewMode === "product"
-                          ? "bg-blue-600 text-white shadow"
-                          : "text-gray-600 hover:text-black"
-                      }`}
-                    >
-                      Product
-                    </button>
-                  </div>
-
-                  {/* Date Picker */}
-                  <div className="bg-white rounded-lg px-3 py-2 border border-gray-200 shadow-sm">
-                    <MonthRangePicker onChange={handleDateRange} />
-                  </div>
-                </div>
-              </div>
-          
-
-            {/* ================= CONTENT ================= */}
-          
-              <div className="flex-1 bg-gray-50 rounded-xl border border-gray-200 overflow-hidden ">
-                {loading ? (
-                  <SkeletonTable rows={8} />
-                ) : effectiveData.length === 0 ? (
-                  <NodataAvailable />
-                ) : (
-                  <ReportTable
-                    headers={headersName}
-                    reportName="Product-Wise Lead Report"
-                    data={effectiveData}
-                    mode={viewMode}
-                    selectedStaff={selectedStaff}
-                    drillDown={drillDown}
-                    onStaffClick={handleStaffClick}
-                    onSeeAll={handleSeeAll}
-                    onTotalLeadsClick={handleTotalLeadsClick}
-                  />
+                  </p>
                 )}
               </div>
-            
+
+              {/* RIGHT CONTROLS */}
+              <div className="flex flex-wrap items-end gap-4">
+                {/* Toggle */}
+                <div className="flex items-center bg-gray-100 rounded-full p-1 text-xs font-medium">
+                  <button
+                    onClick={handleSeeAll}
+                    className={`px-4 py-1.5 rounded-full transition-all ${
+                      viewMode === "staff"
+                        ? "bg-blue-600 text-white shadow"
+                        : "text-gray-600 hover:text-black"
+                    }`}
+                  >
+                    Staff
+                  </button>
+
+                  <button
+                    onClick={handleProductToggle}
+                    className={`px-4 py-1.5 rounded-full transition-all ${
+                      viewMode === "product"
+                        ? "bg-blue-600 text-white shadow"
+                        : "text-gray-600 hover:text-black"
+                    }`}
+                  >
+                    Product
+                  </button>
+                </div>
+
+                {/* Date Picker */}
+                <div className="bg-white rounded-lg px-3 py-2 border border-gray-200 shadow-sm">
+                  <MonthRangePicker onChange={handleDateRange} />
+                </div>
+              </div>
+            </div>
+
+            {/* ================= CONTENT ================= */}
+
+            <div className="flex-1 bg-gray-50 rounded-xl border border-gray-200 overflow-hidden mx-3">
+              {loading ? (
+                <SkeletonTable rows={8} />
+              ) : effectiveData.length === 0 ? (
+                <NodataAvailable />
+              ) : (
+                <ReportTable
+                  headers={headersName}
+                  reportName="Product-Wise Lead Report"
+                  data={effectiveData}
+                  mode={viewMode}
+                  selectedStaff={selectedStaff}
+                  drillDown={drillDown}
+                  onStaffClick={handleStaffClick}
+                  onSeeAll={handleSeeAll}
+                  onTotalLeadsClick={handleTotalLeadsClick}
+                />
+              )}
+            </div>
           </div>
         </div>
         <PerformanceModal
@@ -1149,20 +1203,20 @@ console.log(loggeduser)
             setacheivedProducts([])
             setselectedDataPopup([])
             setperiodMode(val)
-  setselecteduserName(null)
+            setselecteduserName(null)
           }}
           onYearChange={(val) => {
             setacheivedProducts([])
             setselectedDataPopup([])
             setSelectedYear(val)
-  setselecteduserName(null)
+            setselecteduserName(null)
           }}
           productlist={productlist}
           onClose={() => {
             setselecteduserName(null)
             setacheivedProducts([])
             setOpenModal(false)
-  setActiveUserId(null)
+            setActiveUserId(null)
           }}
           selectedMonth={periodMode}
           selectedYear={selectedYear}
@@ -1180,7 +1234,7 @@ console.log(loggeduser)
           selectedUser={selectedUserName}
           category={selectedCategory}
           handleSelectedUser={handleSelectedUser}
- activeUserId={activeUserId}
+          activeUserId={activeUserId}
         />
       </div>
     </div>

@@ -9,8 +9,9 @@ function CustomerRegistration() {
   const user = JSON.parse(userData)
   const handleSubmit = async (customerData, tabledata) => {
     try {
+const createdFrom="customermaster"
       const response = await api.post(
-        "/customer/customerRegistration",
+        `/customer/customerRegistration?createdfrom=${createdFrom}`,
         { customerData, tabledata },
         {
           withCredentials: true
