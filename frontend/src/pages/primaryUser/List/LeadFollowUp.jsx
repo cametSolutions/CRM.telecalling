@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { Pencil } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom"
-
+import Breadcrumb from "../../../components/common/Breadcrumb"
 import { formatDate } from "../../../utils/dateUtils"
 import MyDatePicker from "../../../components/common/MyDatePicker"
 import { FaSpinner } from "react-icons/fa"
@@ -43,6 +43,15 @@ const LeadFollowUp = () => {
   const navigate = useNavigate()
 
   const safeState = location?.state || {}
+console.log(location?.state)
+  const nav = [
+    { label: "Lead", path: "" },
+    { label: "Lead follow-up", path: "" }
+  ]
+  const Breadcrumblist = location?.state ? location?.state?.breadcrumb : nav
+console.log(Breadcrumblist)
+  const checkedownfollowup = safeState?.ownfollowp
+  console.log(checkedownfollowup)
   console.log(safeState)
 
   const [selectedLeadId, setSelectedLeadId] = useState(null)
@@ -106,8 +115,9 @@ const LeadFollowUp = () => {
   const [selectedTab, setselectedTab] = useState("")
   const [hasOwnLeads, setHasownLeads] = useState(false)
   const [ownFollowUp, setOwnFollowUp] = useState(
-    safeState?.ownlead ? true : false
+    safeState?.ownlead ? true : safeState?.staffId ? false : true
   )
+  console.log(ownFollowUp)
   console.log(safeState)
   console.log(ownFollowUp)
   console.log(ownFollowUp)
@@ -152,7 +162,8 @@ const LeadFollowUp = () => {
     demoassignedDate: ""
   })
 
-  const { data: tasks } = UseFetch("/lead/getallTask")
+  const { data: tasks } = UseFetch(`/lead/getallTask?removefollowup=true`)
+  console.log(tasks)
   const { data: partners } = UseFetch("/customer/getallpartners")
   const { data: branches } = UseFetch("/branch/getBranch")
   const { data } = UseFetch("/auth/getallUsers")
@@ -252,12 +263,17 @@ const LeadFollowUp = () => {
             `&role=${loggedUser.role}` +
             `&pendingfollowup=${pendingFromState}` +
             `&selectedproductId=${selectedproductId}` +
+            `&startDate=${safeState?.viewMode ? dates.startDate : null}` +
+            `&endDate=${safeState?.viewMode ? dates.endDate : null}` +
             `&viewmode=${safeState?.viewMode}` +
             `&header=${safeState?.header}`
         )
         console.log(res.data)
         // console.log(res.data.followupLeads)
         const productwisedata = res.data.followupLeads
+        console.log(productwisedata)
+        const a = productwisedata.map((item) => item.leadId)
+        console.log(a)
         const filteredLeads = productwisedata.filter((lead) => {
           // 1️⃣ Get only followup allocation logs
           const followupAllocations = lead.activityLog.filter(
@@ -273,8 +289,9 @@ const LeadFollowUp = () => {
           // 3️⃣ Take LAST followup allocation
           const lastFollowupAllocation =
             followupAllocations[followupAllocations.length - 1]
-
+          console.log(lastFollowupAllocation)
           // 4️⃣ Match with user
+          return lastFollowupAllocation
           return (
             lastFollowupAllocation.taskallocatedTo?._id.toString() ===
             safeState?.staffId?.toString()
@@ -886,7 +903,12 @@ const LeadFollowUp = () => {
   console.log(safeState?.staffId)
 
   const finalPending = pending !== undefined ? pending : safeState?.pending
-
+  console.log(pending)
+  console.log(finalPending)
+  console.log(safeState?.viewMode ? dates.startDate : null)
+  console.log(dates.endDate)
+  console.log(dates.startDate)
+  console.log(safeState?.viewMode ? "true" : null)
   const url = shouldFetch
     ? `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}` +
       `&loggeduserid=${safeState.istotal ? safeState.staffId : loggedUser._id}` +
@@ -895,8 +917,11 @@ const LeadFollowUp = () => {
       `&viewmode=${safeState?.viewMode ? "true" : null}` +
       `&startDate=${safeState?.viewMode ? dates.startDate : null}` +
       `&endDate=${safeState?.viewMode ? dates.endDate : null}` +
-      `&header=${safeState?.header}`
+      `&header=${safeState?.header}` +
+      `&from=${safeState?.from ? safeState?.from : null}`
     : null
+  console.log(safeState)
+  console.log(pending)
   console.log(shouldFetch)
   console.log(safeState)
   console.log(selectedCompanyBranch)
@@ -1765,10 +1790,10 @@ const LeadFollowUp = () => {
           }
         }
       }
-      if (!safeState.staffId) {
-console.log("hhhh")
-        setOwnFollowUp(true)
-      }
+      //       if (!safeState.staffId) {
+      // console.log("hhhh")
+      //         setOwnFollowUp(true)
+      //       }
 
       console.log("hhhhdd")
       setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
@@ -1784,7 +1809,7 @@ console.log("hhhh")
     loggedUser,
     statusAllocated
   ])
-
+  console.log(ownFollowUp)
   useEffect(() => {
     if (loggedUser) {
       setFormData((prev) => ({
@@ -2087,6 +2112,7 @@ console.log("hhhh")
     setselectedDocid(Item._id)
     setSelectedLeadId(Item.leadId)
   }
+  console.log(!!safeState.staffId || !!safeState?.viewdate)
   const handleeditcollection = () => {
     console.log("dd")
     setcollectionUpdateModal(true)
@@ -2218,7 +2244,7 @@ console.log("hhhh")
               <Eye className="w-3.5 h-3.5" />
             </button>
           </td>
-          {ownFollowUp && pending && (
+          {ownFollowUp && pending && checkedownfollowup && (
             <td
               className="px-2 py-2 border border-gray-300"
               onClick={(e) => e.stopPropagation()}
@@ -2242,7 +2268,7 @@ console.log("hhhh")
 
         {open && (
           <>
-            <tr className="text-xs font-medium border border-gray-300">
+            <tr className="text-xs font-medium border border-gray-300 whitespace-nowrap">
               <td className="border border-gray-300 bg-gray-100" />
               <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
                 <div className="flex items-center gap-1">
@@ -2277,12 +2303,15 @@ console.log("hhhh")
               <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
                 <span>Lead ID</span>
               </td>
-              <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
-                <div className="flex items-center gap-1">
-                  <Phone className="w-3.5 h-3.5" />
-                  <span>Phone</span>
-                </div>
-              </td>
+              {ownFollowUp && checkedownfollowup && (
+                <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
+                  <div className="flex items-center gap-1">
+                    <Phone className="w-3.5 h-3.5" />
+                    <span>Phone</span>
+                  </div>
+                </td>
+              )}
+
               <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
                 <div className="flex items-center gap-1">
                   <Mail className="w-3.5 h-3.5" />
@@ -2308,9 +2337,12 @@ console.log("hhhh")
               <td className="px-3 py-1.5 border border-gray-300 font-bold text-blue-700">
                 {item?.leadId}
               </td>
-              <td className="px-3 py-1.5 border border-gray-300 text-gray-700">
-                {item?.phone || "-"}
-              </td>
+              {ownFollowUp && checkedownfollowup && (
+                <td className="px-3 py-1.5 border border-gray-300 text-gray-700">
+                  {item?.phone || "-"}
+                </td>
+              )}
+
               <td className="px-3 py-1.5 border border-gray-300 text-gray-600">
                 {item?.email || "-"}
               </td>
@@ -2353,7 +2385,7 @@ console.log("hhhh")
           <th className="border border-gray-300 px-3 py-1 text-center">
             View/Modify
           </th>
-          {ownFollowUp && pending ? (
+          {ownFollowUp && pending && checkedownfollowup ? (
             <>
               <th className="border border-gray-300 px-3 py-1 text-center">
                 Follow Up
@@ -2483,141 +2515,147 @@ console.log("hhhh")
             />
           )}
           <div className="flex flex-col flex-1 bg-[#ADD8E6] min-h-0">
-            <h2 className="text-lg font-bold mx-4">Lead Follow Up</h2>
+            <Breadcrumb items={Breadcrumblist} />
+            <div className="flex justify-between">
+              <h2 className="text-lg font-bold mx-4">Lead Follow Up</h2>
 
-            <div className="grid grid-cols-2 md:flex md:flex-nowrap md:gap-6 gap-3 md:items-center w-full md:w-auto mx-4">
-              {dates.startDate && (
-                <div className="w-full ">
-                  <MyDatePicker
-                    setDates={setDates}
-                    dates={dates}
-                    view={!!safeState.staffId}
-                  />
-                </div>
-              )}
-              {!safeState?.staffId && (
-                <div className="relative flex justify-end " ref={dropdownRef}>
-                  <button
-                    type="button"
-                    onClick={() => setfilterOpen(!filterOpen)}
-                    className="p-1 rounded-md bg-gray-100 md:bg-white border border-gray-300 shadow-sm hover:shadow-md hover:bg-gray-50 transition"
-                    title="Filter Options"
-                  >
-                    <BsFilterLeft className="text-md md:text-xl text-gray-800 md:text-gray-700 hover:text-black" />
-                  </button>
+              <div className="grid grid-cols-2 md:flex md:flex-nowrap md:gap-6 gap-3 md:items-center w-full md:w-auto mx-4">
+                {dates.startDate && (
+                  <div className="w-full ">
+                    <MyDatePicker
+                      setDates={setDates}
+                      dates={dates}
+                      view={!!safeState.staffId || !!safeState?.viewdate}
+                    />
+                  </div>
+                )}
+                {!safeState?.staffId && (
+                  <div className="relative flex justify-end " ref={dropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() => setfilterOpen(!filterOpen)}
+                      className="p-1 rounded-md bg-gray-100 md:bg-white border border-gray-300 shadow-sm hover:shadow-md hover:bg-gray-50 transition"
+                      title="Filter Options"
+                    >
+                      <BsFilterLeft className="text-md md:text-xl text-gray-800 md:text-gray-700 hover:text-black" />
+                    </button>
 
-                  {filterOpen && (
-                    <div className="absolute top-full right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-2xl z-50 p-4 space-y-5 animate-fade-in-down">
-                      <h3 className="text-base font-semibold text-gray-800 border-b pb-2">
-                        Filters
-                      </h3>
+                    {filterOpen && (
+                      <div className="absolute top-full right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-2xl z-50 p-4 space-y-5 animate-fade-in-down">
+                        <h3 className="text-base font-semibold text-gray-800 border-b pb-2">
+                          Filters
+                        </h3>
 
-                      {[
-                        {
-                          label: statusAll ? "All Leads" : "Filtered Leads",
-                          value: statusAll,
-                          toggle: () => {
-                            setstatusAll(!statusAll)
-                            setTableData([])
-                            setAllocatedLeads([])
+                        {[
+                          {
+                            label: statusAll ? "All Leads" : "Filtered Leads",
+                            value: statusAll,
+                            toggle: () => {
+                              setstatusAll(!statusAll)
+                              setTableData([])
+                              setAllocatedLeads([])
+                            },
+                            show: false,
+                            disabled: false
                           },
-                          show: false,
-                          disabled: false
-                        },
-                        {
-                          label: "Task Allocated Followups",
-                          value: statusAllocated,
-                          toggle: () => {
-                            setstatusAllocated(!statusAllocated)
-                            setTableData([])
-                            setAllocatedLeads([])
+                          {
+                            label: "Task Allocated Followups",
+                            value: statusAllocated,
+                            toggle: () => {
+                              setstatusAllocated(!statusAllocated)
+                              setTableData([])
+                              setAllocatedLeads([])
+                            },
+                            show: safeState.staffId ? false : pending === true
+                            // disabled: safeState.staffId && safeState.istotal
                           },
-                          show: safeState.staffId ? false : pending === true
-                          // disabled: safeState.staffId && safeState.istotal
-                        },
-                        {
-                          label: pending
-                            ? "Pending Followup"
-                            : "Cleared Followup",
-                          value: pending,
-                          toggle: () => {
-                            setPending(!pending)
-                            setTableData([])
-                            setAllocatedLeads([])
-                            if (safeState.staffId && !safeState.istotal) {
-                              console.log("hhh")
-                              handletoogle(pending)
-                            }
+                          {
+                            label: pending
+                              ? "Pending Followup"
+                              : "Cleared Followup",
+                            value: pending,
+                            toggle: () => {
+                              setPending(!pending)
+                              setTableData([])
+                              setAllocatedLeads([])
+                              if (safeState.staffId && !safeState.istotal) {
+                                console.log("hhh")
+                                handletoogle(pending)
+                              }
+                            },
+                            show: true
+                            //  disabled: safeState.staffId && safeState.istotal
                           },
-                          show: true
-                          //  disabled: safeState.staffId && safeState.istotal
-                        },
-                        {
-                          label: ownFollowUp ? "Own Followup" : "All Followup",
-                          value: ownFollowUp,
-                          toggle: () => {
-                            console.log(ownFollowUp)
-                            setOwnFollowUp(!ownFollowUp)
-                            setTableData([])
-                            setAllocatedLeads([])
-                          },
-                          show: safeState.staffId
-                            ? false
-                            : loggedUser?.role !== "Staff"
-                          // disabled: safeState.staffId && safeState.istotal
-                        }
-                      ]
-                        .filter((item) => item.show)
-                        .map((item, idx) => {
-                          const isDisabled = item.disabled
-                          return (
-                            <div
-                              key={idx}
-                              className="flex items-center justify-between text-sm font-medium text-gray-700 group"
-                            >
-                              <span
-                                className={`transition ${
-                                  item.label === "Task Allocated Followups" &&
-                                  !item.value
-                                    ? "text-gray-400 opacity-60 blur-[1px]"
-                                    : isDisabled
-                                      ? "text-gray-400 cursor-not-allowed"
-                                      : "text-gray-700 group-hover:text-black"
-                                }`}
+                          {
+                            label: ownFollowUp
+                              ? "Own Followup"
+                              : "All Followup",
+                            value: ownFollowUp,
+                            toggle: () => {
+                              console.log(ownFollowUp)
+                              setOwnFollowUp(!ownFollowUp)
+                              setTableData([])
+                              setAllocatedLeads([])
+                            },
+                            show: safeState.staffId
+                              ? false
+                              : loggedUser?.role !== "Staff"
+                            // disabled: safeState.staffId && safeState.istotal
+                          }
+                        ]
+                          .filter((item) => item.show)
+                          .map((item, idx) => {
+                            const isDisabled = item.disabled
+                            return (
+                              <div
+                                key={idx}
+                                className="flex items-center justify-between text-sm font-medium text-gray-700 group"
                               >
-                                {item.label}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (isDisabled) return
-                                  item.toggle()
-                                }}
-                                className={`${
-                                  item.value ? "bg-emerald-400" : "bg-gray-300"
-                                } w-8 h-5 flex items-center rounded-full transition-colors duration-300 ${
-                                  isDisabled
-                                    ? "cursor-not-allowed opacity-60"
-                                    : "cursor-pointer"
-                                }`}
-                              >
-                                <div
+                                <span
+                                  className={`transition ${
+                                    item.label === "Task Allocated Followups" &&
+                                    !item.value
+                                      ? "text-gray-400 opacity-60 blur-[1px]"
+                                      : isDisabled
+                                        ? "text-gray-400 cursor-not-allowed"
+                                        : "text-gray-700 group-hover:text-black"
+                                  }`}
+                                >
+                                  {item.label}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (isDisabled) return
+                                    item.toggle()
+                                  }}
                                   className={`${
                                     item.value
-                                      ? "translate-x-3"
-                                      : "translate-x-0"
-                                  } w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-                                />
-                              </button>
-                            </div>
-                          )
-                        })}
-                    </div>
-                  )}
-                </div>
-              )}
+                                      ? "bg-emerald-400"
+                                      : "bg-gray-300"
+                                  } w-8 h-5 flex items-center rounded-full transition-colors duration-300 ${
+                                    isDisabled
+                                      ? "cursor-not-allowed opacity-60"
+                                      : "cursor-pointer"
+                                  }`}
+                                >
+                                  <div
+                                    className={`${
+                                      item.value
+                                        ? "translate-x-3"
+                                        : "translate-x-0"
+                                    } w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+                                  />
+                                </button>
+                              </div>
+                            )
+                          })}
+                      </div>
+                    )}
+                  </div>
+                )}
 
-              {/* <select
+                {/* <select
                 value={selectedCompanyBranch || ""}
                 onChange={(e) => setselectedCompanyBranch(e.target.value)}
                 className="border border-gray-300 py-0.5 rounded-md px-2 focus:outline-none w-36 md:min-w-[120px] cursor-pointer"
@@ -2629,17 +2667,18 @@ console.log("hhhh")
                 ))}
               </select> */}
 
-              <div className="flex justify-end">
-                <button
-                  onClick={() =>
-                    loggedUser?.role === "Admin"
-                      ? navigate("/admin/transaction/lead")
-                      : navigate("/staff/transaction/lead")
-                  }
-                  className="bg-black text-white py-0.5 px-3 rounded-lg shadow-lg hover:bg-gray-600 w-24"
-                >
-                  New Lead
-                </button>
+                <div className="flex justify-end">
+                  <button
+                    onClick={() =>
+                      loggedUser?.role === "Admin"
+                        ? navigate("/admin/transaction/lead")
+                        : navigate("/staff/transaction/lead")
+                    }
+                    className="bg-black text-white py-0.5 px-3 rounded-lg shadow-lg hover:bg-gray-600 w-24"
+                  >
+                    New Lead
+                  </button>
+                </div>
               </div>
             </div>
             <div className="flex justify-end mr-5">

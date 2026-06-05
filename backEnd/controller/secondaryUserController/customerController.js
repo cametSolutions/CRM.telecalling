@@ -1336,7 +1336,7 @@ export const ServicesRegistration = async (req, res) => {
 
 export const CustomerRegister = async (req, res) => {
   const { customerData, tabledata = [] } = req.body
-
+const {createdfrom}=req.query
   const {
     customerName,
     customerid,
@@ -1381,6 +1381,7 @@ export const CustomerRegister = async (req, res) => {
       state,
       city,
       pincode,
+createdFrom:createdfrom,
       email,
       mobile,
       landline,

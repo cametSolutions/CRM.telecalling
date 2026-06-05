@@ -61,6 +61,7 @@ const CustomerSchema = new mongoose.Schema({
       softwareTrade: { type: String }
     }
   ],
+createdFrom:{type:String},
   callregistration: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "CallRegistration"

@@ -6663,6 +6663,7 @@ const classifyAttendanceDay = ({
   morningStartLabel,
   eveningEndLabel
 }) => {
+  console.log()
   if (!attendance) return;
 
   day.inTime = attendance.inTime || "";
@@ -6670,7 +6671,22 @@ const classifyAttendanceDay = ({
 
   const punchIn = parse12hToMinutes(attendance.inTime);
   const punchOut = parse12hToMinutes(attendance.outTime);
+  // 🔥 ADD THIS HERE (IMPORTANT FIX)
+  const fullPresentCutoff = 13 * 60 + 30; // 1:30 PM
 
+  if (punchOut != null && punchOut < fullPresentCutoff) {
+    day.present = 0;
+    day.late = 0;
+    day.early = 0;
+    day.notMarked = 1
+    // day.coverage.attendance.morning = true;
+    // day.coverage.attendance.afternoon = false;
+
+    // day.notMarked = 0;
+    // day.cantchange = false;
+
+    return; // stop further logic
+  }
   if (punchIn == null && punchOut == null) {
     day.present = 0;
     day.notMarked = 1;
@@ -6998,7 +7014,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
         const attendance = attendanceMap.get(dateKey);
         const dayOnsites = onsiteMap.get(dateKey) || [];
         const dayLeaves = leaveMap.get(dateKey) || [];
-
+      
         classifyAttendanceDay({
           day,
           attendance,
@@ -7065,8 +7081,10 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
         stats.latecutting =
           Math.floor(combined / (lateCutRule * 2)) +
           (Math.floor(combined / lateCutRule) % 2) * 0.5;
+      
 
         stats.present = Math.max(0, stats.present - stats.latecutting);
+
       }
 
       staffAttendanceStats.push(stats);
@@ -7093,9 +7111,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
 export const resetCallStatus = async (req, res) => {
   const { adminid } = req.query
-  console.log(adminid)
-  console.log("h")
-  console.log("dd")
+
   const objectId = new mongoose.Types.ObjectId(adminid)
   try {
     const resetstatus = await Admin.updateOne(
@@ -7790,9 +7806,9 @@ export const LeaveApply = async (req, res) => {
   const { selectedid, assignedto } = req.query
 
   const objectId = new mongoose.Types.ObjectId(selectedid)
-console.log("objectiddddddd")
+  console.log("objectiddddddd")
   const assignedTo = new mongoose.Types.ObjectId(assignedto)
-console.log("assingnedto")
+  console.log("assingnedto")
 
   const {
     leaveDate,
@@ -8428,14 +8444,14 @@ export const UploadImage = async (req, res) => {
 
 //     });
 
-    // const newMisspunch = await Misspunch.create({
-    //   userId,
-    //   remark,
-    //   userModel: userModel.toLowerCase() === "admin" ? userModel : "Staff",
-    //   misspunchDate: new Date(misspunchDate),
-    //   applyDate: new Date(),
-    //   misspunchType
-    // });
+// const newMisspunch = await Misspunch.create({
+//   userId,
+//   remark,
+//   userModel: userModel.toLowerCase() === "admin" ? userModel : "Staff",
+//   misspunchDate: new Date(misspunchDate),
+//   applyDate: new Date(),
+//   misspunchType
+// });
 
 //     const newMisspunch = await Misspunch.create({
 //       userId,
@@ -8737,7 +8753,7 @@ export const Getallmisspunch = async (req, res) => {
     const from = req?.query?.from || null
 
     end.setHours(23, 59, 59, 999)
-    let query={}
+    let query = {}
     if (!from) {
       query = {
         misspunchDate: {
@@ -11734,11 +11750,11 @@ export const RejectMisspunch = async (req, res) => {
           }
         ]
       })
-      
-        console.log("returndone")
-        return res.status(200).json({ message:misspunchdata.length>0? "misspunchfound":"not found", data: misspunchdata })
-      
-      
+
+      console.log("returndone")
+      return res.status(200).json({ message: misspunchdata.length > 0 ? "misspunchfound" : "not found", data: misspunchdata })
+
+
     }
 
   } catch (error) {
@@ -12544,10 +12560,10 @@ export const EditOnsite = async (req, res) => {
     const { onsiteDate, ...updatedFeild } = formData
 
     const dateObj = new Date(onsiteDate)
-console.log("userid",userid)
-console.log("formdata",formData)
-console.log("onsitedatae,",onsiteDate)
-console.log("updatedfirle",updatedFeild)
+    console.log("userid", userid)
+    console.log("formdata", formData)
+    console.log("onsitedatae,", onsiteDate)
+    console.log("updatedfirle", updatedFeild)
     // Extract year and month (without leading zero)
     const year = dateObj.getFullYear() // "2025"
     const month = dateObj.getMonth() + 1
