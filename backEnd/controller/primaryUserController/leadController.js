@@ -1919,11 +1919,14 @@ export const GetallfollowupList = async (req, res) => {
     const isViewMode = viewmode === "true";
     // Check for valid header and date params
     const hasValidHeader = header && header !== "null" && header !== "undefined";
+console.log("hederrrr",header)
     const hasValidDates = startDate && endDate &&
       startDate !== "null" && endDate !== "null" &&
       startDate !== "undefined" && endDate !== "undefined";
 
     const isNewMode = isViewMode || hasValidHeader || hasValidDates;
+console.log("hasvalidheader",hasValidHeader)
+console.log("hasvailddate",hasValidDates)
 console.log("isnewmodee",isNewMode)
 console.log("isviewmodee",isViewMode)
     let query;
