@@ -2081,6 +2081,8 @@ refetchOnMount: false,
                     formatdate(currentDate)
                   : endDateLocal
 console.log(leads)
+const mapeed=leads.map((item)=>item.leadId)
+console.log(mapeed)
               const neverfollowupedLeads = leads.filter(
                 (lead) => lead.neverfollowuped
               )
@@ -2088,6 +2090,9 @@ console.log(leads)
                 loggedusersallocatedleads.followupLeads.filter(
                   (lead) => lead.Nextfollowup
                 )
+console.log(havenextFollowup)
+const edd=havenextFollowup.map((item)=>item.leadId)
+console.log(edd)
               const filteredcurrentdatefollowupLeads = havenextFollowup.filter(
                 (lead) => formatdate(lead.nextFollowUpDate) === fulldatecurrent
               )
@@ -2140,6 +2145,12 @@ console.log(leads)
 console.log(neverfollowupedLeads)
 console.log(uniqueoverdueAndcurrentdate)
 console.log(postdatefollowup)
+const b=neverfollowupedLeads.map((it)=>it.leadId)
+console.log(b)
+const c=uniqueoverdueAndcurrentdate.map((it)=>it.leadId)
+console.log(c)
+const m=postdatefollowup.map((it)=>it.leadId)
+console.log(m)
               const mergedall = [
                 ...neverfollowupedLeads,
                 ...uniqueoverdueAndcurrentdate,
