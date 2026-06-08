@@ -1917,15 +1917,16 @@ export const GetallfollowupList = async (req, res) => {
 
     // Check if viewmode is the string "true"
     const isViewMode = viewmode === "true";
-    console.log("viewmode", isViewMode)
     // Check for valid header and date params
     const hasValidHeader = header && header !== "null" && header !== "undefined";
+console.log("headerrrr",header)
     const hasValidDates = startDate && endDate &&
       startDate !== "null" && endDate !== "null" &&
       startDate !== "undefined" && endDate !== "undefined";
 
     const isNewMode = isViewMode || hasValidHeader || hasValidDates;
-    console.log(isNewMode)
+    console.log("isnewmodeeee",isNewMode)
+console.log("isviewmode",isViewMode)
     let query;
 
     // ✅ VIEW MODE
