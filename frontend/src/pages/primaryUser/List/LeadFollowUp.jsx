@@ -207,6 +207,7 @@ const { data: productwiseResponse, isLoading: productloader } = useQuery({
     return res.data;
   },
 });
+console.log(dates)
 useEffect(() => {
   if (!productwiseResponse?.followupLeads) return;
 
