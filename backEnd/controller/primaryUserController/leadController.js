@@ -1925,6 +1925,8 @@ console.log("headerrrr",header)
       startDate !== "undefined" && endDate !== "undefined";
 
     const isNewMode = isViewMode || hasValidHeader || hasValidDates;
+console.log("hasvalidhaeader",hasValidHeader)
+console.log("hasvaliddate",hasValidDates)
     console.log("isnewmodeeee",isNewMode)
 console.log("isviewmode",isViewMode)
     let query;
