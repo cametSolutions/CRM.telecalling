@@ -39,12 +39,12 @@ export default function FollowupSummaryDashboard() {
   const [selectedUserName, setselecteduserName] = useState(null)
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
-const now=new Date()
+  const now = new Date()
   const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   const [periodMode, setperiodMode] = useState("all")
   const [loggedUser, setloggedUser] = useState(null)
   const [targetData, settargetData] = useState([])
-const [activeUserId, setActiveUserId] = useState(null)
+  const [activeUserId, setActiveUserId] = useState(null)
   console.log(targetData)
   const [openModal, setOpenModal] = useState(false)
   const [productlist, setproductList] = useState([])
@@ -56,8 +56,8 @@ const [activeUserId, setActiveUserId] = useState(null)
       selectedBranch &&
       `/lead/getfollowupsummaryReport?startDate=${date.startDate}&endDate=${date.endDate}&branchId=${selectedBranch}`
   )
-console.log(date.startDate)
-console.log(date.endDate)
+  console.log(date.startDate)
+  console.log(date.endDate)
   const { data: branchProduct } = UseFetch(
     selectedBranch && `/product/getallbranchProduct?branch=${selectedBranch}`
   )
@@ -80,7 +80,7 @@ console.log(date.endDate)
       setproductList(filteredList)
       console.log("J")
       console.log(targetData)
-     
+
       console.log("hhh")
 
       console.log(Datas)
@@ -89,7 +89,7 @@ console.log(date.endDate)
       const filteredselectedCategory = Datas.flatMap(
         (user) => user.categories || []
       ).filter((item) => item.categoryId === selectedCategory?.Id)
-console.log(filteredselectedCategory)
+      console.log(filteredselectedCategory)
       console.log("Hh")
       const summary = filteredselectedCategory.reduce(
         (acc, cur) => {
@@ -104,8 +104,8 @@ console.log(filteredselectedCategory)
       setselectedDataPopup(summary)
       console.log(filteredselectedCategory && filteredselectedCategory.length)
       if (filteredselectedCategory && filteredselectedCategory.length) {
-console.log("hh")
-console.log(filteredselectedCategory)
+        console.log("hh")
+        console.log(filteredselectedCategory)
         setacheivedProducts((prev) => [
           ...prev,
           ...filteredselectedCategory.flatMap((item) =>
@@ -187,8 +187,8 @@ console.log(filteredselectedCategory)
   console.log("hhhh")
   // navigation logic for metric cells
   const handleMetricClick = (row, header, key) => {
-console.log("hhhh")
-console.log(header)
+    console.log("hhhh")
+    console.log(header)
     // row has: staffName, leadCount, dueToday, overDue, future, converted, lost, leadid[]
     const staffName = row.staffName
     console.log("hh")
@@ -239,7 +239,7 @@ console.log(header)
     console.log("J")
     console.log(targetData)
     console.log(loggedUser?._id)
-    
+
     const filteredselectedCategory = Datas.flatMap(
       (user) => user.categories || []
     ).filter((item) => item.categoryId === id)
@@ -272,7 +272,7 @@ console.log(header)
     setOpenModal(true)
   }
   const handleSelectedUser = (category, userId, userName) => {
-setActiveUserId(userId)
+    setActiveUserId(userId)
     setselecteduserName(userName)
     setselectedCategory({
       Id: category.Id,
@@ -303,7 +303,7 @@ setActiveUserId(userId)
       //     amount: product.achieved
       //   })) || []
       // )
- setacheivedProducts(
+      setacheivedProducts(
         filteredselectedCategory.flatMap((item) =>
           (item.products || []).map((product) => ({
             productname: product.name,
@@ -318,6 +318,11 @@ setActiveUserId(userId)
   const handleFollowupCellClick = ({ row, header }) => {
     console.log(header)
     console.log(row)
+    const breadcrumb = [
+      { label: "Report", path: "" },
+      { label: "Follow-Up Summary", path: "/admin/reports/follow-up-summary" },
+      { label: "Lead Follow-Up", path: "" }
+    ]
     if (header === "Staff") return
     if (header === "Conversion %") return
 
@@ -333,7 +338,7 @@ setActiveUserId(userId)
       })
     } else if (header === "Lead Count") {
       navigate("/admin/transaction/lead/allLeads", {
-        state: { staffId: row.staffId }
+        state: { staffId: row.staffId, breadcrumb }
       })
     } else if (header === "Due Today") {
       console.log(date)
@@ -345,7 +350,8 @@ setActiveUserId(userId)
           viewMode: "dueToday",
           from: "followupReport",
           istotal: true,
-          filterRange: date
+          filterRange: date,
+          breadcrumb
         }
       })
       console.log("hhhhh")
@@ -360,7 +366,8 @@ setActiveUserId(userId)
           viewMode: "overDue",
           from: "followupReport",
           istotal: true,
-          filterRange: date
+          filterRange: date,
+          breadcrumb
         }
       })
     } else if (header === "Future") {
@@ -373,7 +380,8 @@ setActiveUserId(userId)
           viewMode: "future",
           from: "followupReport",
           istotal: true,
-          filterRange: date
+          filterRange: date,
+          breadcrumb
         }
       })
     } else if (header === "Converted") {
@@ -386,7 +394,8 @@ setActiveUserId(userId)
           viewMode: "converted",
           from: "followupReport",
           istotal: true,
-          filterRange: date
+          filterRange: date,
+          breadcrumb
         }
       })
     } else if (header === "New Lead") {
@@ -400,7 +409,8 @@ setActiveUserId(userId)
           viewMode: "neverfollowup",
           from: "followupReport",
           istotal: true,
-          filterRange: date
+          filterRange: date,
+          breadcrumb
         }
       })
     } else if (header === "Total Leads") {
@@ -414,7 +424,8 @@ setActiveUserId(userId)
           viewMode: "followup",
           istotal: true,
           header: "Total Leads",
-          branchId: row.branchIds?.[0]
+          branchId: row.branchIds?.[0],
+breadcrumb
         }
       })
       console.log("hhh")
@@ -619,20 +630,20 @@ setActiveUserId(userId)
             setacheivedProducts([])
             setselectedDataPopup([])
             setperiodMode(val)
- setselecteduserName(null)
+            setselecteduserName(null)
           }}
           onYearChange={(val) => {
             setacheivedProducts([])
             setselectedDataPopup([])
             setSelectedYear(val)
- setselecteduserName(null)
+            setselecteduserName(null)
           }}
           productlist={productlist}
           onClose={() => {
             setselecteduserName(null)
             setacheivedProducts([])
             setOpenModal(false)
-  setActiveUserId(null)
+            setActiveUserId(null)
           }}
           selectedMonth={periodMode}
           selectedYear={selectedYear}
@@ -650,7 +661,7 @@ setActiveUserId(userId)
           selectedUser={selectedUserName}
           category={selectedCategory}
           handleSelectedUser={handleSelectedUser}
-  activeUserId={activeUserId}
+          activeUserId={activeUserId}
         />
       </div>
     </div>

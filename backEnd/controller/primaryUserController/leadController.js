@@ -2031,7 +2031,7 @@ export const GetallfollowupList = async (req, res) => {
 
     const followupLeads = [];
     // console.log("selctedfollowups",selectedfollowup)
-
+    console.log("from valueeeeeee", typeof from)
     for (const lead of selectedfollowup) {
       const activity = Array.isArray(lead.activityLog) ? lead.activityLog : [];
 
@@ -2046,13 +2046,37 @@ export const GetallfollowupList = async (req, res) => {
             if (item.taskTo !== "followup") return false;
             if (item.allocationChanged !== false) return false;
             if (!item.submissionDate) return false;
-            if (from) {
-              return true;
-            }
-            const subDate = new Date(item.submissionDate);
+            //             if (from) {
+            //               return true;
+            //             }
+            // console.log("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh")
+            //             const subDate = new Date(item.submissionDate);
+
+            //             if (start && end) {
+            //               if (subDate < start || subDate > end) return false;
+            //             }
+            //             return true
+            // Skip date filtering when from exists
+            //             if (from) return true;
+
+            //             if (start && end) {
+            // console.log("Hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh")
+            //               const subDate = new Date(item.submissionDate);
+            //               return subDate >= start && subDate <= end;
+            //             }
+
+            //             return true;
+            const hasFrom =
+              from &&
+              from !== "null" &&
+              from !== "undefined";
+
+            if (hasFrom) return true;
 
             if (start && end) {
-              if (subDate < start || subDate > end) return false;
+console.log("hhhhhhhhhhhhhhhhhhhhhhhhhh")
+              const subDate = new Date(item.submissionDate);
+              return subDate >= start && subDate <= end;
             }
             return true
 
