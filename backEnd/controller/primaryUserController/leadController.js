@@ -1923,8 +1923,11 @@ console.log("hederrrr",header)
     const hasValidDates = startDate && endDate &&
       startDate !== "null" && endDate !== "null" &&
       startDate !== "undefined" && endDate !== "undefined";
+console.log("startdate",startDate)
+console.log("enddate,",endDate)
 
     const isNewMode = isViewMode || hasValidHeader || hasValidDates;
+
 console.log("hasvalidheader",hasValidHeader)
 console.log("hasvailddate",hasValidDates)
 console.log("isnewmodee",isNewMode)
