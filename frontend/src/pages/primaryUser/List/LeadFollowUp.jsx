@@ -1355,6 +1355,7 @@ useEffect(() => {
     error,
     refreshHook
   } = UseFetch(url)
+console.log(loggedusersallocatedleads)
 
 
 
@@ -2109,6 +2110,12 @@ console.log(neverfollowupedLeads)
 console.log(neverfollowupedLeads)
 console.log(uniqueoverdueAndcurrentdate)
 console.log(postdatefollowup)
+const b=neverfollowupedLeads.map((t)=>t.leadId)
+console.log(b)
+const c=uniqueoverdueAndcurrentdate.map((y)=>y.leadId)
+console.log(c)
+const m=postdatefollowup.map((t)=>t.leadId)
+console.log(m)
               const mergedall = [
                 ...neverfollowupedLeads,
                 ...uniqueoverdueAndcurrentdate,

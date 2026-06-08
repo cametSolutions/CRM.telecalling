@@ -2083,7 +2083,6 @@ console.log("hhhhhhhhhhhhhhhhhhhhhhhhhh")
 
           });
       } else {
-        console.log("nodnewmodeeee")
 
         // ✅ OLD LOGIC (NO DATE FILTER)
         matchedAllocations = activity
@@ -2329,6 +2328,7 @@ console.log("hhhhhhhhhhhhhhhhhhhhhhhhhh")
 
       // Add detailed fields only in old mode
       if (!isNewMode) {
+
         leadObject.activityLog = populatedActivityLog;
         leadObject.neverfollowuped = neverfollowuped;
         leadObject.Nextfollowup = Nextfollowup;
