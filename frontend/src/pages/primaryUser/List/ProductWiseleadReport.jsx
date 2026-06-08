@@ -516,10 +516,13 @@ import {
   X
 } from "lucide-react"
 import api from "../../../api/api"
-import { useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query"
+import { useLocation } from "react-router-dom"
 import Breadcrumb from "../../../components/common/Breadcrumb"
 import { loggeduserBranches } from "../../../../slices/companyBranchSlice"
 export default function ProductWiseleadReport() {
+  const location = useLocation()
+  console.log(location?.state)
   const [filterRange, setFilterRange] = useState({
     startDate: null,
     endDate: null,
@@ -540,6 +543,8 @@ export default function ProductWiseleadReport() {
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
   const now = new Date()
+const [range,setrange]=useState(location?.state?.filterRange?location?.state?.filterRange:null)
+console.log(range)
   const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   const [periodMode, setperiodMode] = useState("all")
   const [targetData, settargetData] = useState([])
@@ -556,8 +561,12 @@ export default function ProductWiseleadReport() {
     const userData = getLocalStorageItem("user")
     setloggeduser(userData)
     if (!userData?.selected?.length) return
-
-    setselectedBranch(userData.selected[0]?.branch_id)
+    if (location?.state) {
+      console.log("hh")
+      setselectedBranch(location?.state?.selectedBranch)
+    } else {
+      setselectedBranch(userData.selected[0]?.branch_id)
+    }
 
     const branches = userData.selected.map((branch) => ({
       id: branch.branch_id,
@@ -573,37 +582,32 @@ export default function ProductWiseleadReport() {
   //     selectedBranch &&
   //     `/lead/getallproductwisereport?startDate=${filterRange.firstDay}&endDate=${filterRange.lastDay}&branchId=${selectedBranch}`
   // )
-const { data: report, isLoading: loading } = useQuery({
-  queryKey: [
-    "productWiseReport",
-    selectedBranch,
-    filterRange.firstDay,
-    filterRange.lastDay,
-  ],
+console.log(filterRange)
+  const { data: report, isLoading: loading } = useQuery({
+    queryKey: [
+      "productWiseReport",
+      selectedBranch,
+      filterRange.firstDay,
+      filterRange.lastDay
+    ],
 
-  enabled:
-    !!selectedBranch &&
-    !!filterRange.firstDay &&
-    !!filterRange.lastDay,
+    enabled:
+      !!selectedBranch && !!filterRange.firstDay && !!filterRange.lastDay,
 
-  queryFn: async () => {
-    const response = await api.get(
-      `/lead/getallproductwisereport`,
-      {
+    queryFn: async () => {
+      const response = await api.get(`/lead/getallproductwisereport`, {
         params: {
           startDate: filterRange.firstDay,
           endDate: filterRange.lastDay,
-          branchId: selectedBranch,
-        },
-      }
-    );
+          branchId: selectedBranch
+        }
+      })
 
-    return response.data.data;
-  },
+      return response.data.data
+    },
 
-  staleTime: 1000 * 60 * 5, // 5 minutes
-});
-
+    staleTime: 1000 * 60 * 5 // 5 minutes
+  })
 
   console.log(report)
   console.log(filterRange.lastDay)
@@ -611,25 +615,22 @@ const { data: report, isLoading: loading } = useQuery({
   // const { data: branchProduct } = UseFetch(
   //   `/product/getallbranchProduct?branch=${selectedBranch}`
   // )
-const { data: branchProduct = [] } = useQuery({
-  queryKey: ["branchProducts", selectedBranch],
+  const { data: branchProduct = [] } = useQuery({
+    queryKey: ["branchProducts", selectedBranch],
 
-  enabled: !!selectedBranch,
+    enabled: !!selectedBranch,
 
-  queryFn: async () => {
-    const response = await api.get(
-      `/product/getallbranchProduct`,
-      {
+    queryFn: async () => {
+      const response = await api.get(`/product/getallbranchProduct`, {
         params: {
-          branch: selectedBranch,
-        },
-      }
-    );
+          branch: selectedBranch
+        }
+      })
 
-    return response.data;
-  },
-  staleTime: 1000 * 60 * 5, // 5 minutes
-});
+      return response.data
+    },
+    staleTime: 1000 * 60 * 5 // 5 minutes
+  })
   useEffect(() => {
     if (selectedCategory) {
       console.log("jj")
@@ -751,9 +752,18 @@ const { data: branchProduct = [] } = useQuery({
     "Lost",
     "Pending"
   ]
-
+  console.log(filterRange)
   const handleDateRange = (range) => {
-    setFilterRange(range)
+    console.log(range)
+console.log(range?.firstDay)
+console.log(location?.state?.filterRange?.firstDay)
+    console.log(location?.state)
+    if (location?.state) {
+      setFilterRange(location?.state?.filterRange)
+    } else {
+console.log("hhhhh")
+      setFilterRange(range)
+    }
   }
 
   const formattedRange = useMemo(() => {
@@ -1011,10 +1021,11 @@ const { data: branchProduct = [] } = useQuery({
       console.log(loggeduser?._id)
       const viewdate = true
       const breadcrumb = [
-        { label: "Report", path: "" },
+        { label: "Report", path: "", state: "" },
         {
           label: "Product-wise-lead-Report",
-          path: "/admin/reports/product-wise-report"
+          path: "/admin/reports/product-wise-report",
+          state: { filterRange, selectedBranch }
         },
         { label: "Lead Follow-Up", path: "" }
       ]
@@ -1034,6 +1045,7 @@ const { data: branchProduct = [] } = useQuery({
           staffRole: row.staffRole,
           filterRange,
           viewdate,
+
           breadcrumb
         }
       })
@@ -1162,7 +1174,7 @@ const { data: branchProduct = [] } = useQuery({
 
                 {/* Date Picker */}
                 <div className="bg-white rounded-lg px-3 py-2 border border-gray-200 shadow-sm">
-                  <MonthRangePicker onChange={handleDateRange} />
+                  <MonthRangePicker onChange={handleDateRange} range={range}/>
                 </div>
               </div>
             </div>

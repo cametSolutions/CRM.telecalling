@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { useLocation } from "react-router-dom"
 import BarLoader from "react-spinners/BarLoader"
+import Breadcrumb from "../../../components/common/Breadcrumb"
 import LeadMaster from "../../common/LeadMaster"
 import api from "../../../api/api"
 import { toast } from "react-toastify"
@@ -38,6 +39,10 @@ console.log(fetcheddata)
   const location = useLocation()
   const { leadId, isReadOnly, refreshKey } = location.state || {}
   console.log(location?.state)
+const nav=[{label:"Lead",path:""},{
+label:"New Lead",path:""}]
+const Breadcrumblist=location?.state?location?.state?.breadcrumb:nav
+console.log(Breadcrumblist)
   const userData = getLocalStorageItem("user")
   const [selectedUserName, setselecteduserName] = useState(null)
   const [selectedcompanyBranch, setselectedcompanyBranch] = useState(
@@ -310,7 +315,8 @@ navigate(-1)
               color="#4A90E2" // Change color as needed
             />
           )}
-          <div className="flex flex-1 min-h-0 min-w-0 overflow-hidden  w-full justify-center">
+          <div className="flex flex-1 flex-col min-h-0 min-w-0 overflow-hidden  w-full justify-center  bg-[#ADD8E6]">
+  <Breadcrumb items={Breadcrumblist} />
             <LeadMaster
               process="edit"
               handleEditData={handleSubmit}

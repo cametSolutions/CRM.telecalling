@@ -43,14 +43,15 @@ const LeadFollowUp = () => {
   const navigate = useNavigate()
 
   const safeState = location?.state || {}
-console.log(location?.state)
+  console.log(location?.state)
   const nav = [
     { label: "Lead", path: "" },
     { label: "Lead follow-up", path: "" }
   ]
   const Breadcrumblist = location?.state ? location?.state?.breadcrumb : nav
-console.log(Breadcrumblist)
-  const checkedownfollowup = safeState?.ownfollowp
+
+  console.log(Breadcrumblist)
+  const checkedownfollowup = safeState?.ownfollowp//its from
   console.log(checkedownfollowup)
   console.log(safeState)
 
@@ -115,8 +116,9 @@ console.log(Breadcrumblist)
   const [selectedTab, setselectedTab] = useState("")
   const [hasOwnLeads, setHasownLeads] = useState(false)
   const [ownFollowUp, setOwnFollowUp] = useState(
-    safeState?.ownlead ? true : safeState?.staffId ? false : true
+    safeState?.ownlead ? true :safeState?.breadcrumb? safeState?.breadcrumb?.ownfollowup:safeState?.staffId ? false : true
   )
+console.log(safeState)
   console.log(ownFollowUp)
   console.log(safeState)
   console.log(ownFollowUp)
@@ -172,6 +174,8 @@ console.log(Breadcrumblist)
       `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
   )
   console.log(selectedCompanyBranch)
+console.log(pending)
+// console.log((ownFollowUp && pending) || (checkedownfollowup &&pending))
   // [Keep all your existing useEffect hooks here - they remain the same]
   // ... (all the existing useEffect hooks from line 92 to line 600+)
   console.log(ownFollowUp)
@@ -920,14 +924,7 @@ console.log(Breadcrumblist)
       `&header=${safeState?.header}` +
       `&from=${safeState?.from ? safeState?.from : null}`
     : null
-  console.log(safeState)
-  console.log(pending)
-  console.log(shouldFetch)
-  console.log(safeState)
-  console.log(selectedCompanyBranch)
-  console.log(safeState?.header)
-  console.log(dates)
-  console.log(url)
+
   const {
     data: loggedusersallocatedleads,
     loading,
@@ -2224,27 +2221,48 @@ console.log(Breadcrumblist)
           >
             <button
               type="button"
-              onClick={() =>
+              onClick={() => {
+console.log("hh")
+                const breadcrumb = [
+                  { label: "Lead", path: "", state: "" },
+                  {
+                    label: "Lead Follow-Up",
+                    path:
+                      originalloggeduser?.role === "Admin"
+                        ? "/admin/transaction/lead/leadFollowUp"
+                        : "/staff/transaction/lead/leadFollowUp",
+                    state: { ownfollowup:ownFollowUp, pending }
+                  },
+                  { label: "New Lead", path: "" }
+                ]
+console.log(
+"Hh")
                 originalloggeduser?.role === "Admin"
                   ? navigate("/admin/transaction/lead/leadEdit", {
                       state: {
                         leadId: item._id,
-                        isReadOnly: !isAllocatedToeditable
+                        isReadOnly: !isAllocatedToeditable,
+                        breadcrumb,
+
                       }
                     })
                   : navigate("/staff/transaction/lead/leadEdit", {
                       state: {
                         leadId: item._id,
-                        isReadOnly: !isAllocatedToeditable
+                        isReadOnly: !isAllocatedToeditable,
+                        breadcrumb,
+
                       }
                     })
-              }
+console.log("hhh")
+              }}
               className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors w-full justify-center"
             >
               <Eye className="w-3.5 h-3.5" />
             </button>
           </td>
-          {ownFollowUp && pending && checkedownfollowup && (
+
+          {/* {(ownFollowUp && pending) || (checkedownfollowup &&pending) &&(
             <td
               className="px-2 py-2 border border-gray-300"
               onClick={(e) => e.stopPropagation()}
@@ -2257,7 +2275,21 @@ console.log(Breadcrumblist)
                 <History className="w-3.5 h-3.5" />
               </button>
             </td>
-          )}
+          )} */}
+{((ownFollowUp && pending) || (checkedownfollowup && pending)) && (
+  <td
+    className="px-2 py-2 border border-gray-300"
+    onClick={(e) => e.stopPropagation()}
+  >
+    <button
+      type="button"
+      onClick={() => handleFollowUp(item)}
+      className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-white bg-amber-500 rounded hover:bg-amber-600 transition-colors w-full justify-center"
+    >
+      <History className="w-3.5 h-3.5" />
+    </button>
+  </td>
+)}
           <td className="px-3 py-2 text-sm font-semibold text-green-700 border border-gray-300 whitespace-nowrap text-right">
             <span className="inline-flex items-center gap-0.5 justify-end">
               <IndianRupee className="w-3.5 h-3.5" />
@@ -2385,7 +2417,7 @@ console.log(Breadcrumblist)
           <th className="border border-gray-300 px-3 py-1 text-center">
             View/Modify
           </th>
-          {ownFollowUp && pending && checkedownfollowup ? (
+          {(ownFollowUp && pending) || (pending&&checkedownfollowup) ? (
             <>
               <th className="border border-gray-300 px-3 py-1 text-center">
                 Follow Up
