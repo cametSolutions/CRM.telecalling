@@ -1910,7 +1910,6 @@ export const GetallfollowupList = async (req, res) => {
       from = null
     } = req.query;
     const userObjectId = new mongoose.Types.ObjectId(loggeduserid);
-    console.log("userobjectid", userObjectId)
     const branchObjectId = new mongoose.Types.ObjectId(branchSelected);
 
     const start = startDate ? new Date(startDate) : null;
@@ -1918,7 +1917,6 @@ export const GetallfollowupList = async (req, res) => {
 
     // Check if viewmode is the string "true"
     const isViewMode = viewmode === "true";
-    console.log("viewmode", isViewMode)
     // Check for valid header and date params
     const hasValidHeader = header && header !== "null" && header !== "undefined";
     const hasValidDates = startDate && endDate &&
@@ -1926,7 +1924,8 @@ export const GetallfollowupList = async (req, res) => {
       startDate !== "undefined" && endDate !== "undefined";
 
     const isNewMode = isViewMode || hasValidHeader || hasValidDates;
-    console.log(isNewMode)
+console.log("isnewmodee",isNewMode)
+console.log("isviewmodee",isViewMode)
     let query;
 
     // ✅ VIEW MODE
@@ -2031,7 +2030,6 @@ export const GetallfollowupList = async (req, res) => {
 
     const followupLeads = [];
     // console.log("selctedfollowups",selectedfollowup)
-    console.log("from valueeeeeee", typeof from)
     for (const lead of selectedfollowup) {
       const activity = Array.isArray(lead.activityLog) ? lead.activityLog : [];
 
@@ -2074,7 +2072,6 @@ export const GetallfollowupList = async (req, res) => {
             if (hasFrom) return true;
 
             if (start && end) {
-console.log("hhhhhhhhhhhhhhhhhhhhhhhhhh")
               const subDate = new Date(item.submissionDate);
               return subDate >= start && subDate <= end;
             }
@@ -2347,13 +2344,11 @@ console.log("hhhhhhhhhhhhhhhhhhhhhhhhhh")
     console.log("MODE:", isNewMode ? "NEW" : "OLD");
 
     if (followupLeads.length > 0) {
-      console.log("get dataaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", branchObjectId)
       return res.status(201).json({
         messge: "leadfollowup found",
         data: { followupLeads, ischekCollegueLeads },
       });
     } else {
-      console.log("nod dataaaaaaaaaaaaaaaaaaaaaaa", branchObjectId)
       return res.status(200).json({ message: "leadfollowp not found", data: { followupLeads, ischekCollegueLeads } });
     }
   } catch (error) {
