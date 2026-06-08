@@ -1910,7 +1910,6 @@ export const GetallfollowupList = async (req, res) => {
       from = null
     } = req.query;
     const userObjectId = new mongoose.Types.ObjectId(loggeduserid);
-    console.log("userobjectid", userObjectId)
     const branchObjectId = new mongoose.Types.ObjectId(branchSelected);
 
     const start = startDate ? new Date(startDate) : null;
@@ -2031,7 +2030,6 @@ export const GetallfollowupList = async (req, res) => {
 
     const followupLeads = [];
     // console.log("selctedfollowups",selectedfollowup)
-    console.log("from valueeeeeee", typeof from)
     for (const lead of selectedfollowup) {
       const activity = Array.isArray(lead.activityLog) ? lead.activityLog : [];
 
@@ -2039,7 +2037,6 @@ export const GetallfollowupList = async (req, res) => {
 
       // ✅ NEW LOGIC ONLY WHEN REQUIRED
       if (isNewMode) {
-        console.log("isnewmodeeeee")
         matchedAllocations = activity
           .map((item, index) => ({ ...item, index }))
           .filter((item) => {
@@ -2074,7 +2071,6 @@ export const GetallfollowupList = async (req, res) => {
             if (hasFrom) return true;
 
             if (start && end) {
-console.log("hhhhhhhhhhhhhhhhhhhhhhhhhh")
               const subDate = new Date(item.submissionDate);
               return subDate >= start && subDate <= end;
             }
@@ -2083,7 +2079,6 @@ console.log("hhhhhhhhhhhhhhhhhhhhhhhhhh")
 
           });
       } else {
-        console.log("nodnewmodeeee")
 
         // ✅ OLD LOGIC (NO DATE FILTER)
         matchedAllocations = activity
@@ -2347,13 +2342,11 @@ console.log("hhhhhhhhhhhhhhhhhhhhhhhhhh")
     console.log("MODE:", isNewMode ? "NEW" : "OLD");
 
     if (followupLeads.length > 0) {
-      console.log("get dataaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", branchObjectId)
       return res.status(201).json({
         messge: "leadfollowup found",
         data: { followupLeads, ischekCollegueLeads },
       });
     } else {
-      console.log("nod dataaaaaaaaaaaaaaaaaaaaaaa", branchObjectId)
       return res.status(200).json({ message: "leadfollowp not found", data: { followupLeads, ischekCollegueLeads } });
     }
   } catch (error) {
