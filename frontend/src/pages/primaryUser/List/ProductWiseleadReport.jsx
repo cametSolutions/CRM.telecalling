@@ -758,7 +758,7 @@ console.log(filterRange)
 console.log(range?.firstDay)
 console.log(location?.state?.filterRange?.firstDay)
     console.log(location?.state)
-    if (location?.state) {
+    if (location?.state&&!location?.state?.change) {
       setFilterRange(location?.state?.filterRange)
     } else {
 console.log("hhhhh")
@@ -1025,7 +1025,7 @@ console.log("hhhhh")
         {
           label: "Product-wise-lead-Report",
           path: "/admin/reports/product-wise-report",
-          state: { filterRange, selectedBranch }
+          state: { filterRange, selectedBranch,change:true }
         },
         { label: "Lead Follow-Up", path: "" }
       ]

@@ -13,6 +13,7 @@ const ProductAdd = ({
   index,
   item
 }) => {
+console.log(product)
   const {
     register,
     handleSubmit,
@@ -30,6 +31,7 @@ const ProductAdd = ({
   })
   const [showTable, setShowTable] = useState(false)
   const [tableData, setTableData] = useState([])
+console.log(tableData)
   // State to toggle the table
   const [editState, seteditState] = useState(true)
 
@@ -266,7 +268,7 @@ const ProductAdd = ({
 
     // setValue("brandName", brandId) // Update the value in react-hook-form
   }
- 
+
   const handleCategoryChange = (e) => {
     const categoryId = e.target.value
     const selectedCategory = data.categories.find(
@@ -558,6 +560,23 @@ const ProductAdd = ({
                 ))}
               </select>
             </div>
+            <div className="">
+              <label
+                htmlFor="productorservicetype"
+                className="block text-sm font-medium text-gray-700 "
+              >
+                Product / Service Type
+              </label>
+
+              <select
+                id="branchName"
+                {...register("productorservicetype",{ required: true })}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none cursor-pointer"
+              >
+                <option value="Primary">Primary</option>
+                <option value="Additional">Additional</option>
+              </select>
+            </div>
             {selectedBranch && (
               <div className="mt-6">
                 <button
@@ -588,6 +607,7 @@ const ProductAdd = ({
                       Branch Name
                     </div>
                   </th>
+
                   <th className=" py-4 text-xs font-semibold text-gray-700 uppercase tracking-wider text-nowrap w-32 text-center">
                     Actions
                   </th>
@@ -635,6 +655,7 @@ const ProductAdd = ({
                           {product?.branchName}
                         </div>
                       </td>
+ 
                       {/* <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-right"></td> */}
                       <td className=" py-4 whitespace-nowrap text-sm font-medium text-center">
                         {/* <button

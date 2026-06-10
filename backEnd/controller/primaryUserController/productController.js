@@ -21,7 +21,7 @@ export const ProductRegistration = async (req, res) => {
       selected: tableData,
       productName: productData.productName,
       productPrice: productData.productPrice,
-
+productorservicetype:productData.productorservicetype,
       description: productData.description
     })
     await products.save()
