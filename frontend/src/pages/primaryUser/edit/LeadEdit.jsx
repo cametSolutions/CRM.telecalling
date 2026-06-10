@@ -32,27 +32,32 @@ import {
 import UseFetch from "../../../hooks/useFetch"
 function LeadEdit() {
   const [fetcheddata, setfetchedData] = useState([])
-console.log(fetcheddata)
+  console.log(fetcheddata)
   const [loader, setLoader] = useState(false)
   const navigate = useNavigate()
 
   const location = useLocation()
   const { leadId, isReadOnly, refreshKey } = location.state || {}
   console.log(location?.state)
-const nav=[{label:"Lead",path:""},{
-label:"New Lead",path:""}]
-const Breadcrumblist=location?.state?location?.state?.breadcrumb:nav
-console.log(Breadcrumblist)
+  const nav = [
+    { label: "Lead", path: "" },
+    {
+      label: "New Lead",
+      path: ""
+    }
+  ]
+  const Breadcrumblist = location?.state ? location?.state?.breadcrumb : nav
+  console.log(Breadcrumblist)
   const userData = getLocalStorageItem("user")
   const [selectedUserName, setselecteduserName] = useState(null)
   const [selectedcompanyBranch, setselectedcompanyBranch] = useState(
     userData?.selected[0]?.branch_id
   )
-const [selectedleadbranch,setselectedleadbranch]=useState(null)
+  const [selectedleadbranch, setselectedleadbranch] = useState(null)
   const [activeUserId, setActiveUserId] = useState(null)
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
-const now=new Date()
+  const now = new Date()
   const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   const [periodMode, setperiodMode] = useState("all")
   const [targetData, settargetData] = useState([])
@@ -66,8 +71,8 @@ const now=new Date()
     selectedcompanyBranch &&
       `/product/getallbranchProduct?branch=${selectedcompanyBranch}`
   )
-console.log(selectedcompanyBranch)
- useEffect(() => {
+  console.log(selectedcompanyBranch)
+  useEffect(() => {
     if (selectedCategory) {
       console.log("jj")
       const Datas = targetData?.userWiseResults
@@ -86,7 +91,7 @@ console.log(selectedcompanyBranch)
       setproductList(filteredList)
       console.log("J")
       console.log(targetData)
-     
+
       console.log("hhh")
 
       console.log(Datas)
@@ -95,7 +100,7 @@ console.log(selectedcompanyBranch)
       const filteredselectedCategory = Datas.flatMap(
         (user) => user.categories || []
       ).filter((item) => item.categoryId === selectedCategory?.Id)
-console.log(filteredselectedCategory)
+      console.log(filteredselectedCategory)
       console.log("Hh")
       const summary = filteredselectedCategory.reduce(
         (acc, cur) => {
@@ -110,8 +115,8 @@ console.log(filteredselectedCategory)
       setselectedDataPopup(summary)
       console.log(filteredselectedCategory && filteredselectedCategory.length)
       if (filteredselectedCategory && filteredselectedCategory.length) {
-console.log("hh")
-console.log(filteredselectedCategory)
+        console.log("hh")
+        console.log(filteredselectedCategory)
         setacheivedProducts((prev) => [
           ...prev,
           ...filteredselectedCategory.flatMap((item) =>
@@ -134,9 +139,9 @@ console.log(filteredselectedCategory)
         const response = await api.get(`/lead/getSelectedLead?leadId=${leadId}`)
 
         if (response.status >= 200 && response.status < 300) {
-console.log("hhhh")
-console.log(response.data.data)
-setselectedleadbranch(response.data.data[0].leadBranch)
+          console.log("hhhh")
+          console.log(response.data.data)
+          setselectedleadbranch(response.data.data[0].leadBranch)
           setfetchedData(response.data.data)
         }
       }
@@ -162,7 +167,7 @@ setselectedleadbranch(response.data.data[0].leadBranch)
     console.log("J")
     console.log(targetData)
     console.log(userData?._id)
-  
+
     // const filteredselectedCategory =
     //   filteredloggedUserItem[0].categories.filter(
     //     (item) => item.categoryId === id
@@ -199,7 +204,7 @@ setselectedleadbranch(response.data.data[0].leadBranch)
     setOpenModal(true)
   }
   const handleSelectedUser = (category, userId, userName) => {
-setActiveUserId(userId)
+    setActiveUserId(userId)
     setselecteduserName(userName)
     setselectedCategory({
       Id: category.Id,
@@ -237,8 +242,10 @@ setActiveUserId(userId)
   console.log(leadId)
 
   const handleSubmit = async (data, leadData, objectId) => {
-console.log(data)
-console.log(leadData)
+    console.log(data)
+    console.log(leadData)
+console.log(objectId)
+
     try {
       setLoader(true)
       const response = await api.put(
@@ -252,14 +259,14 @@ console.log(leadData)
         toast.success(response.data.message)
         setLoader(false)
       }
-navigate(-1)
-   
+      navigate(-1)
     } catch (error) {
       setLoader(false)
       toast.error("Something went wrong")
       console.error("error:", error)
     }
   }
+console.log("hhhh")
   return (
     <div className="h-full bg-[#ADD8E6 overflow-hidden">
       <div className="flex h-full flex-row overflow-hidden">
@@ -309,14 +316,15 @@ navigate(-1)
               </div>
             </div>
           </header>
-          {loader && (
-            <BarLoader
-              cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
-              color="#4A90E2" // Change color as needed
-            />
-          )}
+
           <div className="flex flex-1 flex-col min-h-0 min-w-0 overflow-hidden  w-full justify-center  bg-[#ADD8E6]">
-  <Breadcrumb items={Breadcrumblist} />
+            {loader && (
+              <BarLoader
+                cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
+                color="#4A90E2" // Change color as needed
+              />
+            )}
+            <Breadcrumb items={Breadcrumblist} />
             <LeadMaster
               process="edit"
               handleEditData={handleSubmit}
@@ -324,7 +332,7 @@ navigate(-1)
               seteditLoadingState={setLoader}
               Data={fetcheddata}
               isReadOnly={isReadOnly}
-selectedcompanyBranch={selectedleadbranch}
+              selectedcompanyBranch={selectedleadbranch}
             />
           </div>
         </div>
@@ -341,20 +349,20 @@ selectedcompanyBranch={selectedleadbranch}
             setacheivedProducts([])
             setselectedDataPopup([])
             setperiodMode(val)
-setselecteduserName(null)
+            setselecteduserName(null)
           }}
           onYearChange={(val) => {
             setacheivedProducts([])
             setselectedDataPopup([])
             setSelectedYear(val)
-setselecteduserName(null)
+            setselecteduserName(null)
           }}
           productlist={productlist}
           onClose={() => {
             setselecteduserName(null)
             setacheivedProducts([])
             setOpenModal(false)
-  setActiveUserId(null)
+            setActiveUserId(null)
           }}
           selectedMonth={periodMode}
           selectedYear={selectedYear}
@@ -372,7 +380,7 @@ setselecteduserName(null)
           selectedUser={selectedUserName}
           category={selectedCategory}
           handleSelectedUser={handleSelectedUser}
-  activeUserId={activeUserId}
+          activeUserId={activeUserId}
         />
       </div>
     </div>

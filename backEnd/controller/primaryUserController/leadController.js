@@ -1182,7 +1182,7 @@ export const TaskRegistration = async (req, res) => {
 export const UpdateLeadRegister = async (req, res) => {
   try {
     const { data, leadData } = req.body;
-
+console.log("leaddtaa",leadData)
     // return
     const { docID } = req.query;
     const objectId = new mongoose.Types.ObjectId(docID);
@@ -1919,19 +1919,18 @@ export const GetallfollowupList = async (req, res) => {
     const isViewMode = viewmode === "true";
     // Check for valid header and date params
     const hasValidHeader = header && header !== "null" && header !== "undefined";
-console.log("hederrrr",header)
+console.log("headerrrr",header)
     const hasValidDates = startDate && endDate &&
       startDate !== "null" && endDate !== "null" &&
       startDate !== "undefined" && endDate !== "undefined";
-console.log("startdate",startDate)
-console.log("enddate,",endDate)
+console.log("startdtaae",startDate)
+console.log("endatae",endDate)
 
     const isNewMode = isViewMode || hasValidHeader || hasValidDates;
-
-console.log("hasvalidheader",hasValidHeader)
-console.log("hasvailddate",hasValidDates)
-console.log("isnewmodee",isNewMode)
-console.log("isviewmodee",isViewMode)
+console.log("hasvalidhaeader",hasValidHeader)
+console.log("hasvaliddate",hasValidDates)
+    console.log("isnewmodeeee",isNewMode)
+console.log("isviewmode",isViewMode)
     let query;
 
     // ✅ VIEW MODE
@@ -2043,7 +2042,6 @@ console.log("isviewmodee",isViewMode)
 
       // ✅ NEW LOGIC ONLY WHEN REQUIRED
       if (isNewMode) {
-        console.log("isnewmodeeeee")
         matchedAllocations = activity
           .map((item, index) => ({ ...item, index }))
           .filter((item) => {
