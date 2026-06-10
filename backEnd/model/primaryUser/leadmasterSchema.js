@@ -160,6 +160,7 @@ const leadSchema = new mongoose.Schema(
         changeReason: { type: String },
       },
     ],
+followupClosed:{type:Boolean,default:false},
     //to know what type of allocation currently goin on,like implemention,programming ,followup to track current allocation status
     allocationType: { type: mongoose.Schema.Types.ObjectId, ref: "Task" },
     //to check whether this lead is initially on which type like implemention,programing

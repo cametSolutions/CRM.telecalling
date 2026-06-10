@@ -4,7 +4,7 @@ const productSchema = new mongoose.Schema({
   productName: { type: String, required: true },
   productPrice: { type: Number },
   description: { type: String },
-
+productorservicetype:{type:String,required:true},
   selected: [{
     hsn_id: { type: mongoose.Schema.Types.ObjectId, ref: "Hsn",set: v => (v === "" ? undefined : v)},
     hsnName: { type: String },

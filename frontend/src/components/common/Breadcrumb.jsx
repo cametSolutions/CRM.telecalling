@@ -1,35 +1,4 @@
-// import React from "react";
-// import { Link } from "react-router-dom";
 
-// const Breadcrumb = ({ items = [] }) => {
-//   return (
-//     <div className="flex items-center text-sm text-gray-600 mb-4">
-//       {items.map((item, index) => (
-//         <React.Fragment key={index}>
-//           {index > 0 && (
-//             <span className="mx-2 text-gray-400">/</span>
-//           )}
-
-//           {index === items.length - 1 ? (
-//             <span className="font-semibold text-gray-800">
-//               {item.label}
-//             </span>
-//           ) : (
-//             <Link
-//               to={item.path}
-//               state={item.state}
-//               className="hover:text-blue-600"
-//             >
-//               {item.label}
-//             </Link>
-//           )}
-//         </React.Fragment>
-//       ))}
-//     </div>
-//   );
-// };
-
-// export default Breadcrumb;
 
 import React from "react";
 import { Link } from "react-router-dom";

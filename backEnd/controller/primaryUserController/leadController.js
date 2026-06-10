@@ -1182,7 +1182,7 @@ export const TaskRegistration = async (req, res) => {
 export const UpdateLeadRegister = async (req, res) => {
   try {
     const { data, leadData } = req.body;
-
+console.log("leaddtaa",leadData)
     // return
     const { docID } = req.query;
     const objectId = new mongoose.Types.ObjectId(docID);
