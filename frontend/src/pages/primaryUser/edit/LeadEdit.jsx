@@ -38,6 +38,7 @@ function LeadEdit() {
 
   const location = useLocation()
   const { leadId, isReadOnly, refreshKey } = location.state || {}
+console.log(isReadOnly)
   console.log(location?.state)
   const nav = [
     { label: "Lead", path: "" },
