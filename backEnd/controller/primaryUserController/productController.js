@@ -21,7 +21,7 @@ export const ProductRegistration = async (req, res) => {
       selected: tableData,
       productName: productData.productName,
       productPrice: productData.productPrice,
-productorservicetype:productData.productorservicetype,
+      productorservicetype: productData.productorservicetype,
       description: productData.description
     })
     await products.save()
@@ -447,6 +447,17 @@ export const UpdateServices = async (req, res) => {
   } catch (error) {
     console.error(error)
     res.status(500).json({ message: "Internal Server Error" })
+  }
+}
+export const GetallselectedBranchServices = async (req, res) => {
+  try {
+const {cmp_id,branch_id}=req.query
+console.log("cmpid",cmp_id)
+console.log("branchd",branch_id)
+const services=await Product({})
+  } catch (error) {
+    console.log("error", error.message)
+    return res.status(500).json({ message: "Internal server error" })
   }
 }
 export const GetallServices = async (req, res) => {

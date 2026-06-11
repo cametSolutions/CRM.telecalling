@@ -116,13 +116,22 @@ const LeadFollowUp = () => {
   const [selectedDocId, setselectedDocid] = useState(null)
   const [selectedTab, setselectedTab] = useState("")
   const [hasOwnLeads, setHasownLeads] = useState(false)
+// const result =
+//   safeState?.ownlead
+//     ? true
+//     : safeState?.staffId
+//       ? false
+//       : !!safeState?.ownfollowup ?? true;
 const result =
   safeState?.ownlead
     ? true
     : safeState?.staffId
       ? false
-      : !!safeState?.ownfollowup ?? true;
+      : (safeState?.ownfollowup ?? true);
+console.log(safeState)
+console.log(result)
   const [ownFollowUp, setOwnFollowUp] = useState(result)
+
 console.log(safeState?.ownlead)
 console.log(safeState?.ownfollowup)
 console.log(safeState?.staffId)
@@ -162,6 +171,9 @@ console.log(safeState?.staffId)
     followupType: "infollowup",
     Remarks: ""
   })
+console.log(ownFollowUp)
+console.log(pending)
+console.log(checkedownfollowup)
 
   const [demoData, setDemodata] = useState({
     demoallocatedTo: "",
