@@ -10,7 +10,8 @@ import {
   GetallServices,
   UpdateServices,
   DeleteService,
-  GetbranchProduct
+  GetbranchProduct,
+GetallselectedBranchServices
 } from "../../controller/primaryUserController/productController.js"
 
 const router = express.Router()
@@ -21,6 +22,7 @@ router.get("/getProducts", authMiddleware, GetProducts)
 router.post("/productEdit", authMiddleware, EditProduct)
 router.post("/servicesRegistration", authMiddleware, ServicesRegistration)
 router.get("/getallServices", authMiddleware, GetallServices)
+router.get("/getselectedbranchallServices",authMiddleware,GetallselectedBranchServices)
 router.put("/serviceEdit", authMiddleware, UpdateServices)
 router.delete("/serviceDelete", authMiddleware, DeleteService)
 

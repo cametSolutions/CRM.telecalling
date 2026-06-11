@@ -21,7 +21,8 @@ console.log(product)
     formState: { errors }
   } = useForm()
 
-  const [selectedCompany, setSelectedCompany] = useState([])
+  const [selectedCompany, setSelectedCompany] = useState(null)
+console.log(selectedCompany)
   const [selectedBranch, setSelectedBranch] = useState(false)
   const [editObject, setEditObject] = useState({
     brands: {},
@@ -29,6 +30,7 @@ console.log(product)
     hsn: {}
     // products: [],
   })
+const [selectedcompanyBranch,setselectedCompanyBranch]=useState(null)
   const [showTable, setShowTable] = useState(false)
   const [tableData, setTableData] = useState([])
 console.log(tableData)
@@ -62,6 +64,10 @@ console.log(tableData)
   const { data: brandData, error: brandError } = UseFetch(
     `/inventory/getproductsubDetails?tab=brand`
   )
+const {data:services}=UseFetch(selectedCompany&&selectedcompanyBranch&&`/product/getselectedbranchallServices?cmp_id=${selectedCompany}&branch_id=${selectedcompanyBranch}`)
+console.log(services)
+console.log(selectedcompanyBranch)
+console.log(selectedCompany)
   const { data: categoryData, error: categoryError } = UseFetch(
     `/inventory/getproductsubDetails?tab=category`
   )
@@ -189,6 +195,8 @@ console.log(tableData)
     const selectedBranch = filteredBranches.find(
       (branch) => branch._id === branchId
     )
+console.log(selectedBranch)
+setselectedCompanyBranch(selectedBranch?._id)
     const branchName = selectedBranch.branchName
 
     setTableObject((prev) => ({
