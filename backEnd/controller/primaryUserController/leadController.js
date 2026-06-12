@@ -1182,7 +1182,7 @@ export const TaskRegistration = async (req, res) => {
 export const UpdateLeadRegister = async (req, res) => {
   try {
     const { data, leadData } = req.body;
-console.log("leaddtaa",leadData)
+    console.log("leaddtaa", leadData)
     // return
     const { docID } = req.query;
     const objectId = new mongoose.Types.ObjectId(docID);
@@ -1919,18 +1919,18 @@ export const GetallfollowupList = async (req, res) => {
     const isViewMode = viewmode === "true";
     // Check for valid header and date params
     const hasValidHeader = header && header !== "null" && header !== "undefined";
-console.log("headerrrr",header)
+    console.log("headerrrr", header)
     const hasValidDates = startDate && endDate &&
       startDate !== "null" && endDate !== "null" &&
       startDate !== "undefined" && endDate !== "undefined";
-console.log("startdtaae",startDate)
-console.log("endatae",endDate)
+    console.log("startdtaae", startDate)
+    console.log("endatae", endDate)
 
     const isNewMode = isViewMode || hasValidHeader || hasValidDates;
-console.log("hasvalidhaeader",hasValidHeader)
-console.log("hasvaliddate",hasValidDates)
-    console.log("isnewmodeeee",isNewMode)
-console.log("isviewmode",isViewMode)
+    console.log("hasvalidhaeader", hasValidHeader)
+    console.log("hasvaliddate", hasValidDates)
+    console.log("isnewmodeeee", isNewMode)
+    console.log("isviewmode", isViewMode)
     let query;
 
     // ✅ VIEW MODE
@@ -3722,11 +3722,18 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
         }
       );
     }
-
     // 3) Build activity entry
-    const allocationTask = await Task.findOne({
-      taskName: "Closing"
-    }).lean();
+    let allocationTask = null
+    if (formData.followupType === "closed") {
+      allocationTask = await Task.findOne({
+        taskName: "Closing"
+      }).lean();
+    } else {
+      allocationTask = await Task.findOne({
+        taskName: "Followup"
+      }).lean();
+    }
+
 
     const activityEntry = {
       submissionDate: formData.followUpDate,
@@ -3823,7 +3830,8 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
       },
       $set: {
         totalPaidAmount: updatedTotalPaid,
-        balanceAmount: updatedBalance
+        balanceAmount: updatedBalance,
+        followupClosed: formData?.followupType === "closed" ? true : false
       }
     };
 

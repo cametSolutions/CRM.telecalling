@@ -265,7 +265,7 @@ console.log(filteredselectedCategory)
         // const url = `http://localhost:9000/api/customer/getCustomer?search=${value}&role=${
         //   user.role
         // }&userBranch=${encodeURIComponent(branch)}`
-        const url = `https://www.crmtest.camet.in/api/customer/getCustomer?search=${value}&role=${
+        const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${value}&role=${
           user.role
         }&userBranch=${encodeURIComponent(branch)}`
 
