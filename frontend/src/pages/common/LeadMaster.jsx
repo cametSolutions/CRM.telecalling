@@ -2167,363 +2167,363 @@
 //             </div>
 //           </form>
 
-          // {popupOpen && (
-          //   <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40">
-          //     <div className="bg-white p-4 rounded shadow-md text-center">
-          //       <p className="text-orange-500">{popupMessage}</p>
-          //       <button
-          //         onClick={handlePopupOk}
-          //         className="bg-blue-500 text-white px-4 py-1 rounded mt-3 text-center"
-          //       >
-          //         OK
-          //       </button>
-          //     </div>
-          //   </div>
-          // )}
+// {popupOpen && (
+//   <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40">
+//     <div className="bg-white p-4 rounded shadow-md text-center">
+//       <p className="text-orange-500">{popupMessage}</p>
+//       <button
+//         onClick={handlePopupOk}
+//         className="bg-blue-500 text-white px-4 py-1 rounded mt-3 text-center"
+//       >
+//         OK
+//       </button>
+//     </div>
+//   </div>
+// )}
 
-          // {modalOpen && (
-          //   <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center px-4 z-50">
-          //     <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-          //       <div className="bg-[#1B2A4A] px-6 py-4 flex items-center justify-between flex-shrink-0">
-          //         <div>
-          //           <h2 className="text-white text-base font-bold tracking-wide">
-          //             {Data ? "Update Customer Details" : "Add New Customer"}
-          //           </h2>
-          //           {!Data && (
-          //             <p className="text-blue-300 text-xs mt-0.5">
-          //               Fill in the details to register a new customer
-          //             </p>
-          //           )}
-          //         </div>
-          //         <button
-          //           type="button"
-          //           onClick={() => {
-          //             setModalOpen(false)
-          //             clearmodalErros()
-          //             resetModal()
-          //           }}
-          //           className="text-blue-200 hover:text-white hover:bg-white hover:bg-opacity-10 rounded-full p-1.5 transition-colors"
-          //         >
-          //           <svg
-          //             className="w-5 h-5"
-          //             fill="none"
-          //             viewBox="0 0 24 24"
-          //             stroke="currentColor"
-          //             strokeWidth="2"
-          //           >
-          //             <path
-          //               strokeLinecap="round"
-          //               strokeLinejoin="round"
-          //               d="M6 18L18 6M6 6l12 12"
-          //             />
-          //           </svg>
-          //         </button>
-          //       </div>
+// {modalOpen && (
+//   <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center px-4 z-50">
+//     <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+//       <div className="bg-[#1B2A4A] px-6 py-4 flex items-center justify-between flex-shrink-0">
+//         <div>
+//           <h2 className="text-white text-base font-bold tracking-wide">
+//             {Data ? "Update Customer Details" : "Add New Customer"}
+//           </h2>
+//           {!Data && (
+//             <p className="text-blue-300 text-xs mt-0.5">
+//               Fill in the details to register a new customer
+//             </p>
+//           )}
+//         </div>
+//         <button
+//           type="button"
+//           onClick={() => {
+//             setModalOpen(false)
+//             clearmodalErros()
+//             resetModal()
+//           }}
+//           className="text-blue-200 hover:text-white hover:bg-white hover:bg-opacity-10 rounded-full p-1.5 transition-colors"
+//         >
+//           <svg
+//             className="w-5 h-5"
+//             fill="none"
+//             viewBox="0 0 24 24"
+//             stroke="currentColor"
+//             strokeWidth="2"
+//           >
+//             <path
+//               strokeLinecap="round"
+//               strokeLinejoin="round"
+//               d="M6 18L18 6M6 6l12 12"
+//             />
+//           </svg>
+//         </button>
+//       </div>
 
-          //       <form
-          //         onSubmit={handleSubmitModal(onmodalsubmit)}
-          //         className="overflow-y-auto flex-1 px-6 py-4"
-          //       >
-          //         <div>
-          //           <input
-          //             type="hidden"
-          //             {...registerModal("customerid")}
-          //             onBlur={(e) =>
-          //               setValueModal("customerid", e.target.value.trim())
-          //             }
-          //             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-          //           />
-          //         </div>
-          //         <div>
-          //           <input
-          //             type="hidden"
-          //             {...registerModal("leadid")}
-          //             onBlur={(e) =>
-          //               setValueModal("leadid", e.target.value.trim())
-          //             }
-          //             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-          //           />
-          //         </div>
-          //         <p className="text-[10px] font-bold text-[#1B2A4A] uppercase tracking-widest mb-2 border-b border-gray-200 pb-1">
-          //           Basic Information
-          //         </p>
-          //         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-          //           <div>
-          //             <label className="block text-xs font-semibold text-gray-600 mb-1">
-          //               Customer Name <span className="text-red-500">*</span>
-          //             </label>
-          //             <input
-          //               type="text"
-          //               {...registerModal("customerName", {
-          //                 required: "Customer Name is required"
-          //               })}
-          //               onBlur={(e) =>
-          //                 setValueModal("customerName", e.target.value.trim())
-          //               }
-          //               placeholder="Customer Name"
-          //               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-          //             />
-          //             {errorsModal.customerName && (
-          //               <p className="text-red-500 text-xs mt-1">
-          //                 {errorsModal.customerName.message}
-          //               </p>
-          //             )}
-          //           </div>
-          //           <div>
-          //             <label className="block text-xs font-semibold text-gray-600 mb-1">
-          //               Email
-          //             </label>
-          //             <input
-          //               type="email"
-          //               {...registerModal("email")}
-          //               placeholder="Email"
-          //               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-          //             />
-          //           </div>
-          //           <div>
-          //             <label className="block text-xs font-semibold text-gray-600 mb-1">
-          //               Mobile <span className="text-red-500">*</span>
-          //             </label>
-          //             <input
-          //               type="tel"
-          //               {...registerModal("mobile", {
-          //                 required: "Mobile is Required",
-          //                 validate: (value) => {
-          //                   const cleaned = value
-          //                     .replace(/^\+?91/, "")
-          //                     .replace(/\D/g, "")
-          //                   if (cleaned.length !== 10)
-          //                     return "Must be 10 digits after country code"
-          //                   return true
-          //                 }
-          //               })}
-          //               onBlur={(e) =>
-          //                 setValueModal("mobile", e.target.value.trim())
-          //               }
-          //               placeholder="Mobile"
-          //               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-          //             />
-          //             {errorsModal.mobile && (
-          //               <p className="text-red-500 text-xs mt-1">
-          //                 {errorsModal.mobile.message}
-          //               </p>
-          //             )}
-          //           </div>
-          //           <div>
-          //             <label className="block text-xs font-semibold text-gray-600 mb-1">
-          //               Landline
-          //             </label>
-          //             <input
-          //               type="tel"
-          //               {...registerModal("landline")}
-          //               onBlur={(e) =>
-          //                 setValueModal("landline", e.target.value.trim())
-          //               }
-          //               placeholder="Landline"
-          //               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-          //             />
-          //           </div>
-          //           <div>
-          //             <label className="block text-xs font-semibold text-gray-600 mb-1">
-          //               Contact Person <span className="text-red-500">*</span>
-          //             </label>
-          //             <input
-          //               type="text"
-          //               {...registerModal("contactPerson", {
-          //                 required: "Contact person is Required"
-          //               })}
-          //               onBlur={(e) =>
-          //                 setValueModal("contactPerson", e.target.value.trim())
-          //               }
-          //               placeholder="Contact Person"
-          //               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-          //             />
-          //             {errorsModal.contactPerson && (
-          //               <p className="text-red-500 text-xs mt-1">
-          //                 {errorsModal.contactPerson.message}
-          //               </p>
-          //             )}
-          //           </div>
+//       <form
+//         onSubmit={handleSubmitModal(onmodalsubmit)}
+//         className="overflow-y-auto flex-1 px-6 py-4"
+//       >
+//         <div>
+//           <input
+//             type="hidden"
+//             {...registerModal("customerid")}
+//             onBlur={(e) =>
+//               setValueModal("customerid", e.target.value.trim())
+//             }
+//             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
+//           />
+//         </div>
+//         <div>
+//           <input
+//             type="hidden"
+//             {...registerModal("leadid")}
+//             onBlur={(e) =>
+//               setValueModal("leadid", e.target.value.trim())
+//             }
+//             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
+//           />
+//         </div>
+//         <p className="text-[10px] font-bold text-[#1B2A4A] uppercase tracking-widest mb-2 border-b border-gray-200 pb-1">
+//           Basic Information
+//         </p>
+//         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+//           <div>
+//             <label className="block text-xs font-semibold text-gray-600 mb-1">
+//               Customer Name <span className="text-red-500">*</span>
+//             </label>
+//             <input
+//               type="text"
+//               {...registerModal("customerName", {
+//                 required: "Customer Name is required"
+//               })}
+//               onBlur={(e) =>
+//                 setValueModal("customerName", e.target.value.trim())
+//               }
+//               placeholder="Customer Name"
+//               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
+//             />
+//             {errorsModal.customerName && (
+//               <p className="text-red-500 text-xs mt-1">
+//                 {errorsModal.customerName.message}
+//               </p>
+//             )}
+//           </div>
+//           <div>
+//             <label className="block text-xs font-semibold text-gray-600 mb-1">
+//               Email
+//             </label>
+//             <input
+//               type="email"
+//               {...registerModal("email")}
+//               placeholder="Email"
+//               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
+//             />
+//           </div>
+//           <div>
+//             <label className="block text-xs font-semibold text-gray-600 mb-1">
+//               Mobile <span className="text-red-500">*</span>
+//             </label>
+//             <input
+//               type="tel"
+//               {...registerModal("mobile", {
+//                 required: "Mobile is Required",
+//                 validate: (value) => {
+//                   const cleaned = value
+//                     .replace(/^\+?91/, "")
+//                     .replace(/\D/g, "")
+//                   if (cleaned.length !== 10)
+//                     return "Must be 10 digits after country code"
+//                   return true
+//                 }
+//               })}
+//               onBlur={(e) =>
+//                 setValueModal("mobile", e.target.value.trim())
+//               }
+//               placeholder="Mobile"
+//               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
+//             />
+//             {errorsModal.mobile && (
+//               <p className="text-red-500 text-xs mt-1">
+//                 {errorsModal.mobile.message}
+//               </p>
+//             )}
+//           </div>
+//           <div>
+//             <label className="block text-xs font-semibold text-gray-600 mb-1">
+//               Landline
+//             </label>
+//             <input
+//               type="tel"
+//               {...registerModal("landline")}
+//               onBlur={(e) =>
+//                 setValueModal("landline", e.target.value.trim())
+//               }
+//               placeholder="Landline"
+//               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
+//             />
+//           </div>
+//           <div>
+//             <label className="block text-xs font-semibold text-gray-600 mb-1">
+//               Contact Person <span className="text-red-500">*</span>
+//             </label>
+//             <input
+//               type="text"
+//               {...registerModal("contactPerson", {
+//                 required: "Contact person is Required"
+//               })}
+//               onBlur={(e) =>
+//                 setValueModal("contactPerson", e.target.value.trim())
+//               }
+//               placeholder="Contact Person"
+//               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
+//             />
+//             {errorsModal.contactPerson && (
+//               <p className="text-red-500 text-xs mt-1">
+//                 {errorsModal.contactPerson.message}
+//               </p>
+//             )}
+//           </div>
 
-          //           <div className="md:col-span-2">
-          //             <label className="block text-xs font-semibold text-gray-600 mb-1">
-          //               Address
-          //             </label>
-          //             <textarea
-          //               {...registerModal("address1")}
-          //               onBlur={(e) =>
-          //                 setValueModal("address1", e.target.value.trim())
-          //               }
-          //               placeholder="Address"
-          //               rows={2}
-          //               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition resize-none"
-          //             />
-          //           </div>
-          //         </div>
+//           <div className="md:col-span-2">
+//             <label className="block text-xs font-semibold text-gray-600 mb-1">
+//               Address
+//             </label>
+//             <textarea
+//               {...registerModal("address1")}
+//               onBlur={(e) =>
+//                 setValueModal("address1", e.target.value.trim())
+//               }
+//               placeholder="Address"
+//               rows={2}
+//               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition resize-none"
+//             />
+//           </div>
+//         </div>
 
-          //         <p className="text-[10px] font-bold text-[#1B2A4A] uppercase tracking-widest mb-2 border-b border-gray-200 pb-1">
-          //           Location
-          //         </p>
-          //         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-          //           <div>
-          //             <label className="block text-xs font-semibold text-gray-600 mb-1">
-          //               Country
-          //             </label>
+//         <p className="text-[10px] font-bold text-[#1B2A4A] uppercase tracking-widest mb-2 border-b border-gray-200 pb-1">
+//           Location
+//         </p>
+//         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+//           <div>
+//             <label className="block text-xs font-semibold text-gray-600 mb-1">
+//               Country
+//             </label>
 
-          //             <Controller
-          //               name="country"
-          //               control={controlModal}
-          //               render={({ field }) => (
-          //                 <Select
-          //                   options={countryOptions}
-          //                   value={
-          //                     countryOptions.find(
-          //                       (opt) => opt.value === field.value
-          //                     ) || null
-          //                   }
-          //                   onChange={(option) =>
-          //                     field.onChange(option?.value || "")
-          //                   }
-          //                   getOptionLabel={(o) => o.label}
-          //                   getOptionValue={(o) => o.value}
-          //                 />
-          //               )}
-          //             />
-          //           </div>
-          //           <div>
-          //             <label className="block text-xs font-semibold text-gray-600 mb-1">
-          //               State
-          //             </label>
+//             <Controller
+//               name="country"
+//               control={controlModal}
+//               render={({ field }) => (
+//                 <Select
+//                   options={countryOptions}
+//                   value={
+//                     countryOptions.find(
+//                       (opt) => opt.value === field.value
+//                     ) || null
+//                   }
+//                   onChange={(option) =>
+//                     field.onChange(option?.value || "")
+//                   }
+//                   getOptionLabel={(o) => o.label}
+//                   getOptionValue={(o) => o.value}
+//                 />
+//               )}
+//             />
+//           </div>
+//           <div>
+//             <label className="block text-xs font-semibold text-gray-600 mb-1">
+//               State
+//             </label>
 
-          //             <Controller
-          //               name="state"
-          //               control={controlModal}
-          //               render={({ field }) => (
-          //                 <Select
-          //                   options={stateOptions}
-          //                   value={
-          //                     stateOptions.find(
-          //                       (opt) => opt.value === field.value
-          //                     ) || null
-          //                   }
-          //                   onChange={(option) => {
-          //                     field.onChange(option?.value || "")
-          //                     setSelectedState(option)
-          //                   }}
-          //                   isDisabled={!selectedCountry}
-          //                 />
-          //               )}
-          //             />
-          //           </div>
-          //           <div>
-          //             <label className="block text-xs font-semibold text-gray-600 mb-1">
-          //               City
-          //             </label>
-          //             <input
-          //               type="text"
-          //               {...registerModal("city")}
-          //               onBlur={(e) =>
-          //                 setValueModal("city", e.target.value.trim())
-          //               }
-          //               placeholder="City"
-          //               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-          //             />
-          //           </div>
-          //           <div>
-          //             <label className="block text-xs font-semibold text-gray-600 mb-1">
-          //               Pincode
-          //             </label>
-          //             <input
-          //               type="text"
-          //               {...registerModal("pincode")}
-          //               onBlur={(e) =>
-          //                 setValueModal("pincode", e.target.value.trim())
-          //               }
-          //               placeholder="Pincode"
-          //               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-          //             />
-          //           </div>
-          //         </div>
+//             <Controller
+//               name="state"
+//               control={controlModal}
+//               render={({ field }) => (
+//                 <Select
+//                   options={stateOptions}
+//                   value={
+//                     stateOptions.find(
+//                       (opt) => opt.value === field.value
+//                     ) || null
+//                   }
+//                   onChange={(option) => {
+//                     field.onChange(option?.value || "")
+//                     setSelectedState(option)
+//                   }}
+//                   isDisabled={!selectedCountry}
+//                 />
+//               )}
+//             />
+//           </div>
+//           <div>
+//             <label className="block text-xs font-semibold text-gray-600 mb-1">
+//               City
+//             </label>
+//             <input
+//               type="text"
+//               {...registerModal("city")}
+//               onBlur={(e) =>
+//                 setValueModal("city", e.target.value.trim())
+//               }
+//               placeholder="City"
+//               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
+//             />
+//           </div>
+//           <div>
+//             <label className="block text-xs font-semibold text-gray-600 mb-1">
+//               Pincode
+//             </label>
+//             <input
+//               type="text"
+//               {...registerModal("pincode")}
+//               onBlur={(e) =>
+//                 setValueModal("pincode", e.target.value.trim())
+//               }
+//               placeholder="Pincode"
+//               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
+//             />
+//           </div>
+//         </div>
 
-          //         <p className="text-[10px] font-bold text-[#1B2A4A] uppercase tracking-widest mb-2 border-b border-gray-200 pb-1">
-          //           Business Information
-          //         </p>
-          //         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-2">
-          //           <div>
-          //             <label className="block text-xs font-semibold text-gray-600 mb-1">
-          //               Partnership Type
-          //             </label>
-          //             <select
-          //               {...registerModal("partner")}
-          //               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] bg-gray-50 cursor-pointer transition"
-          //             >
-          //               <option value="">Select Partner</option>
-          //               {partner?.map((p, i) => (
-          //                 <option key={i} value={p._id}>
-          //                   {p.partner}
-          //                 </option>
-          //               ))}
-          //             </select>
-          //           </div>
-          //           <div>
-          //             <label className="block text-xs font-semibold text-gray-600 mb-1">
-          //               Registration Type
-          //             </label>
-          //             <select
-          //               {...registerModal("registrationType")}
-          //               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] bg-gray-50 cursor-pointer transition"
-          //             >
-          //               <option value="">Select Type</option>
-          //               <option value="unregistered">
-          //                 Unregistered / Consumer
-          //               </option>
-          //               <option value="regular">Regular</option>
-          //             </select>
-          //           </div>
-          //           {registrationType === "regular" && (
-          //             <div>
-          //               <label className="block text-xs font-semibold text-gray-600 mb-1">
-          //                 GSTIN / UIN <span className="text-red-500">*</span>
-          //               </label>
-          //               <input
-          //                 {...registerModal("gstNo", {
-          //                   required: "GST is required"
-          //                 })}
-          //                 placeholder="e.g. 22AAAAA0000A1Z5"
-          //                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-          //               />
-          //               {errorsModal.gstNo && (
-          //                 <p className="text-red-500 text-xs mt-1">
-          //                   {errorsModal.gstNo.message}
-          //                 </p>
-          //               )}
-          //             </div>
-          //           )}
-          //         </div>
+//         <p className="text-[10px] font-bold text-[#1B2A4A] uppercase tracking-widest mb-2 border-b border-gray-200 pb-1">
+//           Business Information
+//         </p>
+//         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-2">
+//           <div>
+//             <label className="block text-xs font-semibold text-gray-600 mb-1">
+//               Partnership Type
+//             </label>
+//             <select
+//               {...registerModal("partner")}
+//               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] bg-gray-50 cursor-pointer transition"
+//             >
+//               <option value="">Select Partner</option>
+//               {partner?.map((p, i) => (
+//                 <option key={i} value={p._id}>
+//                   {p.partner}
+//                 </option>
+//               ))}
+//             </select>
+//           </div>
+//           <div>
+//             <label className="block text-xs font-semibold text-gray-600 mb-1">
+//               Registration Type
+//             </label>
+//             <select
+//               {...registerModal("registrationType")}
+//               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] bg-gray-50 cursor-pointer transition"
+//             >
+//               <option value="">Select Type</option>
+//               <option value="unregistered">
+//                 Unregistered / Consumer
+//               </option>
+//               <option value="regular">Regular</option>
+//             </select>
+//           </div>
+//           {registrationType === "regular" && (
+//             <div>
+//               <label className="block text-xs font-semibold text-gray-600 mb-1">
+//                 GSTIN / UIN <span className="text-red-500">*</span>
+//               </label>
+//               <input
+//                 {...registerModal("gstNo", {
+//                   required: "GST is required"
+//                 })}
+//                 placeholder="e.g. 22AAAAA0000A1Z5"
+//                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
+//               />
+//               {errorsModal.gstNo && (
+//                 <p className="text-red-500 text-xs mt-1">
+//                   {errorsModal.gstNo.message}
+//                 </p>
+//               )}
+//             </div>
+//           )}
+//         </div>
 
-          //         <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-3">
-          //           <button
-          //             type="button"
-          //             onClick={() => {
-          //               setModalOpen(false)
-          //               clearmodalErros()
-          //               resetModal()
-          //             }}
-          //             className="px-5 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition"
-          //           >
-          //             Cancel
-          //           </button>
-          //           <button
-          //             type="submit"
-          //             className="px-6 py-2 rounded-lg bg-[#1B2A4A] hover:bg-[#243660] text-white text-sm font-semibold tracking-wide transition"
-          //           >
-          //             Submit
-          //           </button>
-          //         </div>
-          //       </form>
-          //     </div>
-          //   </div>
-          // )}
+//         <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-3">
+//           <button
+//             type="button"
+//             onClick={() => {
+//               setModalOpen(false)
+//               clearmodalErros()
+//               resetModal()
+//             }}
+//             className="px-5 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition"
+//           >
+//             Cancel
+//           </button>
+//           <button
+//             type="submit"
+//             className="px-6 py-2 rounded-lg bg-[#1B2A4A] hover:bg-[#243660] text-white text-sm font-semibold tracking-wide transition"
+//           >
+//             Submit
+//           </button>
+//         </div>
+//       </form>
+//     </div>
+//   </div>
+// )}
 //         </div>
 //       </div>
 //     </div>
@@ -2532,7 +2532,6 @@
 
 // export default LeadMaster
 // export
-
 
 import { useEffect, useState, useMemo, useRef, useLayoutEffect } from "react"
 import { createPortal } from "react-dom"
@@ -2633,10 +2632,13 @@ function LicenseDropdown({
   const inputRef = useRef(null)
 
   useEffect(() => {
+console.log(
+"jj")
     setSearch(String(item.licenseNumber ?? ""))
   }, [item.licenseNumber])
 
   useEffect(() => {
+console.log("hhh")
     const handler = (e) => {
       const portals = document.querySelectorAll("[data-lead-portal]")
       const inPortal = Array.from(portals).some((p) => p.contains(e.target))
@@ -2804,10 +2806,12 @@ function ProductDropdown({
   const inputRef = useRef(null)
 
   useEffect(() => {
+console.log("hhh")
     setSearch(item.productorServiceName || "")
   }, [item.productorServiceName])
 
   useEffect(() => {
+console.log("jjj")
     const handler = (e) => {
       const portals = document.querySelectorAll("[data-lead-portal]")
       const inPortal = Array.from(portals).some((p) => p.contains(e.target))
@@ -2832,11 +2836,11 @@ function ProductDropdown({
       ? [...selectedleadlist]
       : [{ ...emptyRow }]
     const updated = [...base]
-console.log(selectedBranch)
+    console.log(selectedBranch)
     const filteredbranch = prod?.selected?.filter(
       (item) => item.branch_id === selectedBranch
     )
-console.log(filteredbranch)
+    console.log(filteredbranch)
     const igstRate = filteredbranch?.[0]?.hsn_id?.onValue?.igstRate
 
     if (!prod) {
@@ -2852,7 +2856,7 @@ console.log(filteredbranch)
     } else {
       const price = Number(prod?.productPrice || 0)
       const igst = Number(igstRate || 0)
-console.log(igst)
+      console.log(igst)
       const rawNet = price + (igst / 100) * price
       const netAmount = Math.round(rawNet)
 
@@ -2867,7 +2871,7 @@ console.log(igst)
       }
       setSearch(prod.productName || prod.serviceName || "")
     }
-console.log(updated)
+    console.log(updated)
     setSelectedLeadList(updated)
   }
 
@@ -2965,7 +2969,7 @@ const LeadMaster = ({
   showpopupMessage,
   selectedcompanyBranch
 }) => {
-console.log(isReadOnly)
+  console.log(isReadOnly)
   const {
     register: registerMain,
     handleSubmit: handleSubmitMain,
@@ -2973,6 +2977,8 @@ console.log(isReadOnly)
     watch: watchMain,
     control: controlMain,
     reset: resetMain,
+
+    
     clearErrors: clearMainerrors,
     formState: { errors: errorsMain }
   } = useForm()
@@ -3087,9 +3093,21 @@ console.log(isReadOnly)
     loggeduser?.department?._id === "670c867352847bbebbd35750"
 
   useEffect(() => {
+console.log("jjjj")
     setSelectedBranch(selectedcompanyBranch)
   }, [selectedcompanyBranch])
-
+// useEffect(() => {
+//   if (!selfAllocation) {
+//     setValueMain("allocationType", undefined);
+//     setValueMain("dueDate", undefined);
+//   }
+// }, [selfAllocation]);
+// useEffect(() => {
+//   if (!selfAllocation) {
+//     unregister("allocationType");
+//     unregister("dueDate");
+//   }
+// }, [selfAllocation, unregister]);
   useEffect(() => {
     if (!selectedleadlist || selectedleadlist.length === 0) {
       setSelectedLeadList([{ ...emptyRow }])
@@ -3101,12 +3119,14 @@ console.log(isReadOnly)
   const taxAmount = Number(watch("taxAmount") || 0)
 
   useEffect(() => {
+console.log("hhh")
     const exactTotal = taxableAmount + taxAmount
     const net = +exactTotal.toFixed(2)
     setValueMain("netAmount", net, { shouldValidate: true })
   }, [taxableAmount, taxAmount, setValueMain])
 
   useEffect(() => {
+console.log("hhhh")
     const userData = localStorage.getItem("user")
     if (userData) {
       const user = JSON.parse(userData)
@@ -3121,23 +3141,27 @@ console.log(isReadOnly)
 
   useEffect(() => {
     if (tasks) {
+console.log("hhhh")
       settasklist(tasks.filter((item) => item.taskName === "Followup"))
     }
   }, [tasks])
 
   useEffect(() => {
+console.log("jjj")
     if (showmessage) {
       setIspopupModalOpen(true)
     }
   }, [showmessage])
 
   useEffect(() => {
+console.log("jj")
     if (selectedBranch) {
       setValueMain("leadBranch", selectedBranch)
     }
   }, [selectedBranch])
 
   useEffect(() => {
+console.log("hhhh")
     if (
       loggeduser &&
       productData &&
@@ -3159,6 +3183,7 @@ console.log(isReadOnly)
   }, [loggeduser, branches, productData, serviceData, partners, selectedBranch])
 
   useEffect(() => {
+console.log("hhhh")
     const handleClickOutside = (event) => {
       if (
         dropdownLicenseRef.current &&
@@ -3180,6 +3205,7 @@ console.log(isReadOnly)
   }, [])
 
   useEffect(() => {
+console.log("hhhh")
     if (loggeduser?._id) {
       if (Data && Data.length) {
         setValueMain("leadBy", Data[0].leadBy._id)
@@ -3190,6 +3216,7 @@ console.log(isReadOnly)
   }, [loggeduser, setValueMain])
 
   useEffect(() => {
+console.log("hhh")
     if (
       Data &&
       Data.length > 0 &&
@@ -3299,12 +3326,14 @@ console.log(isReadOnly)
   }, [customerOptions, Data])
 
   useEffect(() => {
+console.log("hhh")
     if (customerData && customerData.length > 0) {
       setallcustomer(customerData)
     }
   }, [customerData])
 
   useEffect(() => {
+console.log("hhh")
     if (customerData && customerData.length && selectedBranch) {
       const options = customerData.map((item) => {
         const matchingSelected = item.selected?.find(
@@ -3325,6 +3354,7 @@ console.log(isReadOnly)
   }, [customerData])
 
   useEffect(() => {
+console.log("hhh")
     if (selectedCustomer) {
       setValueMain("mobile", selectedCustomer.mobile)
       setValueMain("phone", selectedCustomer.phone)
@@ -3333,6 +3363,7 @@ console.log(isReadOnly)
   }, [selectedCustomer])
 
   useEffect(() => {
+console.log("hhh")
     if (alluser) {
       const { allusers = [], allAdmins = [] } = alluser
       const combinedUsers = [...allusers, ...allAdmins]
@@ -3341,12 +3372,14 @@ console.log(isReadOnly)
   }, [alluser])
 
   useEffect(() => {
+console.log("hhh")
     setValueMain("netAmount", calculateTotalAmount())
     setValueMain("taxAmount", calculatetaxAmount())
     setValueMain("taxableAmount", calculatetaxableAmount())
   }, [selectedleadlist])
 
   useEffect(() => {
+console.log("hhh")
     if (!selectedLicense && leadList && leadList.length > 0 && !Data) {
       const initialProductListwithoutlicense = leadList?.map((product) => ({
         ...product,
@@ -3384,6 +3417,7 @@ console.log(isReadOnly)
   )
 
   useEffect(() => {
+console.log("hhh")
     if (defaultCountry) {
       setSelectedCountry(defaultCountry)
       setValueModal("country", defaultCountry.value)
@@ -3391,15 +3425,20 @@ console.log(isReadOnly)
   }, [defaultCountry])
 
   useEffect(() => {
+console.log("hhh")
     const currentState = getValuesModal("state")
+  console.log("defaultState:", defaultState);
+  console.log("currentState:", currentState);
+  console.log("condition:", defaultState && !currentState);
     if (defaultState && !currentState) {
+console.log("jjjj")
       setSelectedState(defaultState)
       setValueModal("state", defaultState.value)
     }
   }, [defaultState, getValuesModal, setValueModal])
 
   const handleOpenmodal = () => {
-console.log("h")
+    console.log("h")
     setModalOpen(true)
     clearMainerrors()
     if (Data && Data.length) {
@@ -3416,7 +3455,7 @@ console.log("h")
       setValueModal("registrationType", Data[0]?.customerName?.registrationType)
       setValueModal("gstNo", Data[0]?.customerName?.gstNo)
       setValueModal("city", Data[0]?.customerName?.city)
-console.log("hhh")
+      console.log("hhh")
     }
   }
 
@@ -3491,17 +3530,17 @@ console.log("hhh")
   }
 
   const handleSelectedCustomer = (option) => {
-console.log(option)
-console.log(allcustomer)
+    console.log(option)
+    console.log(allcustomer)
     const matchedCustomer = allcustomer?.find((item) => {
       // return (
       //   String(item?.customerName?.trim()) === String(option?.label?.trim()) &&
       //   String(item?.address1?.trim()) === String(option?.address?.trim()) &&
       //   String(item?.mobile?.trim()) === String(option?.mobile?.trim())
       // )
-return item?._id===option?.value
+      return item?._id === option?.value
     })
-console.log(matchedCustomer)
+    console.log(matchedCustomer)
 
     setSelectedCustomer(option)
 
@@ -3714,7 +3753,7 @@ console.log(matchedCustomer)
       mobile: "",
       source: "",
       partner: "",
-      allocationType: "followup",
+      allocationType: null,
       dueDate: "",
       remark: "",
       taxableAmount: "",
@@ -3748,6 +3787,12 @@ console.log(matchedCustomer)
     if (submitLoading) return
     setsubmitLoading(true)
     if (submitLoading) return
+const submitData = { ...data };
+
+if (!selfAllocation) {
+  delete submitData.allocationType;
+  delete submitData.dueDate;
+}
     try {
       if (hasDuplicateLeadRows(selectedleadlist)) {
         setValidateError((prev) => ({
@@ -3774,14 +3819,14 @@ console.log(matchedCustomer)
           return
         }
         const validation = await validateLeadData(
-          data,
+          submitData,
           filteredleadlist,
           loggeduser.role
         )
-        setFormData(data)
+        setFormData(submitData)
         setPopupMessage(validation.message)
         if (validation.message === "") {
-          const saved = await handlePopupOk(true, data)
+          const saved = await handlePopupOk(true, submitData)
           if (saved) {
             if (process === "Registration") {
               toast.success("lead created successfully")
@@ -3816,6 +3861,8 @@ console.log(matchedCustomer)
   }
 
   const handlePopupOk = async (ischek = false, leadData = null) => {
+    console.log(formData)
+    console.log(leadData)
     setPopupOpen(false)
     const filteredleadlist = selectedleadlist.filter(
       (item) => item.productorServiceId && item.productorServiceId !== ""
@@ -4016,18 +4063,17 @@ console.log(matchedCustomer)
                               setValueMain("customerName", selected.value)
                           }}
                           onChange={(sel) => {
-console.log(
-"hhh")
+                            console.log("hhh")
                             handleSelectedCustomer(sel)
-console.log("uu")
+                            console.log("uu")
                             setSelectedCustomer(sel)
-console.log("hhhhhh")
+                            console.log("hhhhhh")
                             setValueMain("customerName", sel.value, {
                               shouldValidate: true
                             })
                             setValueMain("netAmount", "")
                             setSelectedLicense(null)
-console.log("hhhh")
+                            console.log("hhhh")
                           }}
                           styles={{
                             control: (base, state) => ({
@@ -4088,7 +4134,7 @@ console.log("hhhh")
                           mobile: "",
                           source: "",
                           partner: "",
-                          allocationType: "followup",
+                          allocationType: null,
                           dueDate: "",
                           remark: "",
                           taxableAmount: "",

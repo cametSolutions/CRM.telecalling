@@ -196,7 +196,7 @@ export const LeadRegister = async (req, res) => {
       leadBy,
       leadBranch,
     } = leadData
-
+console.log("allcationtype",allocationType)
     const leadDate = new Date()
     const lastLead = await LeadId.findOne().sort({ leadId: -1 }).session(session)
 
@@ -3728,6 +3728,11 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
       allocationTask = await Task.findOne({
         taskName: "Closing"
       }).lean();
+    } else if (formData.followupType === "lost") {
+      allocationTask = await TaskfindOne({
+        taskName: "Lost"
+      })
+
     } else {
       allocationTask = await Task.findOne({
         taskName: "Followup"
@@ -4439,10 +4444,11 @@ export const UpdateLeadTask = async (req, res) => {
 export const GetrespectedleadTask = async (req, res) => {
   try {
     const { userid, branchSelected, role, ownTask } = req.query;
-
+console.log("useriid",userid)
     const userObjectId = new mongoose.Types.ObjectId(userid);
     const branchObjectId = new mongoose.Types.ObjectId(branchSelected);
     const isAdminOrManager = role === "Admin" || role === "Manager";
+console.log("isadminnn",isAdminOrManager)
     const query = {
       leadBranch: branchObjectId,
       activityLog: {
@@ -4459,6 +4465,7 @@ export const GetrespectedleadTask = async (req, res) => {
     const selectedfollowup = await LeadMaster.find(query)
       .populate({ path: "customerName", select: "customerName" })
       .lean();
+console.log("leaddddddddddd",selectedfollowup)
 
     const taskLeads = [];
     if (ownTask === "false") {
