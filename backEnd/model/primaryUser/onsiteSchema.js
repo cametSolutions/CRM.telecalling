@@ -29,12 +29,12 @@ const onsiteSchema = new Schema(
         return this.attendaneType === "Half Day" // Only required if leaveType is Half Day
       }
     },
-    
-   
+
+
     description: {
       type: String
     },
-   
+
     onsiteData: [],
     adminverified: {
       type: Boolean,
@@ -54,7 +54,8 @@ const onsiteSchema = new Schema(
       type: String,
       enum: ["Not Approved", "HR/Onsite Approved", "HR Rejected"],
       default: "Not Approved"
-    }
+    },
+    ishaveCompensatory: { type: Boolean, default: false }
   },
   { timestamps: true } // Enables createdAt and updatedAt fields)
 )

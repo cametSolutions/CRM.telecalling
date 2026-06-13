@@ -1260,19 +1260,10 @@
 //   )
 // }
 
-
-
-
-
-
-
-
-
-
 import { useState, useEffect, useRef } from "react"
 import { X, IndianRupee, ClipboardCheck, Lock } from "lucide-react"
 import { BarLoader } from "../../components/loader/BarLoader"
-
+import PopUp from "../common/PopUp"
 /* ─── helpers ─── */
 const safeNumber = (v) => {
   const n = parseFloat(v)
@@ -1584,6 +1575,8 @@ export function CollectionupdateModal({
   editData
 }) {
   const [error, setError] = useState({})
+  const [popupOpen, setpopupOpen] = useState(false)
+  console.log(popupOpen)
   const [submitLoader, setsubmitLoader] = useState(false)
   const [formData, setFormData] = useState({
     submissionDate: todayString(),
@@ -1656,7 +1649,9 @@ export function CollectionupdateModal({
       receivedModel: loggedUser?.role === "Admin" ? "Admin" : "Staff"
     }))
 
-    const history = Array.isArray(data.paymentHistory) ? data.paymentHistory : []
+    const history = Array.isArray(data.paymentHistory)
+      ? data.paymentHistory
+      : []
     const lastPayment = history.length ? history[history.length - 1] : null
     const hasPaymentEntries =
       lastPayment &&
@@ -1715,7 +1710,8 @@ export function CollectionupdateModal({
           return {
             id: crypto.randomUUID(),
             label: p.productorServiceId?.productName ?? "Product",
-            productorServiceId: p.productorServiceId?._id ?? p.productorServiceId,
+            productorServiceId:
+              p.productorServiceId?._id ?? p.productorServiceId,
             productorServicemodel: p.productorServicemodel,
             netAmount: String(net),
             receivedAmount: "",
@@ -1824,10 +1820,20 @@ export function CollectionupdateModal({
 
     setError((p) => ({ ...p, [name]: "" }))
   }
-
+  const onClose = () => {
+    setpopupOpen(false)
+  }
   const handleSubmit = async (e) => {
     e.preventDefault()
+    console.log(totalReceived)
+    console.log(totalNet)
+    console.log(paymentRows)
+    if (totalReceived < 1) {
+      setpopupOpen(true)
+      return
+    }
 
+    console.log("hhh")
     const payload = {
       leadId: data?.leadId,
       leadDocId: data?._id,
@@ -1845,7 +1851,11 @@ export function CollectionupdateModal({
       updatedBy: loggedUser?._id
     }
 
-    const res = await handleCollectionUpdate(payload, setsubmitLoader,submitLoader)
+    const res = await handleCollectionUpdate(
+      payload,
+      setsubmitLoader,
+      submitLoader
+    )
     if (res?.status === 200) closemodal(false)
   }
 
@@ -2516,6 +2526,15 @@ export function CollectionupdateModal({
             {from === "followup" ? "Continue" : "Update Collection"}
           </button>
         </div>
+        {popupOpen && (
+          <PopUp
+            isOpen={popupOpen}
+            onClose={onClose}
+            message={
+              "Amount must be a positive number greater than 0. Please do not enter empty, negative, or invalid values."
+            }
+          />
+        )}
       </div>
     </div>
   )
