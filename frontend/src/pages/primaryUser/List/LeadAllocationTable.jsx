@@ -79,6 +79,7 @@ const LeadAllocationTable = () => {
     allocationDate: "",
     allocationDescription: ""
   })
+const [filteredtasklist,setfilteredtasklist]=useState([])
   const { data: tasks } = UseFetch("/lead/getallTask")
   console.log(tasks)
   const { data: leadPendinglist, loading } = UseFetch(
@@ -98,6 +99,14 @@ const LeadAllocationTable = () => {
     setselecteduserName(userData.name)
     setLoggedUser(userData)
   }, [])
+  useEffect(() => {
+    if (tasks) {
+      console.log(tasks)
+      const filteredtask=tasks.filter((item)=>item.taskName==="Followup")
+console.log(filteredtask)
+setfilteredtasklist(filteredtask)
+    }
+  }, [tasks])
   useEffect(() => {
     if (selectedCategory) {
       console.log("jj")
@@ -119,7 +128,7 @@ const LeadAllocationTable = () => {
       console.log(targetData)
       console.log(loggedUser?._id)
       const filteredloggedUserItem = Datas.filter(
-        (item) => item.userId === loggedUser._id 
+        (item) => item.userId === loggedUser._id
       )
       console.log("hhh")
 
@@ -352,7 +361,7 @@ const LeadAllocationTable = () => {
     const filteredloggedUserItem = targetData?.userWiseResults.filter(
       (item) => item.userId === userId
     )
-console.log(filteredloggedUserItem)
+    console.log(filteredloggedUserItem)
     const filteredselectedCategory =
       filteredloggedUserItem[0].categories.filter(
         (item) => item.categoryId === category.Id
@@ -824,7 +833,7 @@ console.log(filteredloggedUserItem)
                                     <select
                                       value={selectedAllocationType?.[item._id]}
                                       onChange={(e) => {
-                                        const selectedtask = tasks.find(
+                                        const selectedtask = filteredtasklist.find(
                                           (t) => t._id === e.target.value
                                         )
                                         setselectedAllocationType((prev) => ({
@@ -845,8 +854,8 @@ console.log(filteredloggedUserItem)
                                       className="py-0.5 border border-gray-400 rounded-md focus:outline-none cursor-pointer"
                                     >
                                       <option>Select Type</option>
-                                      {tasks &&
-                                        tasks.map((task) => (
+                                      {filteredtasklist &&
+                                        filteredtasklist.map((task) => (
                                           <option
                                             key={task._id}
                                             value={task._id}

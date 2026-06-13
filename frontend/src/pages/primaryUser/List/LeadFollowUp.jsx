@@ -159,6 +159,7 @@ console.log(safeState?.staffId)
   const [showFullEmail, setShowFullEmail] = useState(false)
   const [selectedLead, setselectedLead] = useState([])
   const dropdownRef = useRef(null)
+const [taskList,settaskList]=useState([])
   const [tableData, setTableData] = useState([])
   const [activeUserId, setActiveUserId] = useState(null)
   // NEW: Track if payment was updated in current session
@@ -183,7 +184,7 @@ console.log(checkedownfollowup)
     selectedTypeName: "",
     demoassignedDate: ""
   })
-
+console.log(demoData)
   const { data: tasks } = UseFetch(`/lead/getallTask?removefollowup=true`)
   console.log(tasks)
   const { data: partners } = UseFetch("/customer/getallpartners")
@@ -227,6 +228,17 @@ console.log(checkedownfollowup)
     }
   })
   console.log(dates)
+console.log(tasks)
+useEffect(()=>{
+if(tasks){
+
+const updatedTasks = tasks.map(task => ({
+  ...task,
+  taskName: task.taskName.toUpperCase()
+}));
+console.log(updatedTasks)
+settaskList(updatedTasks)
+}},[tasks])
   useEffect(() => {
     if (!productwiseResponse?.followupLeads) return
 
@@ -2487,7 +2499,7 @@ console.log(neverfollowupedLeads)
       setLoader(false)
     }
   }
-
+console.log(formData)
   const handleFollowUpDateSubmit = async () => {
     console.log(formData)
     console.log(collectionupdatedata)
@@ -2575,10 +2587,12 @@ console.log(neverfollowupedLeads)
         null
       : null
     if (ishaveAllocation) {
+console.log(ishaveAllocation)
+console.log(taskList)
       setdemoEditIndex(Item.activityLog.length - 1)
       setDemodata({
         selectedType: ishaveAllocation?.taskId?._id,
-        selectedTypeName: ishaveAllocation?.taskTo,
+        selectedTypeName: ishaveAllocation?.taskTo.toUpperCase(),
         demoallocatedTo: ishaveAllocation?.taskallocatedTo?._id,
         demoallocatedDate: ishaveAllocation?.allocationDate
           .toString()
@@ -3383,8 +3397,8 @@ console.log(neverfollowupedLeads)
                             className="w-full px-4 py-1.5 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                           >
                             <option>Select Type</option>
-                            {tasks &&
-                              tasks.map((task) => (
+                            {taskList &&
+                              taskList.map((task) => (
                                 <option
                                   key={task._id}
                                   value={`${task._id}||${task.taskName}`}

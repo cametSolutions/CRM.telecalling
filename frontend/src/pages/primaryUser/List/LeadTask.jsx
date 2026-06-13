@@ -39,6 +39,7 @@ const LeadTask = () => {
   const [netTotalAmount, setnetTotalAmount] = useState(0)
   const [pending, setPending] = useState(true)
   const [ownTask, setownTask] = useState(true)
+console.log(ownTask)
   const navigate = useNavigate()
   const [activeUserId, setActiveUserId] = useState(null)
   const [loggedUserBranches, setloggedUserBranches] = useState(null)
@@ -421,7 +422,7 @@ const LeadTask = () => {
           setselectedPeriod={setselectedPeriod}
         />
         <div className="flex flex-1 flex-col overflow-hidden">
-          <header className="flex items-center justify-between bg-[#ADD8E6]">
+          <header className="flex items-center justify-between">
             {loggedUser?.role?.toLowerCase() === "admin" ? (
               <AdminHeader hide={true} />
             ) : (
