@@ -54,6 +54,7 @@ export default function CollectionUpdate() {
   const [collectionupdateModal, setcollectionUpdateModal] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [selectedData, setselectedData] = useState(null)
+
   console.log(selectedData)
   const [selectedLeadId, setselectedLeadId] = useState(null)
   console.log(selectedLeadId)
