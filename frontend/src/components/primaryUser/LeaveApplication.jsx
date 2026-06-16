@@ -1056,19 +1056,8 @@ console.log(formData)
 console.log(
 "GGGGGGGGGggggggggggggggggggggggggg")
           setMessage({ top: "", bottom: "" })
-          const response = await fetch(
-            `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify(formData),
-              credentials: "include"
-            }
-          )
           // const response = await fetch(
-          //   `https://www.crm.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+          //   `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
           //   {
           //     method: "POST",
           //     headers: {
@@ -1078,6 +1067,17 @@ console.log(
           //     credentials: "include"
           //   }
           // )
+          const response = await fetch(
+            `https://www.crm.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify(formData),
+              credentials: "include"
+            }
+          )
 
           const responseData = await response.json()
 
@@ -1194,14 +1194,14 @@ console.log(
         setMessage({ top: "", bottom: "" })
         setLoader(true)
 
-        const response = await api.post(
-          `http://localhost:9000/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
-          { formData, tableRows }
-        )
         // const response = await api.post(
-        //   `https://www.crm.camet.in/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
+        //   `http://localhost:9000/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
         //   { formData, tableRows }
         // )
+        const response = await api.post(
+          `https://www.crm.camet.in/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
+          { formData, tableRows }
+        )
 
         if (response.status === 200) {
           setcompensatoryLeave(false)
@@ -1268,14 +1268,14 @@ console.log("hh")
           assignedto: user?.assignedto
         }
 
-        const response = await api.post(
-          "http://localhost:9000/api/auth/misspunchRegister",
-          misspunchPayload
-        )
         // const response = await api.post(
-        //   "https://www.crm.camet.in/api/auth/misspunchRegister",
+        //   "http://localhost:9000/api/auth/misspunchRegister",
         //   misspunchPayload
         // )
+        const response = await api.post(
+          "https://www.crm.camet.in/api/auth/misspunchRegister",
+          misspunchPayload
+        )
 
         if (response.status === 201 || response.status === 200) {
           toast.success("Misspunch registered")
