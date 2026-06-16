@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react"
 import { toast } from "react-toastify"
 import dayjs from "dayjs"
@@ -32,7 +31,7 @@ import {
 function LeaveApplication() {
   const [events, setEvents] = useState([])
   const [edit, setEdit] = useState(null)
- const [activeUserId, setActiveUserId] = useState(null)
+  const [activeUserId, setActiveUserId] = useState(null)
 
   const [showTypeSelector, setShowTypeSelector] = useState(false)
   const [selectedType, setSelectedType] = useState("")
@@ -51,7 +50,7 @@ function LeaveApplication() {
   const [allleaves, setAllleaves] = useState([])
   const [allOnsites, setAllOnsite] = useState([])
   const [errors, setErrors] = useState({})
-console.log(errors)
+  console.log(errors)
   const [MonthData, setMonthData] = useState({})
   const [currentMonthData, setcurrentMonthData] = useState({})
   const [currentMonth, setCurrentMonth] = useState(null)
@@ -63,7 +62,7 @@ console.log(errors)
   const [selectedUserName, setselecteduserName] = useState(null)
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
-const now=new Date()
+  const now = new Date()
   const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   const [periodMode, setperiodMode] = useState("all")
   const [targetData, settargetData] = useState([])
@@ -103,6 +102,7 @@ const now=new Date()
   const [clickedDate, setclickedDate] = useState(null)
   const [currentmonthleaveData, setcurrentmonthLeaveData] = useState([])
   const [currentmonthonsiteData, setcurrentmonthOnsiteData] = useState([])
+console.log(currentmonthonsiteData)
   const [currentmonthmisspunchData, setcurrentmonthMisspunchData] = useState([])
 
   console.log("hhh")
@@ -181,7 +181,7 @@ const now=new Date()
       setproductList(filteredList)
       console.log("J")
       console.log(targetData)
-     
+
       console.log("hhh")
 
       console.log(Datas)
@@ -190,7 +190,7 @@ const now=new Date()
       const filteredselectedCategory = Datas.flatMap(
         (user) => user.categories || []
       ).filter((item) => item.categoryId === selectedCategory?.Id)
-console.log(filteredselectedCategory)
+      console.log(filteredselectedCategory)
       console.log("Hh")
       const summary = filteredselectedCategory.reduce(
         (acc, cur) => {
@@ -205,8 +205,8 @@ console.log(filteredselectedCategory)
       setselectedDataPopup(summary)
       console.log(filteredselectedCategory && filteredselectedCategory.length)
       if (filteredselectedCategory && filteredselectedCategory.length) {
-console.log("hh")
-console.log(filteredselectedCategory)
+        console.log("hh")
+        console.log(filteredselectedCategory)
         setacheivedProducts((prev) => [
           ...prev,
           ...filteredselectedCategory.flatMap((item) =>
@@ -240,18 +240,22 @@ console.log(filteredselectedCategory)
 
   useEffect(() => {
     if (allOnsites && allOnsites.length > 0) {
+console.log(allOnsites)
       const filteredcurrentmonthlyOnsites = allOnsites?.filter((onsite) => {
         const onsiteMonth = onsite.onsiteDate.split("T")[0].slice(0, 7)
         return onsiteMonth === currentMonth
       })
+console.log(allOnsites.length)
+console.log(filteredcurrentmonthlyOnsites)
       console.log("hh")
       setcurrentmonthOnsiteData(filteredcurrentmonthlyOnsites || [])
     } else {
+console.log(currentmonthonsiteData)
       console.log("H")
       setcurrentmonthOnsiteData([])
     }
   }, [allOnsites, currentMonth])
-
+console.log(allOnsites?.length)
   useEffect(() => {
     if (misspunchData?.length > 0 && currentMonth) {
       const filteredCurrentMonthlyMisspunch = misspunchData.filter((item) => {
@@ -612,7 +616,7 @@ console.log(filteredselectedCategory)
     console.log("J")
     console.log(targetData)
     console.log(user?._id)
-   
+
     const filteredselectedCategory = Datas.flatMap(
       (user) => user.categories || []
     ).filter((item) => item.categoryId === id)
@@ -645,7 +649,7 @@ console.log(filteredselectedCategory)
     setOpenModal(true)
   }
   const handleSelectedUser = (category, userId, userName) => {
-setActiveUserId(userId)
+    setActiveUserId(userId)
     setselecteduserName(userName)
     setselectedCategory({
       Id: category.Id,
@@ -676,7 +680,7 @@ setActiveUserId(userId)
       //     amount: product.achieved
       //   })) || []
       // )
- setacheivedProducts(
+      setacheivedProducts(
         filteredselectedCategory.flatMap((item) =>
           (item.products || []).map((product) => ({
             productname: product.name,
@@ -691,28 +695,31 @@ setActiveUserId(userId)
   const handledelete = async (data) => {
     try {
       setLoader(true)
+      console.log(data)
       const payload = {
-        ...(data.leaveType
+        ...(data.onsite
           ? {
+              docId: data?.onsiteId,
+              onsiteType: data.onsiteType,
+              description: data.description,
+              onsiteDate: data.onsiteDate
+            }
+          : {
               leaveType: data.leaveType,
               reason: data.reason,
               leaveDate: data.leaveDate,
               leaveCategory: data.leaveCategory,
               prevCategory: formData.prevCategory
-            }
-          : {
-              docId: data?.onsiteId,
-              onsiteType: data.onsiteType,
-              description: data.description,
-              onsiteDate: data.onsiteDate
             })
       }
+      console.log(payload)
 
       const isLeave = "leaveType" in payload
       const isOnsitePayload = "onsiteType" in payload
       let type = ""
 
       if (isLeave) {
+console.log(isLeave)
         type = "leave"
         const response = await api.post(
           `/auth/deleteEvent?type=${type}&userid=${user._id}`,
@@ -750,6 +757,7 @@ setActiveUserId(userId)
           toast.success(response.data.message)
         }
       } else if (isOnsitePayload) {
+console.log("hhh")
         type = "onsite"
         const response = await api.post(
           `/auth/deleteEvent?type=${type}&userid=${user._id}`,
@@ -757,9 +765,20 @@ setActiveUserId(userId)
         )
         const data = response.data.data
         if (response.status === 200 || response.status === 201) {
+console.log("hhh")
           setLoader(false)
           setMessage({ top: "", bottom: "" })
           setAllOnsite(Array.isArray(data) ? data : [])
+console.log(allOnsites.length)
+console.log(data.length)
+ const filteredcurrentmonthlyOnsites = data?.filter((onsite) => {
+        const onsiteMonth = onsite.onsiteDate.split("T")[0].slice(0, 7)
+        return onsiteMonth === currentMonth
+      })
+console.log(allOnsites.length)
+console.log(filteredcurrentmonthlyOnsites)
+      console.log("hh")
+      setcurrentmonthOnsiteData(filteredcurrentmonthlyOnsites || [])
           refreshHook()
           refreshHookCompensatory()
           setTableRows([])
@@ -1000,8 +1019,9 @@ setActiveUserId(userId)
       misspunchTime: finalTime
     }))
   }
-console.log(formData)
+  console.log(formData)
   const handleSubmit = async (tab) => {
+    console.log(tab)
     try {
       if (tab === "New Leave" || tab === "Edit Leave") {
         const dayOfWeek = new Date(formData.leaveDate).getDay()
@@ -1053,8 +1073,7 @@ console.log(formData)
           }))
           return false
         } else {
-console.log(
-"GGGGGGGGGggggggggggggggggggggggggg")
+          console.log("GGGGGGGGGggggggggggggggggggggggggg")
           setMessage({ top: "", bottom: "" })
           // const response = await fetch(
           //   `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
@@ -1242,7 +1261,7 @@ console.log(
           return false
         }
       } else if (tab === "New Mispunch") {
-console.log("hhh")
+        console.log("hhh")
         let newErrors = {}
         if (!formData.misspunchDate)
           newErrors.misspunchDate = "Misspunch date is required"
@@ -1251,11 +1270,11 @@ console.log("hhh")
         if (!formData.remark) newErrors.remark = "Remark is required"
 
         if (Object.keys(newErrors).length > 0) {
-console.log("hhh")
+          console.log("hhh")
           setErrors(newErrors)
           return false
         }
-console.log("hh")
+        console.log("hh")
         setLoader(true)
 
         const misspunchPayload = {
@@ -1358,7 +1377,7 @@ console.log("hh")
   }
 
   const handleSubmitAndReset = async (tabName) => {
-console.log("hhh")
+    console.log("hhh")
     const success = await handleSubmit(tabName)
     if (success && tabName !== "New Mispunch") {
       resetApplicationFlow()
@@ -2575,103 +2594,103 @@ console.log("hhh")
               </div>
             ))}
           </div> */}
-<div className="mx-4 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50/80 p-3 shadow-sm">
-  <div className="space-y-3">
-    {visibleDays.map((date, index) => {
-      const dayLeaves =
-        currentmonthleaveData?.filter(
-          (leave) =>
-            new Date(leave.leaveDate).toISOString().split("T")[0] ===
-            date.fullDate
-        ) || []
+          <div className="mx-4 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50/80 p-3 shadow-sm">
+            <div className="space-y-3">
+              {visibleDays.map((date, index) => {
+                const dayLeaves =
+                  currentmonthleaveData?.filter(
+                    (leave) =>
+                      new Date(leave.leaveDate).toISOString().split("T")[0] ===
+                      date.fullDate
+                  ) || []
 
-      return (
-        <div
-          key={index}
-          onClick={() => {
-            setSelectedDate(date)
-            setSelectedType("")
-            setShowTypeSelector(true)
-          }}
-          className="group cursor-pointer rounded-2xl border border-slate-200 bg-white p-2 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
-        >
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex min-w-0 items-center gap-4">
-              <div className="flex  shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-center text-sm font-bold text-white shadow-sm sm:h-8 sm:w-32 sm:text-base">
-                {date.fullMonthDay}
-              </div>
+                return (
+                  <div
+                    key={index}
+                    onClick={() => {
+                      setSelectedDate(date)
+                      setSelectedType("")
+                      setShowTypeSelector(true)
+                    }}
+                    className="group cursor-pointer rounded-2xl border border-slate-200 bg-white p-2 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+                  >
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                      <div className="flex min-w-0 items-center gap-4">
+                        <div className="flex  shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-center text-sm font-bold text-white shadow-sm sm:h-8 sm:w-32 sm:text-base">
+                          {date.fullMonthDay}
+                        </div>
 
-              <div className="min-w-0">
-                <div className="text-base font-semibold text-slate-900 sm:text-lg">
-                  {new Date(date.fullDate).toLocaleString("default", {
-                    weekday: "long"
-                  })}
-                </div>
-                {/* <div className="mt-1 text-sm text-slate-500">
+                        <div className="min-w-0">
+                          <div className="text-base font-semibold text-slate-900 sm:text-lg">
+                            {new Date(date.fullDate).toLocaleString("default", {
+                              weekday: "long"
+                            })}
+                          </div>
+                          {/* <div className="mt-1 text-sm text-slate-500">
                   {new Date(date.fullDate).toLocaleDateString("en-IN", {
                     day: "2-digit",
                     month: "long",
                     year: "numeric"
                   })}
                 </div> */}
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2 md:min-w-[280px] md:items-end">
-              {dayLeaves.length > 0 ? (
-                dayLeaves.map((leave, i) => {
-                  const isApproved =
-                    leave.departmentstatus === "Dept Approved" ||
-                    leave.hrstatus === "HR/Onsite Approved"
-
-                  const isPending =
-                    leave.departmentstatus === "Not Approved" &&
-                    leave.hrstatus === "Not Approved"
-
-                  return (
-                    <div
-                      key={i}
-                      className="flex w-full flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
-                    >
-                      <div className="min-w-0">
-                        <div className="text-sm font-medium text-slate-700">
-                          {leave?.leaveType}
-                        </div>
-                        <div className="truncate text-sm font-semibold text-slate-900">
-                          {leave?.leaveCategory}
                         </div>
                       </div>
 
-                      <span
-                        className={`inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${
-                          isApproved
-                            ? "bg-emerald-100 text-emerald-700"
-                            : isPending
-                              ? "bg-amber-100 text-amber-700"
-                              : "bg-rose-100 text-rose-700"
-                        }`}
-                      >
-                        {isApproved
-                          ? "Approved"
-                          : isPending
-                            ? "Pending"
-                            : "Rejected"}
-                      </span>
+                      <div className="flex flex-col gap-2 md:min-w-[280px] md:items-end">
+                        {dayLeaves.length > 0 ? (
+                          dayLeaves.map((leave, i) => {
+                            const isApproved =
+                              leave.departmentstatus === "Dept Approved" ||
+                              leave.hrstatus === "HR/Onsite Approved"
+
+                            const isPending =
+                              leave.departmentstatus === "Not Approved" &&
+                              leave.hrstatus === "Not Approved"
+
+                            return (
+                              <div
+                                key={i}
+                                className="flex w-full flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+                              >
+                                <div className="min-w-0">
+                                  <div className="text-sm font-medium text-slate-700">
+                                    {leave?.leaveType}
+                                  </div>
+                                  <div className="truncate text-sm font-semibold text-slate-900">
+                                    {leave?.leaveCategory}
+                                  </div>
+                                </div>
+
+                                <span
+                                  className={`inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${
+                                    isApproved
+                                      ? "bg-emerald-100 text-emerald-700"
+                                      : isPending
+                                        ? "bg-amber-100 text-amber-700"
+                                        : "bg-rose-100 text-rose-700"
+                                  }`}
+                                >
+                                  {isApproved
+                                    ? "Approved"
+                                    : isPending
+                                      ? "Pending"
+                                      : "Rejected"}
+                                </span>
+                              </div>
+                            )
+                          })
+                        ) : (
+                          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-400 md:text-right">
+                            No leave applied
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  )
-                })
-              ) : (
-                <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-400 md:text-right">
-                  No leave applied
-                </div>
-              )}
+                  </div>
+                )
+              })}
             </div>
           </div>
-        </div>
-      )
-    })}
-  </div>
-</div>
         </div>
 
         {showTypeSelector && (
@@ -2907,20 +2926,20 @@ console.log("hhh")
             setacheivedProducts([])
             setselectedDataPopup([])
             setperiodMode(val)
-  setselecteduserName(null)
+            setselecteduserName(null)
           }}
           onYearChange={(val) => {
             setacheivedProducts([])
             setselectedDataPopup([])
             setSelectedYear(val)
-  setselecteduserName(null)
+            setselecteduserName(null)
           }}
           productlist={productlist}
           onClose={() => {
             setselecteduserName(null)
             setacheivedProducts([])
             setOpenModal(false)
- setActiveUserId(null)
+            setActiveUserId(null)
           }}
           selectedMonth={periodMode}
           selectedYear={selectedYear}
@@ -2938,7 +2957,7 @@ console.log("hhh")
           selectedUser={selectedUserName}
           category={selectedCategory}
           handleSelectedUser={handleSelectedUser}
- activeUserId={activeUserId}
+          activeUserId={activeUserId}
         />
       </div>
     </div>
