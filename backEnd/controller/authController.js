@@ -16013,6 +16013,7 @@ export const DeleteEvent = async (req, res) => {
           .json({ message: "Leaves Deleted Successfully", data: leaves })
       }
     } else if (type === "onsite") {
+console.log("hhhhhh")
       const onsiteRequest = await Onsite.findOne({
         _id: new mongoose.Types.ObjectId(payload?.docId),
         userId: objectId,
@@ -16066,11 +16067,9 @@ export const DeleteEvent = async (req, res) => {
             data: []
           })
         }
-
+console.log("dleterafeteer",onsites.length)
         // Send the leave records as a JSON response
-        res
-          .status(200)
-          .json({ message: "Onsite Deleted Successfully", data: onsites })
+        return res.status(200).json({ message: "Onsite Deleted Successfully", data: onsites })
       }
     }
   } catch (error) {
