@@ -4,9 +4,12 @@ const productSchema = new mongoose.Schema({
   productName: { type: String, required: true },
   productPrice: { type: Number },
   description: { type: String },
-productorservicetype:{type:String,required:true},
+  productorservicetype: { type: String, required: true },
+  defaultservices: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
+  serviceid: [{ type: mongoose.Schema.Types.ObjectId, ref: "Service" }],
+
   selected: [{
-    hsn_id: { type: mongoose.Schema.Types.ObjectId, ref: "Hsn",set: v => (v === "" ? undefined : v)},
+    hsn_id: { type: mongoose.Schema.Types.ObjectId, ref: "Hsn", set: v => (v === "" ? undefined : v) },
     hsnName: { type: String },
     company_id: { type: String },
     companyName: { type: String },
@@ -14,9 +17,9 @@ productorservicetype:{type:String,required:true},
       type: String
     },
     branchName: { type: String },
-    brand_id: { type: mongoose.Schema.ObjectId, ref: "Brand",set: v => (v === "" ? undefined : v)},
+    brand_id: { type: mongoose.Schema.ObjectId, ref: "Brand", set: v => (v === "" ? undefined : v) },
     brandName: { type: String },
-    category_id: { type: mongoose.Schema.ObjectId, ref: "Category",set: v => (v === "" ? undefined : v)},
+    category_id: { type: mongoose.Schema.ObjectId, ref: "Category", set: v => (v === "" ? undefined : v) },
     categoryName: { type: String },
   }],
   GSTIN: String

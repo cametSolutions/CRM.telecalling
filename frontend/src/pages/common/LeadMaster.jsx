@@ -2618,6 +2618,7 @@ function LicenseDropdown({
   setSelectedLeadList,
   handleLicenseSelect
 }) {
+  console.log(item)
   const emptyRow = {
     licenseNumber: "",
     productorServiceId: "",
@@ -2632,13 +2633,12 @@ function LicenseDropdown({
   const inputRef = useRef(null)
 
   useEffect(() => {
-console.log(
-"jj")
+    console.log("jj")
     setSearch(String(item.licenseNumber ?? ""))
   }, [item.licenseNumber])
 
   useEffect(() => {
-console.log("hhh")
+    console.log("hhh")
     const handler = (e) => {
       const portals = document.querySelectorAll("[data-lead-portal]")
       const inPortal = Array.from(portals).some((p) => p.contains(e.target))
@@ -2667,8 +2667,9 @@ console.log("hhh")
 
     return license.includes(q) || product.includes(q)
   })
-
+  console.log(filtered)
   const applySelection = (lic) => {
+    console.log(lic)
     const base = selectedleadlist?.length ? selectedleadlist : [{ ...emptyRow }]
     const updated = [...base]
 
@@ -2710,7 +2711,7 @@ console.log("hhh")
     applySelection(null)
     setOpen(false)
   }
-
+  console.log(search)
   return (
     <div className="relative w-full">
       <input
@@ -2790,8 +2791,10 @@ function ProductDropdown({
   leadList,
   selectedleadlist,
   setSelectedLeadList,
-  selectedBranch
+  selectedBranch,
+  selectedCustomer
 }) {
+  console.log(leadList)
   const emptyRow = {
     licenseNumber: "",
     productorServiceId: "",
@@ -2804,14 +2807,14 @@ function ProductDropdown({
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState(item.productorServiceName || "")
   const inputRef = useRef(null)
-
+  const [selectionMessage, setselectionMessage] = useState({})
   useEffect(() => {
-console.log("hhh")
+    console.log("hhh")
     setSearch(item.productorServiceName || "")
   }, [item.productorServiceName])
 
   useEffect(() => {
-console.log("jjj")
+    console.log("jjj")
     const handler = (e) => {
       const portals = document.querySelectorAll("[data-lead-portal]")
       const inPortal = Array.from(portals).some((p) => p.contains(e.target))
@@ -2825,22 +2828,97 @@ console.log("jjj")
 
   const filtered = (leadList || []).filter((prod) => {
     if (!search) return true
+    console.log(search)
+    console.log(!search)
+    console.log("Hhhh")
     const q = search.toLowerCase()
     const name =
       prod.productName?.toLowerCase() || prod.serviceName?.toLowerCase() || ""
     return name.includes(q)
   })
+  console.log(filtered)
+  console.log(selectedleadlist)
+  // const applySelection = (prod) => {
+  //   const base = selectedleadlist?.length
+  //     ? [...selectedleadlist]
+  //     : [{ ...emptyRow }]
+  //   console.log(selectedleadlist)
+  //   console.log(base)
+  //   console.log("hhhhhh")
+  //   const updated = [...base]
+  //   console.log(updated)
+  //   console.log(selectedBranch)
+  //   const filteredbranch = prod?.selected?.filter(
+  //     (item) => item.branch_id === selectedBranch
+  //   )
+  //   console.log(filteredbranch)
+  //   const igstRate = filteredbranch?.[0]?.hsn_id?.onValue?.igstRate
 
+  //   if (!prod) {
+  //     updated[index] = {
+  //       ...updated[index],
+  //       productorServiceId: "",
+  //       productorServiceName: "",
+  //       productPrice: "",
+  //       hsn: "",
+  //       netAmount: ""
+  //     }
+  //     setSearch("")
+  //   } else {
+  //     const price = Number(prod?.productPrice || 0)
+  //     const igst = Number(igstRate || 0)
+  //     console.log(igst)
+  //     const rawNet = price + (igst / 100) * price
+  //     const netAmount = Math.round(rawNet)
+
+  //     updated[index] = {
+  //       ...updated[index],
+  //       productorServiceId: prod._id,
+  //       productorServiceName: prod.productName || prod.serviceName,
+  //       itemType: prod.productName ? "Product" : "Service",
+  //       productPrice: prod.productPrice,
+  //       hsn: igstRate,
+  //       netAmount
+  //     }
+  //     setSearch(prod.productName || prod.serviceName || "")
+  //   }
+  //   console.log(updated)
+  //   setSelectedLeadList(updated)
+  // }
   const applySelection = (prod) => {
+    if (
+      selectedCustomer === null ||
+      selectedCustomer === undefined ||
+      selectedCustomer === ""
+    ) {
+console.log("jjj")
+      setselectionMessage({
+        productmessage: "Please select the customer first"
+      })
+console.log("hhh")
+  // Clear the message after 3 seconds (3000ms)
+  setTimeout(() => {
+    setselectionMessage({ productmessage: "" })
+  }, 3000)
+return 
+    }
+console.log("hhh")
+
     const base = selectedleadlist?.length
       ? [...selectedleadlist]
       : [{ ...emptyRow }]
-    const updated = [...base]
-    console.log(selectedBranch)
+
+    let updated = [...base]
+
+    // Remove any previously auto-added default services
+    updated = updated.filter(
+      (row, idx) => idx === index || !row?.isDefaultService
+    )
+
     const filteredbranch = prod?.selected?.filter(
       (item) => item.branch_id === selectedBranch
     )
-    console.log(filteredbranch)
+
     const igstRate = filteredbranch?.[0]?.hsn_id?.onValue?.igstRate
 
     if (!prod) {
@@ -2848,34 +2926,55 @@ console.log("jjj")
         ...updated[index],
         productorServiceId: "",
         productorServiceName: "",
+        itemType: "",
         productPrice: "",
         hsn: "",
         netAmount: ""
       }
-      setSearch("")
-    } else {
-      const price = Number(prod?.productPrice || 0)
-      const igst = Number(igstRate || 0)
-      console.log(igst)
-      const rawNet = price + (igst / 100) * price
-      const netAmount = Math.round(rawNet)
 
-      updated[index] = {
-        ...updated[index],
-        productorServiceId: prod._id,
-        productorServiceName: prod.productName || prod.serviceName,
-        itemType: prod.productName ? "Product" : "Service",
-        productPrice: prod.productPrice,
-        hsn: igstRate,
-        netAmount
-      }
-      setSearch(prod.productName || prod.serviceName || "")
+      setSearch("")
+      setSelectedLeadList(updated)
+      return
     }
-    console.log(updated)
+
+    const price = Number(prod?.productPrice || 0)
+    const igst = Number(igstRate || 0)
+    const rawNet = price + (igst / 100) * price
+    const netAmount = Math.round(rawNet)
+
+    // Main selected product
+    updated[index] = {
+      ...updated[index],
+      productorServiceId: prod._id,
+      productorServiceName: prod.productName || prod.serviceName,
+      itemType: prod.productName ? "Product" : "Service",
+      productPrice: prod.productPrice || 0,
+      hsn: igstRate || 0,
+      netAmount
+    }
+
+    // Add default services immediately after selected product
+    if (prod?.defaultservices?.length > 0) {
+      const defaultServiceRows = prod.defaultservices.map((service) => ({
+        ...emptyRow,
+        productorServiceId: service._id,
+        productorServiceName: service.productName,
+        itemType: "Service",
+        productPrice: 0,
+        hsn: 0,
+        netAmount: 0,
+        isDefaultService: true
+      }))
+
+      updated.splice(index + 1, 0, ...defaultServiceRows)
+    }
+
+    setSearch(prod.productName || prod.serviceName || "")
     setSelectedLeadList(updated)
   }
 
   const handleInputChange = (e) => {
+    console.log(e)
     const value = e.target.value
     setSearch(value)
     setOpen(true)
@@ -2906,6 +3005,8 @@ console.log("jjj")
           isReadOnly ? "cursor-not-allowed opacity-70" : "cursor-text"
         }`}
       />
+{selectionMessage&&selectionMessage.productmessage&&(
+<p className="text-red-400">{selectionMessage.productmessage}</p>)}
       {search && !isReadOnly && (
         <button
           type="button"
@@ -2978,7 +3079,6 @@ const LeadMaster = ({
     control: controlMain,
     reset: resetMain,
 
-    
     clearErrors: clearMainerrors,
     formState: { errors: errorsMain }
   } = useForm()
@@ -3010,6 +3110,8 @@ const LeadMaster = ({
   const [openProductDropdown, setOpenProductDropdown] = useState(null)
   const [popupMessage, setPopupMessage] = useState("")
   const [warningMessage, setwarningMessage] = useState("")
+
+  console.log(warningMessage)
   const [ispopupModalOpen, setIspopupModalOpen] = useState(false)
   const [isSelfAllocationChangable, setselfAllocationChangable] = useState(true)
   const [modalloader, setModalLoader] = useState(false)
@@ -3059,6 +3161,7 @@ const LeadMaster = ({
         JSON.stringify(selectedBranch)
       )}`
   )
+  console.log(productData)
   const { data: tasks } = UseFetch("lead/getallTask")
   const { data: companybranches } = UseFetch("/branch/getBranch")
   const { data: partners } = UseFetch("/customer/getallpartners")
@@ -3093,21 +3196,21 @@ const LeadMaster = ({
     loggeduser?.department?._id === "670c867352847bbebbd35750"
 
   useEffect(() => {
-console.log("jjjj")
+    console.log("jjjj")
     setSelectedBranch(selectedcompanyBranch)
   }, [selectedcompanyBranch])
-// useEffect(() => {
-//   if (!selfAllocation) {
-//     setValueMain("allocationType", undefined);
-//     setValueMain("dueDate", undefined);
-//   }
-// }, [selfAllocation]);
-// useEffect(() => {
-//   if (!selfAllocation) {
-//     unregister("allocationType");
-//     unregister("dueDate");
-//   }
-// }, [selfAllocation, unregister]);
+  // useEffect(() => {
+  //   if (!selfAllocation) {
+  //     setValueMain("allocationType", undefined);
+  //     setValueMain("dueDate", undefined);
+  //   }
+  // }, [selfAllocation]);
+  // useEffect(() => {
+  //   if (!selfAllocation) {
+  //     unregister("allocationType");
+  //     unregister("dueDate");
+  //   }
+  // }, [selfAllocation, unregister]);
   useEffect(() => {
     if (!selectedleadlist || selectedleadlist.length === 0) {
       setSelectedLeadList([{ ...emptyRow }])
@@ -3119,14 +3222,14 @@ console.log("jjjj")
   const taxAmount = Number(watch("taxAmount") || 0)
 
   useEffect(() => {
-console.log("hhh")
+    console.log("hhh")
     const exactTotal = taxableAmount + taxAmount
     const net = +exactTotal.toFixed(2)
     setValueMain("netAmount", net, { shouldValidate: true })
   }, [taxableAmount, taxAmount, setValueMain])
 
   useEffect(() => {
-console.log("hhhh")
+    console.log("hhhh")
     const userData = localStorage.getItem("user")
     if (userData) {
       const user = JSON.parse(userData)
@@ -3141,27 +3244,27 @@ console.log("hhhh")
 
   useEffect(() => {
     if (tasks) {
-console.log("hhhh")
+      console.log("hhhh")
       settasklist(tasks.filter((item) => item.taskName === "Followup"))
     }
   }, [tasks])
 
   useEffect(() => {
-console.log("jjj")
+    console.log("jjj")
     if (showmessage) {
       setIspopupModalOpen(true)
     }
   }, [showmessage])
 
   useEffect(() => {
-console.log("jj")
+    console.log("jj")
     if (selectedBranch) {
       setValueMain("leadBranch", selectedBranch)
     }
   }, [selectedBranch])
 
   useEffect(() => {
-console.log("hhhh")
+    console.log("hhhh")
     if (
       loggeduser &&
       productData &&
@@ -3177,13 +3280,13 @@ console.log("hhhh")
         )
       )
       setPartner(filteredPartners)
-      const combinedlead = [...productData, ...serviceData]
+      const combinedlead = [...productData]
       setLeadList(combinedlead)
     }
   }, [loggeduser, branches, productData, serviceData, partners, selectedBranch])
 
   useEffect(() => {
-console.log("hhhh")
+    console.log("hhhh")
     const handleClickOutside = (event) => {
       if (
         dropdownLicenseRef.current &&
@@ -3205,7 +3308,7 @@ console.log("hhhh")
   }, [])
 
   useEffect(() => {
-console.log("hhhh")
+    console.log("hhhh")
     if (loggeduser?._id) {
       if (Data && Data.length) {
         setValueMain("leadBy", Data[0].leadBy._id)
@@ -3216,7 +3319,7 @@ console.log("hhhh")
   }, [loggeduser, setValueMain])
 
   useEffect(() => {
-console.log("hhh")
+    console.log("hhh")
     if (
       Data &&
       Data.length > 0 &&
@@ -3326,14 +3429,14 @@ console.log("hhh")
   }, [customerOptions, Data])
 
   useEffect(() => {
-console.log("hhh")
+    console.log("hhh")
     if (customerData && customerData.length > 0) {
       setallcustomer(customerData)
     }
   }, [customerData])
 
   useEffect(() => {
-console.log("hhh")
+    console.log("hhh")
     if (customerData && customerData.length && selectedBranch) {
       const options = customerData.map((item) => {
         const matchingSelected = item.selected?.find(
@@ -3354,7 +3457,7 @@ console.log("hhh")
   }, [customerData])
 
   useEffect(() => {
-console.log("hhh")
+    console.log("hhh")
     if (selectedCustomer) {
       setValueMain("mobile", selectedCustomer.mobile)
       setValueMain("phone", selectedCustomer.phone)
@@ -3363,7 +3466,7 @@ console.log("hhh")
   }, [selectedCustomer])
 
   useEffect(() => {
-console.log("hhh")
+    console.log("hhh")
     if (alluser) {
       const { allusers = [], allAdmins = [] } = alluser
       const combinedUsers = [...allusers, ...allAdmins]
@@ -3372,14 +3475,14 @@ console.log("hhh")
   }, [alluser])
 
   useEffect(() => {
-console.log("hhh")
+    console.log("hhh")
     setValueMain("netAmount", calculateTotalAmount())
     setValueMain("taxAmount", calculatetaxAmount())
     setValueMain("taxableAmount", calculatetaxableAmount())
   }, [selectedleadlist])
 
   useEffect(() => {
-console.log("hhh")
+    console.log("hhh")
     if (!selectedLicense && leadList && leadList.length > 0 && !Data) {
       const initialProductListwithoutlicense = leadList?.map((product) => ({
         ...product,
@@ -3417,7 +3520,7 @@ console.log("hhh")
   )
 
   useEffect(() => {
-console.log("hhh")
+    console.log("hhh")
     if (defaultCountry) {
       setSelectedCountry(defaultCountry)
       setValueModal("country", defaultCountry.value)
@@ -3425,13 +3528,13 @@ console.log("hhh")
   }, [defaultCountry])
 
   useEffect(() => {
-console.log("hhh")
+    console.log("hhh")
     const currentState = getValuesModal("state")
-  console.log("defaultState:", defaultState);
-  console.log("currentState:", currentState);
-  console.log("condition:", defaultState && !currentState);
+    console.log("defaultState:", defaultState)
+    console.log("currentState:", currentState)
+    console.log("condition:", defaultState && !currentState)
     if (defaultState && !currentState) {
-console.log("jjjj")
+      console.log("jjjj")
       setSelectedState(defaultState)
       setValueModal("state", defaultState.value)
     }
@@ -3564,7 +3667,7 @@ console.log("jjjj")
         index === 0
           ? {
               ...row,
-              licenseNumber: customerLicense || ""
+              licenseNumber: ""
             }
           : row
       )
@@ -3787,12 +3890,12 @@ console.log("jjjj")
     if (submitLoading) return
     setsubmitLoading(true)
     if (submitLoading) return
-const submitData = { ...data };
+    const submitData = { ...data }
 
-if (!selfAllocation) {
-  delete submitData.allocationType;
-  delete submitData.dueDate;
-}
+    if (!selfAllocation) {
+      delete submitData.allocationType
+      delete submitData.dueDate
+    }
     try {
       if (hasDuplicateLeadRows(selectedleadlist)) {
         setValidateError((prev) => ({
@@ -3977,7 +4080,8 @@ if (!selfAllocation) {
   }
 
   const tableRows = selectedleadlist || []
-
+  console.log(tableRows)
+  console.log(selectedCustomer)
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#ADD8E6]">
       {(modalloader ||
@@ -4400,6 +4504,7 @@ if (!selfAllocation) {
                               leadList={leadList}
                               selectedleadlist={selectedleadlist}
                               selectedBranch={selectedBranch}
+                              selectedCustomer={selectedCustomer}
                               setSelectedLeadList={setSelectedLeadList}
                             />
                           </td>

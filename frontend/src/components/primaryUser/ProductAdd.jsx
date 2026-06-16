@@ -13,16 +13,17 @@ const ProductAdd = ({
   index,
   item
 }) => {
-console.log(product)
+  console.log(product)
   const {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors }
   } = useForm()
 
   const [selectedCompany, setSelectedCompany] = useState(null)
-console.log(selectedCompany)
+  console.log(selectedCompany)
   const [selectedBranch, setSelectedBranch] = useState(false)
   const [editObject, setEditObject] = useState({
     brands: {},
@@ -30,13 +31,15 @@ console.log(selectedCompany)
     hsn: {}
     // products: [],
   })
-const [selectedcompanyBranch,setselectedCompanyBranch]=useState(null)
+  const [selectedcompanyBranch, setselectedCompanyBranch] = useState(null)
   const [showTable, setShowTable] = useState(false)
   const [tableData, setTableData] = useState([])
-console.log(tableData)
+  console.log(tableData)
   // State to toggle the table
   const [editState, seteditState] = useState(true)
-
+  const [showServices, setShowServices] = useState(false)
+  const [servicelist, setservicelist] = useState([])
+  console.log(servicelist)
   const [data, setData] = useState({
     companies: [],
     brands: [],
@@ -64,14 +67,37 @@ console.log(tableData)
   const { data: brandData, error: brandError } = UseFetch(
     `/inventory/getproductsubDetails?tab=brand`
   )
-const {data:services}=UseFetch(selectedCompany&&selectedcompanyBranch&&`/product/getselectedbranchallServices?cmp_id=${selectedCompany}&branch_id=${selectedcompanyBranch}`)
-console.log(services)
-console.log(selectedcompanyBranch)
-console.log(selectedCompany)
+  const { data: services } = UseFetch(
+    selectedCompany &&
+      selectedcompanyBranch &&
+      `/product/getselectedbranchallServices?cmp_id=${selectedCompany}&branch_id=${selectedcompanyBranch}`
+  )
+  console.log(selectedCompany)
+  console.log(selectedcompanyBranch)
+  console.log(services)
+  console.log(selectedcompanyBranch)
+  console.log(selectedCompany)
   const { data: categoryData, error: categoryError } = UseFetch(
     `/inventory/getproductsubDetails?tab=category`
   )
-
+  useEffect(() => {
+    if (services && services.length) {
+      // setservicelist(
+      // servicelist.map((item)=>(prev)=>({
+      // ...prev,
+      // id:item._id,
+      // servicename:item.servicename}))
+      // })
+      console.log(services)
+      setservicelist(
+        services.map((item) => ({
+          id: item._id,
+          servicename: item.productName
+        }))
+      )
+console.log("pppp")
+    }
+  }, [services])
   useEffect(() => {
     if (selected) {
       setShowTable(true)
@@ -116,7 +142,7 @@ console.log(selectedCompany)
       //     hsnName: selected.hsnName || ""
       //   }
       // ])
-
+      console.log(selected)
       Object.keys(selected).forEach((key) => {
         if (key === "brandName") {
           setValue(key, selected?.brand_id)
@@ -129,6 +155,7 @@ console.log(selectedCompany)
           setValue(key, selected?.company_id)
         } else if (key === "branchName") {
           setValue(key, selected?.branch_id)
+          setselectedCompanyBranch(selected?.branch_id)
         }
         // Log the key if necessary
       })
@@ -190,13 +217,15 @@ console.log(selectedCompany)
       // Store the ID of the product being edited
     }
   }
+  const selectedProductType = watch("productorservicetype")
+  console.log(selectedProductType)
   const handleBranchChange = (e) => {
     const branchId = e.target.value
     const selectedBranch = filteredBranches.find(
       (branch) => branch._id === branchId
     )
-console.log(selectedBranch)
-setselectedCompanyBranch(selectedBranch?._id)
+    console.log(selectedBranch)
+    setselectedCompanyBranch(selectedBranch?._id)
     const branchName = selectedBranch.branchName
 
     setTableObject((prev) => ({
@@ -208,6 +237,17 @@ setselectedCompanyBranch(selectedBranch?._id)
     setShowTable(true)
     setValue("branch", branchId) // Update the value in react-hook-form
   }
+
+  // const servicelist = [
+  //   {
+  //     _id: "1",
+  //     serviceName: "Tally Software Support Services"
+  //   },
+  //   {
+  //     _id: "2",
+  //     serviceName: "Tally Software Services - Auditor"
+  //   }
+  // ]
   const handleTableData = (e) => {
     e.preventDefault()
     if (tableObject.product_id === "") {
@@ -573,31 +613,106 @@ setselectedCompanyBranch(selectedBranch?._id)
                 htmlFor="productorservicetype"
                 className="block text-sm font-medium text-gray-700 "
               >
-                Product / Service Type
+                Product Type
               </label>
 
               <select
-                id="branchName"
-                {...register("productorservicetype",{ required: true })}
+                id="productorservicetype"
+                {...register("productorservicetype", { required: true })}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none cursor-pointer"
               >
-                <option value="Primary">Primary</option>
-                <option value="Additional">Additional</option>
+                <option value="">select product Type</option>
+                <option value="Primaryproduct">Primary Product</option>
+                <option value="Additionalservice">Additional Service</option>
               </select>
             </div>
-            {selectedBranch && (
-              <div className="mt-6">
-                <button
-                  type="button"
-                  // onClick={handleTableData}
-                  onClick={(event) => handleTableData(event)}
-                  className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+            {/* <div className="">
+              <label
+                htmlFor="defaultservices"
+                className="block text-sm font-medium text-gray-700 "
+              >
+                Default Services
+              </label>
+
+              <select
+                id="defaultservices"
+                {...register("defaultservices", { required: true })}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none cursor-pointer"
+              >
+                <option value="">select services</option>
+                <option value="Primaryproduct">
+                  Tally software support services
+                </option>
+                <option value="Additionalservice">
+                  Tally software Services-auditor
+                </option>
+              </select>
+            </div> */}
+            {/* {selectedProductType === "Primaryproduct" && (
+              <div className="mt-3">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Default Services
+                </label>
+
+                <div className="space-y-2">
+                  {servicelist.map((service) => (
+                    <label key={service} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        value={service}
+                        {...register("defaultservices")}
+                      />
+                      {service}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )} */}
+            {selectedProductType === "Primaryproduct" && (
+              <div className="mt-3 relative">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Default Services
+                </label>
+
+                <div
+                  onClick={() => setShowServices((prev) => !prev)}
+                  className="w-full border border-gray-300 rounded-md p-2 cursor-pointer bg-white"
                 >
-                  Add To Table
-                </button>
+                  Select Services
+                </div>
+
+                {showServices && (
+                  <div className="absolute z-10 mt-1 w-full border border-gray-300 rounded-md bg-white shadow-md p-3 max-h-48 overflow-y-auto">
+                    {servicelist.map((service) => (
+                      <label
+                        key={service._id}
+                        className="flex items-center gap-2 py-1"
+                      >
+                        <input
+                          type="checkbox"
+                          value={service.id}
+                          {...register("defaultservices")}
+                        />
+                        {service.servicename}
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
+          {selectedBranch && (
+            <div className="mt-6">
+              <button
+                type="button"
+                // onClick={handleTableData}
+                onClick={(event) => handleTableData(event)}
+                className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 mb-2 "
+              >
+                Add To Table
+              </button>
+            </div>
+          )}
 
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -663,7 +778,7 @@ setselectedCompanyBranch(selectedBranch?._id)
                           {product?.branchName}
                         </div>
                       </td>
- 
+
                       {/* <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-right"></td> */}
                       <td className=" py-4 whitespace-nowrap text-sm font-medium text-center">
                         {/* <button

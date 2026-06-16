@@ -22,7 +22,8 @@ export const ProductRegistration = async (req, res) => {
       productName: productData.productName,
       productPrice: productData.productPrice,
       productorservicetype: productData.productorservicetype,
-      description: productData.description
+      description: productData.description,
+      defaultservices: productData.defaultservices
     })
     await products.save()
     res.status(200).json({
@@ -59,7 +60,7 @@ export const EditProduct = async (req, res) => {
 
     existingProduct.description =
       productData.description || existingProduct.description
-
+    existingProduct.defaultservices = productData.defaultservices || [];
     // Step 3: Save the changes to the database
     await existingProduct.save()
     res.status(200).json({ message: "Product edit successfully" })
@@ -104,13 +105,24 @@ export const GetallProducts = async (req, res) => {
       if (!Array.isArray(decodedbranches)) {
         decodedbranches = [decodedbranches]; // ensure it's always an array
       }
+
+
+
+
       const products = await Product.find({
         selected: {
           $elemMatch: {
-            branch_id: { $in: decodedbranches },
-          },
-        },
+            branch_id: { $in: decodedbranches }
+          }
+        }
       })
+        .populate({
+          path: "defaultservices",
+          select: "productName "
+        });
+
+
+
       if (products && products.length) {
 
         return res.status(201).json({ message: "foound products", data: products })
@@ -130,7 +142,7 @@ export const GetallProducts = async (req, res) => {
               branch_id: { $in: decodedbranches }
             }
           }
-        }).populate({ path: "selected.hsn_id", select: "onValue" })
+        }).populate({ path: "selected.hsn_id", select: "onValue" }).populate({path:"defaultservices",select:"productName"})
 
 
       } else {
@@ -451,10 +463,22 @@ export const UpdateServices = async (req, res) => {
 }
 export const GetallselectedBranchServices = async (req, res) => {
   try {
-const {cmp_id,branch_id}=req.query
-console.log("cmpid",cmp_id)
-console.log("branchd",branch_id)
-const services=await Product({})
+    const { cmp_id, branch_id } = req.query
+    console.log("cmpid", cmp_id)
+    console.log("branchd", branch_id)
+    const services = await Product.find({
+      productorservicetype: "Additionalservice",
+      selected: {
+        $elemMatch: {
+          company_id: cmp_id,
+          branch_id: branch_id,
+        },
+      },
+    });
+    console.log("servicesss", services)
+    if (services && services.length) {
+      return res.status(200).json({ message: "service found", data: services })
+    }
   } catch (error) {
     console.log("error", error.message)
     return res.status(500).json({ message: "Internal server error" })
