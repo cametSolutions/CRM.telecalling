@@ -270,6 +270,7 @@ padding:20px;
     position: sticky;
     top: 0;
     z-index: 40;
+border-radius:20px 20px 0 0;
     flex-shrink: 0;
     box-shadow: 0 1px 0 rgba(255,255,255,.08);
   }
@@ -684,6 +685,7 @@ export default function ServicesRegistration() {
   const [selectedCompany, setSelectedCompany] = useState("")
   const [selectedBranch, setSelectedBranch] = useState("")
   const [services, setServices] = useState([])
+console.log(services)
   const [editId, setEditId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [deleteTarget, setDeleteTarget] = useState(null)

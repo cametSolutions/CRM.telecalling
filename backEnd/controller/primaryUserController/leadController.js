@@ -1227,7 +1227,7 @@ export const UpdateLeadRegister = async (req, res) => {
 };
 export const GetAllservices = async (req, res) => {
   try {
-    const allservices = await Service.find({});
+    const allservices = await Service.find({}).populate("company").populate("branch")
     return res
       .status(200)
       .json({ message: "Services found", data: allservices });

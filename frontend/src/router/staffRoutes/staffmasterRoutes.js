@@ -27,6 +27,7 @@ import UserEdit from "../../pages/primaryUser/edit/UserEdit"
 import LeadRegister from "../../pages/primaryUser/register/LeadRegister"
 import WithoutProductdetailscustomer from "../../components/secondaryUser/WithoutProductdetailscustomer"
 import TargetRegister from "../../pages/primaryUser/register/TargetRegister"
+import ServicesRegistration from "../../pages/primaryUser/register/ServicesRegistration"
 const staffmastersRoutes = [
   {
     path: "/staff/masters/company",
@@ -105,7 +106,10 @@ const staffmastersRoutes = [
   { path: "/staff/masters/vouchermaster", component: ComingSoon },
   { path: "/staff/masters/target", component: TargetRegister },
   { path: "/staff/masters/product", component: ProductList },
-
+ {
+    path: "/staff/masters/servicesRegistration",
+    component: ServicesRegistration
+  },
   { path: "/staff/masters/partners", component: ComingSoon },
   { path: "/staff/masters/leadRegister", component: LeadRegister },
   { path: "/staff/masters/department", component: DepartmentRegistration }
