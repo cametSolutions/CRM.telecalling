@@ -14,6 +14,8 @@ function ProductEdit() {
   const productId = product._id
 
   const handleSubmit = async (productData, editData) => {
+console.log(productData)
+console.log(editData)
     try {
       await api.post(
         `/product/productEdit?productid=${productId}`,

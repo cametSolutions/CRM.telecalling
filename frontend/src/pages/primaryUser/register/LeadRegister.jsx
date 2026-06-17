@@ -111,7 +111,8 @@ console.log(filteredselectedCategory)
 
   const handleSubmit = async (leadData, selectedtableLeadData, role) => {
     console.log(leadData)
-
+console.log(selectedtableLeadData)
+return
     try {
       const response = await api.post("/lead/leadRegister", {
         assignedto: user?.assignedto,

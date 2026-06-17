@@ -4,6 +4,7 @@ import { generateUniqueNumericToken } from "../../helper/callTokenGeneration.js"
 import { sendWhatapp } from "../../helper/whatapp.js"
 import moment from "moment" // You can use moment.js to handle date manipulation easily
 import { escapeRegExp } from "../../helper/escapeRegExp.js"
+import Lead from "../../model/primaryUser/leadmasterSchema.js"
 import License from "../../model/secondaryUser/licenseSchema.js"
 import CallRegistration from "../../model/secondaryUser/CallRegistrationSchema.js"
 import Partner from "../../model/secondaryUser/partnerSchema.js"
@@ -15,49 +16,49 @@ const { Staff, Admin } = models
 import mongoose, { isValidObjectId } from "mongoose"
 import Holymaster from "../../model/secondaryUser/holydaymasterSchema.js"
 import LeadMaster from "../../model/primaryUser/leadmasterSchema.js"
-export const duplicate=async(req,res)=>{
-// const duplicateCustomers = await Customer.aggregate([
-//   {
-//     $group: {
-//       _id: "$customerName",
-//       count: { $sum: 1 },
-//       customers: { $push: "$$ROOT" }
-//     }
-//   },
-//   {
-//     $match: {
-//       _id: { $ne: null },
-//       count: { $gt: 1 }
-//     }
-//   },
-//   {
-//     $sort: {
-//       count: -1
-//     }
-//   }
-// ]);
-const duplicateCustomers = await Customer.aggregate([
-  {
-    $group: {
-      _id: "$customerName",
-      count: { $sum: 1 }
+export const duplicate = async (req, res) => {
+  // const duplicateCustomers = await Customer.aggregate([
+  //   {
+  //     $group: {
+  //       _id: "$customerName",
+  //       count: { $sum: 1 },
+  //       customers: { $push: "$$ROOT" }
+  //     }
+  //   },
+  //   {
+  //     $match: {
+  //       _id: { $ne: null },
+  //       count: { $gt: 1 }
+  //     }
+  //   },
+  //   {
+  //     $sort: {
+  //       count: -1
+  //     }
+  //   }
+  // ]);
+  const duplicateCustomers = await Customer.aggregate([
+    {
+      $group: {
+        _id: "$customerName",
+        count: { $sum: 1 }
+      }
+    },
+    {
+      $match: {
+        _id: { $ne: null },
+        count: { $gt: 1 }
+      }
+    },
+    {
+      $sort: {
+        count: -1
+      }
     }
-  },
-  {
-    $match: {
-      _id: { $ne: null },
-      count: { $gt: 1 }
-    }
-  },
-  {
-    $sort: {
-      count: -1
-    }
-  }
-]);
+  ]);
 
-console.log(duplicateCustomers);
-return res.status(200).json({message:"found duplicate",data:duplicateCustomers})
+  console.log(duplicateCustomers);
+  return res.status(200).json({ message: "found duplicate", data: duplicateCustomers })
 }
 
 
@@ -356,30 +357,30 @@ export const GetscrollCustomer = async (req, res) => {
           metadata: [
             ...(customerType !== "ProductMissing"
               ? [
-                  {
-                    $addFields: {
-                      selected: {
-                        $filter: {
-                          input: "$selected",
-                          cond: {
-                            $eq: ["$$this.branch_id", branchId]
-                          }
+                {
+                  $addFields: {
+                    selected: {
+                      $filter: {
+                        input: "$selected",
+                        cond: {
+                          $eq: ["$$this.branch_id", branchId]
                         }
                       }
                     }
-                  },
-                  {
-                    $unwind: {
-                      path: "$selected",
-                      preserveNullAndEmptyArrays: true
-                    }
-                  },
-                  {
-                    $group: {
-                      _id: "$_id"
-                    }
                   }
-                ]
+                },
+                {
+                  $unwind: {
+                    path: "$selected",
+                    preserveNullAndEmptyArrays: true
+                  }
+                },
+                {
+                  $group: {
+                    _id: "$_id"
+                  }
+                }
+              ]
               : []),
 
             {
@@ -390,100 +391,100 @@ export const GetscrollCustomer = async (req, res) => {
           customers: [
             ...(customerType !== "ProductMissing"
               ? [
-                  {
-                    $addFields: {
-                      selected: {
-                        $filter: {
-                          input: "$selected",
-                          cond: {
-                            $eq: ["$$this.branch_id", branchId]
-                          }
+                {
+                  $addFields: {
+                    selected: {
+                      $filter: {
+                        input: "$selected",
+                        cond: {
+                          $eq: ["$$this.branch_id", branchId]
                         }
                       }
                     }
-                  },
+                  }
+                },
 
-                  {
-                    $unwind: {
-                      path: "$selected",
-                      preserveNullAndEmptyArrays: true
-                    }
-                  },
+                {
+                  $unwind: {
+                    path: "$selected",
+                    preserveNullAndEmptyArrays: true
+                  }
+                },
 
-                  {
-                    $lookup: {
-                      from: "products",
-                      localField: "selected.product_id",
-                      foreignField: "_id",
-                      as: "productDetails"
-                    }
-                  },
+                {
+                  $lookup: {
+                    from: "products",
+                    localField: "selected.product_id",
+                    foreignField: "_id",
+                    as: "productDetails"
+                  }
+                },
 
-                  {
-                    $unwind: {
-                      path: "$productDetails",
-                      preserveNullAndEmptyArrays: true
-                    }
-                  },
+                {
+                  $unwind: {
+                    path: "$productDetails",
+                    preserveNullAndEmptyArrays: true
+                  }
+                },
 
-                  {
-                    $addFields: {
-                      "selected.productName": {
-                        $ifNull: [
-                          "$productDetails.productName",
-                          null
-                        ]
-                      }
-                    }
-                  },
-
-                  {
-                    $group: {
-                      _id: "$_id",
-
-                      customerName: { $first: "$customerName" },
-                      address1: { $first: "$address1" },
-                      address2: { $first: "$address2" },
-                      country: { $first: "$country" },
-                      city: { $first: "$city" },
-                      pincode: { $first: "$pincode" },
-                      contactPerson: { $first: "$contactPerson" },
-                      landline: { $first: "$landline" },
-                      industry: { $first: "$industry" },
-                      partner: { $first: "$partner" },
-                      state: { $first: "$state" },
-                      registrationType: { $first: "$registrationType" },
-                      gstNo: { $first: "$gstNo" },
-                      email: { $first: "$email" },
-                      mobile: { $first: "$mobile" },
-
-                      selected: {
-                        $push: "$selected"
-                      }
+                {
+                  $addFields: {
+                    "selected.productName": {
+                      $ifNull: [
+                        "$productDetails.productName",
+                        null
+                      ]
                     }
                   }
-                ]
+                },
+
+                {
+                  $group: {
+                    _id: "$_id",
+
+                    customerName: { $first: "$customerName" },
+                    address1: { $first: "$address1" },
+                    address2: { $first: "$address2" },
+                    country: { $first: "$country" },
+                    city: { $first: "$city" },
+                    pincode: { $first: "$pincode" },
+                    contactPerson: { $first: "$contactPerson" },
+                    landline: { $first: "$landline" },
+                    industry: { $first: "$industry" },
+                    partner: { $first: "$partner" },
+                    state: { $first: "$state" },
+                    registrationType: { $first: "$registrationType" },
+                    gstNo: { $first: "$gstNo" },
+                    email: { $first: "$email" },
+                    mobile: { $first: "$mobile" },
+
+                    selected: {
+                      $push: "$selected"
+                    }
+                  }
+                }
+              ]
               : [
-                  {
-                    $project: {
-                      customerName: 1,
-                      address1: 1,
-                      address2: 1,
-                      country: 1,
-                      city: 1,
-                      pincode: 1,
-                      contactPerson: 1,
-                      landline: 1,
-                      industry: 1,
-                      partner: 1,
-                      state: 1,
-                      registrationType: 1,
-                      gstNo: 1,
-                      email: 1,
-                      mobile: 1
-                    }
+                {
+                  $project: {
+                    customerName: 1,
+                    address1: 1,
+                    address2: 1,
+                    country: 1,
+                    city: 1,
+                    pincode: 1,
+                    contactPerson: 1,
+                    landline: 1,
+                    industry: 1,
+                    partner: 1,
+                    state: 1,
+                    registrationType: 1,
+                    gstNo: 1,
+                    email: 1,
+                    mobile: 1
                   }
-                ]),
+                }
+              ]),
 
             { $sort: { customerName: 1 } },
             { $skip: skip },
@@ -1336,7 +1337,7 @@ export const ServicesRegistration = async (req, res) => {
 
 export const CustomerRegister = async (req, res) => {
   const { customerData, tabledata = [] } = req.body
-const {createdfrom}=req.query
+  const { createdfrom } = req.query
   const {
     customerName,
     customerid,
@@ -1381,7 +1382,7 @@ const {createdfrom}=req.query
       state,
       city,
       pincode,
-createdFrom:createdfrom,
+      createdFrom: createdfrom,
       email,
       mobile,
       landline,
@@ -2316,6 +2317,42 @@ export const GetLicense = async (req, res) => {
   } catch (err) {
     console.log(err.message)
     res.status(500).send("server error")
+  }
+}
+export const ChecklicenseForlead = async (req, res) => {
+  try {
+    const { licenseNumber } = req.query
+
+    if (!licenseNumber) {
+      return res.status(400).json({
+        message: "License number is required"
+      });
+    }
+
+    const licenseNo = Number(licenseNumber);
+console.log("licneseno,licenseNo",licenseNo)
+
+    const [leadExists, licenseExists] = await Promise.all([
+      Lead.findOne({
+        "leadFor.licenseNumber": licenseNo
+      }).select("_id"),
+
+      License.findOne({
+        licensenumber: licenseNo
+      }).select("_id")
+    ]);
+
+    return res.json({
+      exists: !!(leadExists || licenseExists),
+      source: leadExists
+        ? "Lead"
+        : licenseExists
+          ? "License"
+          : null
+    });
+  } catch (error) {
+    console.log("error", error.message)
+    return res.status(500).json({ message: "Internal server error" })
   }
 }
 
@@ -5071,9 +5108,9 @@ export const getunwnanted = async (req, res) => {
     const unwanted = await Customer.find({
       mobile: { $exists: false }
     });
-const un=await Customer.find({mobile:""})
+    const un = await Customer.find({ mobile: "" })
 
-    res.status(200).json({message:"found customer",data:{unwanted,un}});
+    res.status(200).json({ message: "found customer", data: { unwanted, un } });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

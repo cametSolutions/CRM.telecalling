@@ -61,6 +61,7 @@ export const EditProduct = async (req, res) => {
     existingProduct.description =
       productData.description || existingProduct.description
     existingProduct.defaultservices = productData.defaultservices || [];
+existingProduct.productorservicetype=productData?.productorservicetype
     // Step 3: Save the changes to the database
     await existingProduct.save()
     res.status(200).json({ message: "Product edit successfully" })
@@ -118,7 +119,7 @@ export const GetallProducts = async (req, res) => {
       })
         .populate({
           path: "defaultservices",
-          select: "productName "
+          select: "productName productorservicetype"
         });
 
 
@@ -142,7 +143,7 @@ export const GetallProducts = async (req, res) => {
               branch_id: { $in: decodedbranches }
             }
           }
-        }).populate({ path: "selected.hsn_id", select: "onValue" }).populate({path:"defaultservices",select:"productName"})
+        }).populate({ path: "selected.hsn_id", select: "onValue" }).populate({path:"defaultservices",select:"productName productorservicetype"})
 
 
       } else {
