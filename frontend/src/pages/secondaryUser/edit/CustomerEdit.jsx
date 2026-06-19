@@ -18,7 +18,7 @@ function CustomerEdit() {
   const { data: editedCustomer } = UseFetch(
     `/customer/geteditedCustomer?customerid=${customerId}`
   )
-
+console.log(editedCustomer)
   function formatDateString(dateString) {
     const dateObject = new Date(dateString)
     const year = dateObject.getUTCFullYear()

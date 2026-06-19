@@ -117,10 +117,7 @@ export const GetallProducts = async (req, res) => {
           }
         }
       })
-        .populate({
-          path: "defaultservices",
-          select: "productName productorservicetype"
-        });
+        .populate("defaultservices");
 
 
 
@@ -134,6 +131,7 @@ export const GetallProducts = async (req, res) => {
 
 
     } else if (branchselected) {
+console.log("dddddddddddddddddddddddddddddddddddddddddddddddddddddddddd")
       let products
       if (branchselected) {
         const decodedbranches = JSON.parse(decodeURIComponent(branchselected))
@@ -143,7 +141,7 @@ export const GetallProducts = async (req, res) => {
               branch_id: { $in: decodedbranches }
             }
           }
-        }).populate({ path: "selected.hsn_id", select: "onValue" }).populate({path:"defaultservices",select:"productName productorservicetype"})
+        }).populate({ path: "selected.hsn_id", select: "onValue" }).populate("defaultservices")
 
 
       } else {

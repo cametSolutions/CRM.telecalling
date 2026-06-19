@@ -1,5 +1,3 @@
-
-
 import { useEffect, useState, useMemo, useRef, useLayoutEffect } from "react"
 import { useLocation } from "react-router-dom"
 import { createPortal } from "react-dom"
@@ -74,10 +72,6 @@ function DropdownPortal({ anchorEl, children }) {
   )
 }
 
-
-
-
-
 function LicenseDropdown({
   index,
   item,
@@ -86,6 +80,7 @@ function LicenseDropdown({
   selectedleadlist,
   setSelectedLeadList
 }) {
+  console.log(customerTableData)
   const isMulti = item?.productorservicetype === "Additionalservice"
 
   const [open, setOpen] = useState(false)
@@ -109,11 +104,9 @@ function LicenseDropdown({
       const wrapperEl = wrapperRef.current
       const dropdownEl = document.getElementById(dropdownId)
 
-      const clickedInsideWrapper =
-        wrapperEl && wrapperEl.contains(target)
+      const clickedInsideWrapper = wrapperEl && wrapperEl.contains(target)
 
-      const clickedInsideDropdown =
-        dropdownEl && dropdownEl.contains(target)
+      const clickedInsideDropdown = dropdownEl && dropdownEl.contains(target)
 
       if (!clickedInsideWrapper && !clickedInsideDropdown) {
         setOpen(false)
@@ -150,6 +143,7 @@ function LicenseDropdown({
   }
 
   const addLicense = (lic) => {
+    console.log(lic)
     if (!lic) return
 
     if (isMulti) {
@@ -217,7 +211,9 @@ function LicenseDropdown({
         onClick={() => {
           if (!isReadOnly) setOpen(true)
         }}
-        placeholder={isMulti ? "Search / Add License" : "Search / Select License"}
+        placeholder={
+          isMulti ? "Search / Add License" : "Search / Select License"
+        }
         className={`w-full px-2 py-1 border border-gray-200 rounded text-xs bg-[#EEF2F8] outline-none ${
           isReadOnly ? "cursor-not-allowed opacity-70" : "cursor-text"
         }`}
@@ -233,7 +229,9 @@ function LicenseDropdown({
           >
             <ul className="max-h-52 overflow-y-auto text-xs">
               {filtered.length === 0 ? (
-                <li className="px-3 py-2 text-gray-400 italic">No results found</li>
+                <li className="px-3 py-2 text-gray-400 italic">
+                  No results found
+                </li>
               ) : (
                 filtered.map((lic, i) => {
                   const valStr = String(lic?.licenseNumber ?? "")
@@ -312,6 +310,7 @@ function LicenseDropdown({
 function ProductDropdown({
   index,
   item,
+  process,
   isReadOnly,
   leadList,
   selectedleadlist,
@@ -319,6 +318,7 @@ function ProductDropdown({
   selectedBranch,
   selectedCustomer
 }) {
+console.log(selectedBranch)
   console.log(leadList)
   const emptyRow = {
     licenseNumber: "",
@@ -410,8 +410,20 @@ function ProductDropdown({
   //   console.log(updated)
   //   setSelectedLeadList(updated)
   // }
+console.log(selectedCustomer)
   const applySelection = (prod) => {
     console.log(prod)
+// const branchdata=prod?.selected.map((item)=>item.branch_id===selectedBranch).map((item)=>return{
+// company_id:item.company_id,
+// branch_id:item.branch_id})
+const branchdata = (prod?.selected || [])
+  .filter((item) => item.branch_id === selectedBranch)
+  .map((item) => ({
+    company_id: item.company_id,
+    branch_id: item.branch_id
+  }))
+console.log(branchdata)
+    console.log(selectedCustomer)
     if (
       selectedCustomer === null ||
       selectedCustomer === undefined ||
@@ -429,13 +441,16 @@ function ProductDropdown({
       return
     }
     console.log("hhh")
-
+    const getRowId = (value) => {
+      console.log(value)
+      return String(value?._id || value?.id || value || "")
+    }
     const base = selectedleadlist?.length
       ? [...selectedleadlist]
       : [{ ...emptyRow }]
 
     let updated = [...base]
-
+    console.log(updated)
     // Remove any previously auto-added default services
     updated = updated.filter(
       (row, idx) => idx === index || !row?.isDefaultService
@@ -444,7 +459,7 @@ function ProductDropdown({
     const filteredbranch = prod?.selected?.filter(
       (item) => item.branch_id === selectedBranch
     )
-
+    console.log(filteredbranch)
     const igstRate = filteredbranch?.[0]?.hsn_id?.onValue?.igstRate
 
     if (!prod) {
@@ -477,30 +492,58 @@ function ProductDropdown({
       productPrice: prod.productPrice || 0,
       productorservicetype: prod?.productorservicetype,
       hsn: igstRate || 0,
-      netAmount
+      netAmount,
+company_id:branchdata[0].company_id,
+branch_id:branchdata[0].branch_id
     }
-
+    console.log(prod)
     // Add default services immediately after selected product
-    if (prod?.defaultservices?.length > 0) {
-      const defaultServiceRows = prod.defaultservices.map((service) => ({
-        ...emptyRow,
-        productorServiceId: service._id,
-        productorServiceName: service.productName,
-        itemType: "Service",
-        productPrice: 0,
-        hsn: 0,
-        productorservicetype: service?.productorservicetype,
-        netAmount: 0,
-        isDefaultService: true
-      }))
+    if (prod?.defaultservices?.length > 0 && process === "closing") {
+      console.log("Hhh")
+      // const defaultServiceRows = prod.defaultservices.map((service) => ({
+      //   ...emptyRow,
+      //   productorServiceId: service._id,
+      //   productorServiceName: service.productName,
+      //   itemType: "Service",
+      //   productPrice: 0,
+      //   hsn: 0,
+      //   productorservicetype: service?.productorservicetype,
+      //   netAmount: 0,
+      //   isDefaultService: true
+      // }))
+
+      // updated.splice(index + 1, 0, ...defaultServiceRows)
+      const primaryId = getRowId(prod)
+      console.log(primaryId)
+      console.log("hhh")
+      const defaultServiceRows = (prod?.defaultservices || []).map(
+        (service) => ({
+          ...emptyRow,
+          licenseNumber: "",
+          licenseNumbers: [],
+          productorServiceId: getRowId(service),
+          productorServiceName:
+            service?.productName || service?.serviceName || "",
+          itemType: service?.productName ? "Product" : "Service",
+          productPrice: 0,
+          hsn: 0,
+          productorservicetype:
+            service?.productorservicetype || "Additionalservice",
+          netAmount: 0,
+          isDefaultService: true,
+          parentPrimaryProductId: primaryId
+        })
+      )
 
       updated.splice(index + 1, 0, ...defaultServiceRows)
     }
 
     setSearch(prod.productName || prod.serviceName || "")
+    console.log(updated)
     setSelectedLeadList(updated)
+    console.log("hh")
   }
-
+console.log(selectedleadlist)
   const handleInputChange = (e) => {
     console.log(e)
     const value = e.target.value
@@ -592,6 +635,7 @@ const LeadMaster = ({
   isReadOnly,
   handleleadData,
   handleEditData,
+  handleclosingData,
   loadingState,
   setLoadingState,
   editloadingState,
@@ -600,6 +644,7 @@ const LeadMaster = ({
   showpopupMessage,
   selectedcompanyBranch
 }) => {
+  console.log(Data)
   console.log(isReadOnly)
   const {
     register: registerMain,
@@ -640,19 +685,19 @@ const LeadMaster = ({
   const [openProductDropdown, setOpenProductDropdown] = useState(null)
   const [popupMessage, setPopupMessage] = useState("")
   const [warningMessage, setwarningMessage] = useState("")
-const [showdetailsopen,setdetailsopen]=useState(false)
-const [detailsItem, setDetailsItem] = useState(null)
-const [detailsIndex, setDetailsIndex] = useState(null)
-const [detailsForm, setDetailsForm] = useState({
-  name: "",
-  licenseNumber: "",
-  softwareTrade: "",
-  applicationDate: "",
-  status: "Active",
-  nextDue: "",
-  quantityUsers: "",
-  amount: ""
-})
+  const [showdetailsopen, setdetailsopen] = useState(false)
+  const [detailsItem, setDetailsItem] = useState(null)
+  const [detailsIndex, setDetailsIndex] = useState(null)
+  const [detailsForm, setDetailsForm] = useState({
+    name: "",
+    licenseNumber: "",
+    softwareTrade: "",
+    applicationDate: "",
+    status: "Running",
+    nextDue: "",
+    quantityUsers: "",
+    amount: ""
+  })
   console.log(warningMessage)
   const [ispopupModalOpen, setIspopupModalOpen] = useState(false)
   const [isSelfAllocationChangable, setselfAllocationChangable] = useState(true)
@@ -694,7 +739,7 @@ const [detailsForm, setDetailsForm] = useState({
   const dropdownLeadforRef = useRef(null)
   const registrationType = watchModal("registrationType")
   const navigate = useNavigate()
- const location = useLocation()
+  const location = useLocation()
   const { data: productData, loading: productLoading } = UseFetch(
     loggeduser &&
       selectedBranch &&
@@ -704,6 +749,8 @@ const [detailsForm, setDetailsForm] = useState({
       )}`
   )
   console.log(productData)
+const filter=productData?.filter((item)=>item.productName==="MARG ERP NANO")
+console.log(filter)
   const { data: tasks } = UseFetch("lead/getallTask")
   const { data: companybranches } = UseFetch("/branch/getBranch")
   const { data: partners } = UseFetch("/customer/getallpartners")
@@ -757,6 +804,7 @@ const [detailsForm, setDetailsForm] = useState({
   // }, [selfAllocation, unregister]);
   useEffect(() => {
     if (!selectedleadlist || selectedleadlist.length === 0) {
+      console.log("hh")
       setSelectedLeadList([{ ...emptyRow }])
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -825,6 +873,7 @@ const [detailsForm, setDetailsForm] = useState({
       )
       setPartner(filteredPartners)
       const combinedlead = [...productData]
+console.log(combinedlead)
       setLeadList(combinedlead)
     }
   }, [loggeduser, branches, productData, serviceData, partners, selectedBranch])
@@ -897,14 +946,15 @@ const [detailsForm, setDetailsForm] = useState({
           : ""
         setValueMain("dueDate", formattedDate)
       }
-
+console.log(Data[0])
       setValueMain("source", Data[0]?.source || "")
       setValueMain("customerName", Data[0]?.customerName?._id)
       setValueMain("mobile", Data[0]?.customerName?.mobile)
       setValueMain("phone", Data[0]?.customerName?.phone)
       setValueMain("email", Data[0]?.customerName?.email)
       setValueMain("remark", Data[0].remark)
-
+setSelectedCustomer(Data[0]?.customerName)
+console.log(Data[0].leadFor)
       const leadData = Data[0]?.leadFor.map((item) => ({
         licenseNumber: item?.licenseNumber,
         productorServiceName:
@@ -915,8 +965,12 @@ const [detailsForm, setDetailsForm] = useState({
         productPrice: item?.productPrice,
         hsn: item?.hsn,
         netAmount: item?.netAmount,
-        price: item?.price
+        price: item?.price,
+company_id:item?.company_id,
+branch_id:item?.branch_id,
+        productorservicetype: item?.productorservicetype
       }))
+      console.log(leadData)
       setSelectedLeadList(leadData.length ? leadData : [{ ...emptyRow }])
 
       const productListwithoutlicenseOnEdit = leadList?.map((product) => {
@@ -962,13 +1016,15 @@ const [detailsForm, setDetailsForm] = useState({
         }
       })
       setProductorServiceSelections(groupedByLicenseNumber)
-
+      console.log(Data[0])
       const selectedcustomerlicenseandproduct =
         Data[0]?.customerName?.selected?.map((sel) => ({
           licenseNumber: sel.licensenumber || "N/A",
-          productName: sel.productName || "Unknown"
+          productName: sel.productName || "Unknown",
+          productorServiceId: sel?.product_id
         }))
       setcustomerTableData(selectedcustomerlicenseandproduct)
+
     }
   }, [customerOptions, Data])
 
@@ -1003,6 +1059,7 @@ const [detailsForm, setDetailsForm] = useState({
   useEffect(() => {
     console.log("hhh")
     if (selectedCustomer) {
+
       setValueMain("mobile", selectedCustomer.mobile)
       setValueMain("phone", selectedCustomer.phone)
       setValueMain("email", selectedCustomer.email)
@@ -1057,18 +1114,18 @@ const [detailsForm, setDetailsForm] = useState({
   //     )
   //   )
   // }
-const updateLicense = (index, licenseNumber) => {
-  setSelectedLeadList((prev) =>
-    prev.map((row, i) =>
-      i === index
-        ? {
-            ...row,
-            licenseNumber
-          }
-        : row
+  const updateLicense = (index, licenseNumber) => {
+    setSelectedLeadList((prev) =>
+      prev.map((row, i) =>
+        i === index
+          ? {
+              ...row,
+              licenseNumber
+            }
+          : row
+      )
     )
-  )
-}
+  }
   console.log(selectedleadlist)
   const handleLicenseBlur = async (index, licenseNumber) => {
     console.log(licenseNumber)
@@ -1178,7 +1235,319 @@ const updateLicense = (index, licenseNumber) => {
     setIslicenseOpen(false)
     setSelectedLicense(license)
   }
+  const getBranchIgstRate = (prod) => {
+    const filteredbranch = prod?.selected?.filter(
+      (item) => item?.branchid === selectedBranch
+    )
+    return Number(filteredbranch?.[0]?.hsnid?.onValue?.igstRate || 0)
+  }
+  // const addAdditionalServicesForPrimaryRow = (row, rowIndex) => {
+  // console.log(row)
+  // console.log(!row?.productorServiceId)
+  //   if (!row?.productorServiceId) return
+  // console.log(leadList)
+  //   const primaryProduct = (leadList || []).find(
+  //     (prod) =>
+  //       String(prod?._id) === String(row?.productorServiceId) &&
+  //       String(prod?.productorservicetype || "").toLowerCase() === "primaryproduct"
+  //   )
 
+  //   if (!primaryProduct) {
+  //     toast.error("Primary product details not found")
+  //     return
+  //   }
+
+  //   const defaultServices = primaryProduct?.defaultservices || []
+
+  //   if (!defaultServices.length) {
+  //     toast.info("No additional services available for this primary product")
+  //     return
+  //   }
+
+  //   setSelectedLeadList((prev) => {
+  //     const rows = Array.isArray(prev) ? [...prev] : []
+
+  //     const existingServiceIds = new Set(
+  //       rows
+  //         .filter(
+  //           (item) =>
+  //             String(item?.productorservicetype || "").toLowerCase() ===
+  //             "additionalservice"
+  //         )
+  //         .map((item) => String(item?.productorServiceId))
+  //     )
+
+  //     const servicesToAdd = defaultServices.filter(
+  //       (service) => !existingServiceIds.has(String(service?.id))
+  //     )
+
+  //     if (!servicesToAdd.length) {
+  //       toast.info("All additional services are already added")
+  //       return prev
+  //     }
+
+  //     const newRows = servicesToAdd.map((service) => {
+  //       const igstRate = getBranchIgstRate(service)
+
+  //       return {
+  //         ...emptyRow,
+  //         licenseNumber: "",
+  //         licenseNumbers: [],
+  //         productorServiceId: service?.id || "",
+  //         productorServiceName: service?.productName || service?.serviceName || "",
+  //         itemType: service?.productName ? "Product" : "Service",
+  //         productorservicetype: service?.productorservicetype || "Additionalservice",
+  //         productPrice: 0,
+  //         hsn: igstRate || 0,
+  //         netAmount: 0,
+  //         isDefaultService: true,
+  //         parentPrimaryProductId: row?.productorServiceId
+  //       }
+  //     })
+
+  //     rows.splice(rowIndex + 1, 0, ...newRows)
+  //     return rows
+  //   })
+  // }
+  // const addAdditionalServicesForPrimaryRow = (row, rowIndex) => {
+  //   if (!row?.productorServiceId) return
+
+  //   const primaryProductId = String(row?.productorServiceId)
+
+  //   const primaryProduct = (leadList || []).find((prod) => {
+  //     const prodId = String(prod?._id || prod?.id || "")
+  //     const prodType = String(prod?.productorservicetype || "").toLowerCase()
+
+  //     return prodId === primaryProductId && prodType === "primaryproduct"
+  //   })
+
+  //   if (!primaryProduct) {
+  //     toast.error("Primary product details not found")
+  //     return
+  //   }
+
+  //   const defaultServices = Array.isArray(primaryProduct?.defaultservices)
+  //     ? primaryProduct.defaultservices
+  //     : []
+
+  //   if (!defaultServices.length) {
+  //     toast.info("No additional services available for this primary product")
+  //     return
+  //   }
+
+  //   setSelectedLeadList((prev) => {
+  //     const rows = Array.isArray(prev) ? [...prev] : []
+
+  //     const existingServiceIdsForThisPrimary = new Set(
+  //       rows
+  //         .filter((item) => {
+  //           const itemType = String(item?.productorservicetype || "").toLowerCase()
+  //           const parentId = String(item?.parentPrimaryProductId || "")
+  //           return (
+  //             itemType === "additionalservice" &&
+  //             parentId === primaryProductId
+  //           )
+  //         })
+  //         .map((item) => String(item?.productorServiceId || ""))
+  //     )
+
+  //     const servicesToAdd = defaultServices.filter((service) => {
+  //       const serviceId = String(service?._id || service?.id || "")
+  //       return serviceId && !existingServiceIdsForThisPrimary.has(serviceId)
+  //     })
+
+  //     if (!servicesToAdd.length) {
+  //       toast.info("Additional services already added for this primary product")
+  //       return prev
+  //     }
+
+  //     const newRows = servicesToAdd.map((service) => {
+  //       const serviceId = String(service?._id || service?.id || "")
+  //       const igstRate = getBranchIgstRate(service)
+
+  //       return {
+  //         ...emptyRow,
+  //         licenseNumber: "",
+  //         licenseNumbers: [],
+  //         productorServiceId: serviceId,
+  //         productorServiceName: service?.productName || service?.serviceName || "",
+  //         itemType: service?.productName ? "Product" : "Service",
+  //         productorservicetype: service?.productorservicetype || "Additionalservice",
+  //         productPrice: 0,
+  //         hsn: igstRate || 0,
+  //         netAmount: 0,
+  //         isDefaultService: true,
+  //         parentPrimaryProductId: primaryProductId
+  //       }
+  //     })
+
+  //     let insertAt = rowIndex + 1
+
+  //     while (
+  //       rows[insertAt] &&
+  //       String(rows[insertAt]?.parentPrimaryProductId || "") === primaryProductId
+  //     ) {
+  //       insertAt++
+  //     }
+
+  //     rows.splice(insertAt, 0, ...newRows)
+  //     return rows
+  //   })
+  // }
+  const getRowId = (value) => {
+    console.log(value)
+    return String(value?._id || value?.id || value || "")
+  }
+
+  const getPrimaryProductFromLeadList = (row) => {
+    const primaryProductId = getRowId(row?.productorServiceId)
+console.log(leadList)
+    return (leadList || []).find((prod) => {
+      const prodId = getRowId(prod)
+      const prodType = String(prod?.productorservicetype || "").toLowerCase()
+      return prodId === primaryProductId && prodType === "primaryproduct"
+    })
+  }
+
+  const getExistingAdditionalServiceIdsForPrimary = (
+    rows,
+    rowIndex,
+    primaryProductId
+  ) => {
+    const existingIds = new Set()
+    console.log(rows)
+    console.log(rowIndex)
+    console.log(primaryProductId)
+    rows.forEach((item) => {
+      const itemType = String(item?.productorservicetype || "").toLowerCase()
+      const parentId = getRowId(item?.parentPrimaryProductId)
+
+      if (itemType === "additionalservice" && parentId === primaryProductId) {
+        existingIds.add(getRowId(item?.productorServiceId))
+      }
+    })
+
+    let pointer = rowIndex + 1
+    while (pointer < rows.length) {
+      const nextRow = rows[pointer]
+      const nextType = String(nextRow?.productorservicetype || "").toLowerCase()
+
+      if (nextType === "primaryproduct") break
+
+      if (nextType === "additionalservice") {
+        existingIds.add(getRowId(nextRow?.productorServiceId))
+      }
+
+      pointer++
+    }
+
+    return existingIds
+  }
+
+  const getRemainingAdditionalServicesCount = (row, rowIndex) => {
+    const primaryProduct = getPrimaryProductFromLeadList(row)
+    console.log(primaryProduct)
+    if (!primaryProduct) return 0
+
+    const primaryProductId = getRowId(row?.productorServiceId)
+    const defaultServices = Array.isArray(primaryProduct?.defaultservices)
+      ? primaryProduct.defaultservices
+      : []
+    console.log(!defaultServices.length)
+    if (!defaultServices.length) return 0
+    console.log("hhhhh")
+    const existingIds = getExistingAdditionalServiceIdsForPrimary(
+      selectedleadlist || [],
+      rowIndex,
+      primaryProductId
+    )
+
+    return defaultServices.filter((service) => {
+      const serviceId = getRowId(service)
+      console.log(serviceId)
+      console.log(existingIds)
+      console.log(serviceId && !existingIds.has(serviceId))
+      return serviceId && !existingIds.has(serviceId)
+    }).length
+  }
+
+  const addAdditionalServicesForPrimaryRow = (row, rowIndex) => {
+    if (!row?.productorServiceId) return
+
+    const primaryProductId = getRowId(row?.productorServiceId)
+    const primaryProduct = getPrimaryProductFromLeadList(row)
+console.log(primaryProduct)
+    if (!primaryProduct) {
+      toast.error("Primary product details not found")
+      return
+    }
+
+    const defaultServices = Array.isArray(primaryProduct?.defaultservices)
+      ? primaryProduct.defaultservices
+      : []
+
+    if (!defaultServices.length) {
+      toast.info("No additional services available for this primary product")
+      return
+    }
+
+    setSelectedLeadList((prev) => {
+      const rows = Array.isArray(prev) ? [...prev] : []
+
+      const existingIds = getExistingAdditionalServiceIdsForPrimary(
+        rows,
+        rowIndex,
+        primaryProductId
+      )
+
+      const servicesToAdd = defaultServices.filter((service) => {
+        const serviceId = getRowId(service)
+        return serviceId && !existingIds.has(serviceId)
+      })
+
+      if (!servicesToAdd.length) {
+        toast.info("Additional services already added for this primary product")
+        return prev
+      }
+console.log(row)
+      const newRows = servicesToAdd.map((service) => {
+console.log(service)
+        const serviceId = getRowId(service)
+        const igstRate = getBranchIgstRate(service)
+
+        return {
+          ...emptyRow,
+          licenseNumber: "",
+          licenseNumbers: [],
+          productorServiceId: serviceId,
+          productorServiceName:
+            service?.productName || service?.serviceName || "",
+          itemType: service?.productName ? "Product" : "Service",
+          productorservicetype:
+            service?.productorservicetype || "Additionalservice",
+          productPrice: 0,
+          hsn: igstRate || 0,
+          netAmount: 0,
+          isDefaultService: true,
+          parentPrimaryProductId: primaryProductId,
+company_id:service?.selected[0]?.company_id,
+branch_id:service?.selected[0]?.branch_id
+        }
+      })
+
+      let insertAt = rowIndex + 1
+      while (insertAt < rows.length) {
+        const nextType = String(
+          rows[insertAt]?.productorservicetype || ""
+        ).toLowerCase()
+        if (nextType === "primaryproduct") break
+        insertAt++
+      }
+
+      rows.splice(insertAt, 0, ...newRows)
+      return rows
+    })
+  }
   const handleProductORserviceSelect = (productId) => {
     if (selectedLicense) {
       if (
@@ -1307,28 +1676,61 @@ const updateLicense = (index, licenseNumber) => {
     )
   }
 
+  // const handleDeletetableData = (item, indexNum) => {
+  //   if (item.licenseNumber) {
+  //     const updatedProductList = productOrserviceSelections[
+  //       item.licenseNumber
+  //     ].map((product) =>
+  //       product._id === item.productId
+  //         ? { ...product, selected: !product.selected }
+  //         : product
+  //     )
+  //     setProductorServiceSelections((prev) => ({
+  //       ...prev,
+  //       [item.licenseNumber]: updatedProductList
+  //     }))
+  //   } else {
+  //     const updatedProductList = licensewithoutProductSelection.map(
+  //       (product) =>
+  //         product._id === item.productId
+  //           ? { ...product, selected: !product.selected }
+  //           : product
+  //     )
+  //     setlicenseWithoutProductSelection(updatedProductList)
+  //   }
+  //   const filteredLeadlist = selectedleadlist.filter(
+  //     (row, index) => index !== indexNum
+  //   )
+  //   setSelectedLeadList(
+  //     filteredLeadlist.length ? filteredLeadlist : [{ ...emptyRow }]
+  //   )
+  // }
   const handleDeletetableData = (item, indexNum) => {
-    if (item.licenseNumber) {
-      const updatedProductList = productOrserviceSelections[
-        item.licenseNumber
-      ].map((product) =>
-        product._id === item.productId
-          ? { ...product, selected: !product.selected }
+    const productId = item?.productorServiceId || item?.productId
+
+    if (item?.licenseNumber) {
+      const updatedProductList = (
+        productOrserviceSelections[item.licenseNumber] || []
+      ).map((product) =>
+        String(product?.id) === String(productId)
+          ? { ...product, selected: false }
           : product
       )
+
       setProductorServiceSelections((prev) => ({
         ...prev,
         [item.licenseNumber]: updatedProductList
       }))
     } else {
-      const updatedProductList = licensewithoutProductSelection.map(
+      const updatedProductList = (licensewithoutProductSelection || []).map(
         (product) =>
-          product._id === item.productId
-            ? { ...product, selected: !product.selected }
+          String(product?.id) === String(productId)
+            ? { ...product, selected: false }
             : product
       )
       setlicenseWithoutProductSelection(updatedProductList)
     }
+
     const filteredLeadlist = selectedleadlist.filter(
       (row, index) => index !== indexNum
     )
@@ -1336,7 +1738,6 @@ const updateLicense = (index, licenseNumber) => {
       filteredLeadlist.length ? filteredLeadlist : [{ ...emptyRow }]
     )
   }
-
   const customFilter = (option, inputValue) => {
     if (!inputValue) return true
     const searchValue = inputValue.toLowerCase()
@@ -1478,8 +1879,101 @@ const updateLicense = (index, licenseNumber) => {
       setValueMain("leadBranch", selectedBranch)
     }
   }
+  const tradeOptions = [
+    { value: "Wholesale Trading", label: "Wholesale Trading" },
+    { value: "Retail Trading", label: "Retail Trading" },
+    { value: "Import & Export", label: "Import & Export" },
+    { value: "Distribution / Dealers", label: "Distribution / Dealers" },
+    {
+      value: "E-commerce / Online Trading",
+      label: "E-commerce / Online Trading"
+    },
+    { value: "IT Services", label: "IT Services" },
+    { value: "Web Design & Development", label: "Web Design & Development" },
+    { value: "Cyber Security Services", label: "Cyber Security Services" },
+    { value: "Hardware & Networking", label: "Hardware & Networking" },
+    { value: "Construction Companies", label: "Construction Companies" },
+    {
+      value: "Pharmaceutical Manufacturing",
+      label: "Pharmaceutical Manufacturing"
+    },
+    { value: "Food Manufacturing", label: "Food Manufacturing" },
+    {
+      value: "Textile / Garment Manufacturing",
+      label: "Textile / Garment Manufacturing"
+    },
+    { value: "Chemical Manufacturing", label: "Chemical Manufacturing" },
+    { value: "Plastic Manufacturing", label: "Plastic Manufacturing" },
+    {
+      value: "Steel / Metal Manufacturing",
+      label: "Steel / Metal Manufacturing"
+    },
+    { value: "Furniture Manufacturing", label: "Furniture Manufacturing" },
+    { value: "Building Contractors", label: "Building Contractors" },
+    { value: "Real Estate Developers", label: "Real Estate Developers" },
+    {
+      value: "Electrical Equipment Manufacturing",
+      label: "Electrical Equipment Manufacturing"
+    },
+    { value: "Electronics Manufacturing", label: "Electronics Manufacturing" },
+    { value: "Automobile Manufacturing", label: "Automobile Manufacturing" },
+    { value: "Hospitals", label: "Hospitals" },
+    { value: "Clinics", label: "Clinics" },
+    { value: "Medical Laboratories", label: "Medical Laboratories" },
+    {
+      value: "Medical Equipment Suppliers",
+      label: "Medical Equipment Suppliers"
+    },
+    {
+      value: "Pharmacies / Medical Stores",
+      label: "Pharmacies / Medical Stores"
+    },
+    { value: "Interior Design", label: "Interior Design" },
+    { value: "Vehicle Dealers", label: "Vehicle Dealers" },
+    {
+      value: "Automobile Service Centres",
+      label: "Automobile Service Centres"
+    },
+    { value: "Insurance Companies", label: "Insurance Companies" },
+    { value: "Spare Parts Dealers", label: "Spare Parts Dealers" },
+    { value: "Transport & Logistics", label: "Transport & Logistics" },
+    { value: "Banks", label: "Banks" },
+    { value: "Finance Companies", label: "Finance Companies" },
+    { value: "Hotels & Resorts", label: "Hotels & Resorts" },
+    { value: "Schools", label: "Schools" },
+    { value: "Colleges", label: "Colleges" },
+    { value: "Training Institutes", label: "Training Institutes" },
+    { value: "Coaching Centers", label: "Coaching Centers" },
+    { value: "Educational Consultants", label: "Educational Consultants" },
+    { value: "Software Development", label: "Software Development" },
+    { value: "Restaurants / Cafes", label: "Restaurants / Cafes" },
+    { value: "Travel Agencies", label: "Travel Agencies" },
+    { value: "Tourism Operators", label: "Tourism Operators" },
+    {
+      value: "Advertising & Marketing Agencies",
+      label: "Advertising & Marketing Agencies"
+    },
+    { value: "Event Management", label: "Event Management" },
+    { value: "Security Services", label: "Security Services" },
+    {
+      value: "Cleaning / Facility Management",
+      label: "Cleaning / Facility Management"
+    },
+    {
+      value: "Chartered Accountants / Audit Firms",
+      label: "Chartered Accountants / Audit Firms"
+    },
+    { value: "Tax Consultants", label: "Tax Consultants" },
+    {
+      value: "NGOs / Non-Profit Organizations",
+      label: "NGOs / Non-Profit Organizations"
+    },
+    { value: "Government Organizations", label: "Government Organizations" }
+  ]
 
   const onSubmit = async (data) => {
+console.log(data)
+
     if (submitLoading) return
     setsubmitLoading(true)
     if (submitLoading) return
@@ -1548,6 +2042,13 @@ const updateLicense = (index, licenseNumber) => {
           selectedleadlist,
           Data[0]?._id
         )
+      } else if (process === "closing") {
+        seteditLoadingState(true)
+        const updated = await handleclosingData(
+          data,
+          selectedleadlist,
+          Data[0]?._id
+        )
       }
     } catch (error) {
       toast.error("Failed to add product!")
@@ -1581,54 +2082,56 @@ const updateLicense = (index, licenseNumber) => {
       resetLeadForm()
     }
   }
-const handleDetailsChange = (e) => {
-  const { name, value } = e.target
-  setDetailsForm((prev) => ({
-    ...prev,
-    [name]: value
-  }))
-}
+  const handleDetailsChange = (e) => {
+    const { name, value } = e.target
+    setDetailsForm((prev) => ({
+      ...prev,
+      [name]: value
+    }))
+  }
 
-const handleDetailsSave = () => {
-  setSelectedLeadList((prev) =>
-    prev.map((row, i) =>
-      i === detailsIndex
-        ? {
-            ...row,
-            productorServiceName: detailsForm.name,
-            licenseNumber: detailsForm.licenseNumber,
-            softwareTrade: detailsForm.softwareTrade,
-            applicationDate: detailsForm.applicationDate,
-            status: detailsForm.status,
-            nextDue: detailsForm.nextDue,
-            quantityUsers: detailsForm.quantityUsers,
-            amount: detailsForm.amount
-          }
-        : row
+  const handleDetailsSave = () => {
+    setSelectedLeadList((prev) =>
+      prev.map((row, i) =>
+        i === detailsIndex
+          ? {
+              ...row,
+              productorServiceName: detailsForm.name,
+              licenseNumber: detailsForm.licenseNumber,
+              softwareTrade: detailsForm.softwareTrade,
+              applicationDate: detailsForm.applicationDate,
+              status: detailsForm.status,
+              nextDue: detailsForm.nextDue,
+              quantityUsers: detailsForm.quantityUsers,
+              amount: detailsForm.amount
+            }
+          : row
+      )
     )
-  )
 
-  setdetailsopen(false)
-  setDetailsItem(null)
-  setDetailsIndex(null)
-}
-console.log(detailsForm)
-console.log(selectedleadlist)
-const isRowPriceLocked = (row) => {
-  if (!row) return false
+    setdetailsopen(false)
+    setDetailsItem(null)
+    setDetailsIndex(null)
+  }
+  console.log(detailsForm)
+  console.log(selectedleadlist)
+  const isRowPriceLocked = (row) => {
+    if (!row) return false
 
-  const currentType = String(row?.productorservicetype || "").toLowerCase()
-  const hasPrimaryProduct = selectedleadlist.some(
-    (item) => String(item?.productorservicetype || "").toLowerCase() === "primaryproduct"
-  )
+    const currentType = String(row?.productorservicetype || "").toLowerCase()
+    const hasPrimaryProduct = selectedleadlist.some(
+      (item) =>
+        String(item?.productorservicetype || "").toLowerCase() ===
+        "primaryproduct"
+    )
 
-  if (!hasPrimaryProduct) return false
+    if (!hasPrimaryProduct) return false
 
-  if (currentType === "primaryproduct") return true
-  if (currentType === "additionalservice") return true
+    if (currentType === "primaryproduct") return true
+    if (currentType === "additionalservice") return true
 
-  return false
-}
+    return false
+  }
   const normalizeMobile = (number) => {
     if (!number) return ""
     return number.replace(/\D/g, "").slice(-10)
@@ -1718,24 +2221,25 @@ const isRowPriceLocked = (row) => {
       setModalLoader(false)
     }
   }
-const handleDetails=(item,index)=>{
-console.log(item)
-console.log(index)
-setDetailsItem(item)
-  setDetailsIndex(index)
-  setDetailsForm({
-    name: item?.productorServiceName || "",
-    licenseNumber: item?.licenseNumber || "",
-    softwareTrade: item?.softwareTrade || "",
-    applicationDate: item?.applicationDate || "",
-    status: item?.status || "Active",
-    nextDue: item?.nextDue || "",
-    quantityUsers: item?.quantityUsers || "",
-    amount: item?.amount || item?.netAmount || ""
-  })
-setdetailsopen(true)
-}
-console.log(showdetailsopen)
+  console.log(process)
+  const handleDetails = (item, index) => {
+    console.log(item)
+    console.log(index)
+    setDetailsItem(item)
+    setDetailsIndex(index)
+    setDetailsForm({
+      name: item?.productorServiceName || "",
+      licenseNumber: item?.licenseNumber || "",
+      softwareTrade: item?.softwareTrade || "",
+      applicationDate: item?.applicationDate || "",
+      status:  "Running",
+      nextDue: item?.nextDue || "",
+      quantityUsers: item?.quantityUsers || "",
+      amount: item?.amount || item?.netAmount || ""
+    })
+    setdetailsopen(true)
+  }
+  console.log(showdetailsopen)
   const tableRows = selectedleadlist || []
   console.log(tableRows)
   console.log(selectedCustomer)
@@ -1885,6 +2389,7 @@ console.log(showdetailsopen)
                         setValueMain("customerName", "")
                         setSelectedCustomer(null)
                         setcustomerTableData([])
+                        console.log(emptyRow)
                         setSelectedLeadList([{ ...emptyRow }])
                         setValueMain("netAmount", "")
                         setSelectedLicense(null)
@@ -2011,7 +2516,7 @@ console.log(showdetailsopen)
                   </div>
                 </div>
 
-                {process !== "edit" && selfAllocation && (
+                {process === "register" && selfAllocation && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-1">
@@ -2091,13 +2596,14 @@ console.log(showdetailsopen)
                           rowSpan={2}
                           className="border border-blue-900 px-2 py-2 text-center text-xs"
                         >
-                          Del
+                          Action
                         </th>
                         <th
                           rowSpan={2}
                           className="border border-blue-900 px-2 py-2 text-center text-xs"
                         >
-                          <button
+                          Details
+                          {/* <button
                             type="button"
                             disabled={isReadOnly}
                             onClick={handleAddRowFromTable}
@@ -2120,7 +2626,7 @@ console.log(showdetailsopen)
                                 d="M12 4v16m8-8H4"
                               />
                             </svg>
-                          </button>
+                          </button> */}
                         </th>
                       </tr>
                       <tr className="bg-[#1B2A4A] text-white">
@@ -2135,124 +2641,8 @@ console.log(showdetailsopen)
                         </th>
                       </tr>
                     </thead>
-                    <tbody>
-                      {/* {tableRows.map((item, index) => (
-const showLicenseDropdown =
-  item?.productorservicetype === "Additionalservice";
-                        <tr
-                          key={index}
-                          className="border-b even:bg-blue-50 bg-white hover:bg-blue-50 transition-colors"
-                        >
-                          <td className="border border-gray-300 px-1 py-1">
-                          
-{
-  showLicenseDropdown ? (
-      <LicenseDropdown
-                              index={index}
-                              item={item}
-                              isReadOnly={isReadOnly}
-                              customerTableData={customerTableData}
-                              selectedleadlist={selectedleadlist}
-                              setSelectedLeadList={setSelectedLeadList}
-                              handleLicenseSelect={handleLicenseSelect}
-                            />
-  ) : (
-    <input
-      value={item.licenseNumber || ""}
-      onChange={(e) =>
-        updateLicense(index, e.target.value)
-      }
-      placeholder="Enter License Number"
-    />
-  )
-}
-                          </td>
-
-                          <td className="border border-gray-300 px-1 py-1">
-                            <ProductDropdown
-                              index={index}
-                              item={item}
-                              isReadOnly={isReadOnly}
-                              leadList={leadList}
-                              selectedleadlist={selectedleadlist}
-                              selectedBranch={selectedBranch}
-                              selectedCustomer={selectedCustomer}
-                              setSelectedLeadList={setSelectedLeadList}
-                            />
-                          </td>
-
-                          <td className="border border-gray-300 px-1 py-1">
-                            <input
-                              type="number"
-                              readOnly={isReadOnly}
-                              value={item.productPrice}
-                              onChange={(e) =>
-                                handlePriceChange(index, e.target.value)
-                              }
-                              placeholder="0.00"
-                              className={`w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-right ${
-                                isReadOnly
-                                  ? "cursor-not-allowed bg-gray-100"
-                                  : "bg-white"
-                              }`}
-                            />
-                          </td>
-
-                          <td className="border border-gray-300 px-1 py-1">
-                            <input
-                              type="number"
-                              readOnly={isReadOnly}
-                              value={item.hsn}
-                              onChange={(e) =>
-                                handleHsnChange(index, e.target.value)
-                              }
-                              placeholder="Tax %"
-                              className={`w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-center bg-gray-100 ${
-                                isReadOnly ? "cursor-not-allowed" : ""
-                              }`}
-                            />
-                          </td>
-
-                          <td className="border border-gray-300 px-1 py-1">
-                            <input
-                              type="text"
-                              readOnly
-                              value={item.netAmount}
-                              placeholder="0.00"
-                              className="w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-right cursor-not-allowed bg-gray-100"
-                            />
-                          </td>
-
-                          <td className="border border-gray-300 px-1 py-1 text-center">
-                            <button
-                              type="button"
-                              disabled={isReadOnly}
-                              onClick={() => handleDeletetableData(item, index)}
-                              className={`text-red-400 hover:text-red-600 p-1 rounded transition-colors ${
-                                isReadOnly
-                                  ? "cursor-not-allowed opacity-30"
-                                  : ""
-                              }`}
-                              title="Delete row"
-                            >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-3.5 w-3.5"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                strokeWidth={2}
-                              >
-                                <path d="M3 6h18" />
-                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                              </svg>
-                            </button>
-                          </td>
-
-                          <td className="border border-gray-300" />
-                        </tr>
-                      ))} */}
+                    {/* <tbody>
+                   
 
                       {tableRows.map((item, index) => {
                         const showLicenseDropdown =
@@ -2410,6 +2800,202 @@ className="text-blue-500 font-bold ml-2">Details</button></td>
                           </tr>
                         )
                       })}
+                    </tbody> */}
+                    <tbody>
+                      {tableRows.map((item, index) => {
+                        const showLicenseDropdown =
+                          item?.productorservicetype === "Additionalservice"
+
+                        const isAmountLocked =
+                          isReadOnly || isRowPriceLocked(item)
+                        const isTaxLocked = isReadOnly || isRowPriceLocked(item)
+
+                        const isPrimaryProduct =
+                          String(
+                            item?.productorservicetype || ""
+                          ).toLowerCase() === "primaryproduct"
+                        console.log(item)
+                        console.log(isPrimaryProduct)
+                        const remainingAdditionalServicesCount =
+                          isPrimaryProduct
+                            ? getRemainingAdditionalServicesCount(item, index)
+                            : 0
+                        console.log(process)
+                        console.log(remainingAdditionalServicesCount)
+                        return (
+                          <tr
+                            key={index}
+                            className="border-b even:bg-blue-50 bg-white hover:bg-blue-50 transition-colors"
+                          >
+                            <td className="border border-gray-300 px-1 py-1">
+                              {showLicenseDropdown ? (
+                                <LicenseDropdown
+                                  index={index}
+                                  item={item}
+                                  isReadOnly={isReadOnly}
+                                  customerTableData={customerTableData}
+                                  selectedleadlist={selectedleadlist}
+                                  setSelectedLeadList={setSelectedLeadList}
+                                  handleLicenseSelect={handleLicenseSelect}
+                                />
+                              ) : (
+                                <input
+                                  value={item.licenseNumber}
+                                  className="py-1 border pl-2 rounded-md border-gray-500 w-full text-xs"
+                                  onChange={(e) => {
+                                    const licenseValue = e.target.value
+                                    updateLicense(index, licenseValue)
+
+                                    if (debounceTimersRef.current[index]) {
+                                      clearTimeout(
+                                        debounceTimersRef.current[index]
+                                      )
+                                    }
+
+                                    debounceTimersRef.current[index] =
+                                      setTimeout(() => {
+                                        handleLicenseBlur(index, licenseValue)
+                                        delete debounceTimersRef.current[index]
+                                      }, 1000)
+                                  }}
+                                  placeholder="Enter License Number"
+                                />
+                              )}
+                            </td>
+
+                            <td className="border border-gray-300 px-1 py-1">
+                              <ProductDropdown
+                                index={index}
+                                item={item}
+                                isReadOnly={isReadOnly}
+                                leadList={leadList}
+                                selectedleadlist={selectedleadlist}
+                                selectedBranch={selectedBranch}
+                                selectedCustomer={selectedCustomer}
+                                process={process}
+                                setSelectedLeadList={setSelectedLeadList}
+                              />
+                            </td>
+
+                            <td className="border border-gray-300 px-1 py-1">
+                              <input
+                                type="number"
+                                readOnly={isAmountLocked}
+                                value={item.productPrice}
+                                onChange={(e) =>
+                                  handlePriceChange(index, e.target.value)
+                                }
+                                placeholder="0.00"
+                                className={`w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-right ${
+                                  isAmountLocked
+                                    ? "cursor-not-allowed bg-gray-100"
+                                    : "bg-white"
+                                }`}
+                              />
+                            </td>
+
+                            <td className="border border-gray-300 px-1 py-1">
+                              <input
+                                type="number"
+                                readOnly={isTaxLocked}
+                                value={item.hsn}
+                                onChange={(e) =>
+                                  handleHsnChange(index, e.target.value)
+                                }
+                                placeholder="Tax"
+                                className={`w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-center ${
+                                  isTaxLocked
+                                    ? "cursor-not-allowed bg-gray-100"
+                                    : "bg-white"
+                                }`}
+                              />
+                            </td>
+
+                            <td className="border border-gray-300 px-1 py-1">
+                              <input
+                                type="text"
+                                readOnly
+                                value={item.netAmount}
+                                placeholder="0.00"
+                                className="w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-right cursor-not-allowed bg-gray-100"
+                              />
+                            </td>
+
+                            <td className="border border-gray-300 px-1 py-1 text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                {/* {isPrimaryProduct && !isReadOnly && (
+              <button
+                type="button"
+                onClick={() => addAdditionalServicesForPrimaryRow(item, index)}
+                title="Add additional services"
+                className="h-6 w-6 rounded-full bg-green-100 text-green-700 hover:bg-green-200 flex items-center justify-center font-bold text-sm"
+              >
+                +
+              </button>
+            )} */}
+                                {isPrimaryProduct &&
+                                  process === "closing" &&
+                                  remainingAdditionalServicesCount > 0 && (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        addAdditionalServicesForPrimaryRow(
+                                          item,
+                                          index
+                                        )
+                                      }
+                                      title={`Add ${remainingAdditionalServicesCount} additional service${
+                                        remainingAdditionalServicesCount > 1
+                                          ? "s"
+                                          : ""
+                                      }`}
+                                      className="h-6 w-6 rounded-full bg-green-100 text-green-700 hover:bg-green-200 flex items-center justify-center font-bold text-sm"
+                                    >
+                                      +
+                                    </button>
+                                  )}
+
+                                <button
+                                  type="button"
+                                  disabled={isReadOnly}
+                                  onClick={() =>
+                                    handleDeletetableData(item, index)
+                                  }
+                                  className={`h-6 w-6 rounded-full flex items-center justify-center text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors ${
+                                    isReadOnly
+                                      ? "cursor-not-allowed opacity-30"
+                                      : ""
+                                  }`}
+                                  title="Delete row"
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-3.5 w-3.5"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    strokeWidth={2}
+                                  >
+                                    <path d="M3 6h18" />
+                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </td>
+
+                            <td className="border border-gray-300 px-1 py-1 text-center">
+                              <button
+                                type="button"
+                                onClick={() => handleDetails(item, index)}
+                                className="text-blue-500 font-bold ml-2"
+                              >
+                                Add
+                              </button>
+                            </td>
+                          </tr>
+                        )
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -2461,7 +3047,7 @@ className="text-blue-500 font-bold ml-2">Details</button></td>
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 pt-2">
                   {/* left: self allocation or lead id */}
                   <div className="w-full sm:w-1/2">
-                    {process !== "edit" ? (
+                    {process === "register" ? (
                       <>
                         <label className="block text-xs font-semibold text-gray-600 mb-1">
                           Self Allocation / Other
@@ -2610,48 +3196,53 @@ className="text-blue-500 font-bold ml-2">Details</button></td>
               </div>
             </div>
           )}
-{showdetailsopen && (
-  <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4">
-    <div className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl border border-gray-200 overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-4 border-b bg-[#1B2A4A] text-white">
-        <div>
-          <h2 className="text-sm font-bold">
-            {String(detailsItem?.productorservicetype || "").toLowerCase() === "primaryproduct"
-              ? "Primary Product Details"
-              : "Additional Service Details"}
-          </h2>
-          <p className="text-xs text-blue-100 mt-1">
-            Fill the details for the selected item
-          </p>
-        </div>
+          {showdetailsopen && (
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4">
+              <div className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl border border-gray-200 overflow-hidden">
+                <div className="flex items-center justify-between px-5 py-4 border-b bg-[#1B2A4A] text-white">
+                  <div>
+                    <h2 className="text-sm font-bold">
+                      {String(
+                        detailsItem?.productorservicetype || ""
+                      ).toLowerCase() === "primaryproduct"
+                        ? "Primary Product Details"
+                        : "Additional Service Details"}
+                    </h2>
+                    <p className="text-xs text-blue-100 mt-1">
+                      Fill the details for the selected item
+                    </p>
+                  </div>
 
-        <button
-          type="button"
-          onClick={() => setdetailsopen(false)}
-          className="h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 text-white text-lg flex items-center justify-center"
-        >
-          ×
-        </button>
-      </div>
+                  <button
+                    type="button"
+                    onClick={() => setdetailsopen(false)}
+                    className="h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 text-white text-lg flex items-center justify-center"
+                  >
+                    ×
+                  </button>
+                </div>
 
-      <div className="p-5">
-        {String(detailsItem?.productorservicetype || "").toLowerCase() === "primaryproduct" ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">
-                Name
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={detailsForm.name}
-                onChange={handleDetailsChange}
-                placeholder="List of Primary Products"
-                className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
-              />
-            </div>
+                <div className="p-5">
+                  {String(
+                    detailsItem?.productorservicetype || ""
+                  ).toLowerCase() === "primaryproduct" ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">
+                          Name
+                        </label>
+                        <input
+                          type="text"
+                          name="name"
+                          readOnly
+                          value={detailsForm.name}
+                          onChange={handleDetailsChange}
+                          placeholder="List of Primary Products"
+                          className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] cursor-not-allowed"
+                        />
+                      </div>
 
-            <div>
+                      {/* <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">
                 License Number
               </label>
@@ -2663,8 +3254,8 @@ className="text-blue-500 font-bold ml-2">Details</button></td>
                 placeholder="License Number"
                 className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
               />
-            </div>
-
+            </div> */}
+                      {/* 
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">
                 Software Trade
@@ -2677,94 +3268,81 @@ className="text-blue-500 font-bold ml-2">Details</button></td>
                 placeholder="Software Trade"
                 className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
               />
-            </div>
+            </div> */}
 
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">
-                Application Date
-              </label>
-              <input
-                type="date"
-                name="applicationDate"
-                value={detailsForm.applicationDate}
-                onChange={handleDetailsChange}
-                className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
-              />
-            </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">
+                          Application Date
+                        </label>
+                        <input
+                          type="date"
+                          name="applicationDate"
+                          value={detailsForm.applicationDate}
+                          onChange={handleDetailsChange}
+                          className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
+                        />
+                      </div>
 
-            <div className="md:col-span-2">
-              <label className="block text-xs font-semibold text-gray-600 mb-1">
-                Status
-              </label>
-              <select
-                name="status"
-                value={detailsForm.status}
-                onChange={handleDetailsChange}
-                className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
-              >
-                <option value="Active">Active</option>
-                <option value="DE active">DE active</option>
-              </select>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">
-                Name
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={detailsForm.name}
-                onChange={handleDetailsChange}
-                placeholder="List of additional service"
-                className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
-              />
-            </div>
+                      <div className="">
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">
+                          Status
+                        </label>
+                        <select
+                          name="status"
+                          value={detailsForm.status}
+                          onChange={handleDetailsChange}
+                          className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
+                        >
+                          <option value="Running">Active</option>
+                          <option value="Deactive">DE active</option>
+                        </select>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">
+                          Name
+                        </label>
+                        <input
+                          type="text"
+                          name="name"
+                          readOnly
+                          value={detailsForm.name}
+                          onChange={handleDetailsChange}
+                          placeholder="List of additional service"
+                          className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] cursor-not-allowed"
+                        />
+                      </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">
-                License Number
-              </label>
-              <input
-                type="text"
-                name="licenseNumber"
-                value={detailsForm.licenseNumber}
-                onChange={handleDetailsChange}
-                placeholder="Optional"
-                className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
-              />
-            </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">
+                          Next Due
+                        </label>
+                        <input
+                          type="date"
+                          name="nextDue"
+                          value={detailsForm.nextDue}
+                          onChange={handleDetailsChange}
+                          className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
+                        />
+                      </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">
-                Next Due
-              </label>
-              <input
-                type="date"
-                name="nextDue"
-                value={detailsForm.nextDue}
-                onChange={handleDetailsChange}
-                className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
-              />
-            </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">
+                          No of Quantity / Users
+                        </label>
+                        <input
+                          type="number"
+                          name="quantityUsers"
+                          value={detailsForm.quantityUsers}
+                          onChange={handleDetailsChange}
+                          placeholder="Optional"
+                          className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
+                        />
+                      </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">
-                No of Quantity / Users
-              </label>
-              <input
-                type="number"
-                name="quantityUsers"
-                value={detailsForm.quantityUsers}
-                onChange={handleDetailsChange}
-                placeholder="Optional"
-                className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
-              />
-            </div>
-
-            <div className="md:col-span-2">
+                      {/* <div className="md:col-span-2">
               <label className="block text-xs font-semibold text-gray-600 mb-1">
                 Amount (Incl. of Tax)
               </label>
@@ -2776,31 +3354,45 @@ className="text-blue-500 font-bold ml-2">Details</button></td>
                 placeholder="Amount"
                 className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
               />
+            </div> */}
+                      <div className="">
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">
+                          Status
+                        </label>
+                        <select
+                          name="status"
+                          value={detailsForm.status}
+                          onChange={handleDetailsChange}
+                          className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
+                        >
+                          <option value="Running">Active</option>
+                          <option value="Deactive">DE active</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-end gap-3 px-5 py-4 border-t bg-gray-50">
+                  <button
+                    type="button"
+                    onClick={() => setdetailsopen(false)}
+                    className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDetailsSave}
+                    className="rounded-lg bg-[#1B2A4A] px-4 py-2 text-sm font-semibold text-white hover:bg-[#243660]"
+                  >
+                    Save Details
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
-
-      <div className="flex items-center justify-end gap-3 px-5 py-4 border-t bg-gray-50">
-        <button
-          type="button"
-          onClick={() => setdetailsopen(false)}
-          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
-        >
-          Cancel
-        </button>
-
-        <button
-          type="button"
-          onClick={handleDetailsSave}
-          className="rounded-lg bg-[#1B2A4A] px-4 py-2 text-sm font-semibold text-white hover:bg-[#243660]"
-        >
-          Save Details
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+          )}
 
           {modalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center px-4 z-50">

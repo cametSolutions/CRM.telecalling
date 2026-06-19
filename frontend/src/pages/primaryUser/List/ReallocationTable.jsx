@@ -788,13 +788,48 @@ const ReallocationTable = () => {
                           <td className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5 "></td>
                           <td
                             className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5 text-red-400 hover:text-red-500 hover:cursor-pointer font-semibold"
-                            onClick={() => {
-                              setIsclosed(true)
+                            // onClick={() => {
+                            //   setIsclosed(true)
 
-                              setselectedData(item)
-                            }}
+                            //   setselectedData(item)
+                            // }}
                           >
-                            Closed
+                            <button
+                              onClick={() => {
+console.log("hhh")
+                                const breadcrumb = [
+                                  { label: "Lead", path: "", state: "" },
+                                  {
+                                    label: "Re Allocation List",
+                                    path:
+                                      loggedUser?.role === "Admin"
+                                        ? "/admin/transaction/lead/ownedLeadlist"
+                                        : "/staff/transaction/lead/ownedLeadlist",
+                                    // state: {
+                                    //   dates,
+                                    //   ownLead,
+                                    //   selecteduserBranch
+                                    // }
+                                  },
+                                  { label: "Lead Closed", path: "" }
+                                ]
+                                loggedUser.role === "Admin"
+                                  ? navigate(
+                                      "/admin/transaction/lead/leadClosed",
+                                      {
+                                        state: { leadId: item._id, breadcrumb }
+                                      }
+                                    )
+                                  : navigate(
+                                      "/staff/transaction/lead/leadClosed",
+                                      {
+                                        state: { leadId: item._id, breadcrumb }
+                                      }
+                                    )
+                              }}
+                            >
+                              Closed
+                            </button>
                           </td>
                           <td className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5"></td>
                         </tr>

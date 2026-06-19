@@ -196,7 +196,7 @@ export const LeadRegister = async (req, res) => {
       leadBy,
       leadBranch,
     } = leadData
-console.log("allcationtype",allocationType)
+    console.log("allcationtype", allocationType)
     const leadDate = new Date()
     const lastLead = await LeadId.findOne().sort({ leadId: -1 }).session(session)
 
@@ -296,7 +296,13 @@ console.log("allcationtype",allocationType)
       }),
       activityLog,
     })
-
+    // const filteredLeadData =
+    //   selectedtableLeadData?.length > 1
+    //     ? selectedtableLeadData.filter(
+    //       (item) =>
+    //         String(item?.productorservicetype || "").toLowerCase() === "primaryproduct"
+    //     )
+    //     : selectedtableLeadData
     selectedtableLeadData.forEach((item) =>
       lead.leadFor.push({
         productorServiceId: item.productorServiceId,
@@ -304,8 +310,11 @@ console.log("allcationtype",allocationType)
         licenseNumber: item.licenseNumber,
         productPrice: item.productPrice,
         hsn: item.hsn,
+        productorservicetype: item.productorservicetype,
         netAmount: item.netAmount,
         price: item.price,
+        company_id: item.company_id,
+        branch_id: item.branch_id
       })
     )
 
@@ -1179,6 +1188,75 @@ export const TaskRegistration = async (req, res) => {
     return res.status(500).json({ message: "internal server error" });
   }
 };
+export const Leadclosing = async (req, res) => {
+  try {
+    const { data, leadData } = req.body;
+    console.log("leaddtaa", leadData)
+    // return
+    const { docID } = req.query;
+    const objectId = new mongoose.Types.ObjectId(docID);
+    const matchedDoc = await LeadMaster.findById(objectId);
+
+    const mappedleadData = leadData.map((item) => {
+      return {
+        licenseNumber: item.licenseNumber,
+        productorServiceId: item.productorServiceId,
+        productorServicemodel: item.itemType,
+        price: item.price,
+        productPrice: Number(item.productPrice),
+        hsn: Number(item.hsn),
+        netAmount: Number(item.netAmount),
+        productorservicetype: item.productorservicetype,
+        company_id: item.company_id,
+        branch_id: item.branch_id
+      };
+    });
+    const mappedproductData = leadData.map((item) => {
+      return {
+        company_id: item.company_id,
+        branch_id: item.branch_id,
+        product_id: item.productorServiceId,
+        licensenumber: item?.licenseNumber ? Number(item?.licenseNumber):null,
+        noofusers: item?.quantityUsers,
+        applicationDate: item?.applicationDate,
+        nextDue: item?.nextDue,
+        isActive: item?.status,
+productorservicetype:item?.productorservicetype
+      }
+    })
+
+    const newbalance = data.netAmount - matchedDoc.totalPaidAmount;
+
+    const updatedLead = await LeadMaster.findByIdAndUpdate(objectId, {
+      ...data,
+      balanceAmount: newbalance,
+      leadFor: mappedleadData,
+    });
+console.log("mappppedproductdata",mappedproductData)
+console.log("customername",data.customerName)
+    const updatedcustomer = await Customer.findByIdAndUpdate(data.customerName, {
+      $set: {
+        mobile: data.mobile,
+        email: data.email,
+        landline: data.phone
+      },
+      $push: {
+        selected: {
+          $each: mappedproductData
+        }
+      }
+    })
+
+    if (!updatedLead) {
+      return res.status(404).json({ message: "Lead not found" });
+    } else {
+      return res.status(200).json({ message: "Lead Closed succesfully" });
+    }
+
+
+  } catch (error) {
+  }
+}
 export const UpdateLeadRegister = async (req, res) => {
   try {
     const { data, leadData } = req.body;
@@ -4444,11 +4522,11 @@ export const UpdateLeadTask = async (req, res) => {
 export const GetrespectedleadTask = async (req, res) => {
   try {
     const { userid, branchSelected, role, ownTask } = req.query;
-console.log("useriid",userid)
+    console.log("useriid", userid)
     const userObjectId = new mongoose.Types.ObjectId(userid);
     const branchObjectId = new mongoose.Types.ObjectId(branchSelected);
     const isAdminOrManager = role === "Admin" || role === "Manager";
-console.log("isadminnn",isAdminOrManager)
+    console.log("isadminnn", isAdminOrManager)
     const query = {
       leadBranch: branchObjectId,
       activityLog: {
@@ -4465,7 +4543,7 @@ console.log("isadminnn",isAdminOrManager)
     const selectedfollowup = await LeadMaster.find(query)
       .populate({ path: "customerName", select: "customerName" })
       .lean();
-console.log("leaddddddddddd",selectedfollowup)
+    console.log("leaddddddddddd", selectedfollowup)
 
     const taskLeads = [];
     if (ownTask === "false") {

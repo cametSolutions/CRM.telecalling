@@ -626,48 +626,7 @@ console.log("pppp")
                 <option value="Additionalservice">Additional Service</option>
               </select>
             </div>
-            {/* <div className="">
-              <label
-                htmlFor="defaultservices"
-                className="block text-sm font-medium text-gray-700 "
-              >
-                Default Services
-              </label>
-
-              <select
-                id="defaultservices"
-                {...register("defaultservices", { required: true })}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none cursor-pointer"
-              >
-                <option value="">select services</option>
-                <option value="Primaryproduct">
-                  Tally software support services
-                </option>
-                <option value="Additionalservice">
-                  Tally software Services-auditor
-                </option>
-              </select>
-            </div> */}
-            {/* {selectedProductType === "Primaryproduct" && (
-              <div className="mt-3">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Default Services
-                </label>
-
-                <div className="space-y-2">
-                  {servicelist.map((service) => (
-                    <label key={service} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        value={service}
-                        {...register("defaultservices")}
-                      />
-                      {service}
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )} */}
+            
             {selectedProductType === "Primaryproduct" && (
               <div className="mt-3 relative">
                 <label className="block text-sm font-medium text-gray-700 mb-2">

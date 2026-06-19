@@ -51,6 +51,9 @@ const leadSchema = new mongoose.Schema(
           refpath: "productorServicemodel",
           default: null,
         },
+        productorservicetype: { type: String },
+        company_id: { type: mongoose.Schema.Types.ObjectId, ref: "Company" },
+        branch_id: { type: mongoose.Schema.Types.ObjectId, ref: "Branch" },
         productorServicemodel: { type: String, enum: ["Product", "Service"] },
         licenseNumber: { type: Number },
         productPrice: { type: Number },
@@ -160,7 +163,7 @@ const leadSchema = new mongoose.Schema(
         changeReason: { type: String },
       },
     ],
-followupClosed:{type:Boolean,default:false},
+    followupClosed: { type: Boolean, default: false },
     //to know what type of allocation currently goin on,like implemention,programming ,followup to track current allocation status
     allocationType: { type: mongoose.Schema.Types.ObjectId, ref: "Task" },
     //to check whether this lead is initially on which type like implemention,programing

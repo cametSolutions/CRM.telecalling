@@ -42,6 +42,8 @@ const CustomerSchema = new mongoose.Schema({
       noofusers: { type: Number }, // Ensure this is a number
       version: { type: mongoose.Schema.Types.Mixed },
       customerAddDate: { type: Date },
+applicationDate:{type:Date},
+nextDue:{type:Date},
       amcstartDate: { type: Date },
       amcendDate: { type: Date },
       amcAmount: { type: Number }, // Ensure this is a number
@@ -58,7 +60,9 @@ const CustomerSchema = new mongoose.Schema({
         enum: ["Running", "Deactive"]
       },
       reasonofStatus: { type: String },
-      softwareTrade: { type: String }
+      softwareTrade: { type: String },
+taggedLicenses:[],
+productorservicetype:{type:String}
     }
   ],
 createdFrom:{type:String},

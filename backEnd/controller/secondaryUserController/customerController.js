@@ -4095,7 +4095,7 @@ export const GeteditedCustomer = async (req, res) => {
       return res.status(400).json({ message: "customer id is required" })
     }
     const id = new mongoose.Types.ObjectId(customerid)
-    const customer = await Customer.findById(id)
+    const customer = await Customer.findById(id).populate("selected.product_id selected.company_id selected.branch_id")
 
     if (customer) {
       return res.status(200).json({ message: "customer found", data: customer })
