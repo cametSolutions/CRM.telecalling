@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import PopUp from "../../../components/common/PopUp"
 import {
   X,
   Calendar,
@@ -36,7 +37,9 @@ import SkeletonTable from "../../../components/loader/SkeletonTable"
 import { StaticSidebar } from "../../../components/primaryUser/StaticSidebar"
 const LeadAllocationTable = () => {
   const [status, setStatus] = useState("Pending")
+  const [popupOpen, setpopupOpen] = useState(false)
   const [submiterror, setsubmitError] = useState("")
+  const [warningMessage, setWarningMessage] = useState(null)
   const [toggleLoading, setToggleLoading] = useState(false)
   const [selectedLeadId, setselectedLeadId] = useState(null)
   const [showModal, setShowmodal] = useState(false)
@@ -74,12 +77,13 @@ const LeadAllocationTable = () => {
   const [tableData, setTableData] = useState([])
   const [activeUserId, setActiveUserId] = useState(null)
   const [selectedData, setselectedData] = useState([])
+console.log(selectedData)
   const { data: branches } = UseFetch("/branch/getBranch")
   const [formData, setFormData] = useState({
     allocationDate: "",
     allocationDescription: ""
   })
-const [filteredtasklist,setfilteredtasklist]=useState([])
+  const [filteredtasklist, setfilteredtasklist] = useState([])
   const { data: tasks } = UseFetch("/lead/getallTask")
   console.log(tasks)
   const { data: leadPendinglist, loading } = UseFetch(
@@ -102,9 +106,9 @@ const [filteredtasklist,setfilteredtasklist]=useState([])
   useEffect(() => {
     if (tasks) {
       console.log(tasks)
-      const filteredtask=tasks.filter((item)=>item.taskName==="Followup")
-console.log(filteredtask)
-setfilteredtasklist(filteredtask)
+      const filteredtask = tasks.filter((item) => item.taskName === "Followup")
+      console.log(filteredtask)
+      setfilteredtasklist(filteredtask)
     }
   }, [tasks])
   useEffect(() => {
@@ -212,11 +216,6 @@ setfilteredtasklist(filteredtask)
       )
     }
   }, [alluserdata, selectedCompanyBranch])
-  useEffect(() => {
-    if (leadPendinglist) {
-      getgroupingData(leadPendinglist)
-    }
-  }, [leadPendinglist])
   const getgroupingData = (data) => {
     const groupedLeads = {}
     let grandTotal = 0
@@ -230,9 +229,15 @@ setfilteredtasklist(filteredtask)
 
       groupedLeads[leadBy].push(lead)
     })
-
+groupedLeads
     setTableData(groupedLeads)
   }
+  useEffect(() => {
+    if (leadPendinglist) {
+      getgroupingData(leadPendinglist)
+    }
+  }, [leadPendinglist])
+
   console.log(selectedAllocationType)
   const toggleStatus = async () => {
     setTableData([])
@@ -248,6 +253,7 @@ setfilteredtasklist(filteredtask)
       if (response.status >= 200 && response.status < 300) {
         const data = response.data.data //gets only allocated leads with reallocatedto field false which means reallocatedto true are in the reallocation page not need to display here
         getgroupingData(data)
+        console.log(data)
         // setTableData(data)
         data.forEach((item) => {
           setselectedAllocationType((prev) => ({
@@ -258,6 +264,9 @@ setfilteredtasklist(filteredtask)
         setapprovedToggleStatus(!approvedToggleStatus)
         setToggleLoading(false)
         const initialSelected = {}
+        console.log(data)
+        const a = data.filter((item) => item.leadId === "00147")
+        console.log(a)
         data.forEach((item) => {
           if (item.allocatedTo?._id) {
             const match = allocationOptions.find(
@@ -269,7 +278,7 @@ setfilteredtasklist(filteredtask)
             }
           }
         })
-
+        console.log(initialSelected)
         setSelectedAllocates(initialSelected)
       }
     } else {
@@ -286,6 +295,9 @@ setfilteredtasklist(filteredtask)
         setToggleLoading(false)
       }
     }
+  }
+  const onClose = () => {
+    setpopupOpen(false)
   }
   const handleMoreClick = (id, name) => {
     const Datas = targetData?.userWiseResults
@@ -435,9 +447,38 @@ setfilteredtasklist(filteredtask)
   console.log(selected)
   console.log(selectedAllocationType)
   const handleSubmit = async () => {
+    const matchingIndex = selectedItem.activityLog.findIndex(
+      (log) =>
+        log.reallocatedTo === false &&
+        log.taskClosed === false &&
+        // log.followupClosed === false &&
+        log.allocatedClosed === false &&
+        log.allocationChanged === false &&
+        log.taskTo // ensures the field exists
+    )
+    console.log(matchingIndex)
+    console.log(selectedItem)
+    console.log(selectedItem.allocatedTo._id||selectedItem.allocatedTo)
+    console.log(selectedItem?.activityLog[matchingIndex]?.taskallocatedTo)
+    console.log(
+      selectedItem?.activityLog[matchingIndex]?.taskallocatedTo ===(selectedItem?.allocatedTo?._id||selectedItem?.allocatedTo)
+    )
+    console.log("Hhh")
+    if (
+      selectedItem?.activityLog[matchingIndex]?.taskallocatedTo ===(selectedItem?.allocatedTo?._id||selectedItem?.allocatedTo)
+    ) {
+      console.log("hhhhh")
+      setWarningMessage("The selected staff member is the same. Please change the staff member")
+      setpopupOpen(true)
+      return
+    }
+    // if(selectedItem.allocatedTo===selectedItem)
+
     if (submitLoading) {
       return
     }
+    console.log(formData)
+
     console.log("hh")
     // sanitize all string fields
     const cleanedData = Object.fromEntries(
@@ -462,14 +503,22 @@ setfilteredtasklist(filteredtask)
       }))
       return
     }
+    console.log(selectedAllocationType)
 
-    // return
     try {
       if (selectedAllocationType) {
         const selected = selectedAllocationType[selectedItem._id]
 
         const allocationname =
           selectedAllocationtypeNames[selectedItem._id]?.taskName
+        console.log(selectedAllocationtypeNames)
+
+        console.log(selectedItem?._id)
+        console.log(allocationname)
+        console.log(selectedItem)
+        console.log(cleanedData)
+        console.log(approvedToggleStatus)
+
         setsubmitLoading(true)
 
         let response
@@ -481,6 +530,8 @@ setfilteredtasklist(filteredtask)
             )}&allocationtypeId=${selected}&allocatedBy=${loggedUser._id}`,
             { selectedItem, cleanedData }
           )
+console.log(response)
+console.log(response.status)
           if (response.status >= 200 && response.status < 300) {
             getgroupingData(response.data.data)
             // setTableData(response.data.data)
@@ -539,6 +590,13 @@ setfilteredtasklist(filteredtask)
   }
   const handleAllocate = (item) => {
     console.log(item)
+    if (item.taskfromFollowup) {
+      setWarningMessage("A Task is pending from followup can't change the user")
+      setpopupOpen(true)
+
+      return
+    }
+
     if (!selectedAllocates.hasOwnProperty(item._id)) {
       setValidateError((prev) => ({
         ...prev,
@@ -553,6 +611,12 @@ setfilteredtasklist(filteredtask)
       }))
       return
     }
+    console.log(filteredtasklist)
+    console.log(selectedAllocationType)
+    setselectedallocatiotypeNames((prev) => ({
+      ...prev,
+      [item._id]: filteredtasklist[0]
+    }))
     setselectedLeadId(item.leadId)
     setShowmodal(true)
     setSelectedItem(item)
@@ -562,6 +626,7 @@ setfilteredtasklist(filteredtask)
       allocationDate: new Date()
     }))
   }
+  console.log(formData)
   console.log(tasks)
   console.log(selectedCompanyBranch)
   return (
@@ -833,9 +898,10 @@ setfilteredtasklist(filteredtask)
                                     <select
                                       value={selectedAllocationType?.[item._id]}
                                       onChange={(e) => {
-                                        const selectedtask = filteredtasklist.find(
-                                          (t) => t._id === e.target.value
-                                        )
+                                        const selectedtask =
+                                          filteredtasklist.find(
+                                            (t) => t._id === e.target.value
+                                          )
                                         setselectedAllocationType((prev) => ({
                                           ...prev,
                                           [item._id]: e.target.value
@@ -1373,6 +1439,9 @@ setfilteredtasklist(filteredtask)
             </table>
           </div>
         </div>
+      )}
+      {popupOpen && (
+        <PopUp isOpen={popupOpen} onClose={onClose} message={warningMessage} />
       )}
       <PerformanceModal
         modalOpen={openModal}

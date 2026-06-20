@@ -600,6 +600,7 @@ console.log(ownTask)
               loggedUser={loggedUser}
               refresh={refreshHook}
               pending={pending}
+ownTask={ownTask}
             />
           ) : (
             <div className="flex flex-col items-center justify-center py-12 text-gray-500">

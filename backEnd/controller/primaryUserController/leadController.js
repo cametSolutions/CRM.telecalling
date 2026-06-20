@@ -196,7 +196,7 @@ export const LeadRegister = async (req, res) => {
       leadBy,
       leadBranch,
     } = leadData
-console.log("allcationtype",allocationType)
+    console.log("allcationtype", allocationType)
     const leadDate = new Date()
     const lastLead = await LeadId.findOne().sort({ leadId: -1 }).session(session)
 
@@ -3248,7 +3248,7 @@ export const GetallLead = async (req, res) => {
     if (!Status && !role) {
       return res.status(400).json({ message: "Status or role is missing " });
     }
-
+    console.log("status", Status)
     if (Status === "Pending") {
       //for getting pending leads means leads not to be allocated to someone
       const query = { leadBranch: branchObjectId, activityLog: { $size: 1 } };
@@ -3280,6 +3280,7 @@ export const GetallLead = async (req, res) => {
         });
       }
     } else if (Status === "Approved") {
+      console.log("apppoved", Status)
       const query = {
         leadBranch: branchObjectId,
         reallocatedTo: false,
@@ -3295,7 +3296,7 @@ export const GetallLead = async (req, res) => {
         approvedAllocatedLeads.map(async (lead) => {
           const lastMatchingActivity = [...(lead.activityLog || [])]
             .reverse()
-            .find((log) => log.taskallocatedTo && log.taskallocatedBy);
+            .find((log) => log.taskallocatedTo && log.taskallocatedBy && !log?.taskfromFollowup);
 
           if (
             !lead.leadByModel ||
@@ -4178,14 +4179,15 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
 
     let allocatedToModel;
     let allocatedByModel;
+console.log("selecteditem",selectedItem)
     const isStaffallocatedtomodel = await Staff.findOne({
-      _id: selectedItem.allocatedTo,
+      _id: selectedItem.allocatedTo?._id||selectedItem?.allocatedTo,
     });
     if (isStaffallocatedtomodel) {
       allocatedToModel = "Staff";
     } else {
       const isAdminallocatedtomodel = await Admin.findOne({
-        _id: selectedItem.allocatedTo,
+        _id: selectedItem.allocatedTo?._id||selectedItem?.allocatedTo,
       });
       if (isAdminallocatedtomodel) {
         allocatedToModel = "Admin";
@@ -4204,6 +4206,8 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
         allocatedByModel = "Admin";
       }
     }
+    console.log("allocatedtomodel", allocatedToModel)
+    console.log("alloatedbymodel", allocatedByModel)
     if (!allocatedToModel || !allocatedByModel) {
       return res
         .status(400)
@@ -4263,8 +4267,10 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
           log.taskClosed === false &&
           // log.followupClosed === false &&
           log.allocatedClosed === false &&
+          log.allocationChanged === false &&
           log.taskTo // ensures the field exists
       );
+
       const task = matchLead.activityLog[matchingIndex]?.taskId;
       console.log("taskkk", task)
       console.log("alocationtupeid", allocationtypeId)
@@ -4288,7 +4294,7 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
         submissiondoneByModel: allocatedByModel,
         taskallocatedBy: allocatedBy,
         taskallocatedByModel: allocatedByModel,
-        taskallocatedTo: selectedItem.allocatedTo,
+        taskallocatedTo: selectedItem.allocatedTo||selectedItem?.allocateTo?._id,
         taskallocatedToModel: allocatedToModel,
         remarks: cleanedData.allocationDescription,
         taskBy: allocationTask?._id,
@@ -4304,6 +4310,9 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
         activityLogEntry.allocationDate = cleanedData.allocationDate;
         // activityLogEntry.taskfromFollowup = false
       }
+      if (cleanedData?.reason) {
+        activityLogEntry.changeReason = cleanedData.reason
+      }
       matchLead.dueDate = cleanedData.allocationDate;
 
       // Push new log
@@ -4313,6 +4322,8 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
     }
 
     if (allocationpending === "true") {
+console.log(
+"oooooooooooooooooo")
       const pendingLeads = await LeadMaster.find({
         leadBranch: branchObjectId,
         activityLog: { $size: 1 },
@@ -4340,12 +4351,13 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
         .status(201)
         .json({ message: "Allocate successfully", data: populatedLeads });
     } else if (allocationpending === "false") {
+console.log("ddddddddddddd")
       const allocatedLeads = await LeadMaster.find({
         allocatedTo: { $ne: null },
       })
         .populate({ path: "customerName", select: "customerName" })
         .lean();
-
+console.log("allocatedleadsss",allocatedLeads)
       const populatedLeads = await Promise.all(
         allocatedLeads.map(async (lead) => {
           if (!lead.leadByModel || !mongoose.models[lead.leadByModel]) {
@@ -4444,11 +4456,11 @@ export const UpdateLeadTask = async (req, res) => {
 export const GetrespectedleadTask = async (req, res) => {
   try {
     const { userid, branchSelected, role, ownTask } = req.query;
-console.log("useriid",userid)
+    console.log("useriid", userid)
     const userObjectId = new mongoose.Types.ObjectId(userid);
     const branchObjectId = new mongoose.Types.ObjectId(branchSelected);
     const isAdminOrManager = role === "Admin" || role === "Manager";
-console.log("isadminnn",isAdminOrManager)
+    console.log("isadminnn", isAdminOrManager)
     const query = {
       leadBranch: branchObjectId,
       activityLog: {
@@ -4465,7 +4477,7 @@ console.log("isadminnn",isAdminOrManager)
     const selectedfollowup = await LeadMaster.find(query)
       .populate({ path: "customerName", select: "customerName" })
       .lean();
-console.log("leaddddddddddd",selectedfollowup)
+    console.log("leaddddddddddd", selectedfollowup)
 
     const taskLeads = [];
     if (ownTask === "false") {
