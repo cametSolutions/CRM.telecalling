@@ -424,7 +424,8 @@ export default function LeadTaskComponent({
   loading,
   loggedUser,
   refresh,
-  pending
+  pending,
+ownTask
 }) {
   const [selectedData, setselectedData] = useState({})
   const [historyList, setHistoryList] = useState([])
@@ -567,7 +568,7 @@ export default function LeadTaskComponent({
             </td>
 
             {/* Update button (pending only) */}
-            {pending && (
+            {pending &&ownTask&& (
               <td
                 className="px-2 py-2 border border-gray-200"
                 onClick={(e) => e.stopPropagation()}
@@ -598,7 +599,7 @@ export default function LeadTaskComponent({
           {open && (
             <>
               {/* Sub-header */}
-              <tr className="text-xs font-medium border border-gray-200 bg-blue-50">
+              <tr className="text-xs font-medium border border-gray-200 bg-blue-50 whitespace-nowrap">
                 <td className="border border-gray-200 px-3 py-1" />
                 <td className="px-3 py-1 border border-gray-200 text-gray-600">
                   Lead By
@@ -620,7 +621,7 @@ export default function LeadTaskComponent({
                     <td className="px-3 py-1 border border-gray-200 text-gray-600">
                       No. of Followups
                     </td>
-                    {pending && (
+                    {pending &&ownTask&& (
                       <td className="px-3 py-1 border border-gray-200" />
                     )}
                   </>
@@ -651,7 +652,7 @@ export default function LeadTaskComponent({
               </tr>
 
               {/* Sub-values */}
-              <tr className="bg-white text-xs border border-gray-200">
+              <tr className="bg-white text-xs border border-gray-200 whitespace-nowrap">
                 <td className="border border-gray-200 px-3 py-1" />
                 <td className="px-3 py-1.5 border border-gray-200">
                   {item?.leadBy?.name || "-"}
@@ -673,7 +674,7 @@ export default function LeadTaskComponent({
                     <td className="px-3 py-1.5 border border-gray-200">
                       {item.activityLog?.length || 0}
                     </td>
-                    {pending && (
+                    {pending &&ownTask&& (
                       <td className="px-3 py-1.5 border border-gray-200" />
                     )}
                   </>
@@ -734,7 +735,7 @@ export default function LeadTaskComponent({
             <th className="border border-blue-500 px-3 py-2 text-center">Event Log</th>
             <th className="border border-blue-500 px-3 py-2 text-center">View / Modify</th>
 
-            {pending && (
+            {pending &&ownTask&& (
               <th className="border border-blue-500 px-3 py-2 text-center">Update</th>
             )}
 
