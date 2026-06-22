@@ -95,7 +95,7 @@ const ProductAdd = ({
           servicename: item.productName
         }))
       )
-console.log("pppp")
+      console.log("pppp")
     }
   }, [services])
   useEffect(() => {
@@ -411,11 +411,15 @@ console.log("pppp")
 
   const onSubmit = async (data, event) => {
     event.preventDefault()
-
+    console.log("hhhh")
+console.log(process)
+console.log(data)
+console.log(tableData)
     try {
       if (process === "Registration") {
         await handleProductData(data, tableData)
       } else if (process === "edit") {
+console.log("hhhh")
         await handleEditedData(data, tableData)
       }
       // Refetch the product data
@@ -424,7 +428,7 @@ console.log("pppp")
       toast.error("Failed to add product!")
     }
   }
-
+console.log(errors)
   return (
     <div className="justify-center items-center">
       <div className="w-auto bg-white shadow-lg rounded p-3 md:p-8 mx-auto">
@@ -454,6 +458,22 @@ console.log("pppp")
                   {errors.productName.message}
                 </span>
               )}
+            </div>
+            <div>
+              <label
+                htmlFor="shortName"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Short Name
+              </label>
+              <input
+                id="shortName"
+                type="text"
+                {...register("shortName")}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
+                placeholder="Short Name"
+              />
+             
             </div>
 
             {/* Product Price */}
@@ -618,15 +638,20 @@ console.log("pppp")
 
               <select
                 id="productorservicetype"
-                {...register("productorservicetype", { required: true })}
+                {...register("productorservicetype", { required: "Product Type is required" })}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none cursor-pointer"
               >
                 <option value="">select product Type</option>
                 <option value="Primaryproduct">Primary Product</option>
                 <option value="Additionalservice">Additional Service</option>
               </select>
+              {errors.productorservicetype && (
+                <span className="mt-2 text-sm text-red-600">
+                  {errors.productorservicetype.message}
+                </span>
+              )}
             </div>
-            
+
             {selectedProductType === "Primaryproduct" && (
               <div className="mt-3 relative">
                 <label className="block text-sm font-medium text-gray-700 mb-2">

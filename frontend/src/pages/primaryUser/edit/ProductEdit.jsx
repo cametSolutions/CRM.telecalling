@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-
+import { getLocalStorageItem } from "../../../helper/localstorage"
 import { useLocation } from "react-router-dom"
 import UseFetch from "../../../hooks/useFetch"
 import ProductAdd from "../../../components/primaryUser/ProductAdd"
@@ -8,15 +8,18 @@ import toast from "react-hot-toast"
 import { useNavigate } from "react-router-dom"
 function ProductEdit() {
   const [data, setData] = useState([])
+  const [loggeduser, setloggedUser] = useState(null)
   const navigate = useNavigate()
   const location = useLocation()
   const { product, selected, index, item } = location.state
   const productId = product._id
-
+  useEffect(() => {
+    setloggedUser(getLocalStorageItem("user"))
+  }, [])
   const handleSubmit = async (productData, editData) => {
-console.log(productData)
-console.log(editData)
-return
+    console.log(productData)
+    console.log(editData)
+
     try {
       await api.post(
         `/product/productEdit?productid=${productId}`,
@@ -25,8 +28,12 @@ return
           withCredentials: true
         }
       )
-      toast.success("Company updated successfully:")
-      navigate("/admin/masters/product")
+      toast.success("Product updated Successfully")
+      if (loggeduser.role === "Admin") {
+        navigate("/admin/masters/product")
+      } else {
+        navigate("/staff/masters/product")
+      }
     } catch (error) {
       console.error("Error updating company:", error)
     }

@@ -55,7 +55,8 @@ export const EditProduct = async (req, res) => {
     existingProduct.selected = editData// Use the updated tableData
     existingProduct.productName =
       productData.productName || existingProduct.productName
-    existingProduct.productPrice =
+existingProduct.shortName=productData.shortName||""   
+ existingProduct.productPrice =
       productData.productPrice || existingProduct.productPrice
 
     existingProduct.description =
@@ -100,6 +101,8 @@ export const GetbranchProduct = async (req, res) => {
 export const GetallProducts = async (req, res) => {
   try {
     const { branchselected = null, branchselectedArray = null } = req.query
+console.log("brancheselelcted",branchselected)
+console.log("branschselectedarrry",branchselectedArray)
     if (branchselectedArray) {
       let decodedbranches = JSON.parse(decodeURIComponent(branchselectedArray));
 
