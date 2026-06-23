@@ -7014,7 +7014,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
         const attendance = attendanceMap.get(dateKey);
         const dayOnsites = onsiteMap.get(dateKey) || [];
         const dayLeaves = leaveMap.get(dateKey) || [];
-      
+
         classifyAttendanceDay({
           day,
           attendance,
@@ -7081,7 +7081,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
         stats.latecutting =
           Math.floor(combined / (lateCutRule * 2)) +
           (Math.floor(combined / lateCutRule) % 2) * 0.5;
-      
+
 
         stats.present = Math.max(0, stats.present - stats.latecutting);
 
@@ -7417,54 +7417,207 @@ export const UpdateUserandAdmin = async (req, res) => {
   }
 }
 
+// export const Login = async (req, res) => {
+//   const { emailOrMobile, password } = req.body
+//   try {
+//     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+//     let user
+//     let branch
+//     // Determine if the input is an email or a mobile number
+//     if (emailRegex.test(emailOrMobile)) {
+
+//       user = await Admin.findOne({ email: emailOrMobile }).populate({ path: "department", select: "department" }).lean()
+
+//       if (!user) {
+//         user = await Staff.findOne({ email: emailOrMobile }).populate({ path: "department", select: "department" }).lean()
+//       }
+//     } else {
+//       // If it's a mobile number
+//       user = await Admin.findOne({ mobile: emailOrMobile }).populate({ path: "department", select: "department" }).lean()
+//       if (!user) {
+//         user = await Staff.findOne({ mobile: emailOrMobile }).populate({ path: "department", select: "department" }).lean()
+
+//       }
+//     }
+//     if (!user) {
+//       return res.status(400).json({ message: "Invalid login credentials" })
+//     }
+
+//     const isMatch = await bcrypt.compare(password, user.password)
+//     if (!isMatch) {
+//       return res.status(400).json({ message: "Invalid login credentials" })
+//     }
+//     console.log(user)
+//     const token = generateToken(res, user)
+//     console.log("dddddddddddddddddddddddddddddddd", token)
+
+//     if (token) {
+//       const { password, ...userwithoutpassword } = user
+
+//       res.status(200).json({
+//         message: "Login successful",
+//         token,
+
+//         User: userwithoutpassword,
+//         branch
+//       })
+//     }
+//   } catch (error) {
+//     console.error("Login error:", error.message)
+//     res.status(500).json({ message: "Server error" })
+//   }
+// }
 export const Login = async (req, res) => {
   const { emailOrMobile, password } = req.body
-  try {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    let user
-    let branch
-    // Determine if the input is an email or a mobile number
-    if (emailRegex.test(emailOrMobile)) {
 
-      user = await Admin.findOne({ email: emailOrMobile }).populate({ path: "department", select: "department" }).lean()
+  try {
+    const trimmedLogin = String(emailOrMobile || "").trim()
+    const trimmedPassword = String(password || "").trim()
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+    let user = null
+    let branch = null
+
+    if (emailRegex.test(trimmedLogin)) {
+      user = await Admin.findOne({ email: trimmedLogin })
+        .populate({ path: "department", select: "department" })
+        .lean()
 
       if (!user) {
-        user = await Staff.findOne({ email: emailOrMobile }).populate({ path: "department", select: "department" }).lean()
+        user = await Staff.findOne({ email: trimmedLogin })
+          .populate({ path: "department", select: "department" })
+          .lean()
       }
     } else {
-      // If it's a mobile number
-      user = await Admin.findOne({ mobile: emailOrMobile }).populate({ path: "department", select: "department" }).lean()
-      if (!user) {
-        user = await Staff.findOne({ mobile: emailOrMobile }).populate({ path: "department", select: "department" }).lean()
+      user = await Admin.findOne({ mobile: trimmedLogin })
+        .populate({ path: "department", select: "department" })
+        .lean()
 
+      if (!user) {
+        user = await Staff.findOne({ mobile: trimmedLogin })
+          .populate({ path: "department", select: "department" })
+          .lean()
       }
     }
+
     if (!user) {
-      return res.status(400).json({ message: "Invalid login credentials" })
+      return res.status(400).json({
+        message: "Invalid login credentials"
+      })
     }
 
-    const isMatch = await bcrypt.compare(password, user.password)
+    const isMatch = await bcrypt.compare(trimmedPassword, user.password)
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid login credentials" })
+      return res.status(400).json({
+        message: "Invalid login credentials"
+      })
     }
-    console.log(user)
+
+    const now = new Date()
+    const passwordExpiryAt = user.passwordExpiryAt
+      ? new Date(user.passwordExpiryAt)
+      : null
+let passwordExpiryWarning = null
+
+if (passwordExpiryAt) {
+  const diffMs = passwordExpiryAt.getTime() - now.getTime()
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+
+  if (diffDays > 0 && diffDays <= 7) {
+    passwordExpiryWarning = `Your password will expire in ${diffDays} day(s).`
+  }
+}
+    if (passwordExpiryAt && passwordExpiryAt <= now) {
+      return res.status(403).json({
+        message: "Your password has expired. Please change your password.",
+        passwordExpired: true,
+        userId: user._id,
+        passwordExpiryAt
+      })
+    }
+
     const token = generateToken(res, user)
-    console.log("dddddddddddddddddddddddddddddddd", token)
 
     if (token) {
       const { password, ...userwithoutpassword } = user
 
-      res.status(200).json({
-        message: "Login successful",
-        token,
-
-        User: userwithoutpassword,
-        branch
-      })
+      // return res.status(200).json({
+      //   message: "Login successful",
+      //   token,
+      //   User: userwithoutpassword,
+      //   branch,
+      //   passwordExpired: false
+      // })
+return res.status(200).json({
+  message: "Login successful",
+  token,
+  User: userwithoutpassword,
+  branch,
+  passwordExpired: false,
+  passwordExpiryWarning
+})
     }
+
+    return res.status(500).json({
+      message: "Token generation failed"
+    })
   } catch (error) {
     console.error("Login error:", error.message)
-    res.status(500).json({ message: "Server error" })
+    return res.status(500).json({
+      message: "Server error"
+    })
+  }
+}
+export const changePassword = async (req, res) => {
+  try {
+    const { userId, currentPassword, newPassword, confirmPassword } = req.body
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return res.status(400).json({ message: "All password fields are required" })
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: "Confirm password does not match" })
+    }
+    let user = null
+
+    user = await Staff.findById(userId)
+    if (user) {
+      true
+    } else {
+      user = await Admin.findById(userId)
+     
+    }
+    if (!user) {
+      return res.status(404).json({ message: "User not found" })
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password)
+    if (!isMatch) {
+      return res.status(400).json({ message: "Current password is incorrect" })
+    }
+
+    // const hashedPassword = await bcrypt.hash(newPassword, 10)
+console.log("newpaswword",newPassword)
+console.log("currrentpasss",currentPassword)
+// console.log("hashedpasss",hashedPassword)
+console.log("user",user)
+    const expiryDate = new Date()
+    expiryDate.setMonth(expiryDate.getMonth() + 2)
+
+    user.password = newPassword
+    user.passwordExpiryAt = expiryDate
+    await user.save()
+
+    return res.status(200).json({
+      message: "Password updated successfully",
+      passwordExpiryAt: expiryDate
+    })
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to update password",
+      error: error.message
+    })
   }
 }
 
@@ -16013,7 +16166,7 @@ export const DeleteEvent = async (req, res) => {
           .json({ message: "Leaves Deleted Successfully", data: leaves })
       }
     } else if (type === "onsite") {
-console.log("hhhhhh")
+      console.log("hhhhhh")
       const onsiteRequest = await Onsite.findOne({
         _id: new mongoose.Types.ObjectId(payload?.docId),
         userId: objectId,
@@ -16067,7 +16220,7 @@ console.log("hhhhhh")
             data: []
           })
         }
-console.log("dleterafeteer",onsites.length)
+        console.log("dleterafeteer", onsites.length)
         // Send the leave records as a JSON response
         return res.status(200).json({ message: "Onsite Deleted Successfully", data: onsites })
       }
