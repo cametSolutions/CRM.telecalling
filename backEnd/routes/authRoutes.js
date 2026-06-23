@@ -47,13 +47,15 @@ import {
   MisspunchRegister,
   Getallmisspunch,
   UploadImage,
-  RejectMisspunch
+  RejectMisspunch,
+changePassword 
 
 } from "../controller/authController.js"
 const router = express.Router()
 
 router.post("/login", Login)
 router.post("/logout", Logout)
+router.put("/updatepassword",authMiddleware,changePassword )
 router.post("/resetAdminstatus", authMiddleware, resetCallStatus)
 router.post("/userEdit", authMiddleware, UpdateUserandAdmin)
 router.post("/userPermissionUpdate", authMiddleware, UpdateUserPermission)
