@@ -109,6 +109,9 @@ function CustomerRegistration() {
   const user = JSON.parse(userData)
 
   const handleSubmit = async (customerData, tabledata) => {
+console.log(customerData)
+console.log(tabledata)
+
     try {
       const createdFrom = "customermaster"
 
