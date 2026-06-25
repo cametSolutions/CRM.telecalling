@@ -2734,6 +2734,7 @@ console.log(taskList)
                   { label: "New Lead", path: "" }
                 ]
                 console.log("Hh")
+console.log(!isAllocatedToeditable)
                 originalloggeduser?.role === "Admin"
                   ? navigate("/admin/transaction/lead/leadEdit", {
                       state: {

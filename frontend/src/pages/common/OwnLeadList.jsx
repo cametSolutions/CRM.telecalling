@@ -415,7 +415,14 @@ setownLead(true)
           .split("/")
           .join("-")
       : "-"
-
+  const isAllocatedToeditable = Array.isArray(item.activityLog)
+      ? item.activityLog.some(
+          (it) =>
+            it?.taskallocatedTo?._id === loggedUser?._id &&
+            it?.taskClosed === false
+        )
+      : false
+console.log(isAllocatedToeditable)
     return (
       <>
         {/* MAIN ROW */}
@@ -488,10 +495,11 @@ setownLead(true)
                 ]
                 loggedUser.role === "Admin"
                   ? navigate("/admin/transaction/lead/leadEdit", {
-                      state: { leadId: item._id, breadcrumb }
+                      state: { leadId: item._id, breadcrumb,isReadOnly:!isAllocatedToeditable,from:"Ownleadlist" }
                     })
                   : navigate("/staff/transaction/lead/leadEdit", {
-                      state: { leadId: item._id, breadcrumb }
+                      state: { leadId: item._id, breadcrumb,
+isReadOnly:!isAllocatedToeditable,from:"Ownleadlist" }
                     })
               }}
               className="bg-blue-600 text-white px-2 py-1 rounded flex justify-center w-full"

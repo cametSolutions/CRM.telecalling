@@ -13,7 +13,7 @@ import api from "../../api/api"
 import { useNavigate } from "react-router-dom"
 import { Loader } from "lucide-react"
 import { selectedBranch } from "../../../slices/companyBranchSlice"
-
+import FullScreenLoader from "../../components/common/FullScreenLoader"
 // ─────────────────────────────────────────────────────────────────────────────
 // DropdownPortal — keeps dropdown aligned on scroll/resize
 // ─────────────────────────────────────────────────────────────────────────────
@@ -80,6 +80,7 @@ function LicenseDropdown({
   selectedleadlist,
   setSelectedLeadList
 }) {
+  console.log(index)
   console.log(customerTableData)
   const isMulti = item?.productorservicetype === "Additionalservice"
 
@@ -137,6 +138,7 @@ function LicenseDropdown({
   })
 
   const updateRow = (newRow) => {
+    console.log(newRow)
     setSelectedLeadList((prev) =>
       prev.map((row, i) => (i === index ? { ...row, ...newRow } : row))
     )
@@ -318,7 +320,7 @@ function ProductDropdown({
   selectedBranch,
   selectedCustomer
 }) {
-console.log(selectedBranch)
+  console.log(selectedBranch)
   console.log(leadList)
   const emptyRow = {
     licenseNumber: "",
@@ -410,19 +412,19 @@ console.log(selectedBranch)
   //   console.log(updated)
   //   setSelectedLeadList(updated)
   // }
-console.log(selectedCustomer)
+  console.log(selectedCustomer)
   const applySelection = (prod) => {
     console.log(prod)
-// const branchdata=prod?.selected.map((item)=>item.branch_id===selectedBranch).map((item)=>return{
-// company_id:item.company_id,
-// branch_id:item.branch_id})
-const branchdata = (prod?.selected || [])
-  .filter((item) => item.branch_id === selectedBranch)
-  .map((item) => ({
-    company_id: item.company_id,
-    branch_id: item.branch_id
-  }))
-console.log(branchdata)
+    // const branchdata=prod?.selected.map((item)=>item.branch_id===selectedBranch).map((item)=>return{
+    // company_id:item.company_id,
+    // branch_id:item.branch_id})
+    const branchdata = (prod?.selected || [])
+      .filter((item) => item.branch_id === selectedBranch)
+      .map((item) => ({
+        company_id: item.company_id,
+        branch_id: item.branch_id
+      }))
+    console.log(branchdata)
     console.log(selectedCustomer)
     if (
       selectedCustomer === null ||
@@ -493,8 +495,8 @@ console.log(branchdata)
       productorservicetype: prod?.productorservicetype,
       hsn: igstRate || 0,
       netAmount,
-company_id:branchdata[0].company_id,
-branch_id:branchdata[0].branch_id
+      company_id: branchdata[0].company_id,
+      branch_id: branchdata[0].branch_id
     }
     console.log(prod)
     // Add default services immediately after selected product
@@ -543,7 +545,7 @@ branch_id:branchdata[0].branch_id
     setSelectedLeadList(updated)
     console.log("hh")
   }
-console.log(selectedleadlist)
+  console.log(selectedleadlist)
   const handleInputChange = (e) => {
     console.log(e)
     const value = e.target.value
@@ -633,6 +635,7 @@ const LeadMaster = ({
   Data = null,
 
   isReadOnly,
+from=null,
   handleleadData,
   handleEditData,
   handleclosingData,
@@ -644,6 +647,7 @@ const LeadMaster = ({
   showpopupMessage,
   selectedcompanyBranch
 }) => {
+console.log(from)
   console.log(Data)
   console.log(isReadOnly)
   const {
@@ -675,6 +679,7 @@ const LeadMaster = ({
   const [productOrserviceSelections, setProductorServiceSelections] = useState(
     {}
   )
+  const [licenseloading, setlicenseloading] = useState(false)
   const [leadList, setLeadList] = useState([])
   const [submitLoading, setsubmitLoading] = useState(false)
   const [popupOpen, setPopupOpen] = useState(false)
@@ -696,8 +701,10 @@ const LeadMaster = ({
     status: "Running",
     nextDue: "",
     quantityUsers: "",
-    amount: ""
+    amount: "",
+    taggeddata: []
   })
+  console.log(detailsForm)
   console.log(warningMessage)
   const [ispopupModalOpen, setIspopupModalOpen] = useState(false)
   const [isSelfAllocationChangable, setselfAllocationChangable] = useState(true)
@@ -711,6 +718,7 @@ const LeadMaster = ({
   const [iscustomerchangeandbranch, setcustomerchangeandbranch] = useState(true)
   const [selectedState, setSelectedState] = useState(null)
   const [selectedleadlist, setSelectedLeadList] = useState([])
+  console.log(selectedleadlist)
   const [selectedCustomer, setSelectedCustomer] = useState(null)
   const [selectedLicense, setSelectedLicense] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
@@ -749,8 +757,10 @@ const LeadMaster = ({
       )}`
   )
   console.log(productData)
-const filter=productData?.filter((item)=>item.productName==="MARG ERP NANO")
-console.log(filter)
+  const filter = productData?.filter(
+    (item) => item.productName === "MARG ERP NANO"
+  )
+  console.log(filter)
   const { data: tasks } = UseFetch("lead/getallTask")
   const { data: companybranches } = UseFetch("/branch/getBranch")
   const { data: partners } = UseFetch("/customer/getallpartners")
@@ -772,7 +782,7 @@ console.log(filter)
   )
   // Track timers for each row index
   const debounceTimersRef = useRef({})
-
+  console.log(selectedleadlist)
   const emptyRow = {
     licenseNumber: "",
     productorServiceId: "",
@@ -873,7 +883,7 @@ console.log(filter)
       )
       setPartner(filteredPartners)
       const combinedlead = [...productData]
-console.log(combinedlead)
+      console.log(combinedlead)
       setLeadList(combinedlead)
     }
   }, [loggeduser, branches, productData, serviceData, partners, selectedBranch])
@@ -946,15 +956,15 @@ console.log(combinedlead)
           : ""
         setValueMain("dueDate", formattedDate)
       }
-console.log(Data[0])
+      console.log(Data[0])
       setValueMain("source", Data[0]?.source || "")
       setValueMain("customerName", Data[0]?.customerName?._id)
       setValueMain("mobile", Data[0]?.customerName?.mobile)
       setValueMain("phone", Data[0]?.customerName?.phone)
       setValueMain("email", Data[0]?.customerName?.email)
       setValueMain("remark", Data[0].remark)
-setSelectedCustomer(Data[0]?.customerName)
-console.log(Data[0].leadFor)
+      setSelectedCustomer(Data[0]?.customerName)
+      console.log(Data[0].leadFor)
       const leadData = Data[0]?.leadFor.map((item) => ({
         licenseNumber: item?.licenseNumber,
         productorServiceName:
@@ -966,8 +976,8 @@ console.log(Data[0].leadFor)
         hsn: item?.hsn,
         netAmount: item?.netAmount,
         price: item?.price,
-company_id:item?.company_id,
-branch_id:item?.branch_id,
+        company_id: item?.company_id,
+        branch_id: item?.branch_id,
         productorservicetype: item?.productorservicetype
       }))
       console.log(leadData)
@@ -1024,7 +1034,6 @@ branch_id:item?.branch_id,
           productorServiceId: sel?.product_id
         }))
       setcustomerTableData(selectedcustomerlicenseandproduct)
-
     }
   }, [customerOptions, Data])
 
@@ -1059,7 +1068,6 @@ branch_id:item?.branch_id,
   useEffect(() => {
     console.log("hhh")
     if (selectedCustomer) {
-
       setValueMain("mobile", selectedCustomer.mobile)
       setValueMain("phone", selectedCustomer.phone)
       setValueMain("email", selectedCustomer.email)
@@ -1132,6 +1140,7 @@ branch_id:item?.branch_id,
     if (!String(licenseNumber).trim()) return
     console.log(licenseNumber)
     try {
+      setlicenseloading(true)
       const { data } = await api.get(
         `/customer/checkLicense?licenseNumber=${licenseNumber}`
       )
@@ -1145,11 +1154,14 @@ branch_id:item?.branch_id,
 
         return
       }
-
+      // setlicenseloading(false)
       toast.success("License available")
     } catch (error) {
+      // setlicenseloading(false)
       console.error(error)
       toast.error("Failed to validate license")
+    } finally {
+      setlicenseloading(false)
     }
   }
   const stateOptions = selectedCountry
@@ -1401,7 +1413,7 @@ branch_id:item?.branch_id,
 
   const getPrimaryProductFromLeadList = (row) => {
     const primaryProductId = getRowId(row?.productorServiceId)
-console.log(leadList)
+    console.log(leadList)
     return (leadList || []).find((prod) => {
       const prodId = getRowId(prod)
       const prodType = String(prod?.productorservicetype || "").toLowerCase()
@@ -1476,7 +1488,7 @@ console.log(leadList)
 
     const primaryProductId = getRowId(row?.productorServiceId)
     const primaryProduct = getPrimaryProductFromLeadList(row)
-console.log(primaryProduct)
+    console.log(primaryProduct)
     if (!primaryProduct) {
       toast.error("Primary product details not found")
       return
@@ -1509,9 +1521,9 @@ console.log(primaryProduct)
         toast.info("Additional services already added for this primary product")
         return prev
       }
-console.log(row)
+      console.log(row)
       const newRows = servicesToAdd.map((service) => {
-console.log(service)
+        console.log(service)
         const serviceId = getRowId(service)
         const igstRate = getBranchIgstRate(service)
 
@@ -1530,8 +1542,8 @@ console.log(service)
           netAmount: 0,
           isDefaultService: true,
           parentPrimaryProductId: primaryProductId,
-company_id:service?.selected[0]?.company_id,
-branch_id:service?.selected[0]?.branch_id
+          company_id: service?.selected[0]?.company_id,
+          branch_id: service?.selected[0]?.branch_id
         }
       })
 
@@ -1592,6 +1604,17 @@ branch_id:service?.selected[0]?.branch_id
 
   const handleToggleDropdown = () => {
     setIsleadForOpen((prev) => !prev)
+  }
+  const handleTaggedDueChange = (rowIndex, value) => {
+    console.log(value)
+    console.log(rowIndex)
+    console.log(detailsForm)
+    setDetailsForm((prev) => ({
+      ...prev,
+      taggeddata: prev.taggeddata.map((row, i) =>
+        i === rowIndex ? { ...row, nextDue: value } : row
+      )
+    }))
   }
 
   const handleSelectedCustomer = (option) => {
@@ -1970,9 +1993,172 @@ branch_id:service?.selected[0]?.branch_id
     },
     { value: "Government Organizations", label: "Government Organizations" }
   ]
+  console.log(selectedleadlist)
+  const validateSelectedLeadList = (selectedleadlist = []) => {
+    const hasAdditionalService = selectedleadlist.some(
+      (row) =>
+        String(row?.productorservicetype || "").toLowerCase() ===
+        "additionalservice"
+    )
+    console.log(selectedleadlist)
+    console.log(hasAdditionalService)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
 
+    const parseDateOnly = (value) => {
+      if (!value) return null
+      const d = new Date(value)
+      if (Number.isNaN(d.getTime())) return null
+      d.setHours(0, 0, 0, 0)
+      return d
+    }
+
+    for (let i = 0; i < selectedleadlist.length; i++) {
+      const row = selectedleadlist[i]
+      const rowNo = i + 1
+      const type = String(row?.productorservicetype || "").toLowerCase()
+
+      const hasCompany = !!(
+        row?.company_id ||
+        row?.companyid ||
+        row?.companyName
+      )
+      const hasBranch = !!(row?.branch_id || row?.branchid || row?.branchName)
+
+      if (!hasCompany) {
+        return `Company is required in row ${rowNo}`
+      }
+
+      if (!hasBranch) {
+        return `Branch is required in row ${rowNo}`
+      }
+
+      const productPrice = Number(
+        row?.productprice ?? row?.productPrice ?? row?.amount ?? 0
+      )
+      console.log(productPrice)
+      const netAmount = Number(row?.netamount ?? row?.netAmount ?? 0)
+
+      if (type === "primaryproduct") {
+        if (!String(row?.licensenumber || row?.licenseNumber || "").trim()) {
+          return `License number is required for primary product in row ${rowNo}`
+        }
+if(!row.applicationDate){
+return `Application date is requiered for primary product in row ${rowNo},please add details`}
+        if (!(productPrice > 0)) {
+          console.log("hhh")
+          return `Product price must be greater than 0 for primary product in row ${rowNo}`
+        }
+
+        if (!(netAmount > 0)) {
+          return `Net amount is required for primary product in row ${rowNo}`
+        }
+      }
+
+      if (type === "additionalservice") {
+        const taggeddata = Array.isArray(row?.taggeddata) ? row.taggeddata : []
+        const outerLicense = String(
+          row?.licensenumber || row?.licenseNumber || ""
+        ).trim()
+        const hasTaggedLicense = taggeddata.some((tag) =>
+          String(tag?.licensenumber || tag?.licenseNumber || "").trim()
+        )
+
+        const hasAnyLicense = !!outerLicense || hasTaggedLicense
+        console.log(!hasAdditionalService)
+        console.log(!hasAdditionalService && !(productPrice > 0))
+        if (!hasAdditionalService && !(productPrice > 0)) {
+          console.log("jjjj")
+          return `Product price must be greater than 0 for additional service in row ${rowNo}`
+        }
+
+        if (!hasAdditionalService && !(netAmount > 0)) {
+          return `Net amount is required for additional service in row ${rowNo}`
+        }
+        console.log(taggeddata)
+        if (taggeddata.length > 0) {
+          for (let j = 0; j < taggeddata.length; j++) {
+            const tag = taggeddata[j]
+            const tagLicense = String(
+              tag?.licensenumber || tag?.licenseNumber || ""
+            ).trim()
+            const due = parseDateOnly(tag?.nextDue)
+
+            if (!tagLicense) {
+              console.log("hh")
+              return `Tagged license number is required in row ${rowNo}, tagged row ${j + 1}`
+            }
+
+            if (!due) {
+              return `Next due is required for tagged license ${tagLicense} in row ${rowNo}`
+            }
+
+            if (due < today) {
+              return `Next due cannot be less than current date for tagged license ${tagLicense} in row ${rowNo}`
+            }
+          }
+        } else {
+          console.log(taggeddata)
+          if (!row.nextDue) {
+            console.log("hh")
+            return `Additonal service in row ${rowNo} must have a nextDue please add Details`
+          }
+          if (!outerLicense && taggeddata.length === 0) {
+            console.log("hhh")
+            return `Additional service in row ${rowNo} must have a license number or tagged license`
+          }
+
+          const due = parseDateOnly(row?.nextDue)
+          if (!due) {
+            return `Next due is required for additional service in row ${rowNo}`
+          }
+
+          if (due < today) {
+            return `Next due cannot be less than current date for additional service in row ${rowNo}`
+          }
+        }
+
+        if (!hasAnyLicense) {
+          console.log("Hhh")
+          return `Additional service in row ${rowNo} must have a license number or tagged license`
+        }
+      }
+    }
+
+    const primaryProducts = selectedleadlist.filter(
+      (row) =>
+        String(row?.productorservicetype || "").toLowerCase() ===
+        "primaryproduct"
+    )
+
+    const additionalServices = selectedleadlist.filter(
+      (row) =>
+        String(row?.productorservicetype || "").toLowerCase() ===
+        "additionalservice"
+    )
+
+    if (primaryProducts.length > 0 && additionalServices.length > 0) {
+      for (let i = 0; i < additionalServices.length; i++) {
+        const row = additionalServices[i]
+        const rowNo = selectedleadlist.findIndex((x) => x === row) + 1
+        const taggeddata = Array.isArray(row?.taggeddata) ? row.taggeddata : []
+        const outerLicense = String(
+          row?.licensenumber || row?.licenseNumber || ""
+        ).trim()
+        const hasTaggedLicense = taggeddata.some((tag) =>
+          String(tag?.licensenumber || tag?.licenseNumber || "").trim()
+        )
+
+        if (!outerLicense && !hasTaggedLicense) {
+          return `Additional service in row ${rowNo} should have any one license number or tagged license number`
+        }
+      }
+    }
+
+    return null
+  }
   const onSubmit = async (data) => {
-console.log(data)
+    console.log(data)
 
     if (submitLoading) return
     setsubmitLoading(true)
@@ -2043,6 +2229,14 @@ console.log(data)
           Data[0]?._id
         )
       } else if (process === "closing") {
+        const validationMessage = validateSelectedLeadList(selectedleadlist)
+
+        if (validationMessage) {
+          toast.error(validationMessage)
+          return
+        }
+console.log(selectedleadlist)
+        
         seteditLoadingState(true)
         const updated = await handleclosingData(
           data,
@@ -2090,28 +2284,75 @@ console.log(data)
     }))
   }
 
+  // const handleDetailsSave = () => {
+  //   setSelectedLeadList((prev) =>
+  //     prev.map((row, i) =>
+  //       i === detailsIndex
+  //         ? {
+  //             ...row,
+  //             productorServiceName: detailsForm.name,
+  //             licenseNumber: detailsForm.licenseNumber,
+  //             softwareTrade: detailsForm.softwareTrade,
+  //             applicationDate: detailsForm.applicationDate,
+  //             status: detailsForm.status,
+  //             nextDue: detailsForm.nextDue,
+  //             quantityUsers: detailsForm.quantityUsers,
+  //             amount: detailsForm.amount
+  //           }
+  //         : row
+  //     )
+  //   )
+
+  //   setdetailsopen(false)
+  //   setDetailsItem(null)
+  //   setDetailsIndex(null)
+  // }
   const handleDetailsSave = () => {
+    const itemType = String(
+      detailsItem?.productorservicetype || ""
+    ).toLowerCase()
+
+    const cleanedTaggedData = Array.isArray(detailsForm.taggeddata)
+      ? detailsForm.taggeddata
+          .map((tag) => ({
+            licensenumber: String(tag?.licensenumber || "").trim(),
+            nextDue: String(tag?.nextDue || "").trim()
+          }))
+          .filter((tag) => tag.licensenumber !== "")
+      : []
+
     setSelectedLeadList((prev) =>
-      prev.map((row, i) =>
-        i === detailsIndex
-          ? {
-              ...row,
-              productorServiceName: detailsForm.name,
-              licenseNumber: detailsForm.licenseNumber,
-              softwareTrade: detailsForm.softwareTrade,
-              applicationDate: detailsForm.applicationDate,
-              status: detailsForm.status,
-              nextDue: detailsForm.nextDue,
-              quantityUsers: detailsForm.quantityUsers,
-              amount: detailsForm.amount
-            }
-          : row
-      )
+      prev.map((row, i) => {
+        if (i !== detailsIndex) return row
+
+        if (itemType === "additionalservice") {
+          const hasTaggedLicenses = cleanedTaggedData.length > 0
+
+          return {
+            ...row,
+            applicationDate: detailsForm.applicationDate,
+            quantityUsers: detailsForm.quantityUsers,
+            amount: detailsForm.amount,
+            status: detailsForm.status,
+            isActive: detailsForm.status,
+            nextDue: hasTaggedLicenses ? "" : detailsForm.nextDue,
+            taggeddata: hasTaggedLicenses ? cleanedTaggedData : [],
+            licenseNumber: hasTaggedLicenses
+              ? row?.licenseNumber || ""
+              : detailsForm.licenseNumber || row?.licenseNumber || ""
+          }
+        }
+
+        return {
+          ...row,
+          applicationDate: detailsForm.applicationDate,
+          status: detailsForm.status,
+          isActive: detailsForm.status
+        }
+      })
     )
 
     setdetailsopen(false)
-    setDetailsItem(null)
-    setDetailsIndex(null)
   }
   console.log(detailsForm)
   console.log(selectedleadlist)
@@ -2222,9 +2463,59 @@ console.log(data)
     }
   }
   console.log(process)
+  // const handleDetails = (item, index) => {
+  //   console.log(item)
+  //   console.log(index)
+  //   setDetailsItem(item)
+  //   setDetailsIndex(index)
+  //   setDetailsForm({
+  //     name: item?.productorServiceName || "",
+  //     licenseNumber: item?.licenseNumber || "",
+  //     softwareTrade: item?.softwareTrade || "",
+  //     applicationDate: item?.applicationDate || "",
+  //     status: "Running",
+  //     nextDue: item?.nextDue || "",
+  //     quantityUsers: item?.quantityUsers || "",
+  //     amount: item?.amount || item?.netAmount || "",
+  //     taggedLicenseNumbers: item?.licenseNumbers,
+  //     taggeddata: Array.isArray(item?.taggeddata)
+  //       ? item.taggeddata.map((tag) => ({
+  //           licensenumber: tag?.licensenumber || "",
+  //           nextDue: tag?.nextDue || ""
+  //         }))
+  //       : []
+  //   })
+  //   setdetailsopen(true)
+  // }
   const handleDetails = (item, index) => {
-    console.log(item)
-    console.log(index)
+    const isAdditionalService =
+      String(item?.productorservicetype || "").toLowerCase() ===
+      "additionalservice"
+
+    const normalizedTaggedData =
+      isAdditionalService &&
+      Array.isArray(item?.licenseNumbers) &&
+      item.licenseNumbers.length > 0
+        ? item.licenseNumbers.map((lic) => {
+            const existingTag = Array.isArray(item?.taggeddata)
+              ? item.taggeddata.find(
+                  (tag) =>
+                    String(tag?.licensenumber) === String(lic?.licenseNumber)
+                )
+              : null
+
+            return {
+              licensenumber: lic?.licenseNumber || "",
+              nextDue: existingTag?.nextDue || ""
+            }
+          })
+        : Array.isArray(item?.taggeddata)
+          ? item.taggeddata.map((tag) => ({
+              licensenumber: tag?.licensenumber || "",
+              nextDue: tag?.nextDue || ""
+            }))
+          : []
+
     setDetailsItem(item)
     setDetailsIndex(index)
     setDetailsForm({
@@ -2232,13 +2523,15 @@ console.log(data)
       licenseNumber: item?.licenseNumber || "",
       softwareTrade: item?.softwareTrade || "",
       applicationDate: item?.applicationDate || "",
-      status:  "Running",
+      status: item?.status || item?.isActive || "Running",
       nextDue: item?.nextDue || "",
       quantityUsers: item?.quantityUsers || "",
-      amount: item?.amount || item?.netAmount || ""
+      amount: item?.amount || item?.netAmount || "",
+      taggeddata: normalizedTaggedData
     })
     setdetailsopen(true)
   }
+  console.log(detailsForm)
   console.log(showdetailsopen)
   const tableRows = selectedleadlist || []
   console.log(tableRows)
@@ -2281,6 +2574,7 @@ console.log(data)
               message={showmessage}
             />
           )}
+          {licenseloading && <FullScreenLoader text="Checking..." />}
 
           <form
             onSubmit={handleSubmitMain(onSubmit)}
@@ -2805,7 +3099,7 @@ className="text-blue-500 font-bold ml-2">Details</button></td>
                       {tableRows.map((item, index) => {
                         const showLicenseDropdown =
                           item?.productorservicetype === "Additionalservice"
-
+                        console.log("jjj")
                         const isAmountLocked =
                           isReadOnly || isRowPriceLocked(item)
                         const isTaxLocked = isReadOnly || isRowPriceLocked(item)
@@ -2844,6 +3138,7 @@ className="text-blue-500 font-bold ml-2">Details</button></td>
                                   className="py-1 border pl-2 rounded-md border-gray-500 w-full text-xs"
                                   onChange={(e) => {
                                     const licenseValue = e.target.value
+console.log(licenseValue)
                                     updateLicense(index, licenseValue)
 
                                     if (debounceTimersRef.current[index]) {
@@ -3175,7 +3470,9 @@ className="text-blue-500 font-bold ml-2">Details</button></td>
                     >
                       {process === "Registration"
                         ? "SUBMIT LEAD"
-                        : "UPDATE LEAD"}
+                        : process === "closing"
+                          ? "Closing Lead"
+                          : "UPDATE LEAD"}
                     </button>
                   </div>
                 </div>
@@ -3242,19 +3539,6 @@ className="text-blue-500 font-bold ml-2">Details</button></td>
                         />
                       </div>
 
-                      {/* <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">
-                License Number
-              </label>
-              <input
-                type="text"
-                name="licenseNumber"
-                value={detailsForm.licenseNumber}
-                onChange={handleDetailsChange}
-                placeholder="License Number"
-                className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
-              />
-            </div> */}
                       {/* 
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">
@@ -3314,19 +3598,76 @@ className="text-blue-500 font-bold ml-2">Details</button></td>
                           className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] cursor-not-allowed"
                         />
                       </div>
+                      {detailsForm?.taggeddata?.length ? (
+                        <div className="md:col-span-2">
+                          <label className="mb-1.5 block text-[11px] font-medium text-[#5d6983]">
+                            Tagged License Due Details
+                          </label>
 
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-600 mb-1">
-                          Next Due
-                        </label>
-                        <input
-                          type="date"
-                          name="nextDue"
-                          value={detailsForm.nextDue}
-                          onChange={handleDetailsChange}
-                          className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
-                        />
-                      </div>
+                          <div className="overflow-hidden rounded-[8px] border border-[#e7ebf4]">
+                            <div className="max-h-40 overflow-y-auto">
+                              <table className="w-full border-collapse">
+                                <thead className="sticky top-0 bg-[#f8fafc]">
+                                  <tr>
+                                    <th className="border-b border-[#e7ebf4] px-2.5 py-1.5 text-left text-[11px] font-semibold text-[#43506a]">
+                                      License Number
+                                    </th>
+                                    <th className="border-b border-[#e7ebf4] px-2.5 py-1.5 text-left text-[11px] font-semibold text-[#43506a]">
+                                      Next Due
+                                    </th>
+                                  </tr>
+                                </thead>
+                                {/* <tbody>
+                                
+                                </tbody> */}
+                                <tbody>
+                                  {detailsForm.taggeddata.map(
+                                    (tag, rowIndex) => (
+                                      <tr
+                                        key={`${tag?.licensenumber}-${rowIndex}`}
+                                      >
+                                        <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
+                                          <input
+                                            value={tag?.licensenumber || ""}
+                                            readOnly
+                                            className="w-full cursor-not-allowed rounded-[7px] border border-[#dfe5ee] bg-[#f3f6fb] px-2 py-1.5 text-[11px] text-[#1f2a3d] outline-none"
+                                          />
+                                        </td>
+                                        <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
+                                          <input
+                                            type="date"
+                                            value={tag?.nextDue || ""}
+                                            onChange={(e) =>
+                                              handleTaggedDueChange(
+                                                rowIndex,
+                                                e.target.value
+                                              )
+                                            }
+                                            className="w-full rounded-[7px] border border-[#dfe5ee] bg-white px-2 py-1.5 text-[11px] text-[#1f2a3d] outline-none focus:border-[#1B2A4A]"
+                                          />
+                                        </td>
+                                      </tr>
+                                    )
+                                  )}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-600 mb-1">
+                            Next Due
+                          </label>
+                          <input
+                            type="date"
+                            name="nextDue"
+                            value={detailsForm.nextDue}
+                            onChange={handleDetailsChange}
+                            className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
+                          />
+                        </div>
+                      )}
 
                       <div>
                         <label className="block text-xs font-semibold text-gray-600 mb-1">

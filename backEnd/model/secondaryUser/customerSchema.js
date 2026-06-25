@@ -185,6 +185,7 @@ const SelectedItemSchema = new mongoose.Schema(
       type: Date,
       default: null
     },
+taggeddata:[{licensenumber:{type:Number},nextDue:{type:Date}}],
 
     amcstartDate: {
       type: Date,

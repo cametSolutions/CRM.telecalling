@@ -653,7 +653,7 @@ console.log(errors)
             </div>
 
             {selectedProductType === "Primaryproduct" && (
-              <div className="mt-3 relative">
+              <div className="relative">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Default Services
                 </label>

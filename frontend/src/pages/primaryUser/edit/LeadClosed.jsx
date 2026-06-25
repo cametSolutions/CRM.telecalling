@@ -265,6 +265,7 @@ console.log(objectId)
       setLoader(false)
       toast.error("Something went wrong")
       console.error("error:", error)
+console.log(error.message)
     }
   }
 console.log("hhhh")

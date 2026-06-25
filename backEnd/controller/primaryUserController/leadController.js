@@ -11,6 +11,7 @@ import Service from "../../model/primaryUser/servicesSchema.js";
 import getLeadMetricsForSingleDay from "../../helper/leadandtaskcount.js";
 import { getCallMetricsForSingleDay } from "../../helper/callcount.js";
 import { formatDate } from "../../../frontend/src/utils/dateUtils.js";
+import License from "../../model/secondaryUser/licenseSchema.js";
 // export const LeadRegister = async (req, res) => {
 //   try {
 //     const { leadData, selectedtableLeadData, role } = req.body;
@@ -1188,73 +1189,316 @@ export const TaskRegistration = async (req, res) => {
     return res.status(500).json({ message: "internal server error" });
   }
 };
-export const Leadclosing = async (req, res) => {
-  try {
-    const { data, leadData } = req.body;
-    console.log("leaddtaa", leadData)
-    // return
-    const { docID } = req.query;
-    const objectId = new mongoose.Types.ObjectId(docID);
-    const matchedDoc = await LeadMaster.findById(objectId);
+// export const Leadclosing = async (req, res) => {
+//   try {
+//     const { data, leadData } = req.body;
+//     console.log("leaddtaa", leadData)
+//     // return
+//     const { docID } = req.query;
+//     const objectId = new mongoose.Types.ObjectId(docID);
+//     const matchedDoc = await LeadMaster.findById(objectId);
 
-    const mappedleadData = leadData.map((item) => {
-      return {
-        licenseNumber: item.licenseNumber,
-        productorServiceId: item.productorServiceId,
-        productorServicemodel: item.itemType,
-        price: item.price,
-        productPrice: Number(item.productPrice),
-        hsn: Number(item.hsn),
-        netAmount: Number(item.netAmount),
-        productorservicetype: item.productorservicetype,
-        company_id: item.company_id,
-        branch_id: item.branch_id
-      };
-    });
-    const mappedproductData = leadData.map((item) => {
-      return {
-        company_id: item.company_id,
-        branch_id: item.branch_id,
-        product_id: item.productorServiceId,
-        licensenumber: item?.licenseNumber ? Number(item?.licenseNumber):null,
+//     const mappedleadData = leadData.map((item) => {
+//       return {
+//         licenseNumber: item?.licenseNumber,
+//         productorServiceId: item?.productorServiceId,
+//         productorServicemodel: item?.itemType,
+//         price: item?.price,
+//         productPrice: Number(item?.productPrice),
+//         hsn: Number(item?.hsn),
+//         netAmount: Number(item?.netAmount),
+//         productorservicetype: item?.productorservicetype,
+//         company_id: item?.company_id,
+//         branch_id: item?.branch_id
+//       };
+//     });
+//     const mappedproductData = leadData.map((item) => {
+//       return {
+//         company_id: item.company_id,
+//         branch_id: item.branch_id,
+//         product_id: item.productorServiceId,
+//         licensenumber: item?.licenseNumber ? Number(item?.licenseNumber) : null,
+//         noofusers: item?.quantityUsers,
+//         applicationDate: item?.applicationDate,
+//         nextDue: item?.nextDue,
+//         isActive: item?.status,
+//         taggeddata: item?.taggeddata ? item.taggeddata : [],
+//         productorservicetype: item?.productorservicetype,
+//         isActive: item?.status,
+//         version: item?.version
+
+//       }
+//     })
+
+//     const newbalance = data.netAmount - matchedDoc.totalPaidAmount;
+
+//     const updatedLead = await LeadMaster.findByIdAndUpdate(objectId, {
+//       ...data,
+//       balanceAmount: newbalance,
+//       leadFor: mappedleadData,
+//     });
+//     console.log("mappppedproductdata", mappedproductData)
+//     console.log("customername", data.customerName)
+//     const directLicenseNumbers = leadData
+//       .filter(
+//         (item) =>
+//           item?.licenseNumber !== null &&
+//           item?.licenseNumber !== undefined &&
+//           String(item?.licenseNumber).trim() !== ""
+//       )
+//       .map((item) => ({
+//         licensenumber: Number(item.licenseNumber),
+//         productid: item?.productid || item?.product_id || null
+//       }))
+//     const custobjectId = new mongoose.Types.ObjectId(data.customerName)
+
+//     const existingCustomer = await Customer.findById(custobjectId)
+//     if (!existingCustomer) {
+//       return res.status(404).json({ message: "Customer not found" })
+//     }
+//     const allLicenses = [...directLicenseNumbers]
+
+//     const uniqueLicenseMap = new Map()
+//     for (const item of allLicenses) {
+//       if (!uniqueLicenseMap.has(String(item.licensenumber))) {
+//         uniqueLicenseMap.set(String(item.licensenumber), item)
+//       }
+//     }
+
+//     const uniqueLicenses = Array.from(uniqueLicenseMap.values())
+//     const licenseNumbers = uniqueLicenses.map((item) => item.licensenumber)
+
+//     if (licenseNumbers.length > 0) {
+//       const existingLicenses = await License.find({
+//         customerName: existingCustomer._id,
+//         licensenumber: { $in: licenseNumbers }
+//       }).select("licensenumber")
+
+//       const existingLicenseSet = new Set(
+//         existingLicenses.map((item) => String(item.licensenumber))
+//       )
+
+//       const newLicenses = uniqueLicenses.filter(
+//         (item) => !existingLicenseSet.has(String(item.licensenumber))
+//       )
+
+//       if (newLicenses.length > 0) {
+//         const licenseDocs = newLicenses.map((item) => ({
+//           products: item.productid,
+//           customerName: existingCustomer._id,
+//           licensenumber: item.licensenumber
+//         }))
+
+//         await License.insertMany(licenseDocs)
+//       }
+//     }
+//     const updatedcustomer = await Customer.findByIdAndUpdate(data.customerName, {
+//       $set: {
+//         mobile: data.mobile,
+//         email: data.email,
+//         landline: data.phone
+//       },
+//       $push: {
+//         selected: {
+//           $each: mappedproductData
+//         }
+//       }
+//     })
+
+//     if (!updatedLead) {
+//       return res.status(404).json({ message: "Lead not found" });
+//     } else {
+//       return res.status(200).json({ message: "Lead Closed succesfully" });
+//     }
+
+
+//   } catch (error) {
+//   }
+// }
+export const Leadclosing = async (req, res) => {
+  const session = await mongoose.startSession()
+
+  try {
+    const { data, leadData } = req.body
+    const { docID } = req.query
+
+    if (!docID) {
+      return res.status(400).json({ message: "docID is required" })
+    }
+
+    if (!data) {
+      return res.status(400).json({ message: "data is required" })
+    }
+
+    if (!Array.isArray(leadData)) {
+      return res.status(400).json({ message: "leadData must be an array" })
+    }
+
+    const objectId = new mongoose.Types.ObjectId(docID)
+
+    let responsePayload = null
+
+    await session.withTransaction(async () => {
+      const matchedDoc = await LeadMaster.findById(objectId).session(session)
+
+      if (!matchedDoc) {
+        throw new Error("Lead not found")
+      }
+
+      const mappedleadData = leadData.map((item) => ({
+        licenseNumber: item?.licenseNumber,
+        productorServiceId: item?.productorServiceId,
+        productorServicemodel: item?.itemType,
+        price: item?.price,
+        productPrice: Number(item?.productPrice || 0),
+        hsn: Number(item?.hsn || 0),
+        netAmount: Number(item?.netAmount || 0),
+        productorservicetype: item?.productorservicetype,
+        company_id: item?.company_id,
+        branch_id: item?.branch_id
+      }))
+
+      const mappedproductData = leadData.map((item) => ({
+        company_id: item?.company_id,
+        branch_id: item?.branch_id,
+        product_id: item?.productorServiceId,
+        licensenumber:
+          item?.licenseNumber !== null &&
+            item?.licenseNumber !== undefined &&
+            String(item?.licenseNumber).trim() !== ""
+            ? Number(item?.licenseNumber)
+            : null,
         noofusers: item?.quantityUsers,
         applicationDate: item?.applicationDate,
         nextDue: item?.nextDue,
+        taggeddata: Array.isArray(item?.taggeddata) ? item.taggeddata : [],
+        productorservicetype: item?.productorservicetype,
         isActive: item?.status,
-productorservicetype:item?.productorservicetype
+        version: item?.version
+      }))
+
+      const newbalance =
+        Number(data?.netAmount || 0) - Number(matchedDoc?.totalPaidAmount || 0)
+
+      const updatedLead = await LeadMaster.findByIdAndUpdate(
+        objectId,
+        {
+          ...data,
+          balanceAmount: newbalance,
+          leadFor: mappedleadData
+        },
+        { new: true, session }
+      )
+
+      if (!updatedLead) {
+        throw new Error("Lead update failed")
       }
-    })
 
-    const newbalance = data.netAmount - matchedDoc.totalPaidAmount;
+      if (!data?.customerName) {
+        throw new Error("Customer id is required")
+      }
 
-    const updatedLead = await LeadMaster.findByIdAndUpdate(objectId, {
-      ...data,
-      balanceAmount: newbalance,
-      leadFor: mappedleadData,
-    });
-console.log("mappppedproductdata",mappedproductData)
-console.log("customername",data.customerName)
-    const updatedcustomer = await Customer.findByIdAndUpdate(data.customerName, {
-      $set: {
-        mobile: data.mobile,
-        email: data.email,
-        landline: data.phone
-      },
-      $push: {
-        selected: {
-          $each: mappedproductData
+      const custobjectId = new mongoose.Types.ObjectId(data.customerName)
+
+      const existingCustomer = await Customer.findById(custobjectId).session(
+        session
+      )
+
+      if (!existingCustomer) {
+        throw new Error("Customer not found")
+      }
+
+      const directLicenseNumbers = leadData
+        .filter(
+          (item) =>
+            item?.licenseNumber !== null &&
+            item?.licenseNumber !== undefined &&
+            String(item?.licenseNumber).trim() !== ""
+        )
+        .map((item) => ({
+          licensenumber: Number(item.licenseNumber),
+          productid: item?.productid || item?.product_id || item?.productorServiceId || null
+        }))
+
+      const uniqueLicenseMap = new Map()
+
+      for (const item of directLicenseNumbers) {
+        if (!uniqueLicenseMap.has(String(item.licensenumber))) {
+          uniqueLicenseMap.set(String(item.licensenumber), item)
         }
       }
+
+      const uniqueLicenses = Array.from(uniqueLicenseMap.values())
+      const licenseNumbers = uniqueLicenses.map((item) => item.licensenumber)
+
+      if (licenseNumbers.length > 0) {
+        const existingLicenses = await License.find({
+          customerName: existingCustomer._id,
+          licensenumber: { $in: licenseNumbers }
+        })
+          .select("licensenumber")
+          .session(session)
+
+        const existingLicenseSet = new Set(
+          existingLicenses.map((item) => String(item.licensenumber))
+        )
+
+        const newLicenses = uniqueLicenses.filter(
+          (item) => !existingLicenseSet.has(String(item.licensenumber))
+        )
+
+        if (newLicenses.length > 0) {
+          const licenseDocs = newLicenses.map((item) => ({
+            products: item.productid,
+            customerName: existingCustomer._id,
+            licensenumber: item.licensenumber
+          }))
+
+          await License.insertMany(licenseDocs, { session })
+        }
+      }
+
+      const updatedcustomer = await Customer.findByIdAndUpdate(
+        data.customerName,
+        {
+          $set: {
+            mobile: data.mobile,
+            email: data.email,
+            landline: data.phone
+          },
+          $push: {
+            selected: {
+              $each: mappedproductData
+            }
+          }
+        },
+        { new: true, session }
+      )
+
+      if (!updatedcustomer) {
+        throw new Error("Customer update failed")
+      }
+
+      responsePayload = {
+        message: "Lead Closed successfully",
+        lead: updatedLead,
+        customer: updatedcustomer
+      }
     })
 
-    if (!updatedLead) {
-      return res.status(404).json({ message: "Lead not found" });
-    } else {
-      return res.status(200).json({ message: "Lead Closed succesfully" });
-    }
-
-
+    return res.status(200).json(responsePayload)
   } catch (error) {
+    console.error("Leadclosing error:", error)
+
+    return res.status(500).json({
+      message: error?.message || "Something went wrong while closing lead",
+      error: {
+        name: error?.name || "Error",
+        message: error?.message || "Unknown error"
+      }
+    })
+  } finally {
+    await session.endSession()
   }
 }
 export const UpdateLeadRegister = async (req, res) => {

@@ -37,7 +37,7 @@ function LeadEdit() {
   const navigate = useNavigate()
 
   const location = useLocation()
-  const { leadId, isReadOnly, refreshKey } = location.state || {}
+  const { leadId, isReadOnly, refreshKey,from } = location.state || {}
 console.log(isReadOnly)
   console.log(location?.state)
   const nav = [
@@ -333,6 +333,7 @@ console.log("hhhh")
               seteditLoadingState={setLoader}
               Data={fetcheddata}
               isReadOnly={isReadOnly}
+from={from}
               selectedcompanyBranch={selectedleadbranch}
             />
           </div>

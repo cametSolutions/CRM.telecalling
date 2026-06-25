@@ -619,10 +619,23 @@ const ReallocationTable = () => {
                           <td className="px-4 ">No. of Followups</td>
                           <td className="px-4 min-w-[120px]">Lead Date</td>
                           <td className="px-4 min-w-[120px] border border-t-0 border-b-0 border-gray-400 whitespace-nowrap">
-                            {
+                            {/* {
                               item?.activityLog[item.activityLog.length - 1]
                                 .remarks
-                            }
+                            } */}
+<span className="mx-2 relative group inline-block max-w-[220px] align-middle">
+  <span className="block truncate text-[12px] text-slate-700">
+    {item?.activityLog?.[item.activityLog.length - 1]?.remarks || "-"}
+  </span>
+
+  {item?.activityLog?.[item.activityLog.length - 1]?.remarks && (
+    <div className="pointer-events-none absolute left-0 top-full z-50 mt-1 hidden w-80 rounded-md border border-slate-200 bg-slate-700 px-3 py-2 shadow-lg group-hover:block">
+      <p className="text-[11px] leading-4 text-white whitespace-normal break-words">
+        {item?.activityLog?.[item.activityLog.length - 1]?.remarks}
+      </p>
+    </div>
+  )}
+</span>
                           </td>
                           <td className=" border border-t-0 border-b-0 border-gray-400 px-1 bg-white ">
                             <select
@@ -847,12 +860,25 @@ console.log("hhh")
                               <span className="mx-2">
                                 {item?.lasttask?.taskName}-
                               </span>
-                              <span>
+                              {/* <span>
                                 {
                                   item?.activityLog[item.activityLog.length - 1]
                                     ?.remarks
                                 }
-                              </span>
+                              </span> */}
+<span className="mx-2 relative group inline-block max-w-[220px] align-middle">
+  <span className="block truncate text-[12px] text-slate-700">
+    {item?.activityLog?.[item.activityLog.length - 1]?.remarks || "-"}
+  </span>
+
+  {item?.activityLog?.[item.activityLog.length - 1]?.remarks && (
+    <div className="pointer-events-none absolute left-0 top-full z-50 mt-1 hidden w-80 rounded-md border border-slate-200 bg-slate-700 px-3 py-2 shadow-lg group-hover:block">
+      <p className="text-[11px] leading-4 text-white whitespace-normal break-words">
+        {item?.activityLog?.[item.activityLog.length - 1]?.remarks}
+      </p>
+    </div>
+  )}
+</span>
                             </div>
                           </td>
                           <td className="border border-t-0 border-gray-400 "></td>
