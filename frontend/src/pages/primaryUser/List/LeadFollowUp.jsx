@@ -2530,7 +2530,7 @@ console.log(formData)
       )
 
       if (response.status === 200) {
-        toast.success("Followup updated successfully")
+        toast.success(response?.data?.message)
 
         setIsEditable(false)
         setselectedDocid(null)

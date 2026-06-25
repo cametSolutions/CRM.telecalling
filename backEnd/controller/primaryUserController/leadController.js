@@ -3730,7 +3730,7 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
         taskName: "Closing"
       }).lean();
     } else if (formData.followupType === "lost") {
-      allocationTask = await TaskfindOne({
+      allocationTask = await Task.findOne({
         taskName: "Lost"
       })
 
@@ -3885,7 +3885,7 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
       );
 
     return res.status(200).json({
-      message: "Followup updated successfully",
+      message:formData.followupType === "lost"? "Lead losted":formData.followupType === "closed"?"Followup Closed":"Next follow up updated",
       data: updatedLead
     });
   } catch (error) {
