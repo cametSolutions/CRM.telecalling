@@ -478,7 +478,7 @@ export default function CallRegistration() {
   const fetchCallDetails = async (callId) => {
     setLoader(true)
     const response = await fetch(
-      `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
+      `https://www.crmtest.camet.in/api/customer/getcallregister/${callId}`,
       {
         method: "GET",
         credentials: "include" // This allows cookies to be sent with the request
@@ -1048,7 +1048,7 @@ Problem:    \t${selectedText}
     let url
     if (user.role === "Admin") {
       // url = `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${user.role}`
-      url = `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${user.role}`
+      url = `https://www.crmtest.camet.in/api/customer/getCustomer?search=${query}&role=${user.role}`
     } else {
       const branches = JSON.stringify(branch)
 
@@ -1061,7 +1061,7 @@ Problem:    \t${selectedText}
       url =
         branches &&
         branches.length > 0 &&
-        `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${
+        `https://www.crmtest.camet.in/api/customer/getCustomer?search=${query}&role=${
           user.role
         }&userBranch=${encodeURIComponent(branches)}`
     }
