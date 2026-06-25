@@ -12,7 +12,7 @@ console.log(user)
   const handleSubmit = async (productData, tableData) => {
 console.log(productData)
 console.log(productData)
-return
+
     try {
       const response = await api.post(
         "/product/productRegistration",
