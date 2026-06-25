@@ -11,6 +11,7 @@ import Service from "../../model/primaryUser/servicesSchema.js";
 import getLeadMetricsForSingleDay from "../../helper/leadandtaskcount.js";
 import { getCallMetricsForSingleDay } from "../../helper/callcount.js";
 import { formatDate } from "../../../frontend/src/utils/dateUtils.js";
+import License from "../../model/secondaryUser/licenseSchema.js";
 // export const LeadRegister = async (req, res) => {
 //   try {
 //     const { leadData, selectedtableLeadData, role } = req.body;
@@ -196,7 +197,7 @@ export const LeadRegister = async (req, res) => {
       leadBy,
       leadBranch,
     } = leadData
-
+    console.log("allcationtype", allocationType)
     const leadDate = new Date()
     const lastLead = await LeadId.findOne().sort({ leadId: -1 }).session(session)
 
@@ -296,7 +297,13 @@ export const LeadRegister = async (req, res) => {
       }),
       activityLog,
     })
-
+    // const filteredLeadData =
+    //   selectedtableLeadData?.length > 1
+    //     ? selectedtableLeadData.filter(
+    //       (item) =>
+    //         String(item?.productorservicetype || "").toLowerCase() === "primaryproduct"
+    //     )
+    //     : selectedtableLeadData
     selectedtableLeadData.forEach((item) =>
       lead.leadFor.push({
         productorServiceId: item.productorServiceId,
@@ -304,8 +311,11 @@ export const LeadRegister = async (req, res) => {
         licenseNumber: item.licenseNumber,
         productPrice: item.productPrice,
         hsn: item.hsn,
+        productorservicetype: item.productorservicetype,
         netAmount: item.netAmount,
         price: item.price,
+        company_id: item.company_id,
+        branch_id: item.branch_id
       })
     )
 
@@ -417,10 +427,14 @@ export const getAlltasktoTarget = async (req, res) => {
 }
 export const GetallTask = async (req, res) => {
   try {
-    const { istaskregistration = false } = req.query
+    const { istaskregistration = false, removefollowup = false } = req.query
+    console.log("removefollup", removefollowup)
     let query = {}
     if (istaskregistration === "false" || istaskregistration === false) {
       query = { listed: true }
+      if (removefollowup === "true" || removefollowup === true) {
+        query.taskName = { $ne: "Followup" };
+      }
     }
     const tasks = await Task.find(query);
     if (tasks) {
@@ -1175,10 +1189,322 @@ export const TaskRegistration = async (req, res) => {
     return res.status(500).json({ message: "internal server error" });
   }
 };
+// export const Leadclosing = async (req, res) => {
+//   try {
+//     const { data, leadData } = req.body;
+//     console.log("leaddtaa", leadData)
+//     // return
+//     const { docID } = req.query;
+//     const objectId = new mongoose.Types.ObjectId(docID);
+//     const matchedDoc = await LeadMaster.findById(objectId);
+
+//     const mappedleadData = leadData.map((item) => {
+//       return {
+//         licenseNumber: item?.licenseNumber,
+//         productorServiceId: item?.productorServiceId,
+//         productorServicemodel: item?.itemType,
+//         price: item?.price,
+//         productPrice: Number(item?.productPrice),
+//         hsn: Number(item?.hsn),
+//         netAmount: Number(item?.netAmount),
+//         productorservicetype: item?.productorservicetype,
+//         company_id: item?.company_id,
+//         branch_id: item?.branch_id
+//       };
+//     });
+//     const mappedproductData = leadData.map((item) => {
+//       return {
+//         company_id: item.company_id,
+//         branch_id: item.branch_id,
+//         product_id: item.productorServiceId,
+//         licensenumber: item?.licenseNumber ? Number(item?.licenseNumber) : null,
+//         noofusers: item?.quantityUsers,
+//         applicationDate: item?.applicationDate,
+//         nextDue: item?.nextDue,
+//         isActive: item?.status,
+//         taggeddata: item?.taggeddata ? item.taggeddata : [],
+//         productorservicetype: item?.productorservicetype,
+//         isActive: item?.status,
+//         version: item?.version
+
+//       }
+//     })
+
+//     const newbalance = data.netAmount - matchedDoc.totalPaidAmount;
+
+//     const updatedLead = await LeadMaster.findByIdAndUpdate(objectId, {
+//       ...data,
+//       balanceAmount: newbalance,
+//       leadFor: mappedleadData,
+//     });
+//     console.log("mappppedproductdata", mappedproductData)
+//     console.log("customername", data.customerName)
+//     const directLicenseNumbers = leadData
+//       .filter(
+//         (item) =>
+//           item?.licenseNumber !== null &&
+//           item?.licenseNumber !== undefined &&
+//           String(item?.licenseNumber).trim() !== ""
+//       )
+//       .map((item) => ({
+//         licensenumber: Number(item.licenseNumber),
+//         productid: item?.productid || item?.product_id || null
+//       }))
+//     const custobjectId = new mongoose.Types.ObjectId(data.customerName)
+
+//     const existingCustomer = await Customer.findById(custobjectId)
+//     if (!existingCustomer) {
+//       return res.status(404).json({ message: "Customer not found" })
+//     }
+//     const allLicenses = [...directLicenseNumbers]
+
+//     const uniqueLicenseMap = new Map()
+//     for (const item of allLicenses) {
+//       if (!uniqueLicenseMap.has(String(item.licensenumber))) {
+//         uniqueLicenseMap.set(String(item.licensenumber), item)
+//       }
+//     }
+
+//     const uniqueLicenses = Array.from(uniqueLicenseMap.values())
+//     const licenseNumbers = uniqueLicenses.map((item) => item.licensenumber)
+
+//     if (licenseNumbers.length > 0) {
+//       const existingLicenses = await License.find({
+//         customerName: existingCustomer._id,
+//         licensenumber: { $in: licenseNumbers }
+//       }).select("licensenumber")
+
+//       const existingLicenseSet = new Set(
+//         existingLicenses.map((item) => String(item.licensenumber))
+//       )
+
+//       const newLicenses = uniqueLicenses.filter(
+//         (item) => !existingLicenseSet.has(String(item.licensenumber))
+//       )
+
+//       if (newLicenses.length > 0) {
+//         const licenseDocs = newLicenses.map((item) => ({
+//           products: item.productid,
+//           customerName: existingCustomer._id,
+//           licensenumber: item.licensenumber
+//         }))
+
+//         await License.insertMany(licenseDocs)
+//       }
+//     }
+//     const updatedcustomer = await Customer.findByIdAndUpdate(data.customerName, {
+//       $set: {
+//         mobile: data.mobile,
+//         email: data.email,
+//         landline: data.phone
+//       },
+//       $push: {
+//         selected: {
+//           $each: mappedproductData
+//         }
+//       }
+//     })
+
+//     if (!updatedLead) {
+//       return res.status(404).json({ message: "Lead not found" });
+//     } else {
+//       return res.status(200).json({ message: "Lead Closed succesfully" });
+//     }
+
+
+//   } catch (error) {
+//   }
+// }
+export const Leadclosing = async (req, res) => {
+  const session = await mongoose.startSession()
+
+  try {
+    const { data, leadData } = req.body
+    const { docID } = req.query
+
+    if (!docID) {
+      return res.status(400).json({ message: "docID is required" })
+    }
+
+    if (!data) {
+      return res.status(400).json({ message: "data is required" })
+    }
+
+    if (!Array.isArray(leadData)) {
+      return res.status(400).json({ message: "leadData must be an array" })
+    }
+
+    const objectId = new mongoose.Types.ObjectId(docID)
+
+    let responsePayload = null
+
+    await session.withTransaction(async () => {
+      const matchedDoc = await LeadMaster.findById(objectId).session(session)
+
+      if (!matchedDoc) {
+        throw new Error("Lead not found")
+      }
+
+      const mappedleadData = leadData.map((item) => ({
+        licenseNumber: item?.licenseNumber,
+        productorServiceId: item?.productorServiceId,
+        productorServicemodel: item?.itemType,
+        price: item?.price,
+        productPrice: Number(item?.productPrice || 0),
+        hsn: Number(item?.hsn || 0),
+        netAmount: Number(item?.netAmount || 0),
+        productorservicetype: item?.productorservicetype,
+        company_id: item?.company_id,
+        branch_id: item?.branch_id
+      }))
+
+      const mappedproductData = leadData.map((item) => ({
+        company_id: item?.company_id,
+        branch_id: item?.branch_id,
+        product_id: item?.productorServiceId,
+        licensenumber:
+          item?.licenseNumber !== null &&
+            item?.licenseNumber !== undefined &&
+            String(item?.licenseNumber).trim() !== ""
+            ? Number(item?.licenseNumber)
+            : null,
+        noofusers: item?.quantityUsers,
+        applicationDate: item?.applicationDate,
+        nextDue: item?.nextDue,
+        taggeddata: Array.isArray(item?.taggeddata) ? item.taggeddata : [],
+        productorservicetype: item?.productorservicetype,
+        isActive: item?.status,
+        version: item?.version
+      }))
+
+      const newbalance =
+        Number(data?.netAmount || 0) - Number(matchedDoc?.totalPaidAmount || 0)
+
+      const updatedLead = await LeadMaster.findByIdAndUpdate(
+        objectId,
+        {
+          ...data,
+          balanceAmount: newbalance,
+          leadFor: mappedleadData
+        },
+        { new: true, session }
+      )
+
+      if (!updatedLead) {
+        throw new Error("Lead update failed")
+      }
+
+      if (!data?.customerName) {
+        throw new Error("Customer id is required")
+      }
+
+      const custobjectId = new mongoose.Types.ObjectId(data.customerName)
+
+      const existingCustomer = await Customer.findById(custobjectId).session(
+        session
+      )
+
+      if (!existingCustomer) {
+        throw new Error("Customer not found")
+      }
+
+      const directLicenseNumbers = leadData
+        .filter(
+          (item) =>
+            item?.licenseNumber !== null &&
+            item?.licenseNumber !== undefined &&
+            String(item?.licenseNumber).trim() !== ""
+        )
+        .map((item) => ({
+          licensenumber: Number(item.licenseNumber),
+          productid: item?.productid || item?.product_id || item?.productorServiceId || null
+        }))
+
+      const uniqueLicenseMap = new Map()
+
+      for (const item of directLicenseNumbers) {
+        if (!uniqueLicenseMap.has(String(item.licensenumber))) {
+          uniqueLicenseMap.set(String(item.licensenumber), item)
+        }
+      }
+
+      const uniqueLicenses = Array.from(uniqueLicenseMap.values())
+      const licenseNumbers = uniqueLicenses.map((item) => item.licensenumber)
+
+      if (licenseNumbers.length > 0) {
+        const existingLicenses = await License.find({
+          customerName: existingCustomer._id,
+          licensenumber: { $in: licenseNumbers }
+        })
+          .select("licensenumber")
+          .session(session)
+
+        const existingLicenseSet = new Set(
+          existingLicenses.map((item) => String(item.licensenumber))
+        )
+
+        const newLicenses = uniqueLicenses.filter(
+          (item) => !existingLicenseSet.has(String(item.licensenumber))
+        )
+
+        if (newLicenses.length > 0) {
+          const licenseDocs = newLicenses.map((item) => ({
+            products: item.productid,
+            customerName: existingCustomer._id,
+            licensenumber: item.licensenumber
+          }))
+
+          await License.insertMany(licenseDocs, { session })
+        }
+      }
+
+      const updatedcustomer = await Customer.findByIdAndUpdate(
+        data.customerName,
+        {
+          $set: {
+            mobile: data.mobile,
+            email: data.email,
+            landline: data.phone
+          },
+          $push: {
+            selected: {
+              $each: mappedproductData
+            }
+          }
+        },
+        { new: true, session }
+      )
+
+      if (!updatedcustomer) {
+        throw new Error("Customer update failed")
+      }
+
+      responsePayload = {
+        message: "Lead Closed successfully",
+        lead: updatedLead,
+        customer: updatedcustomer
+      }
+    })
+
+    return res.status(200).json(responsePayload)
+  } catch (error) {
+    console.error("Leadclosing error:", error)
+
+    return res.status(500).json({
+      message: error?.message || "Something went wrong while closing lead",
+      error: {
+        name: error?.name || "Error",
+        message: error?.message || "Unknown error"
+      }
+    })
+  } finally {
+    await session.endSession()
+  }
+}
 export const UpdateLeadRegister = async (req, res) => {
   try {
     const { data, leadData } = req.body;
-
+    console.log("leaddtaa", leadData)
     // return
     const { docID } = req.query;
     const objectId = new mongoose.Types.ObjectId(docID);
@@ -1234,10 +1560,14 @@ export const GetAllservices = async (req, res) => {
 };
 export const GetallselectedproductFollowup = async (req, res) => {
   try {
+
     // const { loggeduserid, branchSelected, role, pendingfollowup, selectedproductId } = req.query;
-    const { loggeduserid, branchSelected, role, pendingfollowup, selectedproductId, viewmode = null, header = null } = req.query
-    const userObjectId = new mongoose.Types.ObjectId(loggeduserid)
+    const { loggeduserid, branchSelected, role, pendingfollowup, selectedproductId, viewmode = null, header = null, startDate, endDate } = req.query
+
+    // const userObjectId = new mongoose.Types.ObjectId(loggeduserid)
     const branchObjectId = new mongoose.Types.ObjectId(branchSelected)
+    const start = startDate ? new Date(startDate) : null;
+    const end = endDate ? new Date(endDate) : null;
     const productObjectId = selectedproductId ? new mongoose.Types.ObjectId(selectedproductId) : null
 
     let query
@@ -1327,7 +1657,18 @@ export const GetallselectedproductFollowup = async (req, res) => {
       const activity = Array.isArray(lead.activityLog) ? lead.activityLog : []
       const matchedAllocations = activity
         .map((item, index) => ({ ...item, index }))
-        .filter((item) => item.taskTo === "followup")
+        .filter((item) => {
+          if (item.taskTo !== "followup") return false;
+          if (item.allocationChanged !== false) return false;
+          if (!item.submissionDate) return false
+          const subDate = new Date(item.submissionDate);
+
+          if (start && end) {
+            if (subDate < start || subDate > end) return false;
+          }
+
+          return true;
+        })
 
       if (matchedAllocations.length === 0) continue
 
@@ -1516,7 +1857,8 @@ export const GetallselectedproductFollowup = async (req, res) => {
 
 
   } catch (error) {
-    console.log("error", error)
+    // console.log("error", error)
+    console.log("eroorrr", error.message)
     return res.status(500).json({ message: "Internal server error" })
   }
 }
@@ -1887,29 +2229,30 @@ export const GetallfollowupList = async (req, res) => {
       startDate,
       endDate,
       header,
+      from = null
     } = req.query;
-
     const userObjectId = new mongoose.Types.ObjectId(loggeduserid);
     const branchObjectId = new mongoose.Types.ObjectId(branchSelected);
 
     const start = startDate ? new Date(startDate) : null;
     const end = endDate ? new Date(endDate) : null;
 
-
-
-
-
     // Check if viewmode is the string "true"
     const isViewMode = viewmode === "true";
-
     // Check for valid header and date params
     const hasValidHeader = header && header !== "null" && header !== "undefined";
+    console.log("headerrrr", header)
     const hasValidDates = startDate && endDate &&
       startDate !== "null" && endDate !== "null" &&
       startDate !== "undefined" && endDate !== "undefined";
+    console.log("startdtaae", startDate)
+    console.log("endatae", endDate)
 
     const isNewMode = isViewMode || hasValidHeader || hasValidDates;
-
+    console.log("hasvalidhaeader", hasValidHeader)
+    console.log("hasvaliddate", hasValidDates)
+    console.log("isnewmodeeee", isNewMode)
+    console.log("isviewmode", isViewMode)
     let query;
 
     // ✅ VIEW MODE
@@ -2014,7 +2357,6 @@ export const GetallfollowupList = async (req, res) => {
 
     const followupLeads = [];
     // console.log("selctedfollowups",selectedfollowup)
-
     for (const lead of selectedfollowup) {
       const activity = Array.isArray(lead.activityLog) ? lead.activityLog : [];
 
@@ -2028,14 +2370,40 @@ export const GetallfollowupList = async (req, res) => {
             if (item.taskTo !== "followup") return false;
             if (item.allocationChanged !== false) return false;
             if (!item.submissionDate) return false;
+            //             if (from) {
+            //               return true;
+            //             }
+            // console.log("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh")
+            //             const subDate = new Date(item.submissionDate);
 
-            // const subDate = new Date(item.submissionDate);
+            //             if (start && end) {
+            //               if (subDate < start || subDate > end) return false;
+            //             }
+            //             return true
+            // Skip date filtering when from exists
+            //             if (from) return true;
 
-            // if (start && end) {
-            //   if (subDate < start || subDate > end) return false;
-            // }
+            //             if (start && end) {
+            // console.log("Hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh")
+            //               const subDate = new Date(item.submissionDate);
+            //               return subDate >= start && subDate <= end;
+            //             }
 
-            return true;
+            //             return true;
+            const hasFrom =
+              from &&
+              from !== "null" &&
+              from !== "undefined";
+
+            if (hasFrom) return true;
+
+            if (start && end) {
+              const subDate = new Date(item.submissionDate);
+              return subDate >= start && subDate <= end;
+            }
+            return true
+
+
           });
       } else {
 
@@ -2283,6 +2651,7 @@ export const GetallfollowupList = async (req, res) => {
 
       // Add detailed fields only in old mode
       if (!isNewMode) {
+
         leadObject.activityLog = populatedActivityLog;
         leadObject.neverfollowuped = neverfollowuped;
         leadObject.Nextfollowup = Nextfollowup;
@@ -2306,9 +2675,7 @@ export const GetallfollowupList = async (req, res) => {
         data: { followupLeads, ischekCollegueLeads },
       });
     } else {
-      return res
-        .status(404)
-        .json({ message: "leadfollowp not found", data: {} });
+      return res.status(200).json({ message: "leadfollowp not found", data: { followupLeads, ischekCollegueLeads } });
     }
   } catch (error) {
     console.log("error:", error.message);
@@ -3461,37 +3828,200 @@ export const GetallLead = async (req, res) => {
 // };
 
 
+// export const UpdateLeadfollowUpDate = async (req, res) => {
+//   try {
+//     const { formData, collectionupdatedata } = req.body;
+//     const { selectedleaddocId, loggeduserid } = req.query;
+
+//     if (!selectedleaddocId || !loggeduserid) {
+//       return res.status(400).json({ message: "Missing lead or user reference" });
+//     }
+
+//     if (!formData || !formData.followupType) {
+//       return res.status(400).json({ message: "Missing followup data" });
+//     }
+
+//     // 1) Resolve followedByModel
+//     let followedByModel = null;
+
+//     const isStaff = await Staff.findById(loggeduserid).lean();
+//     if (isStaff) {
+//       followedByModel = "Staff";
+//     } else {
+//       const isAdmin = await Admin.findById(loggeduserid).lean();
+//       if (isAdmin) {
+//         followedByModel = "Admin";
+//       }
+//     }
+
+//     if (!followedByModel) {
+//       return res.status(400).json({ message: "Invalid followed user reference" });
+//     }
+
+//     // 2) If lead is being closed, mark the last open followup in activityLog as closed
+//     if (formData.followupType === "closed") {
+//       await LeadMaster.updateOne(
+//         { _id: selectedleaddocId },
+//         {
+//           $set: {
+//             "activityLog.$[elem].reallocatedTo": true,
+//             "activityLog.$[elem].taskClosed": true,
+//             "activityLog.$[elem].followupClosed": true
+//           }
+//         },
+//         {
+//           arrayFilters: [
+//             {
+//               "elem.taskTo": { $exists: true },
+//               "elem.reallocatedTo": false,
+//               "elem.taskClosed": false,
+//               "elem.followupClosed": false
+//             }
+//           ]
+//         }
+//       );
+//     }
+
+//     // 3) Build new activityLog entry
+//     const allocationTask = await Task.findOne({ taskName: "Closing" }).lean();
+
+//     const activityEntry = {
+//       submissionDate: formData.followUpDate,
+//       submittedUser: loggeduserid,
+//       submissiondoneByModel: followedByModel,
+//       taskBy: allocationTask?._id || null,
+//       nextFollowUpDate: formData?.nextfollowUpDate,
+//       remarks: formData.Remarks,
+//       taskfromFollowup: false
+//     };
+
+//     if (formData.followupType === "closed") {
+//       activityEntry.taskClosed = true;
+//       activityEntry.followupClosed = true;
+//       activityEntry.reallocatedTo = true;
+//     } else if (formData.followupType === "lost") {
+//       activityEntry.taskClosed = true;
+//     }
+
+//     // 4) Build payment record (if any)
+//     let paymentRecord = null;
+
+//     if (collectionupdatedata && Array.isArray(collectionupdatedata.paymentEntries)) {
+//       const normalizedPaymentEntries = collectionupdatedata.paymentEntries.map((e) => ({
+//         productorServiceId: e.productorServiceId,
+//         productorServicemodel: e.productorServicemodel,
+//         netAmount: Number(e.netAmount || 0),
+//         receivedAmount: Number(e.receivedAmount || 0),
+//         balanceAmount: Number(e.balanceAmount || 0)
+//       }));
+
+//       const receivedAmount = Number(collectionupdatedata?.totalReceivedAmount ?? 0);
+
+//       // only create record if there is some payment info
+//       if (normalizedPaymentEntries.length > 0 || receivedAmount > 0) {
+//         paymentRecord = {
+//           paymentDate: new Date(),
+//           receivedAmount,
+//           paymentVerified: false,
+//           paymentEntries: normalizedPaymentEntries,
+//           receivedBy: collectionupdatedata?.receivedBy || null,
+//           receivedModel: collectionupdatedata?.receivedModel || null,
+//           bankRemarks:
+//             collectionupdatedata?.bankRemark ?? formData?.bankRemarks ?? "",
+//           createdAt: new Date(),
+//           updatedAt: new Date()
+//         };
+//       }
+//     }
+
+//     // 5) Build update doc with $push + $set
+//     const updateDoc = {
+//       $push: {
+//         activityLog: activityEntry
+//       },
+//       $set: {}
+//     };
+
+//     // top-level flags for lead
+//     if (formData.followupType === "closed") {
+//       updateDoc.$set.reallocatedTo = true;
+//       updateDoc.$set.leadConvertedDate = new Date();
+//     }
+
+//     if (formData.followupType === "lost") {
+//       updateDoc.$set.leadLost = true;
+//       updateDoc.$set.leadLostDate = new Date();
+//     }
+
+//     if (paymentRecord) {
+//       updateDoc.$push.paymentHistory = paymentRecord;
+//     }
+
+//     // remove empty $set/$push if nothing inside (to avoid Mongo errors)
+//     if (Object.keys(updateDoc.$set).length === 0) delete updateDoc.$set;
+//     if (Object.keys(updateDoc.$push).length === 0) delete updateDoc.$push;
+
+//     const updatedLead = await LeadMaster.findOneAndUpdate(
+//       { _id: selectedleaddocId },
+//       updateDoc,
+//       {
+//         upsert: false,
+//         returnDocument: "after"
+//       }
+//     );
+
+//     if (!updatedLead) {
+//       return res.status(404).json({ message: "Lead not found" });
+//     }
+
+//     return res.status(200).json({
+//       message: "Followup updated successfully",
+//       data: updatedLead
+//     });
+//   } catch (error) {
+//     console.log("UpdateLeadfollowUpDate error:", error);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// };
 export const UpdateLeadfollowUpDate = async (req, res) => {
   try {
     const { formData, collectionupdatedata } = req.body;
     const { selectedleaddocId, loggeduserid } = req.query;
 
     if (!selectedleaddocId || !loggeduserid) {
-      return res.status(400).json({ message: "Missing lead or user reference" });
+      return res.status(400).json({
+        message: "Missing lead or user reference"
+      });
     }
 
     if (!formData || !formData.followupType) {
-      return res.status(400).json({ message: "Missing followup data" });
+      return res.status(400).json({
+        message: "Missing followup data"
+      });
     }
 
     // 1) Resolve followedByModel
     let followedByModel = null;
 
     const isStaff = await Staff.findById(loggeduserid).lean();
+
     if (isStaff) {
       followedByModel = "Staff";
     } else {
       const isAdmin = await Admin.findById(loggeduserid).lean();
+
       if (isAdmin) {
         followedByModel = "Admin";
       }
     }
 
     if (!followedByModel) {
-      return res.status(400).json({ message: "Invalid followed user reference" });
+      return res.status(400).json({
+        message: "Invalid followed user reference"
+      });
     }
 
-    // 2) If lead is being closed, mark the last open followup in activityLog as closed
+    // 2) Close previous open followup if lead closed
     if (formData.followupType === "closed") {
       await LeadMaster.updateOne(
         { _id: selectedleaddocId },
@@ -3514,9 +4044,23 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
         }
       );
     }
+    // 3) Build activity entry
+    let allocationTask = null
+    if (formData.followupType === "closed") {
+      allocationTask = await Task.findOne({
+        taskName: "Closing"
+      }).lean();
+    } else if (formData.followupType === "lost") {
+      allocationTask = await TaskfindOne({
+        taskName: "Lost"
+      })
 
-    // 3) Build new activityLog entry
-    const allocationTask = await Task.findOne({ taskName: "Closing" }).lean();
+    } else {
+      allocationTask = await Task.findOne({
+        taskName: "Followup"
+      }).lean();
+    }
+
 
     const activityEntry = {
       submissionDate: formData.followUpDate,
@@ -3536,84 +4080,144 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
       activityEntry.taskClosed = true;
     }
 
-    // 4) Build payment record (if any)
+    // 4) Payment handling
     let paymentRecord = null;
+    let receivedAmount = 0;
 
-    if (collectionupdatedata && Array.isArray(collectionupdatedata.paymentEntries)) {
-      const normalizedPaymentEntries = collectionupdatedata.paymentEntries.map((e) => ({
-        productorServiceId: e.productorServiceId,
-        productorServicemodel: e.productorServicemodel,
-        netAmount: Number(e.netAmount || 0),
-        receivedAmount: Number(e.receivedAmount || 0),
-        balanceAmount: Number(e.balanceAmount || 0)
-      }));
+    if (
+      collectionupdatedata &&
+      Array.isArray(collectionupdatedata.paymentEntries)
+    ) {
+      const normalizedPaymentEntries =
+        collectionupdatedata.paymentEntries.map((e) => ({
+          productorServiceId: e.productorServiceId,
+          productorServicemodel: e.productorServicemodel,
+          netAmount: Number(e.netAmount || 0),
+          receivedAmount: Number(e.receivedAmount || 0),
+          balanceAmount: Number(e.balanceAmount || 0)
+        }));
 
-      const receivedAmount = Number(collectionupdatedata?.totalReceivedAmount ?? 0);
+      receivedAmount = Number(
+        collectionupdatedata?.totalReceivedAmount ?? 0
+      );
 
-      // only create record if there is some payment info
-      if (normalizedPaymentEntries.length > 0 || receivedAmount > 0) {
+      if (
+        normalizedPaymentEntries.length > 0 ||
+        receivedAmount > 0
+      ) {
         paymentRecord = {
           paymentDate: new Date(),
           receivedAmount,
           paymentVerified: false,
           paymentEntries: normalizedPaymentEntries,
-          receivedBy: collectionupdatedata?.receivedBy || null,
-          receivedModel: collectionupdatedata?.receivedModel || null,
+          receivedBy:
+            collectionupdatedata?.receivedBy || null,
+          receivedModel:
+            collectionupdatedata?.receivedModel || null,
           bankRemarks:
-            collectionupdatedata?.bankRemark ?? formData?.bankRemarks ?? "",
+            collectionupdatedata?.bankRemark ??
+            formData?.bankRemarks ??
+            "",
           createdAt: new Date(),
           updatedAt: new Date()
         };
       }
     }
 
-    // 5) Build update doc with $push + $set
+    // 5) Get existing lead
+    const existingLead = await LeadMaster.findById(
+      selectedleaddocId
+    );
+
+    if (!existingLead) {
+      return res.status(404).json({
+        message: "Lead not found"
+      });
+    }
+
+    // 6) Calculate updated amounts
+    const currentPaid = Number(
+      existingLead.totalPaidAmount || 0
+    );
+
+    const leadNetAmount = Number(
+      existingLead.netAmount || 0
+    );
+
+    const updatedTotalPaid =
+      currentPaid + receivedAmount;
+
+    const updatedBalance =
+      leadNetAmount - updatedTotalPaid;
+
+    // 7) Build update doc
     const updateDoc = {
       $push: {
         activityLog: activityEntry
       },
-      $set: {}
+      $set: {
+        totalPaidAmount: updatedTotalPaid,
+        balanceAmount: updatedBalance,
+        followupClosed: formData?.followupType === "closed" ? true : false
+      }
     };
 
-    // top-level flags for lead
+    // lead closed
     if (formData.followupType === "closed") {
       updateDoc.$set.reallocatedTo = true;
       updateDoc.$set.leadConvertedDate = new Date();
+      updateDoc.$set.leadClosed = true;
+      updateDoc.$set.leadClosedDate = new Date();
     }
 
+    // lead lost
     if (formData.followupType === "lost") {
       updateDoc.$set.leadLost = true;
       updateDoc.$set.leadLostDate = new Date();
     }
 
+    // payment fully completed
+    if (updatedBalance <= 0) {
+      updateDoc.$set.paymentVerified = true;
+    }
+
+    // add payment history
     if (paymentRecord) {
       updateDoc.$push.paymentHistory = paymentRecord;
     }
 
-    // remove empty $set/$push if nothing inside (to avoid Mongo errors)
-    if (Object.keys(updateDoc.$set).length === 0) delete updateDoc.$set;
-    if (Object.keys(updateDoc.$push).length === 0) delete updateDoc.$push;
-
-    const updatedLead = await LeadMaster.findOneAndUpdate(
-      { _id: selectedleaddocId },
-      updateDoc,
-      {
-        upsert: false,
-        returnDocument: "after"
-      }
-    );
-
-    if (!updatedLead) {
-      return res.status(404).json({ message: "Lead not found" });
+    // remove empty operators
+    if (Object.keys(updateDoc.$set).length === 0) {
+      delete updateDoc.$set;
     }
+
+    if (Object.keys(updateDoc.$push).length === 0) {
+      delete updateDoc.$push;
+    }
+
+    // 8) Update lead
+    const updatedLead =
+      await LeadMaster.findOneAndUpdate(
+        { _id: selectedleaddocId },
+        updateDoc,
+        {
+          new: true
+        }
+      );
 
     return res.status(200).json({
       message: "Followup updated successfully",
       data: updatedLead
     });
   } catch (error) {
-    console.log("UpdateLeadfollowUpDate error:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    console.log(
+      "UpdateLeadfollowUpDate error:",
+      error
+    );
+
+    return res.status(500).json({
+      message: "Internal server error"
+    });
   }
 };
 export const LeadClosing = async (req, res) => {
@@ -3984,7 +4588,9 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
           log.taskTo // ensures the field exists
       );
       const task = matchLead.activityLog[matchingIndex]?.taskId;
-      if (task !== allocationtypeId) {
+      console.log("taskkk", task)
+      console.log("alocationtupeid", allocationtypeId)
+      if (!task?.equals(allocationtypeId)) {
         return res.status(409).json({
           message:
             "Cannot change task name. It's already running.only possible to change the allocatedUser",
@@ -4160,10 +4766,11 @@ export const UpdateLeadTask = async (req, res) => {
 export const GetrespectedleadTask = async (req, res) => {
   try {
     const { userid, branchSelected, role, ownTask } = req.query;
-
+    console.log("useriid", userid)
     const userObjectId = new mongoose.Types.ObjectId(userid);
     const branchObjectId = new mongoose.Types.ObjectId(branchSelected);
     const isAdminOrManager = role === "Admin" || role === "Manager";
+    console.log("isadminnn", isAdminOrManager)
     const query = {
       leadBranch: branchObjectId,
       activityLog: {
@@ -4180,6 +4787,7 @@ export const GetrespectedleadTask = async (req, res) => {
     const selectedfollowup = await LeadMaster.find(query)
       .populate({ path: "customerName", select: "customerName" })
       .lean();
+    console.log("leaddddddddddd", selectedfollowup)
 
     const taskLeads = [];
     if (ownTask === "false") {
@@ -6515,8 +7123,665 @@ export const GetallproductwiseReport = async (req, res) => {
 
     const start = new Date(startDate);
     const end = new Date(endDate);
+    console.log("startdate", start)
+    console.log('enddataee', end)
     ///for productwise report
+    // const result = await LeadMaster.aggregate([
 
+    //   // 1️⃣ Unwind activityLog
+    //   { $unwind: "$activityLog" },
+
+    //   // 2️⃣ Only followup allocations
+    //   {
+    //     $match: {
+    //       "activityLog.taskallocatedTo": { $exists: true, $ne: null },
+    //       "activityLog.taskTo": "followup",
+    //       "activityLog.allocationChanged": false,
+    //       "activityLog.submissionDate": {
+    //         $gte: start,
+    //         $lte: end,
+    //       },
+    //     },
+    //   },
+
+    //   // 3️⃣ Sort latest followup first
+    //   {
+    //     $sort: {
+    //       "activityLog.submissionDate": -1,
+    //     },
+    //   },
+
+    //   // 4️⃣ Unwind leadFor
+    //   { $unwind: "$leadFor" },
+
+    //   // 5️⃣ DEDUPLICATE (Lead + Staff + Product + Model)
+    //   {
+    //     $group: {
+    //       _id: {
+    //         leadId: "$leadId",
+    //         staffId: "$activityLog.taskallocatedTo",
+    //         model: "$activityLog.taskallocatedToModel", // ✅ IMPORTANT
+    //         productId: "$leadFor.productorServiceId",
+    //         productModel: "$leadFor.productorServicemodel",
+    //       },
+
+    //       leadLost: { $first: "$leadLost" },
+    //       leadLostDate: { $first: "$leadLostDate" },
+    //       leadConvertedDate: { $first: "$leadConvertedDate" },
+    //       netAmount: { $first: "$leadFor.netAmount" },
+    //     },
+    //   },
+
+    //   // 6️⃣ STATUS LOGIC (Lost > Converted > Pending)
+    //   {
+    //     $addFields: {
+    //       status: {
+    //         $cond: [
+    //           {
+    //             $and: [
+    //               { $eq: ["$leadLost", true] },
+    //               { $ne: ["$leadLostDate", null] },
+    //             ],
+    //           },
+    //           "LOST",
+    //           {
+    //             $cond: [
+    //               { $ne: ["$leadConvertedDate", null] },
+    //               "CONVERTED",
+    //               "PENDING",
+    //             ],
+    //           },
+    //         ],
+    //       },
+    //     },
+    //   },
+
+    //   // 7️⃣ Flags
+    //   {
+    //     $addFields: {
+    //       isLost: { $cond: [{ $eq: ["$status", "LOST"] }, 1, 0] },
+    //       isConverted: { $cond: [{ $eq: ["$status", "CONVERTED"] }, 1, 0] },
+    //       isPending: { $cond: [{ $eq: ["$status", "PENDING"] }, 1, 0] },
+    //     },
+    //   },
+
+    //   // 8️⃣ Amount calculations
+    //   {
+    //     $addFields: {
+    //       entryTotalAmount: { $ifNull: ["$netAmount", 0] },
+
+    //       entryConvertedAmount: {
+    //         $cond: [{ $eq: ["$isConverted", 1] }, { $ifNull: ["$netAmount", 0] }, 0],
+    //       },
+
+    //       entryLostAmount: {
+    //         $cond: [{ $eq: ["$isLost", 1] }, { $ifNull: ["$netAmount", 0] }, 0],
+    //       },
+
+    //       entryPendingAmount: {
+    //         $cond: [{ $eq: ["$isPending", 1] }, { $ifNull: ["$netAmount", 0] }, 0],
+    //       },
+    //     },
+    //   },
+
+    //   // 9️⃣ FINAL GROUP → Staff/Admin + Product
+    //   {
+    //     $group: {
+    //       _id: {
+    //         staffId: "$_id.staffId",
+    //         model: "$_id.model",
+    //         productId: "$_id.productId",
+    //         productModel: "$_id.productModel",
+    //       },
+
+    //       leadCount: { $sum: 1 },
+
+    //       totalConverted: { $sum: "$isConverted" },
+    //       totalLost: { $sum: "$isLost" },
+    //       totalPending: { $sum: "$isPending" },
+
+    //       totalNetAmount: { $sum: "$entryTotalAmount" },
+    //       convertedNetAmount: { $sum: "$entryConvertedAmount" },
+    //       lostNetAmount: { $sum: "$entryLostAmount" },
+    //       totalPendingAmount: { $sum: "$entryPendingAmount" },
+    //     },
+    //   },
+
+    //   // 🔟 Lookup Staffs
+    //   {
+    //     $lookup: {
+    //       from: "staffs",
+    //       let: { id: "$_id.staffId", model: "$_id.model" },
+    //       pipeline: [
+    //         {
+    //           $match: {
+    //             $expr: {
+    //               $and: [
+    //                 { $eq: ["$$model", "Staff"] },
+    //                 { $eq: ["$_id", "$$id"] },
+    //               ],
+    //             },
+    //           },
+    //         },
+    //       ],
+    //       as: "staffData",
+    //     },
+    //   },
+
+    //   // 1️⃣1️⃣ Lookup Admins
+    //   {
+    //     $lookup: {
+    //       from: "admins",
+    //       let: { id: "$_id.staffId", model: "$_id.model" },
+    //       pipeline: [
+    //         {
+    //           $match: {
+    //             $expr: {
+    //               $and: [
+    //                 { $eq: ["$$model", "Admin"] },
+    //                 { $eq: ["$_id", "$$id"] },
+    //               ],
+    //             },
+    //           },
+    //         },
+    //       ],
+    //       as: "adminData",
+    //     },
+    //   },
+
+    //   // 1️⃣2️⃣ Merge user
+    //   {
+    //     $addFields: {
+    //       user: {
+    //         $cond: [
+    //           { $eq: ["$_id.model", "Staff"] },
+    //           { $arrayElemAt: ["$staffData", 0] },
+    //           { $arrayElemAt: ["$adminData", 0] },
+    //         ],
+    //       },
+    //     },
+    //   },
+
+    //   // 1️⃣3️⃣ Lookup Product
+    //   {
+    //     $lookup: {
+    //       from: "products",
+    //       localField: "_id.productId",
+    //       foreignField: "_id",
+    //       as: "product",
+    //     },
+    //   },
+
+    //   // 1️⃣4️⃣ Lookup Service
+    //   {
+    //     $lookup: {
+    //       from: "services",
+    //       localField: "_id.productId",
+    //       foreignField: "_id",
+    //       as: "service",
+    //     },
+    //   },
+
+    //   // 1️⃣5️⃣ Resolve product/service + branch
+    //   {
+    //     $addFields: {
+    //       productName: {
+    //         $cond: [
+    //           { $eq: ["$_id.productModel", "Product"] },
+    //           { $arrayElemAt: ["$product.productName", 0] },
+    //           { $arrayElemAt: ["$service.serviceName", 0] },
+    //         ],
+    //       },
+
+    //       branch: {
+    //         $cond: [
+    //           { $eq: ["$_id.productModel", "Product"] },
+    //           {
+    //             $arrayElemAt: [
+    //               {
+    //                 $map: {
+    //                   input: {
+    //                     $ifNull: [
+    //                       { $arrayElemAt: ["$product.selected", 0] },
+    //                       [],
+    //                     ],
+    //                   },
+    //                   as: "sel",
+    //                   in: "$$sel.branch_id",
+    //                 },
+    //               },
+    //               0,
+    //             ],
+    //           },
+    //           { $arrayElemAt: ["$service.branch", 0] },
+    //         ],
+    //       },
+    //     },
+    //   },
+
+    //   // 1️⃣6️⃣ Final output
+    //   {
+    //     $project: {
+    //       _id: 0,
+
+    //       staffId: "$_id.staffId",
+    //       productId: "$_id.productId",
+    //       productModel: "$_id.productModel",
+
+    //       staffName: { $ifNull: ["$user.name", "Unknown"] },
+    //       staffRole: "$user.role",
+
+    //       productName: 1,
+    //       branch: 1,
+
+    //       leadCount: 1,
+    //       totalConverted: 1,
+    //       totalLost: 1,
+    //       totalPending: 1,
+
+    //       totalNetAmount: 1,
+    //       convertedNetAmount: 1,
+    //       lostNetAmount: 1,
+    //       totalPendingAmount: 1,
+    //     },
+    //   },
+
+    //   // 1️⃣7️⃣ Sort
+    //   {
+    //     $sort: {
+    //       staffName: 1,
+    //       productName: 1,
+    //     },
+    //   },
+
+    // ]);
+    // const result = await LeadMaster.aggregate([
+
+    //   // 1️⃣ Unwind activityLog
+    //   { $unwind: "$activityLog" },
+
+    //   // 2️⃣ Only followup allocations
+    //   {
+    //     $match: {
+    //       "activityLog.taskallocatedTo": { $exists: true, $ne: null },
+    //       "activityLog.taskTo": "followup",
+    //       "activityLog.allocationChanged": false,
+    //       "activityLog.submissionDate": {
+    //         $gte: start,
+    //         $lte: end,
+    //       },
+    //     },
+    //   },
+
+    //   // 3️⃣ Sort latest followup first
+    //   {
+    //     $sort: {
+    //       "activityLog.submissionDate": -1,
+    //     },
+    //   },
+
+    //   // 4️⃣ Unwind leadFor
+    //   { $unwind: "$leadFor" },
+
+    //   // 5️⃣ DEDUPLICATE (ONLY PRODUCT WISE NOW)
+    //   {
+    //     $group: {
+    //       _id: {
+    //         productId: "$leadFor.productorServiceId",
+    //         productModel: "$leadFor.productorServicemodel",
+    //       },
+
+    //       leadLost: { $first: "$leadLost" },
+    //       leadLostDate: { $first: "$leadLostDate" },
+    //       leadConvertedDate: { $first: "$leadConvertedDate" },
+    //       netAmount: { $first: "$leadFor.netAmount" },
+    //     },
+    //   },
+
+    //   // 6️⃣ STATUS LOGIC
+    //   {
+    //     $addFields: {
+    //       status: {
+    //         $cond: [
+    //           {
+    //             $and: [
+    //               { $eq: ["$leadLost", true] },
+    //               { $ne: ["$leadLostDate", null] },
+    //             ],
+    //           },
+    //           "LOST",
+    //           {
+    //             $cond: [
+    //               { $ne: ["$leadConvertedDate", null] },
+    //               "CONVERTED",
+    //               "PENDING",
+    //             ],
+    //           },
+    //         ],
+    //       },
+    //     },
+    //   },
+
+    //   // 7️⃣ FLAGS
+    //   {
+    //     $addFields: {
+    //       isLost: { $cond: [{ $eq: ["$status", "LOST"] }, 1, 0] },
+    //       isConverted: { $cond: [{ $eq: ["$status", "CONVERTED"] }, 1, 0] },
+    //       isPending: { $cond: [{ $eq: ["$status", "PENDING"] }, 1, 0] },
+    //     },
+    //   },
+
+    //   // 8️⃣ AMOUNTS
+    //   {
+    //     $addFields: {
+    //       entryTotalAmount: { $ifNull: ["$netAmount", 0] },
+
+    //       entryConvertedAmount: {
+    //         $cond: [{ $eq: ["$isConverted", 1] }, { $ifNull: ["$netAmount", 0] }, 0],
+    //       },
+
+    //       entryLostAmount: {
+    //         $cond: [{ $eq: ["$isLost", 1] }, { $ifNull: ["$netAmount", 0] }, 0],
+    //       },
+
+    //       entryPendingAmount: {
+    //         $cond: [{ $eq: ["$isPending", 1] }, { $ifNull: ["$netAmount", 0] }, 0],
+    //       },
+    //     },
+    //   },
+
+    //   // 9️⃣ FINAL PRODUCT GROUP
+    //   {
+    //     $group: {
+    //       _id: {
+    //         productId: "$_id.productId",
+    //         productModel: "$_id.productModel",
+    //       },
+
+    //       leadCount: { $sum: 1 },
+
+    //       totalConverted: { $sum: "$isConverted" },
+    //       totalLost: { $sum: "$isLost" },
+    //       totalPending: { $sum: "$isPending" },
+
+    //       totalNetAmount: { $sum: "$entryTotalAmount" },
+    //       convertedNetAmount: { $sum: "$entryConvertedAmount" },
+    //       lostNetAmount: { $sum: "$entryLostAmount" },
+    //       totalPendingAmount: { $sum: "$entryPendingAmount" },
+    //     },
+    //   },
+
+    //   // 🔟 PRODUCT LOOKUP
+    //   {
+    //     $lookup: {
+    //       from: "products",
+    //       localField: "_id.productId",
+    //       foreignField: "_id",
+    //       as: "product",
+    //     },
+    //   },
+
+    //   // 1️⃣1️⃣ SERVICE LOOKUP
+    //   {
+    //     $lookup: {
+    //       from: "services",
+    //       localField: "_id.productId",
+    //       foreignField: "_id",
+    //       as: "service",
+    //     },
+    //   },
+
+    //   // 1️⃣2️⃣ RESOLVE PRODUCT NAME + BRANCH
+    //   {
+    //     $addFields: {
+    //       productName: {
+    //         $cond: [
+    //           { $eq: ["$_id.productModel", "Product"] },
+    //           { $arrayElemAt: ["$product.productName", 0] },
+    //           { $arrayElemAt: ["$service.serviceName", 0] },
+    //         ],
+    //       },
+
+    //       branch: {
+    //         $cond: [
+    //           { $eq: ["$_id.productModel", "Product"] },
+    //           {
+    //             $arrayElemAt: [
+    //               {
+    //                 $map: {
+    //                   input: {
+    //                     $ifNull: [
+    //                       { $arrayElemAt: ["$product.selected", 0] },
+    //                       [],
+    //                     ],
+    //                   },
+    //                   as: "sel",
+    //                   in: "$$sel.branch_id",
+    //                 },
+    //               },
+    //               0,
+    //             ],
+    //           },
+    //           { $arrayElemAt: ["$service.branch", 0] },
+    //         ],
+    //       },
+    //     },
+    //   },
+
+    //   // 1️⃣3️⃣ FINAL OUTPUT
+    //   {
+    //     $project: {
+    //       _id: 0,
+
+    //       productId: "$_id.productId",
+    //       productModel: "$_id.productModel",
+
+    //       productName: 1,
+    //       branch: 1,
+
+    //       leadCount: 1,
+    //       totalConverted: 1,
+    //       totalLost: 1,
+    //       totalPending: 1,
+
+    //       totalNetAmount: 1,
+    //       convertedNetAmount: 1,
+    //       lostNetAmount: 1,
+    //       totalPendingAmount: 1,
+    //     },
+    //   },
+
+    //   // 1️⃣4️⃣ SORT
+    //   {
+    //     $sort: {
+    //       productName: 1,
+    //     },
+    //   },
+
+    // ]);
+    // const result = await LeadMaster.aggregate([
+
+    //   // 1️⃣ Unwind activityLog
+    //   { $unwind: "$activityLog" },
+
+    //   // 2️⃣ Only followup allocations
+    //   {
+    //     $match: {
+    //       "activityLog.taskallocatedTo": { $exists: true, $ne: null },
+    //       "activityLog.taskTo": "followup",
+    //       "activityLog.allocationChanged": false,
+    //       "activityLog.submissionDate": {
+    //         $gte: start,
+    //         $lte: end,
+    //       },
+    //     },
+    //   },
+
+    //   // 3️⃣ Sort latest first
+    //   {
+    //     $sort: {
+    //       "activityLog.submissionDate": -1,
+    //     },
+    //   },
+
+    //   // 4️⃣ Unwind products
+    //   { $unwind: "$leadFor" },
+
+    //   // 5️⃣ 🔥 FIXED DEDUP (DO NOT LOSE A+ B USERS DATA)
+    //   {
+    //     $group: {
+    //       _id: {
+    //         leadId: "$leadId",
+    //         staffId: "$activityLog.taskallocatedTo",
+    //         staffModel: "$activityLog.taskallocatedToModel",
+    //         productId: "$leadFor.productorServiceId",
+    //         productModel: "$leadFor.productorServicemodel",
+    //         submissionDate: "$activityLog.submissionDate"
+    //       },
+
+    //       leadLost: { $first: "$leadLost" },
+    //       leadLostDate: { $first: "$leadLostDate" },
+    //       leadConvertedDate: { $first: "$leadConvertedDate" },
+
+    //       netAmount: { $first: "$leadFor.netAmount" }
+    //     }
+    //   },
+
+    //   // 6️⃣ STATUS
+    //   {
+    //     $addFields: {
+    //       status: {
+    //         $cond: [
+    //           {
+    //             $and: [
+    //               { $eq: ["$leadLost", true] },
+    //               { $ne: ["$leadLostDate", null] }
+    //             ]
+    //           },
+    //           "LOST",
+    //           {
+    //             $cond: [
+    //               { $ne: ["$leadConvertedDate", null] },
+    //               "CONVERTED",
+    //               "PENDING"
+    //             ]
+    //           }
+    //         ]
+    //       }
+    //     }
+    //   },
+
+    //   // 7️⃣ FLAGS
+    //   {
+    //     $addFields: {
+    //       isLost: { $cond: [{ $eq: ["$status", "LOST"] }, 1, 0] },
+    //       isConverted: { $cond: [{ $eq: ["$status", "CONVERTED"] }, 1, 0] },
+    //       isPending: { $cond: [{ $eq: ["$status", "PENDING"] }, 1, 0] }
+    //     }
+    //   },
+
+    //   // 8️⃣ AMOUNT CALC
+    //   {
+    //     $addFields: {
+    //       entryTotalAmount: { $ifNull: ["$netAmount", 0] },
+
+    //       entryConvertedAmount: {
+    //         $cond: [{ $eq: ["$isConverted", 1] }, "$netAmount", 0]
+    //       },
+
+    //       entryLostAmount: {
+    //         $cond: [{ $eq: ["$isLost", 1] }, "$netAmount", 0]
+    //       },
+
+    //       entryPendingAmount: {
+    //         $cond: [{ $eq: ["$isPending", 1] }, "$netAmount", 0]
+    //       }
+    //     }
+    //   },
+
+    //   // 9️⃣ PRODUCT WISE GROUP (CORRECT NOW)
+    //   {
+    //     $group: {
+    //       _id: {
+    //         productId: "$_id.productId",
+    //         productModel: "$_id.productModel"
+    //       },
+
+    //       leadCount: { $sum: 1 },
+
+    //       totalConverted: { $sum: "$isConverted" },
+    //       totalLost: { $sum: "$isLost" },
+    //       totalPending: { $sum: "$isPending" },
+
+    //       totalNetAmount: { $sum: "$entryTotalAmount" },
+    //       convertedNetAmount: { $sum: "$entryConvertedAmount" },
+    //       lostNetAmount: { $sum: "$entryLostAmount" },
+    //       totalPendingAmount: { $sum: "$entryPendingAmount" }
+    //     }
+    //   },
+
+    //   // 🔟 PRODUCT LOOKUP
+    //   {
+    //     $lookup: {
+    //       from: "products",
+    //       localField: "_id.productId",
+    //       foreignField: "_id",
+    //       as: "product"
+    //     }
+    //   },
+
+    //   // 1️⃣1️⃣ SERVICE LOOKUP
+    //   {
+    //     $lookup: {
+    //       from: "services",
+    //       localField: "_id.productId",
+    //       foreignField: "_id",
+    //       as: "service"
+    //     }
+    //   },
+
+    //   // 1️⃣2️⃣ RESOLVE NAME
+    //   {
+    //     $addFields: {
+    //       productName: {
+    //         $cond: [
+    //           { $eq: ["$_id.productModel", "Product"] },
+    //           { $arrayElemAt: ["$product.productName", 0] },
+    //           { $arrayElemAt: ["$service.serviceName", 0] }
+    //         ]
+    //       }
+    //     }
+    //   },
+
+    //   // 1️⃣3️⃣ FINAL OUTPUT
+    //   {
+    //     $project: {
+    //       _id: 0,
+
+    //       productId: "$_id.productId",
+    //       productModel: "$_id.productModel",
+
+    //       productName: 1,
+
+    //       leadCount: 1,
+    //       totalConverted: 1,
+    //       totalLost: 1,
+    //       totalPending: 1,
+
+    //       totalNetAmount: 1,
+    //       convertedNetAmount: 1,
+    //       lostNetAmount: 1,
+    //       totalPendingAmount: 1
+    //     }
+    //   },
+
+    //   // 1️⃣4️⃣ SORT
+    //   {
+    //     $sort: {
+    //       productName: 1
+    //     }
+    //   }
+    // ]);
     const result = await LeadMaster.aggregate([
 
       // 1️⃣ Unwind activityLog
@@ -6528,10 +7793,14 @@ export const GetallproductwiseReport = async (req, res) => {
           "activityLog.taskallocatedTo": { $exists: true, $ne: null },
           "activityLog.taskTo": "followup",
           "activityLog.allocationChanged": false,
+          "activityLog.submissionDate": {
+            $gte: start,
+            $lte: end,
+          },
         },
       },
 
-      // 3️⃣ Sort latest followup first
+      // 3️⃣ Sort latest first
       {
         $sort: {
           "activityLog.submissionDate": -1,
@@ -6541,25 +7810,35 @@ export const GetallproductwiseReport = async (req, res) => {
       // 4️⃣ Unwind leadFor
       { $unwind: "$leadFor" },
 
-      // 5️⃣ DEDUPLICATE (Lead + Staff + Product + Model)
+      // 5️⃣ 🔥 KEEP BRANCH (IMPORTANT FIX)
+      {
+        $addFields: {
+          branchId: "$leadBranch"
+        }
+      },
+
+      // 6️⃣ 🔥 FIRST GROUP (dedup fix + branch included)
       {
         $group: {
           _id: {
             leadId: "$leadId",
             staffId: "$activityLog.taskallocatedTo",
-            model: "$activityLog.taskallocatedToModel", // ✅ IMPORTANT
+            staffModel: "$activityLog.taskallocatedToModel",
             productId: "$leadFor.productorServiceId",
             productModel: "$leadFor.productorServicemodel",
+            submissionDate: "$activityLog.submissionDate",
+            branchId: "$branchId"   // ✅ FIXED
           },
 
           leadLost: { $first: "$leadLost" },
           leadLostDate: { $first: "$leadLostDate" },
           leadConvertedDate: { $first: "$leadConvertedDate" },
-          netAmount: { $first: "$leadFor.netAmount" },
-        },
+
+          netAmount: { $first: "$leadFor.netAmount" }
+        }
       },
 
-      // 6️⃣ STATUS LOGIC (Lost > Converted > Pending)
+      // 7️⃣ STATUS
       {
         $addFields: {
           status: {
@@ -6583,7 +7862,7 @@ export const GetallproductwiseReport = async (req, res) => {
         },
       },
 
-      // 7️⃣ Flags
+      // 8️⃣ FLAGS
       {
         $addFields: {
           isLost: { $cond: [{ $eq: ["$status", "LOST"] }, 1, 0] },
@@ -6592,33 +7871,32 @@ export const GetallproductwiseReport = async (req, res) => {
         },
       },
 
-      // 8️⃣ Amount calculations
+      // 9️⃣ AMOUNT CALC
       {
         $addFields: {
           entryTotalAmount: { $ifNull: ["$netAmount", 0] },
 
           entryConvertedAmount: {
-            $cond: [{ $eq: ["$isConverted", 1] }, { $ifNull: ["$netAmount", 0] }, 0],
+            $cond: [{ $eq: ["$isConverted", 1] }, "$netAmount", 0],
           },
 
           entryLostAmount: {
-            $cond: [{ $eq: ["$isLost", 1] }, { $ifNull: ["$netAmount", 0] }, 0],
+            $cond: [{ $eq: ["$isLost", 1] }, "$netAmount", 0],
           },
 
           entryPendingAmount: {
-            $cond: [{ $eq: ["$isPending", 1] }, { $ifNull: ["$netAmount", 0] }, 0],
+            $cond: [{ $eq: ["$isPending", 1] }, "$netAmount", 0],
           },
         },
       },
 
-      // 9️⃣ FINAL GROUP → Staff/Admin + Product
+      // 🔟 FINAL GROUP (PRODUCT + BRANCH WISE)
       {
         $group: {
           _id: {
-            staffId: "$_id.staffId",
-            model: "$_id.model",
             productId: "$_id.productId",
             productModel: "$_id.productModel",
+            branchId: "$_id.branchId"   // ✅ FIXED
           },
 
           leadCount: { $sum: 1 },
@@ -6630,136 +7908,53 @@ export const GetallproductwiseReport = async (req, res) => {
           totalNetAmount: { $sum: "$entryTotalAmount" },
           convertedNetAmount: { $sum: "$entryConvertedAmount" },
           lostNetAmount: { $sum: "$entryLostAmount" },
-          totalPendingAmount: { $sum: "$entryPendingAmount" },
-        },
+          totalPendingAmount: { $sum: "$entryPendingAmount" }
+        }
       },
 
-      // 🔟 Lookup Staffs
-      {
-        $lookup: {
-          from: "staffs",
-          let: { id: "$_id.staffId", model: "$_id.model" },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ["$$model", "Staff"] },
-                    { $eq: ["$_id", "$$id"] },
-                  ],
-                },
-              },
-            },
-          ],
-          as: "staffData",
-        },
-      },
-
-      // 1️⃣1️⃣ Lookup Admins
-      {
-        $lookup: {
-          from: "admins",
-          let: { id: "$_id.staffId", model: "$_id.model" },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ["$$model", "Admin"] },
-                    { $eq: ["$_id", "$$id"] },
-                  ],
-                },
-              },
-            },
-          ],
-          as: "adminData",
-        },
-      },
-
-      // 1️⃣2️⃣ Merge user
-      {
-        $addFields: {
-          user: {
-            $cond: [
-              { $eq: ["$_id.model", "Staff"] },
-              { $arrayElemAt: ["$staffData", 0] },
-              { $arrayElemAt: ["$adminData", 0] },
-            ],
-          },
-        },
-      },
-
-      // 1️⃣3️⃣ Lookup Product
+      // 1️⃣1️⃣ PRODUCT LOOKUP
       {
         $lookup: {
           from: "products",
           localField: "_id.productId",
           foreignField: "_id",
-          as: "product",
-        },
+          as: "product"
+        }
       },
 
-      // 1️⃣4️⃣ Lookup Service
+      // 1️⃣2️⃣ SERVICE LOOKUP
       {
         $lookup: {
           from: "services",
           localField: "_id.productId",
           foreignField: "_id",
-          as: "service",
-        },
+          as: "service"
+        }
       },
 
-      // 1️⃣5️⃣ Resolve product/service + branch
+      // 1️⃣3️⃣ RESOLVE PRODUCT NAME
       {
         $addFields: {
           productName: {
             $cond: [
               { $eq: ["$_id.productModel", "Product"] },
               { $arrayElemAt: ["$product.productName", 0] },
-              { $arrayElemAt: ["$service.serviceName", 0] },
-            ],
-          },
-
-          branch: {
-            $cond: [
-              { $eq: ["$_id.productModel", "Product"] },
-              {
-                $arrayElemAt: [
-                  {
-                    $map: {
-                      input: {
-                        $ifNull: [
-                          { $arrayElemAt: ["$product.selected", 0] },
-                          [],
-                        ],
-                      },
-                      as: "sel",
-                      in: "$$sel.branch_id",
-                    },
-                  },
-                  0,
-                ],
-              },
-              { $arrayElemAt: ["$service.branch", 0] },
-            ],
-          },
-        },
+              { $arrayElemAt: ["$service.serviceName", 0] }
+            ]
+          }
+        }
       },
 
-      // 1️⃣6️⃣ Final output
+      // 1️⃣4️⃣ FINAL OUTPUT
       {
         $project: {
           _id: 0,
 
-          staffId: "$_id.staffId",
           productId: "$_id.productId",
           productModel: "$_id.productModel",
-
-          staffName: { $ifNull: ["$user.name", "Unknown"] },
-          staffRole: "$user.role",
+          branch: "$_id.branchId",   // ✅ FIXED
 
           productName: 1,
-          branch: 1,
 
           leadCount: 1,
           totalConverted: 1,
@@ -6769,19 +7964,21 @@ export const GetallproductwiseReport = async (req, res) => {
           totalNetAmount: 1,
           convertedNetAmount: 1,
           lostNetAmount: 1,
-          totalPendingAmount: 1,
-        },
+          totalPendingAmount: 1
+        }
       },
 
-      // 1️⃣7️⃣ Sort
+      // 1️⃣5️⃣ SORT
       {
         $sort: {
-          staffName: 1,
-          productName: 1,
-        },
-      },
-
+          productName: 1
+        }
+      }
     ]);
+
+
+
+
     ///stqfffwisereport 
     const re = await LeadMaster.aggregate([
       // 1️⃣ Unwind activity log

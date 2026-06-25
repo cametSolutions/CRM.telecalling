@@ -39,10 +39,12 @@ export default function FollowupSummaryDashboard() {
   const [selectedUserName, setselecteduserName] = useState(null)
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
-  const [selectedYear, setSelectedYear] = useState(null)
+  const now = new Date()
+  const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   const [periodMode, setperiodMode] = useState("all")
   const [loggedUser, setloggedUser] = useState(null)
   const [targetData, settargetData] = useState([])
+  const [activeUserId, setActiveUserId] = useState(null)
   console.log(targetData)
   const [openModal, setOpenModal] = useState(false)
   const [productlist, setproductList] = useState([])
@@ -54,9 +56,70 @@ export default function FollowupSummaryDashboard() {
       selectedBranch &&
       `/lead/getfollowupsummaryReport?startDate=${date.startDate}&endDate=${date.endDate}&branchId=${selectedBranch}`
   )
+  console.log(date.startDate)
+  console.log(date.endDate)
   const { data: branchProduct } = UseFetch(
     selectedBranch && `/product/getallbranchProduct?branch=${selectedBranch}`
   )
+  useEffect(() => {
+    if (selectedCategory) {
+      console.log("jj")
+      const Datas = targetData?.userWiseResults
+
+      const filteredList = branchProduct
+        .filter(
+          (item) =>
+            item.selected?.some(
+              (selectedItem) =>
+                String(selectedItem.category_id) ===
+                String(selectedCategory?.Id)
+            ) || String(item.category_id) === String(selectedCategory?.Id)
+        )
+        .map((item) => item.productName || item.serviceName)
+      console.log(filteredList)
+      setproductList(filteredList)
+      console.log("J")
+      console.log(targetData)
+
+      console.log("hhh")
+
+      console.log(Datas)
+      console.log("hhhh")
+
+      const filteredselectedCategory = Datas.flatMap(
+        (user) => user.categories || []
+      ).filter((item) => item.categoryId === selectedCategory?.Id)
+      console.log(filteredselectedCategory)
+      console.log("Hh")
+      const summary = filteredselectedCategory.reduce(
+        (acc, cur) => {
+          acc.target += Number(cur.target || 0)
+          acc.achieved += Number(cur.achieved || 0)
+          acc.balance += Number(cur.balance || 0)
+          return acc
+        },
+        { target: 0, achieved: 0, balance: 0 }
+      )
+      console.log("hhh")
+      setselectedDataPopup(summary)
+      console.log(filteredselectedCategory && filteredselectedCategory.length)
+      if (filteredselectedCategory && filteredselectedCategory.length) {
+        console.log("hh")
+        console.log(filteredselectedCategory)
+        setacheivedProducts((prev) => [
+          ...prev,
+          ...filteredselectedCategory.flatMap((item) =>
+            (item?.products || []).map((product) => ({
+              productname: product.name,
+              amount: product.achieved
+            }))
+          )
+        ])
+      } else {
+        setacheivedProducts([])
+      }
+    }
+  }, [targetData])
   console.log(followup)
   // set end of current month once
   useEffect(() => {
@@ -124,6 +187,8 @@ export default function FollowupSummaryDashboard() {
   console.log("hhhh")
   // navigation logic for metric cells
   const handleMetricClick = (row, header, key) => {
+    console.log("hhhh")
+    console.log(header)
     // row has: staffName, leadCount, dueToday, overDue, future, converted, lost, leadid[]
     const staffName = row.staffName
     console.log("hh")
@@ -174,19 +239,7 @@ export default function FollowupSummaryDashboard() {
     console.log("J")
     console.log(targetData)
     console.log(loggedUser?._id)
-    const filteredloggedUserItem = Datas.filter(
-      (item) => item.userId === loggedUser._id
-    )
-    console.log("hhh")
 
-    console.log(Datas)
-    console.log("hhhh")
-    console.log(filteredloggedUserItem)
-    console.log(id)
-    // const filteredselectedCategory =
-    //   filteredloggedUserItem[0].categories.filter(
-    //     (item) => item.categoryId === id
-    //   )
     const filteredselectedCategory = Datas.flatMap(
       (user) => user.categories || []
     ).filter((item) => item.categoryId === id)
@@ -219,12 +272,13 @@ export default function FollowupSummaryDashboard() {
     setOpenModal(true)
   }
   const handleSelectedUser = (category, userId, userName) => {
+    setActiveUserId(userId)
     setselecteduserName(userName)
     setselectedCategory({
       Id: category.Id,
       categoryName: category.categoryName
     })
-    const filteredloggedUserItem = data?.userWiseResults.filter(
+    const filteredloggedUserItem = targetData?.userWiseResults.filter(
       (item) => item.userId === userId
     )
     const filteredselectedCategory =
@@ -243,11 +297,19 @@ export default function FollowupSummaryDashboard() {
 
     setselectedDataPopup(summary)
     if (filteredselectedCategory && filteredselectedCategory.length) {
+      // setacheivedProducts(
+      //   filteredselectedCategory[0]?.products?.map((product) => ({
+      //     productname: product.name,
+      //     amount: product.achieved
+      //   })) || []
+      // )
       setacheivedProducts(
-        filteredselectedCategory[0]?.products?.map((product) => ({
-          productname: product.name,
-          amount: product.achieved
-        })) || []
+        filteredselectedCategory.flatMap((item) =>
+          (item.products || []).map((product) => ({
+            productname: product.name,
+            amount: product.achieved
+          }))
+        )
       )
     } else {
       setacheivedProducts([])
@@ -256,6 +318,11 @@ export default function FollowupSummaryDashboard() {
   const handleFollowupCellClick = ({ row, header }) => {
     console.log(header)
     console.log(row)
+    const breadcrumb = [
+      { label: "Report", path: "" },
+      { label: "Follow-Up Summary", path: "/admin/reports/follow-up-summary" },
+      { label: "Lead Follow-Up", path: "" }
+    ]
     if (header === "Staff") return
     if (header === "Conversion %") return
 
@@ -271,7 +338,7 @@ export default function FollowupSummaryDashboard() {
       })
     } else if (header === "Lead Count") {
       navigate("/admin/transaction/lead/allLeads", {
-        state: { staffId: row.staffId }
+        state: { staffId: row.staffId, breadcrumb }
       })
     } else if (header === "Due Today") {
       console.log(date)
@@ -283,7 +350,8 @@ export default function FollowupSummaryDashboard() {
           viewMode: "dueToday",
           from: "followupReport",
           istotal: true,
-          filterRange: date
+          filterRange: date,
+          breadcrumb
         }
       })
       console.log("hhhhh")
@@ -298,7 +366,8 @@ export default function FollowupSummaryDashboard() {
           viewMode: "overDue",
           from: "followupReport",
           istotal: true,
-          filterRange: date
+          filterRange: date,
+          breadcrumb
         }
       })
     } else if (header === "Future") {
@@ -311,7 +380,8 @@ export default function FollowupSummaryDashboard() {
           viewMode: "future",
           from: "followupReport",
           istotal: true,
-          filterRange: date
+          filterRange: date,
+          breadcrumb
         }
       })
     } else if (header === "Converted") {
@@ -324,10 +394,11 @@ export default function FollowupSummaryDashboard() {
           viewMode: "converted",
           from: "followupReport",
           istotal: true,
-          filterRange: date
+          filterRange: date,
+          breadcrumb
         }
       })
-    } else if (header === "Never Follow Up") {
+    } else if (header === "New Lead") {
       console.log("hhhhhh")
       console.log("hhhhh")
       navigate("/admin/transaction/lead/leadFollowUp", {
@@ -338,7 +409,8 @@ export default function FollowupSummaryDashboard() {
           viewMode: "neverfollowup",
           from: "followupReport",
           istotal: true,
-          filterRange: date
+          filterRange: date,
+          breadcrumb
         }
       })
     } else if (header === "Total Leads") {
@@ -352,7 +424,8 @@ export default function FollowupSummaryDashboard() {
           viewMode: "followup",
           istotal: true,
           header: "Total Leads",
-          branchId: row.branchIds?.[0]
+          branchId: row.branchIds?.[0],
+breadcrumb
         }
       })
       console.log("hhh")
@@ -373,8 +446,8 @@ export default function FollowupSummaryDashboard() {
           selectedCompanyBranch={selectedBranch}
           setselectedCompanyBranch={setselectedBranch}
           parenttargetData={settargetData}
-          parentperiodmode={setperiodMode}
-          parentyear={setSelectedYear}
+          parentperiodmode={periodMode}
+          parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
         />
         <div className="flex flex-1 flex-col overflow-hidden">
@@ -554,22 +627,23 @@ export default function FollowupSummaryDashboard() {
             setselectedPeriod(val)
           }}
           onMonthChange={(val) => {
-            setcategorylist([])
             setacheivedProducts([])
             setselectedDataPopup([])
             setperiodMode(val)
+            setselecteduserName(null)
           }}
           onYearChange={(val) => {
-            setcategorylist([])
             setacheivedProducts([])
             setselectedDataPopup([])
             setSelectedYear(val)
+            setselecteduserName(null)
           }}
           productlist={productlist}
           onClose={() => {
-            setselecteduserName(loggedUser?.name)
+            setselecteduserName(null)
             setacheivedProducts([])
             setOpenModal(false)
+            setActiveUserId(null)
           }}
           selectedMonth={periodMode}
           selectedYear={selectedYear}
@@ -587,6 +661,7 @@ export default function FollowupSummaryDashboard() {
           selectedUser={selectedUserName}
           category={selectedCategory}
           handleSelectedUser={handleSelectedUser}
+          activeUserId={activeUserId}
         />
       </div>
     </div>

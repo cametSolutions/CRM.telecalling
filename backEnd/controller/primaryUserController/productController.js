@@ -21,8 +21,9 @@ export const ProductRegistration = async (req, res) => {
       selected: tableData,
       productName: productData.productName,
       productPrice: productData.productPrice,
-
-      description: productData.description
+      productorservicetype: productData.productorservicetype,
+      description: productData.description,
+      defaultservices: productData.defaultservices
     })
     await products.save()
     res.status(200).json({
@@ -54,12 +55,14 @@ export const EditProduct = async (req, res) => {
     existingProduct.selected = editData// Use the updated tableData
     existingProduct.productName =
       productData.productName || existingProduct.productName
-    existingProduct.productPrice =
+existingProduct.shortName=productData.shortName||""   
+ existingProduct.productPrice =
       productData.productPrice || existingProduct.productPrice
 
     existingProduct.description =
       productData.description || existingProduct.description
-
+    existingProduct.defaultservices = productData.defaultservices || [];
+existingProduct.productorservicetype=productData?.productorservicetype
     // Step 3: Save the changes to the database
     await existingProduct.save()
     res.status(200).json({ message: "Product edit successfully" })
@@ -98,19 +101,29 @@ export const GetbranchProduct = async (req, res) => {
 export const GetallProducts = async (req, res) => {
   try {
     const { branchselected = null, branchselectedArray = null } = req.query
+console.log("brancheselelcted",branchselected)
+console.log("branschselectedarrry",branchselectedArray)
     if (branchselectedArray) {
       let decodedbranches = JSON.parse(decodeURIComponent(branchselectedArray));
 
       if (!Array.isArray(decodedbranches)) {
         decodedbranches = [decodedbranches]; // ensure it's always an array
       }
+
+
+
+
       const products = await Product.find({
         selected: {
           $elemMatch: {
-            branch_id: { $in: decodedbranches },
-          },
-        },
+            branch_id: { $in: decodedbranches }
+          }
+        }
       })
+        .populate("defaultservices");
+
+
+
       if (products && products.length) {
 
         return res.status(201).json({ message: "foound products", data: products })
@@ -121,6 +134,7 @@ export const GetallProducts = async (req, res) => {
 
 
     } else if (branchselected) {
+console.log("dddddddddddddddddddddddddddddddddddddddddddddddddddddddddd")
       let products
       if (branchselected) {
         const decodedbranches = JSON.parse(decodeURIComponent(branchselected))
@@ -130,7 +144,7 @@ export const GetallProducts = async (req, res) => {
               branch_id: { $in: decodedbranches }
             }
           }
-        }).populate({ path: "selected.hsn_id", select: "onValue" })
+        }).populate({ path: "selected.hsn_id", select: "onValue" }).populate("defaultservices")
 
 
       } else {
@@ -447,6 +461,29 @@ export const UpdateServices = async (req, res) => {
   } catch (error) {
     console.error(error)
     res.status(500).json({ message: "Internal Server Error" })
+  }
+}
+export const GetallselectedBranchServices = async (req, res) => {
+  try {
+    const { cmp_id, branch_id } = req.query
+    console.log("cmpid", cmp_id)
+    console.log("branchd", branch_id)
+    const services = await Product.find({
+      productorservicetype: "Additionalservice",
+      selected: {
+        $elemMatch: {
+          company_id: cmp_id,
+          branch_id: branch_id,
+        },
+      },
+    });
+    console.log("servicesss", services)
+    if (services && services.length) {
+      return res.status(200).json({ message: "service found", data: services })
+    }
+  } catch (error) {
+    console.log("error", error.message)
+    return res.status(500).json({ message: "Internal server error" })
   }
 }
 export const GetallServices = async (req, res) => {

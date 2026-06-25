@@ -11,15 +11,18 @@ import { PerformanceModal } from "./PerformanceModal"
 import api from "../../api/api"
 import SkeletonTable from "../loader/SkeletonTable"
 import Sidebar from "./Sidebar"
+import { useFetcher } from "react-router-dom"
 export const StaticSidebar = ({
   selectedCompanyBranch,
-setselectedPeriod,
+  setselectedPeriod,
   handleMoreClick,
   setselectedCompanyBranch,
   parenttargetData,
   parentyear,
   parentperiodmode
 }) => {
+  console.log(parentperiodmode)
+  console.log(parentyear)
   console.log(selectedCompanyBranch)
   const [categorylist, setcategorylist] = useState([])
   const [avatarOpen, setAvatarOpen] = useState(false)
@@ -30,7 +33,9 @@ setselectedPeriod,
   const [selectedBranch, setselectedBranch] = useState(null)
   console.log(selectedCompanyBranch)
   console.log(selectedBranch)
-  const [periodMode, setperiodMode] = useState("all")
+  const [periodMode, setperiodMode] = useState(parentperiodmode)
+  console.log(parentperiodmode)
+  console.log(periodMode)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   console.log(sidebarOpen)
   const [branchOptions, setbranchOptions] = useState([])
@@ -38,7 +43,7 @@ setselectedPeriod,
     String(now.getMonth() + 1).padStart(2, "0")
   )
   const [loggedusedTarget, setloggeduserTarget] = useState([])
-  const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
+  const [selectedYear, setSelectedYear] = useState(parentyear)
   const [achievedPoints, setachievedPoints] = useState(0)
   const { data, loading: targetLoading } = UseFetch(
     selectedBranch &&
@@ -47,11 +52,21 @@ setselectedPeriod,
       periodMode &&
       `/target/gettargetresult?month=${selectedMonth}&year=${selectedYear}&periodMode=${periodMode}&selectedBranch=${selectedBranch}`
   )
-console.log(selectedBranch)
-console.log(selectedMonth)
-console.log(selectedYear)
-console.log(periodMode)
-console.log(data)
+  const { data: branchlist } = UseFetch("/branch/getBranch")
+  console.log(branchlist)
+  console.log(selectedYear)
+  console.log(periodMode)
+  console.log(selectedBranch)
+  console.log(selectedMonth)
+  console.log(selectedYear)
+  console.log(periodMode)
+  console.log(data)
+  useEffect(() => {
+    setperiodMode(parentperiodmode)
+  }, [parentperiodmode])
+  useEffect(() => {
+    setSelectedYear(parentyear)
+  }, [parentyear])
   useEffect(() => {
     if (data?.userWiseResults && data?.userWiseResults.length) {
       parenttargetData(data)
@@ -115,11 +130,14 @@ console.log(data)
   }, [selectedCompanyBranch])
   console.log(data)
   useEffect(() => {
+    if (!branchlist) return
+    console.log(branchlist)
     const storedUser = getLocalStorageItem("user")
     if (storedUser) {
       setUser(storedUser)
       setselecteduserName(storedUser.name)
       //   setselectedBranch(storedUser.selected[0].branch_id)
+      console.log(storedUser)
       setbranchOptions((prev) => [
         ...prev,
         ...storedUser.selected.map((branch) => ({
@@ -127,9 +145,17 @@ console.log(data)
           label: branch.branchName
         }))
       ])
-    }
-  }, [])
+//  setbranchOptions((prev) => [
+//         ...prev,
+//         ...storedUser.selected.map((branch) => ({
+//           id: branch.branch_id,
+//           label: branch.branchName
+//         }))
+//       ])
 
+    }
+  }, [branchlist])
+console.log(branchOptions)
   console.log("b")
   const toggleSidebar = () => setSidebarOpen((prev) => !prev)
   return (

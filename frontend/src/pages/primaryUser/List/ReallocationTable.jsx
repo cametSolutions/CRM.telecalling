@@ -51,6 +51,7 @@ const ReallocationTable = () => {
   const [selectedAllocationtypeNames, setselectedallocatiotypeNames] = useState(
     {}
   )
+  const [activeUserId, setActiveUserId] = useState(null)
   const [validateError, setValidateError] = useState({})
   const [validatetypeError, setValidatetypeError] = useState({})
   const [loggedUserBranches, setLoggeduserBranches] = useState([])
@@ -66,7 +67,8 @@ const ReallocationTable = () => {
   const [tableData, setTableData] = useState([])
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
-  const [selectedYear, setSelectedYear] = useState(null)
+  const now = new Date()
+  const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   const [periodMode, setperiodMode] = useState("all")
   const [targetData, settargetData] = useState([])
   console.log(targetData)
@@ -91,7 +93,7 @@ const ReallocationTable = () => {
       selectedCompanyBranch &&
       `/lead/getallreallocatedLead?selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
   )
-const { data: branchProduct } = UseFetch(
+  const { data: branchProduct } = UseFetch(
     `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
   )
   const { data: tasks } = UseFetch("/lead/getallTask")
@@ -100,11 +102,66 @@ const { data: branchProduct } = UseFetch(
   const { data } = UseFetch("/auth/getallUsers")
   const { data: partners } = UseFetch("/customer/getallpartners")
   const navigate = useNavigate()
+
   useEffect(() => {
     const userData = localStorage.getItem("user")
     const user = JSON.parse(userData)
     setLoggedUser(user)
   }, [])
+  useEffect(() => {
+    if (selectedCategory) {
+      console.log("jj")
+      const Datas = targetData?.userWiseResults
+
+      const filteredList = branchProduct
+        .filter(
+          (item) =>
+            item.selected?.some(
+              (selectedItem) =>
+                String(selectedItem.category_id) ===
+                String(selectedCategory?.Id)
+            ) || String(item.category_id) === String(selectedCategory?.Id)
+        )
+        .map((item) => item.productName || item.serviceName)
+      console.log(filteredList)
+      setproductList(filteredList)
+      console.log("J")
+      console.log(targetData)
+
+      const filteredselectedCategory = Datas.flatMap(
+        (user) => user.categories || []
+      ).filter((item) => item.categoryId === selectedCategory?.Id)
+      console.log(filteredselectedCategory)
+      console.log("Hh")
+      const summary = filteredselectedCategory.reduce(
+        (acc, cur) => {
+          acc.target += Number(cur.target || 0)
+          acc.achieved += Number(cur.achieved || 0)
+          acc.balance += Number(cur.balance || 0)
+          return acc
+        },
+        { target: 0, achieved: 0, balance: 0 }
+      )
+      console.log("hhh")
+      setselectedDataPopup(summary)
+      console.log(filteredselectedCategory && filteredselectedCategory.length)
+      if (filteredselectedCategory && filteredselectedCategory.length) {
+        console.log("hh")
+        console.log(filteredselectedCategory)
+        setacheivedProducts((prev) => [
+          ...prev,
+          ...filteredselectedCategory.flatMap((item) =>
+            (item?.products || []).map((product) => ({
+              productname: product.name,
+              amount: product.achieved
+            }))
+          )
+        ])
+      } else {
+        setacheivedProducts([])
+      }
+    }
+  }, [targetData])
   useEffect(() => {
     if (loggedUser && branches && branches.length > 0) {
       if (loggedUser.role === "Admin") {
@@ -162,6 +219,7 @@ const { data: branchProduct } = UseFetch(
     }
   }, [leadreallocation])
   const filterLeadsByLastTaskLabel = (leads, label) => {
+    console.log(label)
     return leads.filter((lead) => {
       const logs = lead.activityLog
       if (!logs || logs.length === 0) return false
@@ -169,7 +227,7 @@ const { data: branchProduct } = UseFetch(
       const lastLog = lead?.lasttask?.taskName
       console.log(lastLog)
       console.log(label)
-      return lastLog.toLowerCase() === label.toLowerCase()
+      return lastLog?.toLowerCase() === label.toLowerCase()
     })
   }
 
@@ -294,10 +352,7 @@ const { data: branchProduct } = UseFetch(
     console.log("hhhh")
     console.log(filteredloggedUserItem)
     console.log(id)
-    // const filteredselectedCategory =
-    //   filteredloggedUserItem[0].categories.filter(
-    //     (item) => item.categoryId === id
-    //   )
+
     const filteredselectedCategory = Datas.flatMap(
       (user) => user.categories || []
     ).filter((item) => item.categoryId === id)
@@ -330,12 +385,13 @@ const { data: branchProduct } = UseFetch(
     setOpenModal(true)
   }
   const handleSelectedUser = (category, userId, userName) => {
+    setActiveUserId(userId)
     setselecteduserName(userName)
     setselectedCategory({
       Id: category.Id,
       categoryName: category.categoryName
     })
-    const filteredloggedUserItem = data?.userWiseResults.filter(
+    const filteredloggedUserItem = targetData?.userWiseResults.filter(
       (item) => item.userId === userId
     )
     const filteredselectedCategory =
@@ -354,11 +410,19 @@ const { data: branchProduct } = UseFetch(
 
     setselectedDataPopup(summary)
     if (filteredselectedCategory && filteredselectedCategory.length) {
+      // setacheivedProducts(
+      //   filteredselectedCategory[0]?.products?.map((product) => ({
+      //     productname: product.name,
+      //     amount: product.achieved
+      //   })) || []
+      // )
       setacheivedProducts(
-        filteredselectedCategory[0]?.products?.map((product) => ({
-          productname: product.name,
-          amount: product.achieved
-        })) || []
+        filteredselectedCategory.flatMap((item) =>
+          (item.products || []).map((product) => ({
+            productname: product.name,
+            amount: product.achieved
+          }))
+        )
       )
     } else {
       setacheivedProducts([])
@@ -372,11 +436,11 @@ const { data: branchProduct } = UseFetch(
           selectedCompanyBranch={selectedCompanyBranch}
           setselectedCompanyBranch={setSelectedCompanyBranch}
           parenttargetData={settargetData}
-          parentperiodmode={setperiodMode}
-          parentyear={setSelectedYear}
+          parentperiodmode={periodMode}
+          parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
         />
-        <div className="flex flex-1 flex-col overflow-hidden ">
+        <div className="flex flex-1 flex-col overflow-hidden min-h-0">
           <header className="flex items-center justify-between bg-[#ADD8E6]">
             {loggedUser?.role?.toLowerCase() === "admin" ? (
               <AdminHeader hide={true} />
@@ -434,26 +498,10 @@ const { data: branchProduct } = UseFetch(
               color="#4A90E2" // Change color as needed
             />
           )}
-          <div className="flex flex-col flex-1 bg-[#ADD8E6]">
+          <div className="flex flex-col flex-1 bg-[#ADD8E6] min-h-0">
             <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3 ">
               <h2 className="text-lg font-bold ml-5 mt-3">ReAllocation List</h2>
               <div className="flex justify-end  ml-auto gap-6 items-center">
-                {/* Branch Dropdown */}
-                <select
-                  value={selectedCompanyBranch || ""}
-                  onChange={(e) => {
-                    setSelectedCompanyBranch(e.target.value)
-                    setStatus(approvedToggleStatus ? "Approved" : "Pending")
-                  }}
-                  className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[120px]"
-                >
-                  {loggedUserBranches?.map((branch) => (
-                    <option key={branch._id} value={branch.value}>
-                      {branch.label}
-                    </option>
-                  ))}
-                </select>
-
                 <button
                   onClick={() =>
                     loggedUser.role === "Admin"
@@ -466,8 +514,9 @@ const { data: branchProduct } = UseFetch(
                 </button>
               </div>
             </div>
+
             {/* Responsive Table Container */}
-            <div className="h-auto overflow-auto rounded-lg text-center overflow-y-auto border  shadow-xl mx-3 md:mx-5 mb-3 bg-white">
+            <div className=" overflow-auto rounded-lg text-center overflow-y-auto border  shadow-xl mx-3 md:mx-5 mb-3 bg-white">
               <table className="w-full text-sm">
                 <thead className=" whitespace-nowrap bg-blue-600 text-white sticky top-0 z-30">
                   <tr>
@@ -569,11 +618,24 @@ const { data: branchProduct } = UseFetch(
                           <td className=" px-4 ">Assignedby</td>
                           <td className="px-4 ">No. of Followups</td>
                           <td className="px-4 min-w-[120px]">Lead Date</td>
-                          <td className="px-4 min-w-[120px] border border-t-0 border-b-0 border-gray-400">
-                            {
+                          <td className="px-4 min-w-[120px] border border-t-0 border-b-0 border-gray-400 whitespace-nowrap">
+                            {/* {
                               item?.activityLog[item.activityLog.length - 1]
                                 .remarks
-                            }
+                            } */}
+<span className="mx-2 relative group inline-block max-w-[220px] align-middle">
+  <span className="block truncate text-[12px] text-slate-700">
+    {item?.activityLog?.[item.activityLog.length - 1]?.remarks || "-"}
+  </span>
+
+  {item?.activityLog?.[item.activityLog.length - 1]?.remarks && (
+    <div className="pointer-events-none absolute left-0 top-full z-50 mt-1 hidden w-80 rounded-md border border-slate-200 bg-slate-700 px-3 py-2 shadow-lg group-hover:block">
+      <p className="text-[11px] leading-4 text-white whitespace-normal break-words">
+        {item?.activityLog?.[item.activityLog.length - 1]?.remarks}
+      </p>
+    </div>
+  )}
+</span>
                           </td>
                           <td className=" border border-t-0 border-b-0 border-gray-400 px-1 bg-white ">
                             <select
@@ -739,13 +801,48 @@ const { data: branchProduct } = UseFetch(
                           <td className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5 "></td>
                           <td
                             className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5 text-red-400 hover:text-red-500 hover:cursor-pointer font-semibold"
-                            onClick={() => {
-                              setIsclosed(true)
+                            // onClick={() => {
+                            //   setIsclosed(true)
 
-                              setselectedData(item)
-                            }}
+                            //   setselectedData(item)
+                            // }}
                           >
-                            Closed
+                            <button
+                              onClick={() => {
+console.log("hhh")
+                                const breadcrumb = [
+                                  { label: "Lead", path: "", state: "" },
+                                  {
+                                    label: "Re Allocation List",
+                                    path:
+                                      loggedUser?.role === "Admin"
+                                        ? "/admin/transaction/lead/ownedLeadlist"
+                                        : "/staff/transaction/lead/ownedLeadlist",
+                                    // state: {
+                                    //   dates,
+                                    //   ownLead,
+                                    //   selecteduserBranch
+                                    // }
+                                  },
+                                  { label: "Lead Closed", path: "" }
+                                ]
+                                loggedUser.role === "Admin"
+                                  ? navigate(
+                                      "/admin/transaction/lead/leadClosed",
+                                      {
+                                        state: { leadId: item._id, breadcrumb }
+                                      }
+                                    )
+                                  : navigate(
+                                      "/staff/transaction/lead/leadClosed",
+                                      {
+                                        state: { leadId: item._id, breadcrumb }
+                                      }
+                                    )
+                              }}
+                            >
+                              Closed
+                            </button>
                           </td>
                           <td className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5"></td>
                         </tr>
@@ -763,42 +860,30 @@ const { data: branchProduct } = UseFetch(
                               <span className="mx-2">
                                 {item?.lasttask?.taskName}-
                               </span>
-                              <span>
+                              {/* <span>
                                 {
                                   item?.activityLog[item.activityLog.length - 1]
                                     ?.remarks
                                 }
-                              </span>
+                              </span> */}
+<span className="mx-2 relative group inline-block max-w-[220px] align-middle">
+  <span className="block truncate text-[12px] text-slate-700">
+    {item?.activityLog?.[item.activityLog.length - 1]?.remarks || "-"}
+  </span>
+
+  {item?.activityLog?.[item.activityLog.length - 1]?.remarks && (
+    <div className="pointer-events-none absolute left-0 top-full z-50 mt-1 hidden w-80 rounded-md border border-slate-200 bg-slate-700 px-3 py-2 shadow-lg group-hover:block">
+      <p className="text-[11px] leading-4 text-white whitespace-normal break-words">
+        {item?.activityLog?.[item.activityLog.length - 1]?.remarks}
+      </p>
+    </div>
+  )}
+</span>
                             </div>
                           </td>
                           <td className="border border-t-0 border-gray-400 "></td>
                           <td className="border border-t-0 border-gray-400 "></td>
-                          <td
-                            // onClick={() => {
-                            //   if (!selectedAllocates.hasOwnProperty(item._id)) {
-                            //     setValidateError((prev) => ({
-                            //       ...prev,
-                            //       [item._id]: "Allocate to Someone"
-                            //     }))
-                            //     return
-                            //   }
-                            //   if (!selectedAllocationType.hasOwnProperty(item._id)) {
-                            //     setValidatetypeError((prev) => ({
-                            //       ...prev,
-                            //       [item._id]: "please select a Type"
-                            //     }))
-                            //     return
-                            //   }
-                            //   setselectedLeadId(item.leadId)
-                            //   setShowmodal(true)
-                            //   setSelectedItem(item)
-                            //   setFormData((prev) => ({
-                            //     ...prev,
-                            //     allocationDate: new Date()
-                            //   }))
-                            // }}
-                            className="border border-t-0 border-gray-400"
-                          ></td>
+                          <td className="border border-t-0 border-gray-400"></td>
                           <td className="border border-t-0 border-gray-400 "></td>
                         </tr>
                         <tr>
@@ -922,7 +1007,7 @@ const { data: branchProduct } = UseFetch(
             </div>
           </div>
         </div>
- <PerformanceModal
+        <PerformanceModal
           modalOpen={openModal}
           splitType={targetData?.selectedMeasurementType}
           selectedperiod={selectedPeriod}
@@ -932,22 +1017,23 @@ const { data: branchProduct } = UseFetch(
             setselectedPeriod(val)
           }}
           onMonthChange={(val) => {
-            setcategorylist([])
             setacheivedProducts([])
             setselectedDataPopup([])
             setperiodMode(val)
+            setselecteduserName(null)
           }}
           onYearChange={(val) => {
-            setcategorylist([])
             setacheivedProducts([])
             setselectedDataPopup([])
             setSelectedYear(val)
+            setselecteduserName(null)
           }}
           productlist={productlist}
           onClose={() => {
-            setselecteduserName(loggedUser?.name)
+            setselecteduserName(null)
             setacheivedProducts([])
             setOpenModal(false)
+            setActiveUserId(null)
           }}
           selectedMonth={periodMode}
           selectedYear={selectedYear}
@@ -965,6 +1051,7 @@ const { data: branchProduct } = UseFetch(
           selectedUser={selectedUserName}
           category={selectedCategory}
           handleSelectedUser={handleSelectedUser}
+          activeUserId={activeUserId}
         />
       </div>
     </div>

@@ -39,9 +39,11 @@ const LeaveSummary = () => {
   const [selectedName, setSelectedName] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [userBranches, setuserBranches] = useState([])
+const [activeUserId, setActiveUserId] = useState(null)
   const currentYear = new Date().getFullYear()
   const currentMonth = new Date().getMonth() + 1 // JavaScript months are 0-based, so adding 1
   const [selectedStaff, setselectedStaff] = useState("")
+const now=new Date()
   const [selectedYear, setSelectedYear] = useState(currentYear)
   const [selectedMonth, setSelectedMonth] = useState(currentMonth)
   const [formData, setFormData] = useState({})
@@ -78,6 +80,65 @@ const LeaveSummary = () => {
   const { data: branchProduct } = UseFetch(
     `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
   )
+  useEffect(() => {
+    if (selectedCategory) {
+      console.log("jj")
+      const Datas = targetData?.userWiseResults
+
+      const filteredList = branchProduct
+        .filter(
+          (item) =>
+            item.selected?.some(
+              (selectedItem) =>
+                String(selectedItem.category_id) ===
+                String(selectedCategory?.Id)
+            ) || String(item.category_id) === String(selectedCategory?.Id)
+        )
+        .map((item) => item.productName || item.serviceName)
+      console.log(filteredList)
+      setproductList(filteredList)
+      console.log("J")
+      console.log(targetData)
+     
+      console.log("hhh")
+
+      console.log(Datas)
+      console.log("hhhh")
+
+      const filteredselectedCategory = Datas.flatMap(
+        (user) => user.categories || []
+      ).filter((item) => item.categoryId === selectedCategory?.Id)
+console.log(filteredselectedCategory)
+      console.log("Hh")
+      const summary = filteredselectedCategory.reduce(
+        (acc, cur) => {
+          acc.target += Number(cur.target || 0)
+          acc.achieved += Number(cur.achieved || 0)
+          acc.balance += Number(cur.balance || 0)
+          return acc
+        },
+        { target: 0, achieved: 0, balance: 0 }
+      )
+      console.log("hhh")
+      setselectedDataPopup(summary)
+      console.log(filteredselectedCategory && filteredselectedCategory.length)
+      if (filteredselectedCategory && filteredselectedCategory.length) {
+console.log("hh")
+console.log(filteredselectedCategory)
+        setacheivedProducts((prev) => [
+          ...prev,
+          ...filteredselectedCategory.flatMap((item) =>
+            (item?.products || []).map((product) => ({
+              productname: product.name,
+              amount: product.achieved
+            }))
+          )
+        ])
+      } else {
+        setacheivedProducts([])
+      }
+    }
+  }, [targetData])
   useEffect(() => {
     const userData = getLocalStorageItem("user")
     if (userData.selected && userData.selected.length > 1) {
@@ -255,19 +316,7 @@ const LeaveSummary = () => {
     console.log("J")
     console.log(targetData)
     console.log(user?._id)
-    const filteredloggedUserItem = Datas.filter(
-      (item) => item.userId === user._id
-    )
-    console.log("hhh")
-
-    console.log(Datas)
-    console.log("hhhh")
-    console.log(filteredloggedUserItem)
-    console.log(id)
-    // const filteredselectedCategory =
-    //   filteredloggedUserItem[0].categories.filter(
-    //     (item) => item.categoryId === id
-    //   )
+  
     const filteredselectedCategory = Datas.flatMap(
       (user) => user.categories || []
     ).filter((item) => item.categoryId === id)
@@ -305,7 +354,7 @@ const LeaveSummary = () => {
       Id: category.Id,
       categoryName: category.categoryName
     })
-    const filteredloggedUserItem = data?.userWiseResults.filter(
+    const filteredloggedUserItem = targetData?.userWiseResults.filter(
       (item) => item.userId === userId
     )
     const filteredselectedCategory =
@@ -324,11 +373,19 @@ const LeaveSummary = () => {
 
     setselectedDataPopup(summary)
     if (filteredselectedCategory && filteredselectedCategory.length) {
-      setacheivedProducts(
-        filteredselectedCategory[0]?.products?.map((product) => ({
-          productname: product.name,
-          amount: product.achieved
-        })) || []
+      // setacheivedProducts(
+      //   filteredselectedCategory[0]?.products?.map((product) => ({
+      //     productname: product.name,
+      //     amount: product.achieved
+      //   })) || []
+      // )
+  setacheivedProducts(
+        filteredselectedCategory.flatMap((item) =>
+          (item.products || []).map((product) => ({
+            productname: product.name,
+            amount: product.achieved
+          }))
+        )
       )
     } else {
       setacheivedProducts([])
@@ -431,6 +488,8 @@ const LeaveSummary = () => {
           toast.error("error in updating")
         }
       } else if (type === "Onsite") {
+console.log(selected)
+console.log(staffId)
         const response = await api.post(
           `/auth/editOnsite?userid=${staffId}`,
           selected
@@ -834,8 +893,8 @@ const LeaveSummary = () => {
           selectedCompanyBranch={selectedCompanyBranch}
           setselectedCompanyBranch={setselectedCompanyBranch}
           parenttargetData={settargetData}
-          parentperiodmode={setperiodMode}
-          parentyear={setSelectedYear}
+          parentperiodmode={periodMode}
+          parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
         />
 
@@ -964,7 +1023,7 @@ const LeaveSummary = () => {
             </div>
 
             {loading ? (
-              <div className="min-h-0 flex-1 overflow-y-auto">
+              <div className="min-h-0 flex-1 overflow-y-auto p-5">
                 <CardSkeletonLoader count={5} />
               </div>
             ) : (
@@ -982,7 +1041,7 @@ const LeaveSummary = () => {
                               }
                             >
                               <div
-                                className={`w-full cursor-pointer rounded-lg border bg-gray-200 shadow-lg ${
+                                className={`w-full cursor-pointer rounded-lg border bg-white shadow-lg ${
                                   selectedName === attendee.name
                                     ? "z-10 md:mr-4"
                                     : "mb-2"
@@ -996,7 +1055,7 @@ const LeaveSummary = () => {
 
                                   <div className="w-full overflow-x-auto">
                                     <table className="w-full min-w-[520px]">
-                                      <thead className="bg-gray-200 text-gray-800">
+                                      <thead className="bg-white text-gray-800">
                                         <tr>
                                           {[
                                             "Present",
@@ -1015,7 +1074,7 @@ const LeaveSummary = () => {
                                         </tr>
                                       </thead>
                                       <tbody>
-                                        <tr className="bg-gray-200 text-gray-800">
+                                        <tr className="bg-white text-gray-800">
                                           {[
                                             attendee.present,
                                             attendee.absent,
@@ -1099,22 +1158,23 @@ const LeaveSummary = () => {
           setselectedPeriod(val)
         }}
         onMonthChange={(val) => {
-          setcategorylist([])
           setacheivedProducts([])
           setselectedDataPopup([])
           setperiodMode(val)
+    setselecteduserName(null)
         }}
         onYearChange={(val) => {
-          setcategorylist([])
           setacheivedProducts([])
           setselectedDataPopup([])
           setSelectedYear(val)
+    setselecteduserName(null)
         }}
         productlist={productlist}
         onClose={() => {
-          setselecteduserName(user?.name)
+          setselecteduserName(null)
           setacheivedProducts([])
           setOpenModal(false)
+  setActiveUserId(null)
         }}
         selectedMonth={periodMode}
         selectedYear={selectedYear}
@@ -1132,6 +1192,7 @@ const LeaveSummary = () => {
         selectedUser={selectedUserName}
         category={selectedCategory}
         handleSelectedUser={handleSelectedUser}
+ activeUserId={activeUserId}
       />
     </div>
   )

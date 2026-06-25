@@ -52,9 +52,10 @@ const Modal = ({
   const [selectedOnsite, setselectedOnsite] = useState({
     onsiteDate: "",
     onsiteType: "",
-    halfDayPeriod: "",
+    halfDayPeriod: "Morning",
     description: ""
   })
+console.log(selectedOnsite)
   const [isApplying, setIsApplying] = useState(false)
   const [errors, setErrors] = useState({})
   const parseTime = (timeString) => {
@@ -111,7 +112,7 @@ console.log(compensatoryleaves)
       setselectedOnsite({
         onsiteDate: formData?.onsiteDate,
         onsiteType: formData?.onsiteType,
-        halfDayPeriod: formData?.halfDayPeriod,
+        halfDayPeriod: formData?.halfDayPeriod??"Morning",
         description: formData?.description
       })
     }
@@ -440,6 +441,8 @@ console.log(compensatoryleaves)
 
       handleApply(staffId, selectedAttendance, setIsApplying, type)
     } else if (type === "Onsite") {
+console.log(selectedOnsite)
+console.log(type)
       setIsApplying(true)
       handleApply(staffId, selectedOnsite, setIsApplying, type)
     }

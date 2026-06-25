@@ -94,9 +94,11 @@
 import React, { useState, useEffect } from "react";
 import { format, startOfMonth, endOfMonth, addMonths } from "date-fns";
 
-export const MonthRangePicker = ({ onChange }) => {
-  const [startMonth, setStartMonth] = useState(new Date());
-  const [endMonth, setEndMonth] = useState(new Date());
+export const MonthRangePicker = ({ onChange,range }) => {
+console.log(range)
+  const [startMonth, setStartMonth] = useState(range?range?.startDate:new Date());
+console.log(startMonth)
+  const [endMonth, setEndMonth] = useState(range?range?.endDate:new Date());
 
   const months = Array.from({ length: 24 }, (_, i) =>
     addMonths(new Date(), i - 12)
@@ -104,7 +106,11 @@ export const MonthRangePicker = ({ onChange }) => {
 
   const handleRangeChange = () => {
     const startDate = startOfMonth(startMonth);
+
     const endDate = endOfMonth(endMonth);
+// console.log(range.startDate)
+// console.log(range.endDate)
+// console.log(startMonth())
     onChange({
       startDate,
       endDate,

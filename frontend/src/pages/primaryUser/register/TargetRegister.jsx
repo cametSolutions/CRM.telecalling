@@ -156,7 +156,7 @@ export const TargetRegister = () => {
   const [showAllocationModal, setShowAllocationModal] = useState(false)
   const [showSplitModal, setShowSplitModal] = useState(false)
   const [splitModalData, setSplitModalData] = useState(null)
-
+  const [deletedCategories, setDeletedCategories] = useState([])
   const [showCreatePeriodModal, setShowCreatePeriodModal] = useState(false)
   console.log(showCreatePeriodModal)
   const [showEditPeriodModal, setShowEditPeriodModal] = useState(false)
@@ -190,7 +190,7 @@ export const TargetRegister = () => {
   const { data } = UseFetch("/auth/getallusers?isVerified=true")
   const { data: category } = UseFetch("/inventory/getCategory")
   const { data: tasklist } = UseFetch("/lead/getAlltasktoTarget")
-
+  console.log(tasklist)
   const loggeduserBranch = useSelector(
     (state) => state.companyBranch.loggeduserbranches
   )
@@ -549,8 +549,8 @@ export const TargetRegister = () => {
       return !usedMonths.has(month)
     })
   }
-console.log(committedSplitData)
-console.log(workingSplitData)
+  console.log(committedSplitData)
+  console.log(workingSplitData)
   const validateCreatePeriod = (startMonth, endMonth) => {
     const fromIndex = months.indexOf(startMonth)
     const toIndex = months.indexOf(endMonth)
@@ -603,16 +603,7 @@ console.log(workingSplitData)
   useEffect(() => {
     if (tasklist && tasklist.length) {
       console.log(tasklist)
-      //       const filteredtask = tasklist.filter((item) => {
-      //         const name = (item.taskName || "").trim().toLowerCase()
-      // console.log(name)
-      //         return (
-      //           (item.listed && name !== "Followup") ||
-      //           name !== "followup" ||
-      //           name === "lead" ||
-      //           name === "closing"
-      //         )
-      //       })
+
       const filteredtask = tasklist.filter((item) => {
         const name = (item.taskName || "").trim().toLowerCase()
 
@@ -727,48 +718,130 @@ console.log(workingSplitData)
     })
   }
 
+  //   const handleRemoveProductRow = (productId) => {
+  //     setSelectedProducts((prev) =>
+  //       prev.filter((p) => String(p.id) !== String(productId))
+  //     )
+
+  //     setCommittedTargetData((prev) => {
+  //       const next = { ...prev }
+  //       Object.keys(next).forEach((key) => {
+  //         if (key.startsWith(`${productId}-`)) delete next[key]
+  //       })
+  //       return next
+  //     })
+
+  //     settargetpriceorpercentageValue((prev) => {
+  //       const next = { ...prev }
+  //       Object.keys(next).forEach((key) => {
+  //         if (key.startsWith(`${productId}-`)) delete next[key]
+  //       })
+  //       return next
+  //     })
+
+  //     settargetpriceorPercentageType((prev) => {
+  //       const next = { ...prev }
+  //       Object.keys(next).forEach((key) => {
+  //         if (key.startsWith(`${productId}-`)) delete next[key]
+  //       })
+  //       return next
+  //     })
+  // console.log(committedSplitData)
+  //     setCommittedSplitData((prev) => {
+  //       const next = { ...prev }
+  //       Object.keys(next).forEach((key) => {
+  //         if (key.startsWith(`${productId}-`)) delete next[key]
+  //       })
+  //       return next
+  //     })
+  //     console.log(workingSplitData)
+  //     setWorkingSplitData((prev) => {
+  //       const next = { ...prev }
+  //       Object.keys(next).forEach((key) => {
+  //         if (key.startsWith(`${productId}-`)) delete next[key]
+  //       })
+  //       return next
+  //     })
+
+  //     delete committedProductsRef.current[productId]
+  //   }
   const handleRemoveProductRow = (productId) => {
+    const existingTarget = targetData.find(
+      (item) =>
+        String(item.categoryId?._id || item.categoryId) === String(productId)
+    )
+
+    if (existingTarget) {
+      const categoryId =
+        existingTarget.categoryId?._id || existingTarget.categoryId
+
+      setDeletedCategories((prev) => {
+        if (prev.includes(categoryId)) return prev
+        return [...prev, categoryId]
+      })
+    }
+
     setSelectedProducts((prev) =>
       prev.filter((p) => String(p.id) !== String(productId))
     )
 
     setCommittedTargetData((prev) => {
       const next = { ...prev }
+
       Object.keys(next).forEach((key) => {
-        if (key.startsWith(`${productId}-`)) delete next[key]
+        if (key.startsWith(`${productId}-`)) {
+          delete next[key]
+        }
       })
+
       return next
     })
 
     settargetpriceorpercentageValue((prev) => {
       const next = { ...prev }
+
       Object.keys(next).forEach((key) => {
-        if (key.startsWith(`${productId}-`)) delete next[key]
+        if (key.startsWith(`${productId}-`)) {
+          delete next[key]
+        }
       })
+
       return next
     })
 
     settargetpriceorPercentageType((prev) => {
       const next = { ...prev }
+
       Object.keys(next).forEach((key) => {
-        if (key.startsWith(`${productId}-`)) delete next[key]
+        if (key.startsWith(`${productId}-`)) {
+          delete next[key]
+        }
       })
+
       return next
     })
-console.log(committedSplitData)
+
     setCommittedSplitData((prev) => {
       const next = { ...prev }
+
       Object.keys(next).forEach((key) => {
-        if (key.startsWith(`${productId}-`)) delete next[key]
+        if (key.startsWith(`${productId}-`)) {
+          delete next[key]
+        }
       })
+
       return next
     })
-    console.log(workingSplitData)
+
     setWorkingSplitData((prev) => {
       const next = { ...prev }
+
       Object.keys(next).forEach((key) => {
-        if (key.startsWith(`${productId}-`)) delete next[key]
+        if (key.startsWith(`${productId}-`)) {
+          delete next[key]
+        }
       })
+
       return next
     })
 
@@ -810,68 +883,7 @@ console.log(committedSplitData)
       }))
     }
   }
-  // const handleIncentiveInput = (productId, allocId, value, field) => {
-  //   if (field === "type") {
-  //     const splitType =
-  //       respectedmonthtargetType?.[`${productId}-${selectedMonths[0]}`] ||
-  //       "quantity"
 
-  //     let message = ""
-
-  //     if (splitType === "amount" && value !== "percentage") {
-  //       message = "For Amount split, incentive must be %"
-  //     }
-
-  //     if (splitType === "quantity" && value !== "amount") {
-  //       message = "For Quantity split, incentive must be ₹"
-  //     }
-
-  //     if (message) {
-  //       setIncentiveWarnings((prev) => ({
-  //         ...prev,
-  //         [`${productId}-${allocId}`]: message
-  //       }))
-
-  //       setTimeout(() => {
-  //         setIncentiveWarnings((prev) => {
-  //           const updated = { ...prev }
-  //           delete updated[`${productId}-${allocId}`]
-  //           return updated
-  //         })
-  //       }, 3000)
-
-  //       setSplitWarnings((prev) => ({
-  //         ...prev,
-  //         [`${productId}`]:
-  //           splitType === "amount"
-  //             ? "Split type 'Amount' requires all incentives to be %"
-  //             : "Split type 'Quantity' requires all incentives to be ₹"
-  //       }))
-
-  //       return
-  //     }
-
-  //     setIncentiveWarnings((prev) => ({
-  //       ...prev,
-  //       [`${productId}-${allocId}`]: ""
-  //     }))
-
-  //     setSplitWarnings((prev) => ({
-  //       ...prev,
-  //       [`${productId}`]: ""
-  //     }))
-
-  //     settargetpriceorPercentageType((prev) => ({
-  //       ...prev,
-  //       [`${productId}-${allocId}-type`]: value
-  //     }))
-  //   } else {
-  //     settargetpriceorpercentageValue((prev) => ({
-  //       ...prev,
-  //       [`${productId}-${allocId}-value`]: value
-  //     }))
-  //   }
-  // }
   console.log(userList)
   const openSplitModal = (productId, month, name) => {
     const Name = name.trim()
@@ -1039,40 +1051,7 @@ console.log(committedSplitData)
       return { ...prev, [key]: updatedArray }
     })
   }
-  // const handleSplitTypeChange = (productId, month, newSplitType) => {
-  //   const key = `${productId}-${month}`
 
-  //   setrespectedmonthtargetType((prev) => ({
-  //     ...prev,
-  //     [key]: newSplitType
-  //   }))
-
-  //   // Normalize incentive types for this product when split type changes
-  //   settargetpriceorPercentageType((prev) => {
-  //     const next = { ...prev }
-
-  //     Object.keys(prev).forEach((k) => {
-  //       const [pId, allocId] = k.split("-")
-
-  //       if (String(pId) === String(productId)) {
-  //         const currentType = prev[k]
-  //         const normalized = normalizeIncentiveTypeForSplit(
-  //           newSplitType,
-  //           currentType
-  //         )
-  //         if (normalized !== currentType) {
-  //           next[k] = normalized
-  //         }
-  //       }
-  //     })
-
-  //     return next
-  //   })
-
-  //   toast.info(
-  //     `Split type changed to ${newSplitType}. Incompatible incentive types were adjusted automatically.`
-  //   )
-  // }
   const handleSplitTypeChange = (productId, newType) => {
     // 1) Update split type for all selected months of this product
     setrespectedmonthtargetType((prev) => {
@@ -1160,9 +1139,9 @@ console.log(committedSplitData)
     setWorkingSplitData({})
     setUserMessages({})
   }
-console.log(userList)
+  console.log(userList)
   const normalizeSlabs = (slabArray = []) => {
-console.log(slabArray)
+    console.log(slabArray)
     return slabArray
       .map((slab, index) => ({
         slabOrder: index + 1,
@@ -1179,8 +1158,8 @@ console.log(slabArray)
     const { productId, month } = splitModalData
     const key = `${productId}-${month}`
     const workingArray = workingSplitData[key] || []
-console.log(workingArray)
-// console.log(normalizeSlabs)
+    console.log(workingArray)
+    // console.log(normalizeSlabs)
     const normalizedArray = workingArray
       .map((userEntry) => ({
         userId: userEntry.userId,
@@ -1195,8 +1174,8 @@ console.log(workingArray)
     }, 0)
 
     const isFirstTime = !committedProductsRef.current[productId]
-console.log(committedSplitData)
-console.log(normalizedArray)
+    console.log(committedSplitData)
+    console.log(normalizedArray)
     setCommittedSplitData((prev) => {
       const next = { ...prev }
 
@@ -1287,10 +1266,6 @@ console.log(normalizedArray)
       ? `${modalTotal} NO`
       : `₹ ${modalTotal.toLocaleString("en-IN")}`
 
-  // const handlePeriodChange = async (value) => {
-  //   setPageMessage("")
-  //   await applyPeriodSelection({ displayPeriod: value })
-  // }//old
   const handlePeriodChange = async (value) => {
     setPageMessage("")
 
@@ -1299,11 +1274,6 @@ console.log(normalizedArray)
     await applyPeriodSelection({ displayPeriod: value })
   }
 
-  // const handleOpenCreatePeriod = () => {
-  //   setDraftFromMonth(currentMonth)
-  //   setDraftToMonth(currentMonth)
-  //   setShowCreatePeriodModal(true)
-  // }
   const handleOpenCreatePeriod = () => {
     const availableFromMonths = months.filter(
       (month) => !getUsedMonthsMap(false).has(month)
@@ -1322,26 +1292,6 @@ console.log(normalizedArray)
     setShowEditPeriodModal(true)
   }
 
-  // const handleConfirmCreatePeriod = () => {
-  //   const error = validateCreatePeriod(draftFromMonth, draftToMonth)
-  //   if (error) {
-  //     setPageMessage(error)
-  //     return
-  //   }
-
-  //   const display = buildPeriodLabelWithoutYear(draftFromMonth, draftToMonth)
-  //   setFromMonth(draftFromMonth)
-  //   setToMonth(draftToMonth)
-  //   setSelectedPeriodOption("")
-  //   setFetchedPeriodWithoutYear(display)
-  //   setActiveFetchedPeriodName(
-  //     buildPeriodNameWithYear(draftFromMonth, draftToMonth, selectedYear)
-  //   )
-  //   resetTargetStates()
-  //   setTargetData([])
-  //   setShowCreatePeriodModal(false)
-  //   setPageMessage("")
-  // }old
   const handleConfirmCreatePeriod = () => {
     const error = validateCreatePeriod(draftFromMonth, draftToMonth)
 
@@ -1417,27 +1367,7 @@ console.log(normalizedArray)
     setShowEditPeriodModal(false)
     setPageMessage("")
   }
-  // const normalizeIncentiveTypeForSplit = (splitType, newIncentiveType) => {
-  //   if (!splitType) return newIncentiveType
 
-  //   const type = String(newIncentiveType).toLowerCase()
-
-  //   if (splitType === "quantity") {
-  //     // quantity-based targets: cannot be percentage
-  //     if (type === "percentage" || type === "%") {
-  //       return "amount" // or "rupee" depending on what you treat as fixed
-  //     }
-  //   }
-
-  //   if (splitType === "amount") {
-  //     // amount-based targets: cannot be rupee
-  //     if (type === "rupee" || type === "₹") {
-  //       return "percentage"
-  //     }
-  //   }
-
-  //   return newIncentiveType
-  // }
   const normalizeIncentiveTypeForSplit = (splitType, newIncentiveType) => {
     if (!splitType) return newIncentiveType
 
@@ -1488,7 +1418,7 @@ console.log(normalizedArray)
         toMonth,
         selectedYear
       )
-
+      console.log(selectedProducts)
       const payloads = selectedProducts.map((product) => {
         const allocationsPayload = selectedAllocations.map((alloc) => ({
           allocationId: alloc.id,
@@ -1541,6 +1471,23 @@ console.log(normalizedArray)
       })
       console.log(payloads)
       const token = getLocalStorageItem("token")
+      if (deletedCategories.length > 0) {
+        await Promise.all(
+          deletedCategories.map((categoryId) =>
+            api.delete("/target/deleteTargetConfiguration", {
+              data: {
+                categoryId,
+                branchId: selectedBranch,
+                year: selectedYear,
+                periodName: finalPeriodName
+              },
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            })
+          )
+        )
+      }
 
       await Promise.all(
         payloads.map((body) =>
@@ -1683,17 +1630,6 @@ console.log(normalizedArray)
                 Edit Period
               </button>
             )}
-
-            {/* {!isCreateNewMode && (
-              <button
-                type="button"
-                className="mt-5 inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 shadow-sm hover:bg-amber-100"
-                onClick={handleOpenEditPeriod}
-              >
-                <Pencil className="h-3.5 w-3.5" />
-                Edit Period
-              </button>
-            )} */}
 
             <button
               type="button"
@@ -2223,58 +2159,6 @@ console.log(normalizedArray)
                             e.target.value
                           )
                         }
-                        // onChange={(e) => {
-                        //   const newType = e.target.value
-                        //   const productId = selectedsplitProducts
-
-                        //   const invalidAlloc = selectedAllocations.find(
-                        //     (alloc) => {
-                        //       const incentiveType =
-                        //         targetpriceorPercentageType[
-                        //           `${productId}-${alloc.id}-type`
-                        //         ] || "amount"
-
-                        //       if (
-                        //         newType === "amount" &&
-                        //         incentiveType !== "percentage"
-                        //       ) {
-                        //         return true
-                        //       }
-                        //       if (
-                        //         newType === "quantity" &&
-                        //         incentiveType !== "amount"
-                        //       ) {
-                        //         return true
-                        //       }
-
-                        //       return false
-                        //     }
-                        //   )
-
-                        //   if (invalidAlloc) {
-                        //     setSplitWarnings((prev) => ({
-                        //       ...prev,
-                        //       [`${productId}`]:
-                        //         newType === "amount"
-                        //           ? "Split type 'Amount' requires all incentives to be %"
-                        //           : "Split type 'Quantity' requires all incentives to be ₹"
-                        //     }))
-                        //     return
-                        //   }
-
-                        //   setSplitWarnings((prev) => ({
-                        //     ...prev,
-                        //     [`${productId}`]: ""
-                        //   }))
-
-                        //   setrespectedmonthtargetType((prev) => {
-                        //     const updated = { ...prev }
-                        //     selectedMonths.forEach((m) => {
-                        //       updated[`${productId}-${m}`] = newType
-                        //     })
-                        //     return updated
-                        //   })
-                        // }}
                         className="w-28 px-2 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
                       >
                         <option value="quantity">Quantity</option>

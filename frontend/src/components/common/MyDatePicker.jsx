@@ -55,6 +55,7 @@ const MyDatePicker = ({
   loader,
   view = false
 }) => {
+console.log(view)
   const handleDateRange = (date) => {
     if (view) return // block changes in view mode
     setDates({

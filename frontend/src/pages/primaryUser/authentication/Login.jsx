@@ -24,6 +24,8 @@ const Login = () => {
   const navigate = useNavigate()
 console.log("hhhhh")
   const onSubmit = async (data) => {
+console.log("hhh")
+if(loading)return
     try {
       setLoading(true)
       const response = await api.post(`/auth/login`, data)
@@ -39,7 +41,7 @@ console.log("hhhhh")
           setLocalStorageItem("companybranches", allcompanybranches)
           dispatch(loggeduserBranches(loggeduserbranches))
           dispatch(setBranches(allcompanybranches))
-
+console.log("hh")
           toast.success(response.data.message, {
             icon: "🚀",
             style: {

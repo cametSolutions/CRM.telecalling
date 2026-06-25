@@ -1780,6 +1780,7 @@ const LeaveApprovalAndPending = () => {
         return true
       }
     } catch (error) {
+console.log(error)
       toast.error(error?.response?.data?.message || "An error occurred")
     } finally {
       setLoader(false)

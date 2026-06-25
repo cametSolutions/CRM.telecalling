@@ -52,8 +52,21 @@ const CustomerListform = () => {
     const res = await api.get(
       `/customer/getcust?limit=100&page=${pageParam}&search=${search}&loggeduserBranches=${branch}&customerType=${status}`
     )
+console.log(res.data.data)
+const d=res.data.data.customers
+console.log(d)
+const t=d.filter((item)=>item.customerName==="SHAFASIL TRADERS AND CONTRACTORS PRIVATE LIMITED")
+console.log(t)
     return res.data.data
   }
+const{data:dupi}=UseFetch("/customer/duplicate")
+console.log(dupi)
+const {data:unwanted}=UseFetch("/customer/getunwanted")
+console.log(unwanted)
+const a=unwanted?.unwanted?.filter((item)=>!item.selected.length)
+const b=unwanted?.un.filter((item)=>!item.selected.length)
+console.log(b)
+console.log(a)
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isFetching } =
     useInfiniteQuery({
       queryKey: [

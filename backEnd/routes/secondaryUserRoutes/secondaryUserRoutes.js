@@ -37,11 +37,15 @@ import {
   Getallcallregistrationlist,
   GetselectedCustomerForCall,
   existsameCallnote,
-CustomereditonLead
+CustomereditonLead,
+getunwnanted,
+duplicate,
+ChecklicenseForlead
 } from "../../controller/secondaryUserController/customerController.js"
 
 const router = express.Router()
 router.get("/downloadcustomerlistexcel", authMiddleware, Downloadcustomerlist)
+router.get("/getunwanted",authMiddleware,getunwnanted)
 router.get("/getcust", authMiddleware, GetscrollCustomer)
 router.get("/geteditedCustomer", authMiddleware, GeteditedCustomer)
 router.get("/getproductmissingCustomer", authMiddleware, GetallproductmissingCustomer)
@@ -53,7 +57,9 @@ router.put("/callnotesEdit", authMiddleware, UpdateCallnotes)
 router.post("/customerEdit", authMiddleware, CustomerEdit)
 router.post("/customereditonlead",authMiddleware,CustomereditonLead)
 router.get("/getLicensenumber", authMiddleware, GetLicense)
+router.get("/checkLicense",authMiddleware,ChecklicenseForlead)
 router.get("/getCustomer", authMiddleware, GetCustomer)
+router.get("/duplicate",authMiddleware,duplicate)
 router.get("/getselectedcustomerforCall/:id", authMiddleware, GetselectedCustomerForCall)
 router.get("/getallCustomer", authMiddleware, GetAllCustomer)
 router.post("/callRegistration", authMiddleware, customerCallRegistration)

@@ -38,6 +38,7 @@ export default function CollectionUpdate() {
   const [showFullName, setShowFullName] = useState(false)
   const [tableData, setTableData] = useState([])
   console.log(tableData)
+  console.log(tableData)
   const [forcefullyclosedLeads, setforcefullyClosedLeads] = useState([])
   const [isforcefullyclosed, setisforcefullyclosed] = useState(false)
   console.log(tableData)
@@ -46,12 +47,14 @@ export default function CollectionUpdate() {
   const [loggedUser, setLoggedUser] = useState(null)
   const [leadId, setleadId] = useState(null)
   const [leadDocId, setleadDocId] = useState(null)
+  const [activeUserId, setActiveUserId] = useState(null)
   const [partner, setPartner] = useState([])
   const [showFullEmail, setShowFullEmail] = useState(false)
   const [paymenthistoryModal, setpaymentHistoryModal] = useState(false)
   const [collectionupdateModal, setcollectionUpdateModal] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [selectedData, setselectedData] = useState(null)
+
   console.log(selectedData)
   const [selectedLeadId, setselectedLeadId] = useState(null)
   console.log(selectedLeadId)
@@ -67,7 +70,8 @@ export default function CollectionUpdate() {
   const [selectedUserName, setselecteduserName] = useState(null)
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
-  const [selectedYear, setSelectedYear] = useState(null)
+const now =new Date()
+  const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   const [periodMode, setperiodMode] = useState("all")
   const [targetData, settargetData] = useState([])
   console.log(targetData)
@@ -142,7 +146,65 @@ export default function CollectionUpdate() {
       }
     }
   }, [companybranches])
+  useEffect(() => {
+    if (selectedCategory) {
+      console.log("jj")
+      const Datas = targetData?.userWiseResults
 
+      const filteredList = branchProduct
+        .filter(
+          (item) =>
+            item.selected?.some(
+              (selectedItem) =>
+                String(selectedItem.category_id) ===
+                String(selectedCategory?.Id)
+            ) || String(item.category_id) === String(selectedCategory?.Id)
+        )
+        .map((item) => item.productName || item.serviceName)
+      console.log(filteredList)
+      setproductList(filteredList)
+      console.log("J")
+      console.log(targetData)
+     
+      console.log("hhh")
+
+      console.log(Datas)
+      console.log("hhhh")
+
+      const filteredselectedCategory = Datas.flatMap(
+        (user) => user.categories || []
+      ).filter((item) => item.categoryId === selectedCategory?.Id)
+console.log(filteredselectedCategory)
+      console.log("Hh")
+      const summary = filteredselectedCategory.reduce(
+        (acc, cur) => {
+          acc.target += Number(cur.target || 0)
+          acc.achieved += Number(cur.achieved || 0)
+          acc.balance += Number(cur.balance || 0)
+          return acc
+        },
+        { target: 0, achieved: 0, balance: 0 }
+      )
+      console.log("hhh")
+      setselectedDataPopup(summary)
+      console.log(filteredselectedCategory && filteredselectedCategory.length)
+      if (filteredselectedCategory && filteredselectedCategory.length) {
+console.log("hh")
+console.log(filteredselectedCategory)
+        setacheivedProducts((prev) => [
+          ...prev,
+          ...filteredselectedCategory.flatMap((item) =>
+            (item?.products || []).map((product) => ({
+              productname: product.name,
+              amount: product.achieved
+            }))
+          )
+        ])
+      } else {
+        setacheivedProducts([])
+      }
+    }
+  }, [targetData])
   useEffect(() => {
     if (paymenthistoryModal && collectionlead && selectedLeadId) {
       console.log("hh")
@@ -161,6 +223,7 @@ export default function CollectionUpdate() {
       setselectedCompanyBranch(defaultbranch.value)
     }
   }, [loggedUserBranches])
+  console.log("Hh")
   useEffect(() => {
     if (
       collectionlead &&
@@ -275,7 +338,14 @@ export default function CollectionUpdate() {
       .filter((history) => history?.paymentVerified === false)
       .reduce((sum, history) => sum + Number(history?.receivedAmount || 0), 0)
   }
-  const handleCollectionUpdate = async (formData, setsubmitLoader) => {
+  const handleCollectionUpdate = async (
+    formData,
+    setsubmitLoader,
+    submitLoader
+  ) => {
+    console.log("H")
+    if (submitLoader) return
+    console.log("Hh")
     setsubmitLoader(true)
     console.log(formData)
 
@@ -311,15 +381,7 @@ export default function CollectionUpdate() {
     console.log("J")
     console.log(targetData)
     console.log(loggedUser?._id)
-    const filteredloggedUserItem = Datas.filter(
-      (item) => item.userId === loggedUser._id
-    )
-    console.log("hhh")
 
-    console.log(Datas)
-    console.log("hhhh")
-    console.log(filteredloggedUserItem)
-    console.log(id)
     // const filteredselectedCategory =
     //   filteredloggedUserItem[0].categories.filter(
     //     (item) => item.categoryId === id
@@ -356,12 +418,13 @@ export default function CollectionUpdate() {
     setOpenModal(true)
   }
   const handleSelectedUser = (category, userId, userName) => {
+    setActiveUserId(userId)
     setselecteduserName(userName)
     setselectedCategory({
       Id: category.Id,
       categoryName: category.categoryName
     })
-    const filteredloggedUserItem = data?.userWiseResults.filter(
+    const filteredloggedUserItem = targetData?.userWiseResults.filter(
       (item) => item.userId === userId
     )
     const filteredselectedCategory =
@@ -380,11 +443,19 @@ export default function CollectionUpdate() {
 
     setselectedDataPopup(summary)
     if (filteredselectedCategory && filteredselectedCategory.length) {
+      // setacheivedProducts(
+      //   filteredselectedCategory[0]?.products?.map((product) => ({
+      //     productname: product.name,
+      //     amount: product.achieved
+      //   })) || []
+      // )
       setacheivedProducts(
-        filteredselectedCategory[0]?.products?.map((product) => ({
-          productname: product.name,
-          amount: product.achieved
-        })) || []
+        filteredselectedCategory.flatMap((item) =>
+          (item.products || []).map((product) => ({
+            productname: product.name,
+            amount: product.achieved
+          }))
+        )
       )
     } else {
       setacheivedProducts([])
@@ -420,11 +491,11 @@ export default function CollectionUpdate() {
             {/* <td className="px-3 py-2 font-semibold text-gray-900 text-sm border border-gray-300 whitespace-nowrap uppercase truncate">
               {item?.customerName?.customerName}
             </td> */}
-<td className="px-3 py-2 border border-gray-300">
-  <div className="font-semibold text-gray-900 text-sm uppercase max-w-[200px] truncate">
-    {item?.customerName?.customerName}
-  </div>
-</td>
+            <td className="px-3 py-2 border border-gray-300">
+              <div className="font-semibold text-gray-900 text-sm uppercase max-w-[200px] truncate">
+                {item?.customerName?.customerName}
+              </div>
+            </td>
             <td className="px-3 py-2 text-gray-700 text-sm border border-gray-300 whitespace-nowrap">
               {item?.mobile}
             </td>
@@ -665,14 +736,14 @@ export default function CollectionUpdate() {
           selectedCompanyBranch={selectedCompanyBranch}
           setselectedCompanyBranch={setselectedCompanyBranch}
           parenttargetData={settargetData}
-          parentperiodmode={setperiodMode}
-          parentyear={setSelectedYear}
+          parentperiodmode={periodMode}
+          parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
         />
         <div className="flex flex-1 flex-col overflow-hidden">
           <header className="flex items-center justify-between bg-[#ADD8E6]">
             {loggedUser?.role?.toLowerCase() === "admin" ? (
-              <AdminHeader hide={true}/>
+              <AdminHeader hide={true} />
             ) : (
               <StaffHeader hide={true} />
             )}
@@ -788,7 +859,7 @@ export default function CollectionUpdate() {
                   </div>
                 </>
               )}
-              <select
+              {/* <select
                 value={selectedCompanyBranch || ""}
                 onChange={(e) => {
                   setTableData([])
@@ -801,7 +872,7 @@ export default function CollectionUpdate() {
                     {branch.label}
                   </option>
                 ))}
-              </select>
+              </select> */}
 
               <button
                 onClick={() =>
@@ -916,22 +987,23 @@ export default function CollectionUpdate() {
           setselectedPeriod(val)
         }}
         onMonthChange={(val) => {
-          setcategorylist([])
           setacheivedProducts([])
           setselectedDataPopup([])
           setperiodMode(val)
+          setselecteduserName(null)
         }}
         onYearChange={(val) => {
-          setcategorylist([])
           setacheivedProducts([])
           setselectedDataPopup([])
           setSelectedYear(val)
+          setselecteduserName(null)
         }}
         productlist={productlist}
         onClose={() => {
-          setselecteduserName(loggedUser?.name)
+          setselecteduserName(null)
           setacheivedProducts([])
           setOpenModal(false)
+          setActiveUserId(null)
         }}
         selectedMonth={periodMode}
         selectedYear={selectedYear}
@@ -949,6 +1021,7 @@ export default function CollectionUpdate() {
         selectedUser={selectedUserName}
         category={selectedCategory}
         handleSelectedUser={handleSelectedUser}
+        activeUserId={activeUserId}
       />
     </div>
   )

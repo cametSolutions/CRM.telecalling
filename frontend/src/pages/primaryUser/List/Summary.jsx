@@ -56,7 +56,9 @@ const [selectedCompanyBranch,setselectedCompanyBranch]=useState(null)
   const [selectedUserName, setselecteduserName] = useState(null)
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
-  const [selectedYear, setSelectedYear] = useState(null)
+ const [activeUserId, setActiveUserId] = useState(null)
+const now=new Date()
+  const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   const [periodMode, setperiodMode] = useState("all")
   const [targetData, settargetData] = useState([])
   console.log(targetData)
@@ -92,6 +94,65 @@ setselectedCompanyBranch(user.selected[0].branch_id)
       )
     }
   }, [branches])
+ useEffect(() => {
+    if (selectedCategory) {
+      console.log("jj")
+      const Datas = targetData?.userWiseResults
+
+      const filteredList = branchProduct
+        .filter(
+          (item) =>
+            item.selected?.some(
+              (selectedItem) =>
+                String(selectedItem.category_id) ===
+                String(selectedCategory?.Id)
+            ) || String(item.category_id) === String(selectedCategory?.Id)
+        )
+        .map((item) => item.productName || item.serviceName)
+      console.log(filteredList)
+      setproductList(filteredList)
+      console.log("J")
+      console.log(targetData)
+     
+      console.log("hhh")
+
+      console.log(Datas)
+      console.log("hhhh")
+
+      const filteredselectedCategory = Datas.flatMap(
+        (user) => user.categories || []
+      ).filter((item) => item.categoryId === selectedCategory?.Id)
+console.log(filteredselectedCategory)
+      console.log("Hh")
+      const summary = filteredselectedCategory.reduce(
+        (acc, cur) => {
+          acc.target += Number(cur.target || 0)
+          acc.achieved += Number(cur.achieved || 0)
+          acc.balance += Number(cur.balance || 0)
+          return acc
+        },
+        { target: 0, achieved: 0, balance: 0 }
+      )
+      console.log("hhh")
+      setselectedDataPopup(summary)
+      console.log(filteredselectedCategory && filteredselectedCategory.length)
+      if (filteredselectedCategory && filteredselectedCategory.length) {
+console.log("hh")
+console.log(filteredselectedCategory)
+        setacheivedProducts((prev) => [
+          ...prev,
+          ...filteredselectedCategory.flatMap((item) =>
+            (item?.products || []).map((product) => ({
+              productname: product.name,
+              amount: product.achieved
+            }))
+          )
+        ])
+      } else {
+        setacheivedProducts([])
+      }
+    }
+  }, [targetData])
   useEffect(() => {
     if (staffCallList) {
       setIndividualCallList(staffCallList)
@@ -610,19 +671,7 @@ setselectedCompanyBranch(user.selected[0].branch_id)
     console.log("J")
     console.log(targetData)
     console.log(loggedusers?._id)
-    const filteredloggedUserItem = Datas.filter(
-      (item) => item.userId === loggedusers._id
-    )
-    console.log("hhh")
-
-    console.log(Datas)
-    console.log("hhhh")
-    console.log(filteredloggedUserItem)
-    console.log(id)
-    // const filteredselectedCategory =
-    //   filteredloggedUserItem[0].categories.filter(
-    //     (item) => item.categoryId === id
-    //   )
+   
     const filteredselectedCategory = Datas.flatMap(
       (user) => user.categories || []
     ).filter((item) => item.categoryId === id)
@@ -655,12 +704,13 @@ setselectedCompanyBranch(user.selected[0].branch_id)
     setperformanceOpenModal(true)
   }
   const handleSelectedUser = (category, userId, userName) => {
+setActiveUserId(userId)
     setselecteduserName(userName)
     setselectedCategory({
       Id: category.Id,
       categoryName: category.categoryName
     })
-    const filteredloggedUserItem = data?.userWiseResults.filter(
+    const filteredloggedUserItem = targetData?.userWiseResults.filter(
       (item) => item.userId === userId
     )
     const filteredselectedCategory =
@@ -679,11 +729,19 @@ setselectedCompanyBranch(user.selected[0].branch_id)
 
     setselectedDataPopup(summary)
     if (filteredselectedCategory && filteredselectedCategory.length) {
-      setacheivedProducts(
-        filteredselectedCategory[0]?.products?.map((product) => ({
-          productname: product.name,
-          amount: product.achieved
-        })) || []
+      // setacheivedProducts(
+      //   filteredselectedCategory[0]?.products?.map((product) => ({
+      //     productname: product.name,
+      //     amount: product.achieved
+      //   })) || []
+      // )
+ setacheivedProducts(
+        filteredselectedCategory.flatMap((item) =>
+          (item.products || []).map((product) => ({
+            productname: product.name,
+            amount: product.achieved
+          }))
+        )
       )
     } else {
       setacheivedProducts([])
@@ -738,11 +796,11 @@ console.log(selectedBranch)
           selectedCompanyBranch={selectedCompanyBranch}
           setselectedCompanyBranch={setselectedCompanyBranch}
           parenttargetData={settargetData}
-          parentperiodmode={setperiodMode}
-          parentyear={setSelectedYear}
+          parentperiodmode={periodMode}
+          parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
         />
-        <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex flex-1 flex-col overflow-hidden min-h-0">
           <header className="flex items-center justify-between bg-[#ADD8E6]">
             {loggedusers?.role?.toLowerCase() === "admin" ? (
               <AdminHeader hide={true} />
@@ -803,7 +861,7 @@ console.log(selectedBranch)
               />
             </div>
           )}
-          <div className="flex flex-col flex-1 bg-[#ADD8E6]">
+          <div className="flex flex-col flex-1 bg-[#ADD8E6] min-h-0">
             <div className="md:px-5 lg:px-6 ">
               <div className="flex justify-center text-2xl font-semibold ">
                 <h1 className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-red-500 to-pink-600">
@@ -870,8 +928,10 @@ console.log(selectedBranch)
                 </div>
               </div>
             </div>
-            <div className="md:mx-5 lg:mx-6 mb-3 mt-1 overflow-y-auto rounded-lg shadow-xl border border-gray-300">
-              <table className="min-w-full leading-normal text-left max-w-7xl mx-auto  ">
+            {/* <div className="md:mx-5 lg:mx-6 mb-3 mt-1 overflow-y-auto rounded-lg shadow-xl border border-gray-300"> */}
+<div className="md:mx-5 lg:mx-6 mb-3 mt-1 flex-1 min-h-0 overflow-auto rounded-lg shadow-xl border border-gray-300 bg-white">
+              {/* <table className="min-w-full leading-normal text-left max-w-7xl mx-auto  "> */}
+<table className="min-w-full leading-normal text-left">
                 <thead className="sticky top-0 z-30 bg-purple-300">
                   <tr>
                     <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider">
@@ -1464,22 +1524,23 @@ console.log(selectedBranch)
             setselectedPeriod(val)
           }}
           onMonthChange={(val) => {
-            setcategorylist([])
             setacheivedProducts([])
             setselectedDataPopup([])
             setperiodMode(val)
+  setselecteduserName(null)
           }}
           onYearChange={(val) => {
-            setcategorylist([])
             setacheivedProducts([])
             setselectedDataPopup([])
             setSelectedYear(val)
+  setselecteduserName(null)
           }}
           productlist={productlist}
           onClose={() => {
-            setselecteduserName(loggedusers?.name)
+            setselecteduserName(null)
             setacheivedProducts([])
             setperformanceOpenModal(false)
+ setActiveUserId(null)
           }}
           selectedMonth={periodMode}
           selectedYear={selectedYear}
@@ -1497,6 +1558,7 @@ console.log(selectedBranch)
           selectedUser={selectedUserName}
           category={selectedCategory}
           handleSelectedUser={handleSelectedUser}
+  activeUserId={activeUserId}
         />
     </div>
   )

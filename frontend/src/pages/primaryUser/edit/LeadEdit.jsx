@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { useLocation } from "react-router-dom"
 import BarLoader from "react-spinners/BarLoader"
+import Breadcrumb from "../../../components/common/Breadcrumb"
 import LeadMaster from "../../common/LeadMaster"
 import api from "../../../api/api"
 import { toast } from "react-toastify"
@@ -31,20 +32,34 @@ import {
 import UseFetch from "../../../hooks/useFetch"
 function LeadEdit() {
   const [fetcheddata, setfetchedData] = useState([])
+  console.log(fetcheddata)
   const [loader, setLoader] = useState(false)
   const navigate = useNavigate()
 
   const location = useLocation()
-  const { leadId, isReadOnly, refreshKey } = location.state || {}
+  const { leadId, isReadOnly, refreshKey,from } = location.state || {}
+console.log(isReadOnly)
   console.log(location?.state)
+  const nav = [
+    { label: "Lead", path: "" },
+    {
+      label: "New Lead",
+      path: ""
+    }
+  ]
+  const Breadcrumblist = location?.state ? location?.state?.breadcrumb : nav
+  console.log(Breadcrumblist)
   const userData = getLocalStorageItem("user")
   const [selectedUserName, setselecteduserName] = useState(null)
   const [selectedcompanyBranch, setselectedcompanyBranch] = useState(
     userData?.selected[0]?.branch_id
   )
+  const [selectedleadbranch, setselectedleadbranch] = useState(null)
+  const [activeUserId, setActiveUserId] = useState(null)
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
-  const [selectedYear, setSelectedYear] = useState(null)
+  const now = new Date()
+  const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   const [periodMode, setperiodMode] = useState("all")
   const [targetData, settargetData] = useState([])
   console.log(targetData)
@@ -57,6 +72,66 @@ function LeadEdit() {
     selectedcompanyBranch &&
       `/product/getallbranchProduct?branch=${selectedcompanyBranch}`
   )
+  console.log(selectedcompanyBranch)
+  useEffect(() => {
+    if (selectedCategory) {
+      console.log("jj")
+      const Datas = targetData?.userWiseResults
+
+      const filteredList = branchProduct
+        .filter(
+          (item) =>
+            item.selected?.some(
+              (selectedItem) =>
+                String(selectedItem.category_id) ===
+                String(selectedCategory?.Id)
+            ) || String(item.category_id) === String(selectedCategory?.Id)
+        )
+        .map((item) => item.productName || item.serviceName)
+      console.log(filteredList)
+      setproductList(filteredList)
+      console.log("J")
+      console.log(targetData)
+
+      console.log("hhh")
+
+      console.log(Datas)
+      console.log("hhhh")
+
+      const filteredselectedCategory = Datas.flatMap(
+        (user) => user.categories || []
+      ).filter((item) => item.categoryId === selectedCategory?.Id)
+      console.log(filteredselectedCategory)
+      console.log("Hh")
+      const summary = filteredselectedCategory.reduce(
+        (acc, cur) => {
+          acc.target += Number(cur.target || 0)
+          acc.achieved += Number(cur.achieved || 0)
+          acc.balance += Number(cur.balance || 0)
+          return acc
+        },
+        { target: 0, achieved: 0, balance: 0 }
+      )
+      console.log("hhh")
+      setselectedDataPopup(summary)
+      console.log(filteredselectedCategory && filteredselectedCategory.length)
+      if (filteredselectedCategory && filteredselectedCategory.length) {
+        console.log("hh")
+        console.log(filteredselectedCategory)
+        setacheivedProducts((prev) => [
+          ...prev,
+          ...filteredselectedCategory.flatMap((item) =>
+            (item?.products || []).map((product) => ({
+              productname: product.name,
+              amount: product.achieved
+            }))
+          )
+        ])
+      } else {
+        setacheivedProducts([])
+      }
+    }
+  }, [targetData])
   useEffect(() => {
     console.log("hhhh")
     if (leadId) {
@@ -65,6 +140,9 @@ function LeadEdit() {
         const response = await api.get(`/lead/getSelectedLead?leadId=${leadId}`)
 
         if (response.status >= 200 && response.status < 300) {
+          console.log("hhhh")
+          console.log(response.data.data)
+          setselectedleadbranch(response.data.data[0].leadBranch)
           setfetchedData(response.data.data)
         }
       }
@@ -90,15 +168,7 @@ function LeadEdit() {
     console.log("J")
     console.log(targetData)
     console.log(userData?._id)
-    const filteredloggedUserItem = Datas.filter(
-      (item) => item.userId === userData._id
-    )
-    console.log("hhh")
 
-    console.log(Datas)
-    console.log("hhhh")
-    console.log(filteredloggedUserItem)
-    console.log(id)
     // const filteredselectedCategory =
     //   filteredloggedUserItem[0].categories.filter(
     //     (item) => item.categoryId === id
@@ -135,6 +205,7 @@ function LeadEdit() {
     setOpenModal(true)
   }
   const handleSelectedUser = (category, userId, userName) => {
+    setActiveUserId(userId)
     setselecteduserName(userName)
     setselectedCategory({
       Id: category.Id,
@@ -172,8 +243,10 @@ function LeadEdit() {
   console.log(leadId)
 
   const handleSubmit = async (data, leadData, objectId) => {
-console.log(data)
-console.log(leadData)
+    console.log(data)
+    console.log(leadData)
+console.log(objectId)
+
     try {
       setLoader(true)
       const response = await api.put(
@@ -187,16 +260,14 @@ console.log(leadData)
         toast.success(response.data.message)
         setLoader(false)
       }
-navigate(-1)
-      // userData?.role === "Admin"
-      //   ? navigate("/admin/transaction/lead/leadAllocation")
-      //   : navigate("/staff/transaction/lead/leadFollowUp")
+      navigate(-1)
     } catch (error) {
       setLoader(false)
       toast.error("Something went wrong")
       console.error("error:", error)
     }
   }
+console.log("hhhh")
   return (
     <div className="h-full bg-[#ADD8E6 overflow-hidden">
       <div className="flex h-full flex-row overflow-hidden">
@@ -205,8 +276,8 @@ navigate(-1)
           selectedCompanyBranch={selectedcompanyBranch}
           setselectedCompanyBranch={setselectedcompanyBranch}
           parenttargetData={settargetData}
-          parentperiodmode={setperiodMode}
-          parentyear={setSelectedYear}
+          parentperiodmode={periodMode}
+          parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
         />
         <div className="flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden justify-center">
@@ -246,13 +317,15 @@ navigate(-1)
               </div>
             </div>
           </header>
-          {loader && (
-            <BarLoader
-              cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
-              color="#4A90E2" // Change color as needed
-            />
-          )}
-          <div className="flex flex-1 min-h-0 min-w-0 overflow-hidden  w-full justify-center">
+
+          <div className="flex flex-1 flex-col min-h-0 min-w-0 overflow-hidden  w-full justify-center  bg-[#ADD8E6]">
+            {loader && (
+              <BarLoader
+                cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
+                color="#4A90E2" // Change color as needed
+              />
+            )}
+            <Breadcrumb items={Breadcrumblist} />
             <LeadMaster
               process="edit"
               handleEditData={handleSubmit}
@@ -260,6 +333,8 @@ navigate(-1)
               seteditLoadingState={setLoader}
               Data={fetcheddata}
               isReadOnly={isReadOnly}
+from={from}
+              selectedcompanyBranch={selectedleadbranch}
             />
           </div>
         </div>
@@ -273,22 +348,23 @@ navigate(-1)
             setselectedPeriod(val)
           }}
           onMonthChange={(val) => {
-            setcategorylist([])
             setacheivedProducts([])
             setselectedDataPopup([])
             setperiodMode(val)
+            setselecteduserName(null)
           }}
           onYearChange={(val) => {
-            setcategorylist([])
             setacheivedProducts([])
             setselectedDataPopup([])
             setSelectedYear(val)
+            setselecteduserName(null)
           }}
           productlist={productlist}
           onClose={() => {
-            setselecteduserName(userData?.name)
+            setselecteduserName(null)
             setacheivedProducts([])
             setOpenModal(false)
+            setActiveUserId(null)
           }}
           selectedMonth={periodMode}
           selectedYear={selectedYear}
@@ -306,6 +382,7 @@ navigate(-1)
           selectedUser={selectedUserName}
           category={selectedCategory}
           handleSelectedUser={handleSelectedUser}
+          activeUserId={activeUserId}
         />
       </div>
     </div>

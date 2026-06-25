@@ -1,5 +1,5 @@
-// export
 import { useEffect, useState, useMemo, useRef, useLayoutEffect } from "react"
+import { useLocation } from "react-router-dom"
 import { createPortal } from "react-dom"
 import { Country, State } from "country-state-city"
 import BarLoader from "react-spinners/BarLoader"
@@ -13,7 +13,7 @@ import api from "../../api/api"
 import { useNavigate } from "react-router-dom"
 import { Loader } from "lucide-react"
 import { selectedBranch } from "../../../slices/companyBranchSlice"
-
+import FullScreenLoader from "../../components/common/FullScreenLoader"
 // ─────────────────────────────────────────────────────────────────────────────
 // DropdownPortal — keeps dropdown aligned on scroll/resize
 // ─────────────────────────────────────────────────────────────────────────────
@@ -72,139 +72,163 @@ function DropdownPortal({ anchorEl, children }) {
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// LicenseDropdown
-// ─────────────────────────────────────────────────────────────────────────────
 function LicenseDropdown({
   index,
   item,
   isReadOnly,
   customerTableData,
   selectedleadlist,
-  setSelectedLeadList,
-  handleLicenseSelect
+  setSelectedLeadList
 }) {
-  const emptyRow = {
-    licenseNumber: "",
-    productorServiceId: "",
-    productorServiceName: "",
-    productPrice: "",
-    hsn: "",
-    netAmount: ""
-  }
+  console.log(index)
+  console.log(customerTableData)
+  const isMulti = item?.productorservicetype === "Additionalservice"
 
   const [open, setOpen] = useState(false)
-  const [search, setSearch] = useState(String(item.licenseNumber ?? ""))
+  const [search, setSearch] = useState("")
+
+  const wrapperRef = useRef(null)
   const inputRef = useRef(null)
+  const dropdownId = `license-dropdown-${index}`
 
   useEffect(() => {
-    setSearch(String(item.licenseNumber ?? ""))
-  }, [item.licenseNumber])
+    if (isMulti) {
+      setSearch("")
+    } else {
+      setSearch(String(item?.licenseNumber ?? ""))
+    }
+  }, [item?.licenseNumber, isMulti])
 
   useEffect(() => {
-    const handler = (e) => {
-      const portals = document.querySelectorAll("[data-lead-portal]")
-      const inPortal = Array.from(portals).some((p) => p.contains(e.target))
-      if (!inPortal && !inputRef.current?.contains(e.target)) {
+    const handlePointerDown = (event) => {
+      const target = event.target
+      const wrapperEl = wrapperRef.current
+      const dropdownEl = document.getElementById(dropdownId)
+
+      const clickedInsideWrapper = wrapperEl && wrapperEl.contains(target)
+
+      const clickedInsideDropdown = dropdownEl && dropdownEl.contains(target)
+
+      if (!clickedInsideWrapper && !clickedInsideDropdown) {
         setOpen(false)
       }
     }
-    if (open) document.addEventListener("mousedown", handler)
-    return () => document.removeEventListener("mousedown", handler)
-  }, [open])
+
+    document.addEventListener("mousedown", handlePointerDown)
+    document.addEventListener("touchstart", handlePointerDown)
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown)
+      document.removeEventListener("touchstart", handlePointerDown)
+    }
+  }, [dropdownId])
+
+  const selectedLicenses = isMulti ? item?.licenseNumbers || [] : []
 
   const filtered = (customerTableData || []).filter((lic) => {
-    if (!search) return true
+    const q = String(search || "").toLowerCase()
+    if (!q) return true
 
-    const q = String(search).toLowerCase()
-
-    const license =
-      lic && lic.licenseNumber !== undefined && lic.licenseNumber !== null
-        ? String(lic.licenseNumber).toLowerCase()
-        : ""
-
-    const product =
-      lic && (lic.productName || lic.productorServiceName)
-        ? String(lic.productName || lic.productorServiceName).toLowerCase()
-        : ""
+    const license = String(lic?.licenseNumber ?? "").toLowerCase()
+    const product = String(
+      lic?.productName || lic?.productorServiceName || ""
+    ).toLowerCase()
 
     return license.includes(q) || product.includes(q)
   })
 
-  const applySelection = (lic) => {
-    const base = selectedleadlist?.length ? selectedleadlist : [{ ...emptyRow }]
-    const updated = [...base]
+  const updateRow = (newRow) => {
+    console.log(newRow)
+    setSelectedLeadList((prev) =>
+      prev.map((row, i) => (i === index ? { ...row, ...newRow } : row))
+    )
+  }
 
-    if (!lic) {
-      updated[index] = { ...emptyRow }
-      setSearch("")
-      handleLicenseSelect(null)
-    } else {
-      const valueStr = String(lic.licenseNumber ?? "")
-      updated[index] = {
-        ...updated[index],
-        licenseNumber: lic.licenseNumber,
-        productorServiceId: "",
-        productorServiceName: "",
-        productPrice: "",
-        hsn: "",
-        netAmount: ""
-      }
-      setSearch(valueStr)
-      handleLicenseSelect(lic.licenseNumber)
+  const addLicense = (lic) => {
+    console.log(lic)
+    if (!lic) return
+
+    if (isMulti) {
+      const exists = selectedLicenses.some(
+        (x) => String(x?.licenseNumber) === String(lic?.licenseNumber)
+      )
+
+      if (exists) return
+
+      updateRow({
+        licenseNumbers: [
+          ...(item?.licenseNumbers || []),
+          {
+            licenseNumber: lic?.licenseNumber,
+            productorServiceId: lic?.productorServiceId || "",
+            productorServiceName:
+              lic?.productName || lic?.productorServiceName || ""
+          }
+        ]
+      })
+
+      return
     }
 
-    setSelectedLeadList(updated)
-  }
-
-  const handleInputChange = (e) => {
-    console.log("h")
-    const value = e.target.value
-    setSearch(value)
-    setOpen(true)
-
-    const exact = (customerTableData || []).find(
-      (lic) => String(lic.licenseNumber ?? "") === value
-    )
-    if (exact) applySelection(exact)
-    else if (!value) applySelection(null)
-  }
-
-  const handleClear = () => {
-    applySelection(null)
+    updateRow({
+      licenseNumber: lic?.licenseNumber || ""
+    })
+    setSearch(String(lic?.licenseNumber ?? ""))
     setOpen(false)
   }
 
+  const removeLicense = (licenseNumber) => {
+    if (!isMulti) return
+
+    updateRow({
+      licenseNumbers: (item?.licenseNumbers || []).filter(
+        (x) => String(x?.licenseNumber) !== String(licenseNumber)
+      )
+    })
+  }
+
+  const toggleLicense = (lic, checked) => {
+    if (!lic || isReadOnly) return
+
+    if (checked) {
+      addLicense(lic)
+    } else {
+      removeLicense(lic?.licenseNumber)
+    }
+  }
+
+  const handleInputChange = (e) => {
+    setSearch(e.target.value)
+    setOpen(true)
+  }
+
   return (
-    <div className="relative w-full">
+    <div ref={wrapperRef} className="relative w-full">
       <input
         ref={inputRef}
         type="text"
         disabled={isReadOnly}
         value={search}
         onChange={handleInputChange}
-        onClick={() => !isReadOnly && setOpen(true)}
-        placeholder="Search / Select License"
+        onClick={() => {
+          if (!isReadOnly) setOpen(true)
+        }}
+        placeholder={
+          isMulti ? "Search / Add License" : "Search / Select License"
+        }
         className={`w-full px-2 py-1 border border-gray-200 rounded text-xs bg-[#EEF2F8] outline-none ${
           isReadOnly ? "cursor-not-allowed opacity-70" : "cursor-text"
         }`}
       />
-      {search && !isReadOnly && (
-        <button
-          type="button"
-          onMouseDown={(e) => {
-            e.preventDefault()
-            handleClear()
-          }}
-          className="absolute right-1.5 top-1.5 text-gray-400 hover:text-red-500 text-[10px]"
-        >
-          ✕
-        </button>
-      )}
 
       {open && (
         <DropdownPortal anchorEl={inputRef.current}>
-          <div className="bg-white border border-gray-200 rounded shadow-xl overflow-hidden max-h-52">
+          <div
+            id={dropdownId}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            className="bg-white border border-gray-200 rounded shadow-xl overflow-hidden max-h-52"
+          >
             <ul className="max-h-52 overflow-y-auto text-xs">
               {filtered.length === 0 ? (
                 <li className="px-3 py-2 text-gray-400 italic">
@@ -212,26 +236,64 @@ function LicenseDropdown({
                 </li>
               ) : (
                 filtered.map((lic, i) => {
-                  const valStr = String(lic.licenseNumber ?? "")
-                  const isActive = valStr === String(item.licenseNumber ?? "")
+                  const valStr = String(lic?.licenseNumber ?? "")
+                  const productName =
+                    lic?.productName || lic?.productorServiceName || ""
+
+                  const alreadyAdded = isMulti
+                    ? (item?.licenseNumbers || []).some(
+                        (x) => String(x?.licenseNumber) === valStr
+                      )
+                    : valStr === String(item?.licenseNumber ?? "")
+
                   return (
                     <li
-                      key={lic.licenseNumber ?? i}
-                      className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center justify-between gap-2 ${
-                        isActive
+                      key={lic?.licenseNumber ?? i}
+                      className={`px-3 py-2 hover:bg-blue-50 flex items-center justify-between gap-2 ${
+                        alreadyAdded
                           ? "bg-blue-50 font-semibold text-[#1B2A4A]"
                           : "text-gray-700"
                       }`}
-                      onMouseDown={(e) => {
-                        e.preventDefault()
-                        applySelection(lic)
-                        setOpen(false)
-                      }}
                     >
-                      <span className="font-medium">{valStr}</span>
-                      <span className="text-gray-400 truncate">
-                        {lic.productName || lic.productorServiceName}
-                      </span>
+                      {isMulti ? (
+                        <label className="flex items-center justify-between gap-2 w-full cursor-pointer">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <input
+                              type="checkbox"
+                              checked={alreadyAdded}
+                              disabled={isReadOnly}
+                              onChange={(e) =>
+                                toggleLicense(lic, e.target.checked)
+                              }
+                              onMouseDown={(e) => e.stopPropagation()}
+                              onTouchStart={(e) => e.stopPropagation()}
+                              onClick={(e) => e.stopPropagation()}
+                              className="h-3.5 w-3.5 accent-blue-600 cursor-pointer"
+                            />
+                            <span className="font-medium">{valStr}</span>
+                          </div>
+
+                          <span className="text-gray-400 truncate">
+                            {productName}
+                          </span>
+                        </label>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={isReadOnly}
+                          onMouseDown={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            addLicense(lic)
+                          }}
+                          className="flex items-center justify-between gap-2 w-full text-left"
+                        >
+                          <span className="font-medium">{valStr}</span>
+                          <span className="text-gray-400 truncate">
+                            {productName}
+                          </span>
+                        </button>
+                      )}
                     </li>
                   )
                 })
@@ -250,13 +312,16 @@ function LicenseDropdown({
 function ProductDropdown({
   index,
   item,
+  process,
   isReadOnly,
   leadList,
   selectedleadlist,
   setSelectedLeadList,
-  selectedBranch
+  selectedBranch,
+  selectedCustomer
 }) {
   console.log(selectedBranch)
+  console.log(leadList)
   const emptyRow = {
     licenseNumber: "",
     productorServiceId: "",
@@ -269,12 +334,14 @@ function ProductDropdown({
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState(item.productorServiceName || "")
   const inputRef = useRef(null)
-
+  const [selectionMessage, setselectionMessage] = useState({})
   useEffect(() => {
+    console.log("hhh")
     setSearch(item.productorServiceName || "")
   }, [item.productorServiceName])
 
   useEffect(() => {
+    console.log("jjj")
     const handler = (e) => {
       const portals = document.querySelectorAll("[data-lead-portal]")
       const inPortal = Array.from(portals).some((p) => p.contains(e.target))
@@ -288,68 +355,199 @@ function ProductDropdown({
 
   const filtered = (leadList || []).filter((prod) => {
     if (!search) return true
+    console.log(search)
+    console.log(!search)
+    console.log("Hhhh")
     const q = search.toLowerCase()
     const name =
       prod.productName?.toLowerCase() || prod.serviceName?.toLowerCase() || ""
     return name.includes(q)
   })
-  console.log(selectedBranch)
+  console.log(filtered)
+  console.log(selectedleadlist)
+  // const applySelection = (prod) => {
+  //   const base = selectedleadlist?.length
+  //     ? [...selectedleadlist]
+  //     : [{ ...emptyRow }]
+  //   console.log(selectedleadlist)
+  //   console.log(base)
+  //   console.log("hhhhhh")
+  //   const updated = [...base]
+  //   console.log(updated)
+  //   console.log(selectedBranch)
+  //   const filteredbranch = prod?.selected?.filter(
+  //     (item) => item.branch_id === selectedBranch
+  //   )
+  //   console.log(filteredbranch)
+  //   const igstRate = filteredbranch?.[0]?.hsn_id?.onValue?.igstRate
+
+  //   if (!prod) {
+  //     updated[index] = {
+  //       ...updated[index],
+  //       productorServiceId: "",
+  //       productorServiceName: "",
+  //       productPrice: "",
+  //       hsn: "",
+  //       netAmount: ""
+  //     }
+  //     setSearch("")
+  //   } else {
+  //     const price = Number(prod?.productPrice || 0)
+  //     const igst = Number(igstRate || 0)
+  //     console.log(igst)
+  //     const rawNet = price + (igst / 100) * price
+  //     const netAmount = Math.round(rawNet)
+
+  //     updated[index] = {
+  //       ...updated[index],
+  //       productorServiceId: prod._id,
+  //       productorServiceName: prod.productName || prod.serviceName,
+  //       itemType: prod.productName ? "Product" : "Service",
+  //       productPrice: prod.productPrice,
+  //       hsn: igstRate,
+  //       netAmount
+  //     }
+  //     setSearch(prod.productName || prod.serviceName || "")
+  //   }
+  //   console.log(updated)
+  //   setSelectedLeadList(updated)
+  // }
+  console.log(selectedCustomer)
   const applySelection = (prod) => {
+    console.log(prod)
+    // const branchdata=prod?.selected.map((item)=>item.branch_id===selectedBranch).map((item)=>return{
+    // company_id:item.company_id,
+    // branch_id:item.branch_id})
+    const branchdata = (prod?.selected || [])
+      .filter((item) => item.branch_id === selectedBranch)
+      .map((item) => ({
+        company_id: item.company_id,
+        branch_id: item.branch_id
+      }))
+    console.log(branchdata)
+    console.log(selectedCustomer)
+    if (
+      selectedCustomer === null ||
+      selectedCustomer === undefined ||
+      selectedCustomer === ""
+    ) {
+      console.log("jjj")
+      setselectionMessage({
+        productmessage: "Please select the customer first"
+      })
+      console.log("hhh")
+      // Clear the message after 3 seconds (3000ms)
+      setTimeout(() => {
+        setselectionMessage({ productmessage: "" })
+      }, 3000)
+      return
+    }
+    console.log("hhh")
+    const getRowId = (value) => {
+      console.log(value)
+      return String(value?._id || value?.id || value || "")
+    }
     const base = selectedleadlist?.length
       ? [...selectedleadlist]
       : [{ ...emptyRow }]
-    const updated = [...base]
-    console.log(prod)
-    const filteredbranch = prod?.selected.filter(
-      (item) => item.branch_id === selectedBranch[0]
+
+    let updated = [...base]
+    console.log(updated)
+    // Remove any previously auto-added default services
+    updated = updated.filter(
+      (row, idx) => idx === index || !row?.isDefaultService
+    )
+
+    const filteredbranch = prod?.selected?.filter(
+      (item) => item.branch_id === selectedBranch
     )
     console.log(filteredbranch)
     const igstRate = filteredbranch?.[0]?.hsn_id?.onValue?.igstRate
-    console.log("hhh")
+
     if (!prod) {
-      console.log(prod)
       updated[index] = {
         ...updated[index],
         productorServiceId: "",
         productorServiceName: "",
+        itemType: "",
         productPrice: "",
         hsn: "",
         netAmount: ""
       }
+
       setSearch("")
-    } else {
-      console.log(igstRate)
-      console.log(prod?.selectedArray)
-      console.log(prod.productPrice)
-      // const netAmount = (
-      //   Number(prod?.productPrice || 0) +
-      //   (Number(igstRate || 0) / 100) * Number(prod?.productPrice || 0)
-      // ).toFixed(2)
-      const price = Number(prod?.productPrice || 0)
-      const igst = Number(igstRate || 0)
-
-      const rawNet = price + (igst / 100) * price
-
-      // round: >= .5 goes up, < .5 goes down
-      const netAmount = Math.round(rawNet)
-      console.log(netAmount)
-
-      updated[index] = {
-        ...updated[index],
-        productorServiceId: prod._id,
-        productorServiceName: prod.productName || prod.serviceName,
-        itemType: prod.productName ? "Product" : "Service",
-        productPrice: prod.productPrice,
-        hsn: igstRate,
-        netAmount
-      }
-      setSearch(prod.productName || prod.serviceName || "")
+      setSelectedLeadList(updated)
+      return
     }
 
-    setSelectedLeadList(updated)
-  }
+    const price = Number(prod?.productPrice || 0)
+    const igst = Number(igstRate || 0)
+    const rawNet = price + (igst / 100) * price
+    const netAmount = Math.round(rawNet)
 
+    // Main selected product
+    updated[index] = {
+      ...updated[index],
+      productorServiceId: prod._id,
+      productorServiceName: prod.productName || prod.serviceName,
+      itemType: prod.productName ? "Product" : "Service",
+      productPrice: prod.productPrice || 0,
+      productorservicetype: prod?.productorservicetype,
+      hsn: igstRate || 0,
+      netAmount,
+      company_id: branchdata[0].company_id,
+      branch_id: branchdata[0].branch_id
+    }
+    console.log(prod)
+    // Add default services immediately after selected product
+    if (prod?.defaultservices?.length > 0 && process === "closing") {
+      console.log("Hhh")
+      // const defaultServiceRows = prod.defaultservices.map((service) => ({
+      //   ...emptyRow,
+      //   productorServiceId: service._id,
+      //   productorServiceName: service.productName,
+      //   itemType: "Service",
+      //   productPrice: 0,
+      //   hsn: 0,
+      //   productorservicetype: service?.productorservicetype,
+      //   netAmount: 0,
+      //   isDefaultService: true
+      // }))
+
+      // updated.splice(index + 1, 0, ...defaultServiceRows)
+      const primaryId = getRowId(prod)
+      console.log(primaryId)
+      console.log("hhh")
+      const defaultServiceRows = (prod?.defaultservices || []).map(
+        (service) => ({
+          ...emptyRow,
+          licenseNumber: "",
+          licenseNumbers: [],
+          productorServiceId: getRowId(service),
+          productorServiceName:
+            service?.productName || service?.serviceName || "",
+          itemType: service?.productName ? "Product" : "Service",
+          productPrice: 0,
+          hsn: 0,
+          productorservicetype:
+            service?.productorservicetype || "Additionalservice",
+          netAmount: 0,
+          isDefaultService: true,
+          parentPrimaryProductId: primaryId
+        })
+      )
+
+      updated.splice(index + 1, 0, ...defaultServiceRows)
+    }
+
+    setSearch(prod.productName || prod.serviceName || "")
+    console.log(updated)
+    setSelectedLeadList(updated)
+    console.log("hh")
+  }
+  console.log(selectedleadlist)
   const handleInputChange = (e) => {
+    console.log(e)
     const value = e.target.value
     setSearch(value)
     setOpen(true)
@@ -357,7 +555,6 @@ function ProductDropdown({
     const exact = (leadList || []).find(
       (p) => p.productName === value || p.serviceName === value
     )
-    console.log("hh")
     if (exact) applySelection(exact)
     else if (!value) applySelection(null)
   }
@@ -381,6 +578,9 @@ function ProductDropdown({
           isReadOnly ? "cursor-not-allowed opacity-70" : "cursor-text"
         }`}
       />
+      {selectionMessage && selectionMessage.productmessage && (
+        <p className="text-red-400">{selectionMessage.productmessage}</p>
+      )}
       {search && !isReadOnly && (
         <button
           type="button"
@@ -409,7 +609,6 @@ function ProductDropdown({
                     className="px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2 text-gray-700"
                     onMouseDown={(e) => {
                       e.preventDefault()
-                      console.log("hhh")
                       applySelection(prod)
                       setOpen(false)
                     }}
@@ -434,18 +633,23 @@ function ProductDropdown({
 const LeadMaster = ({
   process,
   Data = null,
+
   isReadOnly,
+from=null,
   handleleadData,
   handleEditData,
+  handleclosingData,
   loadingState,
   setLoadingState,
   editloadingState,
   seteditLoadingState,
   showmessage,
   showpopupMessage,
-selectedcompanyBranch
+  selectedcompanyBranch
 }) => {
+console.log(from)
   console.log(Data)
+  console.log(isReadOnly)
   const {
     register: registerMain,
     handleSubmit: handleSubmitMain,
@@ -453,10 +657,11 @@ selectedcompanyBranch
     watch: watchMain,
     control: controlMain,
     reset: resetMain,
+
     clearErrors: clearMainerrors,
     formState: { errors: errorsMain }
   } = useForm()
-  console.log("h")
+
   const {
     register: registerModal,
     handleSubmit: handleSubmitModal,
@@ -474,18 +679,33 @@ selectedcompanyBranch
   const [productOrserviceSelections, setProductorServiceSelections] = useState(
     {}
   )
+  const [licenseloading, setlicenseloading] = useState(false)
   const [leadList, setLeadList] = useState([])
   const [submitLoading, setsubmitLoading] = useState(false)
-  console.log(submitLoading)
   const [popupOpen, setPopupOpen] = useState(false)
   const [formData, setFormData] = useState(null)
-  console.log("hhh")
   const [restrictionMessage, setrestrictMessage] = useState()
   const [isEligible, setIseligible] = useState(false)
   const [openLicenseDropdown, setOpenLicenseDropdown] = useState(null)
   const [openProductDropdown, setOpenProductDropdown] = useState(null)
   const [popupMessage, setPopupMessage] = useState("")
   const [warningMessage, setwarningMessage] = useState("")
+  const [showdetailsopen, setdetailsopen] = useState(false)
+  const [detailsItem, setDetailsItem] = useState(null)
+  const [detailsIndex, setDetailsIndex] = useState(null)
+  const [detailsForm, setDetailsForm] = useState({
+    name: "",
+    licenseNumber: "",
+    softwareTrade: "",
+    applicationDate: "",
+    status: "Running",
+    nextDue: "",
+    quantityUsers: "",
+    amount: "",
+    taggeddata: []
+  })
+  console.log(detailsForm)
+  console.log(warningMessage)
   const [ispopupModalOpen, setIspopupModalOpen] = useState(false)
   const [isSelfAllocationChangable, setselfAllocationChangable] = useState(true)
   const [modalloader, setModalLoader] = useState(false)
@@ -495,9 +715,10 @@ selectedcompanyBranch
   const [selectedCountry, setSelectedCountry] = useState(null)
   const [licensewithoutProductSelection, setlicenseWithoutProductSelection] =
     useState({})
-  const [iscustomerchangeandbranch, setcutomerchangeandbranch] = useState(true)
+  const [iscustomerchangeandbranch, setcustomerchangeandbranch] = useState(true)
   const [selectedState, setSelectedState] = useState(null)
   const [selectedleadlist, setSelectedLeadList] = useState([])
+  console.log(selectedleadlist)
   const [selectedCustomer, setSelectedCustomer] = useState(null)
   const [selectedLicense, setSelectedLicense] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
@@ -509,7 +730,7 @@ selectedcompanyBranch
   const [validateError, setValidateError] = useState({})
   const [loggeduser, setloggedUser] = useState(null)
   const [allstaff, setallStaffs] = useState([])
-  const [selectedBranch, setSelectedBranch] = useState(null)
+  const [selectedBranch, setSelectedBranch] = useState(selectedcompanyBranch)
   const [tasklist, settasklist] = useState([])
   const [allcustomer, setallcustomer] = useState([])
   const [selectedUserName, setselecteduserName] = useState(null)
@@ -518,17 +739,15 @@ selectedcompanyBranch
   const [selectedYear, setSelectedYear] = useState(null)
   const [periodMode, setperiodMode] = useState("all")
   const [targetData, settargetData] = useState([])
-  console.log(targetData)
   const [openModal, setOpenModal] = useState(false)
   const [productlist, setproductList] = useState([])
   const [achievedproducts, setacheivedProducts] = useState([])
   const [selectedPeriod, setselectedPeriod] = useState("")
-  console.log(allcustomer)
   const dropdownLicenseRef = useRef(null)
   const dropdownLeadforRef = useRef(null)
   const registrationType = watchModal("registrationType")
   const navigate = useNavigate()
-  console.log(loggeduser)
+  const location = useLocation()
   const { data: productData, loading: productLoading } = UseFetch(
     loggeduser &&
       selectedBranch &&
@@ -537,6 +756,11 @@ selectedcompanyBranch
         JSON.stringify(selectedBranch)
       )}`
   )
+  console.log(productData)
+  const filter = productData?.filter(
+    (item) => item.productName === "MARG ERP NANO"
+  )
+  console.log(filter)
   const { data: tasks } = UseFetch("lead/getallTask")
   const { data: companybranches } = UseFetch("/branch/getBranch")
   const { data: partners } = UseFetch("/customer/getallpartners")
@@ -547,7 +771,6 @@ selectedcompanyBranch
   )
 
   const { data: alluser, loading: usersLoading } = UseFetch("/auth/getallUsers")
-  console.log(selectedBranch)
   const {
     data: customerData,
     loading: customerLoading,
@@ -557,7 +780,9 @@ selectedcompanyBranch
       selectedBranch &&
       `/customer/getallCustomer?branchSelected=${selectedBranch}`
   )
-
+  // Track timers for each row index
+  const debounceTimersRef = useRef({})
+  console.log(selectedleadlist)
   const emptyRow = {
     licenseNumber: "",
     productorServiceId: "",
@@ -566,29 +791,47 @@ selectedcompanyBranch
     hsn: "",
     netAmount: ""
   }
-  // decide if user is allowed to self allocate
+
   const canSelfAllocate =
     loggeduser?.department?._id === "670c866552847bbebbd35748" ||
     loggeduser?.department?._id === "670c867352847bbebbd35750"
 
   useEffect(() => {
+    console.log("jjjj")
+    setSelectedBranch(selectedcompanyBranch)
+  }, [selectedcompanyBranch])
+  // useEffect(() => {
+  //   if (!selfAllocation) {
+  //     setValueMain("allocationType", undefined);
+  //     setValueMain("dueDate", undefined);
+  //   }
+  // }, [selfAllocation]);
+  // useEffect(() => {
+  //   if (!selfAllocation) {
+  //     unregister("allocationType");
+  //     unregister("dueDate");
+  //   }
+  // }, [selfAllocation, unregister]);
+  useEffect(() => {
     if (!selectedleadlist || selectedleadlist.length === 0) {
+      console.log("hh")
       setSelectedLeadList([{ ...emptyRow }])
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
   const taxableAmount = Number(watch("taxableAmount") || 0)
   const taxAmount = Number(watch("taxAmount") || 0)
 
-  // whenever any part changes, recompute netAmount
   useEffect(() => {
+    console.log("hhh")
     const exactTotal = taxableAmount + taxAmount
-    // if you want integer final amount, round here; else keep 2 decimals
     const net = +exactTotal.toFixed(2)
     setValueMain("netAmount", net, { shouldValidate: true })
   }, [taxableAmount, taxAmount, setValueMain])
 
   useEffect(() => {
+    console.log("hhhh")
     const userData = localStorage.getItem("user")
     if (userData) {
       const user = JSON.parse(userData)
@@ -603,31 +846,27 @@ selectedcompanyBranch
 
   useEffect(() => {
     if (tasks) {
+      console.log("hhhh")
       settasklist(tasks.filter((item) => item.taskName === "Followup"))
     }
   }, [tasks])
 
   useEffect(() => {
+    console.log("jjj")
     if (showmessage) {
       setIspopupModalOpen(true)
     }
   }, [showmessage])
 
   useEffect(() => {
-    if (companybranches && companybranches.length > 0) {
-      const defaultBranch = companybranches[0]._id
-      if (Data && Data.length) {
-        const customerBranch = Data[0].leadBranch
-        setSelectedBranch([customerBranch])
-        setValueMain("leadBranch", customerBranch)
-      } else if (defaultBranch) {
-        setSelectedBranch([defaultBranch])
-        setValueMain("leadBranch", defaultBranch)
-      }
+    console.log("jj")
+    if (selectedBranch) {
+      setValueMain("leadBranch", selectedBranch)
     }
-  }, [companybranches, Data])
+  }, [selectedBranch])
 
   useEffect(() => {
+    console.log("hhhh")
     if (
       loggeduser &&
       productData &&
@@ -643,12 +882,14 @@ selectedcompanyBranch
         )
       )
       setPartner(filteredPartners)
-      const combinedlead = [...productData, ...serviceData]
+      const combinedlead = [...productData]
+      console.log(combinedlead)
       setLeadList(combinedlead)
     }
   }, [loggeduser, branches, productData, serviceData, partners, selectedBranch])
 
   useEffect(() => {
+    console.log("hhhh")
     const handleClickOutside = (event) => {
       if (
         dropdownLicenseRef.current &&
@@ -668,10 +909,10 @@ selectedcompanyBranch
       document.removeEventListener("mousedown", handleClickOutside)
     }
   }, [])
-  console.log("hhh")
+
   useEffect(() => {
+    console.log("hhhh")
     if (loggeduser?._id) {
-      console.log(Data)
       if (Data && Data.length) {
         setValueMain("leadBy", Data[0].leadBy._id)
       } else {
@@ -681,6 +922,7 @@ selectedcompanyBranch
   }, [loggeduser, setValueMain])
 
   useEffect(() => {
+    console.log("hhh")
     if (
       Data &&
       Data.length > 0 &&
@@ -688,22 +930,24 @@ selectedcompanyBranch
       customerOptions.length &&
       loggeduser
     ) {
-      console.log("h")
       if (Data[0]?.selfAllocation) {
         setselfAllocationChangable(false)
       }
-      if (Data[0].activityLog.length === 1) {
-        setcutomerchangeandbranch(true)
-      } else if (Data[0].activityLog.length > 1) {
-        setcutomerchangeandbranch(false)
+
+      if (Data[0].followupClosed) {
+        setcustomerchangeandbranch(false)
+      } else {
+        setcustomerchangeandbranch(true)
       }
+
       setValueMain("leadId", Data[0]?.leadId)
       setValueMain("partner", Data[0]?.partner)
-setValueMain("remark",Data[0].remark)
+      setValueMain("remark", Data[0].remark)
       setValueMain(
         "selfAllocation",
         Data[0]?.selfAllocation === true ? "true" : "false"
       )
+
       if (Data[0].selfAllocation === true) {
         setselfAllocation(true)
         setValueMain("allocationType", Data[0].selfAllocationType)
@@ -718,6 +962,9 @@ setValueMain("remark",Data[0].remark)
       setValueMain("mobile", Data[0]?.customerName?.mobile)
       setValueMain("phone", Data[0]?.customerName?.phone)
       setValueMain("email", Data[0]?.customerName?.email)
+      setValueMain("remark", Data[0].remark)
+      setSelectedCustomer(Data[0]?.customerName)
+      console.log(Data[0].leadFor)
       const leadData = Data[0]?.leadFor.map((item) => ({
         licenseNumber: item?.licenseNumber,
         productorServiceName:
@@ -728,9 +975,14 @@ setValueMain("remark",Data[0].remark)
         productPrice: item?.productPrice,
         hsn: item?.hsn,
         netAmount: item?.netAmount,
-        price: item?.price
+        price: item?.price,
+        company_id: item?.company_id,
+        branch_id: item?.branch_id,
+        productorservicetype: item?.productorservicetype
       }))
+      console.log(leadData)
       setSelectedLeadList(leadData.length ? leadData : [{ ...emptyRow }])
+
       const productListwithoutlicenseOnEdit = leadList?.map((product) => {
         const match = Data[0].leadFor?.find((lead) => {
           return (
@@ -745,6 +997,7 @@ setValueMain("remark",Data[0].remark)
         }
       })
       setlicenseWithoutProductSelection(productListwithoutlicenseOnEdit)
+
       const groupedByLicenseNumber = {}
       Data[0].leadFor.forEach((lead) => {
         if (lead.licenseNumber) {
@@ -773,55 +1026,30 @@ setValueMain("remark",Data[0].remark)
         }
       })
       setProductorServiceSelections(groupedByLicenseNumber)
+      console.log(Data[0])
       const selectedcustomerlicenseandproduct =
         Data[0]?.customerName?.selected?.map((sel) => ({
           licenseNumber: sel.licensenumber || "N/A",
-          productName: sel.productName || "Unknown"
+          productName: sel.productName || "Unknown",
+          productorServiceId: sel?.product_id
         }))
       setcustomerTableData(selectedcustomerlicenseandproduct)
     }
   }, [customerOptions, Data])
 
   useEffect(() => {
+    console.log("hhh")
     if (customerData && customerData.length > 0) {
       setallcustomer(customerData)
     }
   }, [customerData])
-  console.log(Data)
-  // useEffect(() => {
-  //   if (Data && Data.length) {
-  //     console.log("hh")
-  //     console.log(Data)
-  //     setValueModal("customerName", Data[0]?.customerName?.customerName)
-  //     setValueModal("email", Data[0]?.customerName?.email)
-  //     setValueModal("mobile", Data[0]?.customerName?.mobile)
 
-  //     setValueModal("landline", Data[0]?.customerName?.landline)
-
-  //     setValueModal("contactPerson", Data[0]?.customerName?.contactPerson)
-
-  //     setValueModal("address1", Data[0]?.customerName?.address1)
-
-  //     setValueModal("pincode", Data[0]?.customerName?.pincode)
-
-  //     setValueModal("partner", Data[0]?.customerName?.partner?._id)
-
-  //     setValueModal("registrationType", Data[0]?.customerName?.registrationType)
-
-  //     setValueModal("gstNo", Data[0]?.customerName?.gstNo)
-
-  //     setValueModal("city", Data[0]?.customerName?.city)
-
-  //     setValueModal("industry", Data[0]?.customerName?.industry)
-  //     console.log("hh")
-  //   }
-  // }, [])
-console.log(selectedBranch)
   useEffect(() => {
+    console.log("hhh")
     if (customerData && customerData.length && selectedBranch) {
       const options = customerData.map((item) => {
         const matchingSelected = item.selected?.find(
-          (sel) => sel.branch_id === selectedBranch[0]
+          (sel) => sel.branch_id === selectedBranch
         )
         return {
           value: item?._id,
@@ -838,6 +1066,7 @@ console.log(selectedBranch)
   }, [customerData])
 
   useEffect(() => {
+    console.log("hhh")
     if (selectedCustomer) {
       setValueMain("mobile", selectedCustomer.mobile)
       setValueMain("phone", selectedCustomer.phone)
@@ -846,6 +1075,7 @@ console.log(selectedBranch)
   }, [selectedCustomer])
 
   useEffect(() => {
+    console.log("hhh")
     if (alluser) {
       const { allusers = [], allAdmins = [] } = alluser
       const combinedUsers = [...allusers, ...allAdmins]
@@ -854,12 +1084,14 @@ console.log(selectedBranch)
   }, [alluser])
 
   useEffect(() => {
+    console.log("hhh")
     setValueMain("netAmount", calculateTotalAmount())
     setValueMain("taxAmount", calculatetaxAmount())
     setValueMain("taxableAmount", calculatetaxableAmount())
   }, [selectedleadlist])
 
   useEffect(() => {
+    console.log("hhh")
     if (!selectedLicense && leadList && leadList.length > 0 && !Data) {
       const initialProductListwithoutlicense = leadList?.map((product) => ({
         ...product,
@@ -878,24 +1110,79 @@ console.log(selectedBranch)
       })),
     []
   )
+  // const updateLicense = (index, licenseNumber) => {
+  //   setSelectedLeadList((prev) =>
+  //     prev.map((row, i) =>
+  //       i === index
+  //         ? {
+  //             ...row,
+  //             licenseNumber
+  //           }
+  //         : row
+  //     )
+  //   )
+  // }
+  const updateLicense = (index, licenseNumber) => {
+    setSelectedLeadList((prev) =>
+      prev.map((row, i) =>
+        i === index
+          ? {
+              ...row,
+              licenseNumber
+            }
+          : row
+      )
+    )
+  }
+  console.log(selectedleadlist)
+  const handleLicenseBlur = async (index, licenseNumber) => {
+    console.log(licenseNumber)
+    if (!String(licenseNumber).trim()) return
+    console.log(licenseNumber)
+    try {
+      setlicenseloading(true)
+      const { data } = await api.get(
+        `/customer/checkLicense?licenseNumber=${licenseNumber}`
+      )
+      console.log(data)
+      if (data.exists) {
+        toast.error(`License ${licenseNumber} already exists`)
 
-  console.log(countryOptions)
+        setSelectedLeadList((prev) =>
+          prev.map((row, i) => (i === index ? { ...row } : row))
+        )
+
+        return
+      }
+      // setlicenseloading(false)
+      toast.success("License available")
+    } catch (error) {
+      // setlicenseloading(false)
+      console.error(error)
+      toast.error("Failed to validate license")
+    } finally {
+      setlicenseloading(false)
+    }
+  }
   const stateOptions = selectedCountry
     ? State.getStatesOfCountry(selectedCountry.value).map((state) => ({
         label: state.name,
         value: state.isoCode
       }))
     : []
+
   const defaultCountry = useMemo(
     () => countryOptions.find((country) => country.value === "IN"),
     [countryOptions]
   )
+
   const defaultState = useMemo(
     () => stateOptions.find((state) => state.value === "KL"),
     [stateOptions]
   )
 
   useEffect(() => {
+    console.log("hhh")
     if (defaultCountry) {
       setSelectedCountry(defaultCountry)
       setValueModal("country", defaultCountry.value)
@@ -903,44 +1190,40 @@ console.log(selectedBranch)
   }, [defaultCountry])
 
   useEffect(() => {
+    console.log("hhh")
     const currentState = getValuesModal("state")
+    console.log("defaultState:", defaultState)
+    console.log("currentState:", currentState)
+    console.log("condition:", defaultState && !currentState)
     if (defaultState && !currentState) {
+      console.log("jjjj")
       setSelectedState(defaultState)
       setValueModal("state", defaultState.value)
     }
   }, [defaultState, getValuesModal, setValueModal])
+
   const handleOpenmodal = () => {
-    console.log("Hhh")
+    console.log("h")
     setModalOpen(true)
     clearMainerrors()
     if (Data && Data.length) {
-      console.log(Data)
-      console.log("hhh")
       setValueModal("customerName", Data[0]?.customerName?.customerName)
       setValueModal("customerid", Data[0]?.customerName?._id)
       setValueModal("leadid", Data[0]?._id)
       setValueModal("email", Data[0]?.customerName?.email)
       setValueModal("mobile", Data[0]?.customerName?.mobile)
-
       setValueModal("landline", Data[0]?.customerName?.landline)
-
       setValueModal("contactPerson", Data[0]?.customerName?.contactPerson)
-
       setValueModal("address1", Data[0]?.customerName?.address1)
-
       setValueModal("pincode", Data[0]?.customerName?.pincode)
-
       setValueModal("partner", Data[0]?.customerName?.partner?._id)
-
       setValueModal("registrationType", Data[0]?.customerName?.registrationType)
-
       setValueModal("gstNo", Data[0]?.customerName?.gstNo)
-
       setValueModal("city", Data[0]?.customerName?.city)
-
-      setValueModal("industry", Data[0]?.customerName?.industry)
+      console.log("hhh")
     }
   }
+
   const Industries = [
     "Whole sailor/Distributors",
     "Retailer",
@@ -964,7 +1247,319 @@ console.log(selectedBranch)
     setIslicenseOpen(false)
     setSelectedLicense(license)
   }
+  const getBranchIgstRate = (prod) => {
+    const filteredbranch = prod?.selected?.filter(
+      (item) => item?.branchid === selectedBranch
+    )
+    return Number(filteredbranch?.[0]?.hsnid?.onValue?.igstRate || 0)
+  }
+  // const addAdditionalServicesForPrimaryRow = (row, rowIndex) => {
+  // console.log(row)
+  // console.log(!row?.productorServiceId)
+  //   if (!row?.productorServiceId) return
+  // console.log(leadList)
+  //   const primaryProduct = (leadList || []).find(
+  //     (prod) =>
+  //       String(prod?._id) === String(row?.productorServiceId) &&
+  //       String(prod?.productorservicetype || "").toLowerCase() === "primaryproduct"
+  //   )
 
+  //   if (!primaryProduct) {
+  //     toast.error("Primary product details not found")
+  //     return
+  //   }
+
+  //   const defaultServices = primaryProduct?.defaultservices || []
+
+  //   if (!defaultServices.length) {
+  //     toast.info("No additional services available for this primary product")
+  //     return
+  //   }
+
+  //   setSelectedLeadList((prev) => {
+  //     const rows = Array.isArray(prev) ? [...prev] : []
+
+  //     const existingServiceIds = new Set(
+  //       rows
+  //         .filter(
+  //           (item) =>
+  //             String(item?.productorservicetype || "").toLowerCase() ===
+  //             "additionalservice"
+  //         )
+  //         .map((item) => String(item?.productorServiceId))
+  //     )
+
+  //     const servicesToAdd = defaultServices.filter(
+  //       (service) => !existingServiceIds.has(String(service?.id))
+  //     )
+
+  //     if (!servicesToAdd.length) {
+  //       toast.info("All additional services are already added")
+  //       return prev
+  //     }
+
+  //     const newRows = servicesToAdd.map((service) => {
+  //       const igstRate = getBranchIgstRate(service)
+
+  //       return {
+  //         ...emptyRow,
+  //         licenseNumber: "",
+  //         licenseNumbers: [],
+  //         productorServiceId: service?.id || "",
+  //         productorServiceName: service?.productName || service?.serviceName || "",
+  //         itemType: service?.productName ? "Product" : "Service",
+  //         productorservicetype: service?.productorservicetype || "Additionalservice",
+  //         productPrice: 0,
+  //         hsn: igstRate || 0,
+  //         netAmount: 0,
+  //         isDefaultService: true,
+  //         parentPrimaryProductId: row?.productorServiceId
+  //       }
+  //     })
+
+  //     rows.splice(rowIndex + 1, 0, ...newRows)
+  //     return rows
+  //   })
+  // }
+  // const addAdditionalServicesForPrimaryRow = (row, rowIndex) => {
+  //   if (!row?.productorServiceId) return
+
+  //   const primaryProductId = String(row?.productorServiceId)
+
+  //   const primaryProduct = (leadList || []).find((prod) => {
+  //     const prodId = String(prod?._id || prod?.id || "")
+  //     const prodType = String(prod?.productorservicetype || "").toLowerCase()
+
+  //     return prodId === primaryProductId && prodType === "primaryproduct"
+  //   })
+
+  //   if (!primaryProduct) {
+  //     toast.error("Primary product details not found")
+  //     return
+  //   }
+
+  //   const defaultServices = Array.isArray(primaryProduct?.defaultservices)
+  //     ? primaryProduct.defaultservices
+  //     : []
+
+  //   if (!defaultServices.length) {
+  //     toast.info("No additional services available for this primary product")
+  //     return
+  //   }
+
+  //   setSelectedLeadList((prev) => {
+  //     const rows = Array.isArray(prev) ? [...prev] : []
+
+  //     const existingServiceIdsForThisPrimary = new Set(
+  //       rows
+  //         .filter((item) => {
+  //           const itemType = String(item?.productorservicetype || "").toLowerCase()
+  //           const parentId = String(item?.parentPrimaryProductId || "")
+  //           return (
+  //             itemType === "additionalservice" &&
+  //             parentId === primaryProductId
+  //           )
+  //         })
+  //         .map((item) => String(item?.productorServiceId || ""))
+  //     )
+
+  //     const servicesToAdd = defaultServices.filter((service) => {
+  //       const serviceId = String(service?._id || service?.id || "")
+  //       return serviceId && !existingServiceIdsForThisPrimary.has(serviceId)
+  //     })
+
+  //     if (!servicesToAdd.length) {
+  //       toast.info("Additional services already added for this primary product")
+  //       return prev
+  //     }
+
+  //     const newRows = servicesToAdd.map((service) => {
+  //       const serviceId = String(service?._id || service?.id || "")
+  //       const igstRate = getBranchIgstRate(service)
+
+  //       return {
+  //         ...emptyRow,
+  //         licenseNumber: "",
+  //         licenseNumbers: [],
+  //         productorServiceId: serviceId,
+  //         productorServiceName: service?.productName || service?.serviceName || "",
+  //         itemType: service?.productName ? "Product" : "Service",
+  //         productorservicetype: service?.productorservicetype || "Additionalservice",
+  //         productPrice: 0,
+  //         hsn: igstRate || 0,
+  //         netAmount: 0,
+  //         isDefaultService: true,
+  //         parentPrimaryProductId: primaryProductId
+  //       }
+  //     })
+
+  //     let insertAt = rowIndex + 1
+
+  //     while (
+  //       rows[insertAt] &&
+  //       String(rows[insertAt]?.parentPrimaryProductId || "") === primaryProductId
+  //     ) {
+  //       insertAt++
+  //     }
+
+  //     rows.splice(insertAt, 0, ...newRows)
+  //     return rows
+  //   })
+  // }
+  const getRowId = (value) => {
+    console.log(value)
+    return String(value?._id || value?.id || value || "")
+  }
+
+  const getPrimaryProductFromLeadList = (row) => {
+    const primaryProductId = getRowId(row?.productorServiceId)
+    console.log(leadList)
+    return (leadList || []).find((prod) => {
+      const prodId = getRowId(prod)
+      const prodType = String(prod?.productorservicetype || "").toLowerCase()
+      return prodId === primaryProductId && prodType === "primaryproduct"
+    })
+  }
+
+  const getExistingAdditionalServiceIdsForPrimary = (
+    rows,
+    rowIndex,
+    primaryProductId
+  ) => {
+    const existingIds = new Set()
+    console.log(rows)
+    console.log(rowIndex)
+    console.log(primaryProductId)
+    rows.forEach((item) => {
+      const itemType = String(item?.productorservicetype || "").toLowerCase()
+      const parentId = getRowId(item?.parentPrimaryProductId)
+
+      if (itemType === "additionalservice" && parentId === primaryProductId) {
+        existingIds.add(getRowId(item?.productorServiceId))
+      }
+    })
+
+    let pointer = rowIndex + 1
+    while (pointer < rows.length) {
+      const nextRow = rows[pointer]
+      const nextType = String(nextRow?.productorservicetype || "").toLowerCase()
+
+      if (nextType === "primaryproduct") break
+
+      if (nextType === "additionalservice") {
+        existingIds.add(getRowId(nextRow?.productorServiceId))
+      }
+
+      pointer++
+    }
+
+    return existingIds
+  }
+
+  const getRemainingAdditionalServicesCount = (row, rowIndex) => {
+    const primaryProduct = getPrimaryProductFromLeadList(row)
+    console.log(primaryProduct)
+    if (!primaryProduct) return 0
+
+    const primaryProductId = getRowId(row?.productorServiceId)
+    const defaultServices = Array.isArray(primaryProduct?.defaultservices)
+      ? primaryProduct.defaultservices
+      : []
+    console.log(!defaultServices.length)
+    if (!defaultServices.length) return 0
+    console.log("hhhhh")
+    const existingIds = getExistingAdditionalServiceIdsForPrimary(
+      selectedleadlist || [],
+      rowIndex,
+      primaryProductId
+    )
+
+    return defaultServices.filter((service) => {
+      const serviceId = getRowId(service)
+      console.log(serviceId)
+      console.log(existingIds)
+      console.log(serviceId && !existingIds.has(serviceId))
+      return serviceId && !existingIds.has(serviceId)
+    }).length
+  }
+
+  const addAdditionalServicesForPrimaryRow = (row, rowIndex) => {
+    if (!row?.productorServiceId) return
+
+    const primaryProductId = getRowId(row?.productorServiceId)
+    const primaryProduct = getPrimaryProductFromLeadList(row)
+    console.log(primaryProduct)
+    if (!primaryProduct) {
+      toast.error("Primary product details not found")
+      return
+    }
+
+    const defaultServices = Array.isArray(primaryProduct?.defaultservices)
+      ? primaryProduct.defaultservices
+      : []
+
+    if (!defaultServices.length) {
+      toast.info("No additional services available for this primary product")
+      return
+    }
+
+    setSelectedLeadList((prev) => {
+      const rows = Array.isArray(prev) ? [...prev] : []
+
+      const existingIds = getExistingAdditionalServiceIdsForPrimary(
+        rows,
+        rowIndex,
+        primaryProductId
+      )
+
+      const servicesToAdd = defaultServices.filter((service) => {
+        const serviceId = getRowId(service)
+        return serviceId && !existingIds.has(serviceId)
+      })
+
+      if (!servicesToAdd.length) {
+        toast.info("Additional services already added for this primary product")
+        return prev
+      }
+      console.log(row)
+      const newRows = servicesToAdd.map((service) => {
+        console.log(service)
+        const serviceId = getRowId(service)
+        const igstRate = getBranchIgstRate(service)
+
+        return {
+          ...emptyRow,
+          licenseNumber: "",
+          licenseNumbers: [],
+          productorServiceId: serviceId,
+          productorServiceName:
+            service?.productName || service?.serviceName || "",
+          itemType: service?.productName ? "Product" : "Service",
+          productorservicetype:
+            service?.productorservicetype || "Additionalservice",
+          productPrice: 0,
+          hsn: igstRate || 0,
+          netAmount: 0,
+          isDefaultService: true,
+          parentPrimaryProductId: primaryProductId,
+          company_id: service?.selected[0]?.company_id,
+          branch_id: service?.selected[0]?.branch_id
+        }
+      })
+
+      let insertAt = rowIndex + 1
+      while (insertAt < rows.length) {
+        const nextType = String(
+          rows[insertAt]?.productorservicetype || ""
+        ).toLowerCase()
+        if (nextType === "primaryproduct") break
+        insertAt++
+      }
+
+      rows.splice(insertAt, 0, ...newRows)
+      return rows
+    })
+  }
   const handleProductORserviceSelect = (productId) => {
     if (selectedLicense) {
       if (
@@ -1010,24 +1605,60 @@ console.log(selectedBranch)
   const handleToggleDropdown = () => {
     setIsleadForOpen((prev) => !prev)
   }
+  const handleTaggedDueChange = (rowIndex, value) => {
+    console.log(value)
+    console.log(rowIndex)
+    console.log(detailsForm)
+    setDetailsForm((prev) => ({
+      ...prev,
+      taggeddata: prev.taggeddata.map((row, i) =>
+        i === rowIndex ? { ...row, nextDue: value } : row
+      )
+    }))
+  }
 
   const handleSelectedCustomer = (option) => {
-    const filteredcustomerLicenseandproducts = allcustomer
-      ?.filter(
-        (item) =>
-          String(item?.customerName)?.trim() ===
-            String(option?.label)?.trim() &&
-          String(item?.address1)?.trim() === String(option?.address)?.trim()
+    console.log(option)
+    console.log(allcustomer)
+    const matchedCustomer = allcustomer?.find((item) => {
+      // return (
+      //   String(item?.customerName?.trim()) === String(option?.label?.trim()) &&
+      //   String(item?.address1?.trim()) === String(option?.address?.trim()) &&
+      //   String(item?.mobile?.trim()) === String(option?.mobile?.trim())
+      // )
+      return item?._id === option?.value
+    })
+    console.log(matchedCustomer)
+
+    setSelectedCustomer(option)
+
+    const customerLicense =
+      matchedCustomer?.selected?.find(
+        (sel) => String(sel.branch_id) === String(selectedBranch)
+      )?.licensenumber || ""
+
+    setcustomerTableData(
+      matchedCustomer?.selected
+        ?.filter((sel) => String(sel.branch_id) === String(selectedBranch))
+        ?.map((sel) => ({
+          licenseNumber: sel.licensenumber || "",
+          productName: sel.productName || "Unknown"
+        })) || []
+    )
+
+    setSelectedLeadList((prev) => {
+      const rows = prev?.length ? [...prev] : [{ ...emptyRow }]
+      return rows.map((row, index) =>
+        index === 0
+          ? {
+              ...row,
+              licenseNumber: ""
+            }
+          : row
       )
-      ?.flatMap((item) =>
-        item.selected
-          .filter((sel) => String(sel.branch_id) === String(selectedBranch))
-          .map((sel) => ({
-            licenseNumber: sel.licensenumber || "N/A",
-            productName: sel.productName || "Unknown"
-          }))
-      )
-    setcustomerTableData(filteredcustomerLicenseandproducts)
+    })
+
+    setSelectedLicense(customerLicense || "")
   }
 
   const handlePriceChange = (index, newPrice) => {
@@ -1038,7 +1669,7 @@ console.log(selectedBranch)
         const price = Number(newPrice || 0)
         const igst = Number(product.hsn || 0)
         const rawNet = price + (igst / 100) * price
-        const netAmount = Math.round(rawNet) // rounded net amount
+        const netAmount = Math.round(rawNet)
 
         return {
           ...product,
@@ -1049,7 +1680,6 @@ console.log(selectedBranch)
     )
   }
 
-  console.log(selectedleadlist)
   const handleHsnChange = (index, newHsn) => {
     setSelectedLeadList((prevList) =>
       prevList.map((product, i) => {
@@ -1058,7 +1688,7 @@ console.log(selectedBranch)
         const price = Number(product.productPrice || 0)
         const igst = Number(newHsn || 0)
         const rawNet = price + (igst / 100) * price
-        const netAmount = Math.round(rawNet) // rounded net amount
+        const netAmount = Math.round(rawNet)
 
         return {
           ...product,
@@ -1069,28 +1699,61 @@ console.log(selectedBranch)
     )
   }
 
+  // const handleDeletetableData = (item, indexNum) => {
+  //   if (item.licenseNumber) {
+  //     const updatedProductList = productOrserviceSelections[
+  //       item.licenseNumber
+  //     ].map((product) =>
+  //       product._id === item.productId
+  //         ? { ...product, selected: !product.selected }
+  //         : product
+  //     )
+  //     setProductorServiceSelections((prev) => ({
+  //       ...prev,
+  //       [item.licenseNumber]: updatedProductList
+  //     }))
+  //   } else {
+  //     const updatedProductList = licensewithoutProductSelection.map(
+  //       (product) =>
+  //         product._id === item.productId
+  //           ? { ...product, selected: !product.selected }
+  //           : product
+  //     )
+  //     setlicenseWithoutProductSelection(updatedProductList)
+  //   }
+  //   const filteredLeadlist = selectedleadlist.filter(
+  //     (row, index) => index !== indexNum
+  //   )
+  //   setSelectedLeadList(
+  //     filteredLeadlist.length ? filteredLeadlist : [{ ...emptyRow }]
+  //   )
+  // }
   const handleDeletetableData = (item, indexNum) => {
-    if (item.licenseNumber) {
-      const updatedProductList = productOrserviceSelections[
-        item.licenseNumber
-      ].map((product) =>
-        product._id === item.productId
-          ? { ...product, selected: !product.selected }
+    const productId = item?.productorServiceId || item?.productId
+
+    if (item?.licenseNumber) {
+      const updatedProductList = (
+        productOrserviceSelections[item.licenseNumber] || []
+      ).map((product) =>
+        String(product?.id) === String(productId)
+          ? { ...product, selected: false }
           : product
       )
+
       setProductorServiceSelections((prev) => ({
         ...prev,
         [item.licenseNumber]: updatedProductList
       }))
     } else {
-      const updatedProductList = licensewithoutProductSelection.map(
+      const updatedProductList = (licensewithoutProductSelection || []).map(
         (product) =>
-          product._id === item.productId
-            ? { ...product, selected: !product.selected }
+          String(product?.id) === String(productId)
+            ? { ...product, selected: false }
             : product
       )
       setlicenseWithoutProductSelection(updatedProductList)
     }
+
     const filteredLeadlist = selectedleadlist.filter(
       (row, index) => index !== indexNum
     )
@@ -1098,7 +1761,6 @@ console.log(selectedBranch)
       filteredLeadlist.length ? filteredLeadlist : [{ ...emptyRow }]
     )
   }
-
   const customFilter = (option, inputValue) => {
     if (!inputValue) return true
     const searchValue = inputValue.toLowerCase()
@@ -1132,23 +1794,15 @@ console.log(selectedBranch)
       return total + Number(product.productPrice)
     }, 0)
   }
-  console.log(warningMessage)
+
   const handleAddRowFromTable = () => {
     setwarningMessage(
       "You can’t add more products; this is limited to a single product."
     )
     setTimeout(() => {
       setwarningMessage("")
-    }, 3000) // 3 seconds
+    }, 3000)
     return
-    setSelectedLeadList((prev) => {
-      if (!prev || prev.length === 0) {
-        return [{ ...emptyRow }]
-      }
-      const last = prev[prev.length - 1]
-      const cloned = { ...last }
-      return [...prev, cloned]
-    })
   }
 
   const hasDuplicateLeadRows = (rows) => {
@@ -1204,6 +1858,7 @@ console.log(selectedBranch)
     setPopupMessage(result.data.message)
     return isEligible
   }
+
   const resetLeadForm = () => {
     const defaultBranch =
       Array.isArray(companybranches) && companybranches.length > 0
@@ -1212,13 +1867,13 @@ console.log(selectedBranch)
 
     resetMain({
       customerName: "",
-      leadBranch: defaultBranch || "",
+      leadBranch: selectedBranch || "",
       email: "",
       phone: "",
       mobile: "",
       source: "",
       partner: "",
-      allocationType: "followup",
+      allocationType: null,
       dueDate: "",
       remark: "",
       taxableAmount: "",
@@ -1244,17 +1899,278 @@ console.log(selectedBranch)
     setIseligible(false)
 
     if (defaultBranch) {
-      setSelectedBranch([defaultBranch])
-      setValueMain("leadBranch", defaultBranch)
+      setValueMain("leadBranch", selectedBranch)
     }
   }
+  const tradeOptions = [
+    { value: "Wholesale Trading", label: "Wholesale Trading" },
+    { value: "Retail Trading", label: "Retail Trading" },
+    { value: "Import & Export", label: "Import & Export" },
+    { value: "Distribution / Dealers", label: "Distribution / Dealers" },
+    {
+      value: "E-commerce / Online Trading",
+      label: "E-commerce / Online Trading"
+    },
+    { value: "IT Services", label: "IT Services" },
+    { value: "Web Design & Development", label: "Web Design & Development" },
+    { value: "Cyber Security Services", label: "Cyber Security Services" },
+    { value: "Hardware & Networking", label: "Hardware & Networking" },
+    { value: "Construction Companies", label: "Construction Companies" },
+    {
+      value: "Pharmaceutical Manufacturing",
+      label: "Pharmaceutical Manufacturing"
+    },
+    { value: "Food Manufacturing", label: "Food Manufacturing" },
+    {
+      value: "Textile / Garment Manufacturing",
+      label: "Textile / Garment Manufacturing"
+    },
+    { value: "Chemical Manufacturing", label: "Chemical Manufacturing" },
+    { value: "Plastic Manufacturing", label: "Plastic Manufacturing" },
+    {
+      value: "Steel / Metal Manufacturing",
+      label: "Steel / Metal Manufacturing"
+    },
+    { value: "Furniture Manufacturing", label: "Furniture Manufacturing" },
+    { value: "Building Contractors", label: "Building Contractors" },
+    { value: "Real Estate Developers", label: "Real Estate Developers" },
+    {
+      value: "Electrical Equipment Manufacturing",
+      label: "Electrical Equipment Manufacturing"
+    },
+    { value: "Electronics Manufacturing", label: "Electronics Manufacturing" },
+    { value: "Automobile Manufacturing", label: "Automobile Manufacturing" },
+    { value: "Hospitals", label: "Hospitals" },
+    { value: "Clinics", label: "Clinics" },
+    { value: "Medical Laboratories", label: "Medical Laboratories" },
+    {
+      value: "Medical Equipment Suppliers",
+      label: "Medical Equipment Suppliers"
+    },
+    {
+      value: "Pharmacies / Medical Stores",
+      label: "Pharmacies / Medical Stores"
+    },
+    { value: "Interior Design", label: "Interior Design" },
+    { value: "Vehicle Dealers", label: "Vehicle Dealers" },
+    {
+      value: "Automobile Service Centres",
+      label: "Automobile Service Centres"
+    },
+    { value: "Insurance Companies", label: "Insurance Companies" },
+    { value: "Spare Parts Dealers", label: "Spare Parts Dealers" },
+    { value: "Transport & Logistics", label: "Transport & Logistics" },
+    { value: "Banks", label: "Banks" },
+    { value: "Finance Companies", label: "Finance Companies" },
+    { value: "Hotels & Resorts", label: "Hotels & Resorts" },
+    { value: "Schools", label: "Schools" },
+    { value: "Colleges", label: "Colleges" },
+    { value: "Training Institutes", label: "Training Institutes" },
+    { value: "Coaching Centers", label: "Coaching Centers" },
+    { value: "Educational Consultants", label: "Educational Consultants" },
+    { value: "Software Development", label: "Software Development" },
+    { value: "Restaurants / Cafes", label: "Restaurants / Cafes" },
+    { value: "Travel Agencies", label: "Travel Agencies" },
+    { value: "Tourism Operators", label: "Tourism Operators" },
+    {
+      value: "Advertising & Marketing Agencies",
+      label: "Advertising & Marketing Agencies"
+    },
+    { value: "Event Management", label: "Event Management" },
+    { value: "Security Services", label: "Security Services" },
+    {
+      value: "Cleaning / Facility Management",
+      label: "Cleaning / Facility Management"
+    },
+    {
+      value: "Chartered Accountants / Audit Firms",
+      label: "Chartered Accountants / Audit Firms"
+    },
+    { value: "Tax Consultants", label: "Tax Consultants" },
+    {
+      value: "NGOs / Non-Profit Organizations",
+      label: "NGOs / Non-Profit Organizations"
+    },
+    { value: "Government Organizations", label: "Government Organizations" }
+  ]
+  console.log(selectedleadlist)
+  const validateSelectedLeadList = (selectedleadlist = []) => {
+    const hasAdditionalService = selectedleadlist.some(
+      (row) =>
+        String(row?.productorservicetype || "").toLowerCase() ===
+        "additionalservice"
+    )
+    console.log(selectedleadlist)
+    console.log(hasAdditionalService)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const parseDateOnly = (value) => {
+      if (!value) return null
+      const d = new Date(value)
+      if (Number.isNaN(d.getTime())) return null
+      d.setHours(0, 0, 0, 0)
+      return d
+    }
+
+    for (let i = 0; i < selectedleadlist.length; i++) {
+      const row = selectedleadlist[i]
+      const rowNo = i + 1
+      const type = String(row?.productorservicetype || "").toLowerCase()
+
+      const hasCompany = !!(
+        row?.company_id ||
+        row?.companyid ||
+        row?.companyName
+      )
+      const hasBranch = !!(row?.branch_id || row?.branchid || row?.branchName)
+
+      if (!hasCompany) {
+        return `Company is required in row ${rowNo}`
+      }
+
+      if (!hasBranch) {
+        return `Branch is required in row ${rowNo}`
+      }
+
+      const productPrice = Number(
+        row?.productprice ?? row?.productPrice ?? row?.amount ?? 0
+      )
+      console.log(productPrice)
+      const netAmount = Number(row?.netamount ?? row?.netAmount ?? 0)
+
+      if (type === "primaryproduct") {
+        if (!String(row?.licensenumber || row?.licenseNumber || "").trim()) {
+          return `License number is required for primary product in row ${rowNo}`
+        }
+if(!row.applicationDate){
+return `Application date is requiered for primary product in row ${rowNo},please add details`}
+        if (!(productPrice > 0)) {
+          console.log("hhh")
+          return `Product price must be greater than 0 for primary product in row ${rowNo}`
+        }
+
+        if (!(netAmount > 0)) {
+          return `Net amount is required for primary product in row ${rowNo}`
+        }
+      }
+
+      if (type === "additionalservice") {
+        const taggeddata = Array.isArray(row?.taggeddata) ? row.taggeddata : []
+        const outerLicense = String(
+          row?.licensenumber || row?.licenseNumber || ""
+        ).trim()
+        const hasTaggedLicense = taggeddata.some((tag) =>
+          String(tag?.licensenumber || tag?.licenseNumber || "").trim()
+        )
+
+        const hasAnyLicense = !!outerLicense || hasTaggedLicense
+        console.log(!hasAdditionalService)
+        console.log(!hasAdditionalService && !(productPrice > 0))
+        if (!hasAdditionalService && !(productPrice > 0)) {
+          console.log("jjjj")
+          return `Product price must be greater than 0 for additional service in row ${rowNo}`
+        }
+
+        if (!hasAdditionalService && !(netAmount > 0)) {
+          return `Net amount is required for additional service in row ${rowNo}`
+        }
+        console.log(taggeddata)
+        if (taggeddata.length > 0) {
+          for (let j = 0; j < taggeddata.length; j++) {
+            const tag = taggeddata[j]
+            const tagLicense = String(
+              tag?.licensenumber || tag?.licenseNumber || ""
+            ).trim()
+            const due = parseDateOnly(tag?.nextDue)
+
+            if (!tagLicense) {
+              console.log("hh")
+              return `Tagged license number is required in row ${rowNo}, tagged row ${j + 1}`
+            }
+
+            if (!due) {
+              return `Next due is required for tagged license ${tagLicense} in row ${rowNo}`
+            }
+
+            if (due < today) {
+              return `Next due cannot be less than current date for tagged license ${tagLicense} in row ${rowNo}`
+            }
+          }
+        } else {
+          console.log(taggeddata)
+          if (!row.nextDue) {
+            console.log("hh")
+            return `Additonal service in row ${rowNo} must have a nextDue please add Details`
+          }
+          if (!outerLicense && taggeddata.length === 0) {
+            console.log("hhh")
+            return `Additional service in row ${rowNo} must have a license number or tagged license`
+          }
+
+          const due = parseDateOnly(row?.nextDue)
+          if (!due) {
+            return `Next due is required for additional service in row ${rowNo}`
+          }
+
+          if (due < today) {
+            return `Next due cannot be less than current date for additional service in row ${rowNo}`
+          }
+        }
+
+        if (!hasAnyLicense) {
+          console.log("Hhh")
+          return `Additional service in row ${rowNo} must have a license number or tagged license`
+        }
+      }
+    }
+
+    const primaryProducts = selectedleadlist.filter(
+      (row) =>
+        String(row?.productorservicetype || "").toLowerCase() ===
+        "primaryproduct"
+    )
+
+    const additionalServices = selectedleadlist.filter(
+      (row) =>
+        String(row?.productorservicetype || "").toLowerCase() ===
+        "additionalservice"
+    )
+
+    if (primaryProducts.length > 0 && additionalServices.length > 0) {
+      for (let i = 0; i < additionalServices.length; i++) {
+        const row = additionalServices[i]
+        const rowNo = selectedleadlist.findIndex((x) => x === row) + 1
+        const taggeddata = Array.isArray(row?.taggeddata) ? row.taggeddata : []
+        const outerLicense = String(
+          row?.licensenumber || row?.licenseNumber || ""
+        ).trim()
+        const hasTaggedLicense = taggeddata.some((tag) =>
+          String(tag?.licensenumber || tag?.licenseNumber || "").trim()
+        )
+
+        if (!outerLicense && !hasTaggedLicense) {
+          return `Additional service in row ${rowNo} should have any one license number or tagged license number`
+        }
+      }
+    }
+
+    return null
+  }
   const onSubmit = async (data) => {
+    console.log(data)
+
     if (submitLoading) return
     setsubmitLoading(true)
     if (submitLoading) return
+    const submitData = { ...data }
+
+    if (!selfAllocation) {
+      delete submitData.allocationType
+      delete submitData.dueDate
+    }
     try {
       if (hasDuplicateLeadRows(selectedleadlist)) {
-console.log("HHH")
         setValidateError((prev) => ({
           ...prev,
           duplicate:
@@ -1263,14 +2179,10 @@ console.log("HHH")
         setsubmitLoading(false)
         return
       } else if (validateError.duplicate) {
-console.log(
-"LLL")
         setValidateError((prev) => ({ ...prev, duplicate: "" }))
       }
 
       if (process === "Registration") {
-console.log(
-"hhh")
         const filteredleadlist = selectedleadlist.filter(
           (item) => item.productorServiceId && item.productorServiceId !== ""
         )
@@ -1283,18 +2195,20 @@ console.log(
           return
         }
         const validation = await validateLeadData(
-          data,
+          submitData,
           filteredleadlist,
           loggeduser.role
         )
-console.log(validation.eligible)
-        setFormData(data)
+        setFormData(submitData)
         setPopupMessage(validation.message)
         if (validation.message === "") {
-console.log("HHh")
-          await handlePopupOk(true, data)
+          const saved = await handlePopupOk(true, submitData)
+          if (saved) {
+            if (process === "Registration") {
+              toast.success("lead created successfully")
+            }
+          }
         } else {
-console.log("Hhh")
           setPopupOpen(true)
         }
         setIseligible(validation.eligible)
@@ -1309,10 +2223,28 @@ console.log("Hhh")
           return
         }
         seteditLoadingState(true)
-        await handleEditData(data, selectedleadlist, Data[0]?._id)
+        const updated = await handleEditData(
+          data,
+          selectedleadlist,
+          Data[0]?._id
+        )
+      } else if (process === "closing") {
+        const validationMessage = validateSelectedLeadList(selectedleadlist)
+
+        if (validationMessage) {
+          toast.error(validationMessage)
+          return
+        }
+console.log(selectedleadlist)
+        
+        seteditLoadingState(true)
+        const updated = await handleclosingData(
+          data,
+          selectedleadlist,
+          Data[0]?._id
+        )
       }
     } catch (error) {
-      console.log("error on onsubmit:", error)
       toast.error("Failed to add product!")
     } finally {
       setsubmitLoading(false)
@@ -1320,37 +2252,127 @@ console.log("Hhh")
   }
 
   const handlePopupOk = async (ischek = false, leadData = null) => {
+    console.log(formData)
+    console.log(leadData)
     setPopupOpen(false)
     const filteredleadlist = selectedleadlist.filter(
       (item) => item.productorServiceId && item.productorServiceId !== ""
     )
     let response
     if (isEligible && leadData === null) {
-console.log(
-"pppp")
       response = await handleleadData(
         formData,
         filteredleadlist,
         loggeduser.role
       )
     } else if (ischek && leadData) {
-console.log(
-"Hhh")
       response = await handleleadData(
         leadData,
         filteredleadlist,
         loggeduser.role
       )
-console.log(response)
     }
     if (response?.success) {
-console.log("hhhhh")
       resetLeadForm()
     }
-console.log(
-"OOo")
+  }
+  const handleDetailsChange = (e) => {
+    const { name, value } = e.target
+    setDetailsForm((prev) => ({
+      ...prev,
+      [name]: value
+    }))
   }
 
+  // const handleDetailsSave = () => {
+  //   setSelectedLeadList((prev) =>
+  //     prev.map((row, i) =>
+  //       i === detailsIndex
+  //         ? {
+  //             ...row,
+  //             productorServiceName: detailsForm.name,
+  //             licenseNumber: detailsForm.licenseNumber,
+  //             softwareTrade: detailsForm.softwareTrade,
+  //             applicationDate: detailsForm.applicationDate,
+  //             status: detailsForm.status,
+  //             nextDue: detailsForm.nextDue,
+  //             quantityUsers: detailsForm.quantityUsers,
+  //             amount: detailsForm.amount
+  //           }
+  //         : row
+  //     )
+  //   )
+
+  //   setdetailsopen(false)
+  //   setDetailsItem(null)
+  //   setDetailsIndex(null)
+  // }
+  const handleDetailsSave = () => {
+    const itemType = String(
+      detailsItem?.productorservicetype || ""
+    ).toLowerCase()
+
+    const cleanedTaggedData = Array.isArray(detailsForm.taggeddata)
+      ? detailsForm.taggeddata
+          .map((tag) => ({
+            licensenumber: String(tag?.licensenumber || "").trim(),
+            nextDue: String(tag?.nextDue || "").trim()
+          }))
+          .filter((tag) => tag.licensenumber !== "")
+      : []
+
+    setSelectedLeadList((prev) =>
+      prev.map((row, i) => {
+        if (i !== detailsIndex) return row
+
+        if (itemType === "additionalservice") {
+          const hasTaggedLicenses = cleanedTaggedData.length > 0
+
+          return {
+            ...row,
+            applicationDate: detailsForm.applicationDate,
+            quantityUsers: detailsForm.quantityUsers,
+            amount: detailsForm.amount,
+            status: detailsForm.status,
+            isActive: detailsForm.status,
+            nextDue: hasTaggedLicenses ? "" : detailsForm.nextDue,
+            taggeddata: hasTaggedLicenses ? cleanedTaggedData : [],
+            licenseNumber: hasTaggedLicenses
+              ? row?.licenseNumber || ""
+              : detailsForm.licenseNumber || row?.licenseNumber || ""
+          }
+        }
+
+        return {
+          ...row,
+          applicationDate: detailsForm.applicationDate,
+          status: detailsForm.status,
+          isActive: detailsForm.status
+        }
+      })
+    )
+
+    setdetailsopen(false)
+  }
+  console.log(detailsForm)
+  console.log(selectedleadlist)
+  const isRowPriceLocked = (row) => {
+    if (!row) return false
+
+    const currentType = String(row?.productorservicetype || "").toLowerCase()
+    const hasPrimaryProduct = selectedleadlist.some(
+      (item) =>
+        String(item?.productorservicetype || "").toLowerCase() ===
+        "primaryproduct"
+    )
+
+    if (!hasPrimaryProduct) return false
+
+    if (currentType === "primaryproduct") return true
+    if (currentType === "additionalservice") return true
+
+    return false
+  }
   const normalizeMobile = (number) => {
     if (!number) return ""
     return number.replace(/\D/g, "").slice(-10)
@@ -1363,32 +2385,27 @@ console.log(
   ) => {
     const normalizedInput = normalizeMobile(inputMobile)
     if (customerid) {
-      console.log(customerid)
       return existingCustomers.some((customer) => {
         const normalizedStored = normalizeMobile(customer.mobile)
         return (
           normalizedStored === normalizedInput && customer._id !== customerid
         )
       })
-      console.log("hhh")
     }
-    console.log("hhh")
     return existingCustomers.some((customer) => {
       const normalizedStored = normalizeMobile(customer.mobile)
       return normalizedStored === normalizedInput
     })
   }
-  console.log(Data)
-  const onmodalsubmit = async (data) => {
-    console.log(data)
 
+  const onmodalsubmit = async (data) => {
+    if (modalloader) return
     try {
       const checkexistingNumber = isMobileExists(
         data?.mobile,
         allcustomer,
         data?.customerid
       )
-      console.log(checkexistingNumber)
 
       if (checkexistingNumber) {
         setError("mobile", {
@@ -1400,14 +2417,17 @@ console.log(
       setModalLoader(true)
       let response
       if (data?.customerid) {
-        console.log("Hh")
         response = await api.post("/customer/customereditonlead", {
           customerData: data
         })
       } else {
-        response = await api.post("/customer/customerRegistration", {
-          customerData: data
-        })
+        const createdFrom = "lead"
+        response = await api.post(
+          `/customer/customerRegistration?createdfrom=${createdFrom}`,
+          {
+            customerData: data
+          }
+        )
       }
       if (data?.customerid && response.status === 200) {
         toast.success("Customer updated successfully")
@@ -1428,7 +2448,6 @@ console.log(
                 refreshKey: Date.now()
               }
             })
-        console.log("hhh")
       } else if (response.status === 200) {
         refreshHook()
         setModalLoader(false)
@@ -1439,1205 +2458,85 @@ console.log(
         resetModal()
       }
     } catch (error) {
-      console.log(error)
       toast.error("something went wrong")
       setModalLoader(false)
     }
   }
+  console.log(process)
+  // const handleDetails = (item, index) => {
+  //   console.log(item)
+  //   console.log(index)
+  //   setDetailsItem(item)
+  //   setDetailsIndex(index)
+  //   setDetailsForm({
+  //     name: item?.productorServiceName || "",
+  //     licenseNumber: item?.licenseNumber || "",
+  //     softwareTrade: item?.softwareTrade || "",
+  //     applicationDate: item?.applicationDate || "",
+  //     status: "Running",
+  //     nextDue: item?.nextDue || "",
+  //     quantityUsers: item?.quantityUsers || "",
+  //     amount: item?.amount || item?.netAmount || "",
+  //     taggedLicenseNumbers: item?.licenseNumbers,
+  //     taggeddata: Array.isArray(item?.taggeddata)
+  //       ? item.taggeddata.map((tag) => ({
+  //           licensenumber: tag?.licensenumber || "",
+  //           nextDue: tag?.nextDue || ""
+  //         }))
+  //       : []
+  //   })
+  //   setdetailsopen(true)
+  // }
+  const handleDetails = (item, index) => {
+    const isAdditionalService =
+      String(item?.productorservicetype || "").toLowerCase() ===
+      "additionalservice"
 
+    const normalizedTaggedData =
+      isAdditionalService &&
+      Array.isArray(item?.licenseNumbers) &&
+      item.licenseNumbers.length > 0
+        ? item.licenseNumbers.map((lic) => {
+            const existingTag = Array.isArray(item?.taggeddata)
+              ? item.taggeddata.find(
+                  (tag) =>
+                    String(tag?.licensenumber) === String(lic?.licenseNumber)
+                )
+              : null
+
+            return {
+              licensenumber: lic?.licenseNumber || "",
+              nextDue: existingTag?.nextDue || ""
+            }
+          })
+        : Array.isArray(item?.taggeddata)
+          ? item.taggeddata.map((tag) => ({
+              licensenumber: tag?.licensenumber || "",
+              nextDue: tag?.nextDue || ""
+            }))
+          : []
+
+    setDetailsItem(item)
+    setDetailsIndex(index)
+    setDetailsForm({
+      name: item?.productorServiceName || "",
+      licenseNumber: item?.licenseNumber || "",
+      softwareTrade: item?.softwareTrade || "",
+      applicationDate: item?.applicationDate || "",
+      status: item?.status || item?.isActive || "Running",
+      nextDue: item?.nextDue || "",
+      quantityUsers: item?.quantityUsers || "",
+      amount: item?.amount || item?.netAmount || "",
+      taggeddata: normalizedTaggedData
+    })
+    setdetailsopen(true)
+  }
+  console.log(detailsForm)
+  console.log(showdetailsopen)
   const tableRows = selectedleadlist || []
   console.log(tableRows)
-
+  console.log(selectedCustomer)
   return (
-    // <div className="flex  h-full min-h-0 min-w-0 flex-1 flex-col  overflow-hidden">
-
-    //   {(modalloader ||
-    //     loadingState ||
-    //     editloadingState ||
-    //     productLoading ||
-    //     usersLoading ||
-    //     customerLoading ||
-    //     submitLoading) && (
-    //     <BarLoader
-    //       cssOverride={{ width: "100%", height: "4px" }}
-    //       color="#4A90E2"
-    //     />
-    //   )}
-    //   <div className="flex-1 min-h-0 min-w-0 overflow-y-auto p-3 shadow-xl ">
-    //     <div
-    //       className="bg-white shadow-xl rounded md:w-3/5 "
-    //       style={{
-    //         opacity:
-    //           productLoading || usersLoading || customerLoading ? 0.2 : 1,
-    //         pointerEvents:
-    //           productLoading || usersLoading || customerLoading
-    //             ? "none"
-    //             : "auto",
-    //         transition: "opacity 0.3s ease-in-out"
-    //       }}
-    //     >
-    //       {showmessage && (
-    //         <PopUp
-    //           isOpen={ispopupModalOpen}
-    //           onClose={() => {
-    //             setIspopupModalOpen(false)
-    //             showpopupMessage("")
-    //           }}
-    //           message={showmessage}
-    //         />
-    //       )}
-
-    //       <form
-    //         onSubmit={handleSubmitMain(onSubmit)}
-    //         className="bg-white p-4"
-    //         style={{ fontFamily: "'Segoe UI', sans-serif" }}
-    //       >
-    //         <div className="bg-white rounded-lg border border-gray-300 shadow-md overflow-hidden">
-    //           <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-300">
-    //             <div className="text-sm font-bold px-4 py-1 rounded border-2 text-red-600 border-red-500 bg-white">
-    //               {process === "Registration" ? "New Lead" : "Edit Lead"}
-    //             </div>
-    //           </div>
-
-    //           <div className="p-3 md:p-4 space-y-3">
-    //             <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1.8fr)_auto] gap-3">
-    //               <div className="flex flex-col">
-    //                 <label className="block text-xs font-semibold text-gray-600 mb-1">
-    //                   Customer Name
-    //                 </label>
-    //                 <div className="flex gap-2 items-stretch">
-    //                   <div className="flex-1 min-w-0">
-    //                     <Select
-    //                       options={customerOptions}
-    //                       isDisabled={!iscustomerchangeandbranch}
-    //                       value={
-    //                         customerOptions.length > 0
-    //                           ? (customerOptions.find(
-    //                               (o) =>
-    //                                 o.value === watchMain("customerName")
-    //                             ) ?? null)
-    //                           : null
-    //                       }
-    //                       getOptionLabel={(o) =>
-    //                         `${o.label}-(${o.mobile})-(${o.license})`
-    //                       }
-    //                       getOptionValue={(o) => o._id}
-    //                       filterOption={customFilter}
-    //                       {...registerMain("customerName", {
-    //                         required: "Customer is Required"
-    //                       })}
-    //                       onBlur={() => {
-    //                         const selected = customerOptions.find(
-    //                           (o) => o.value === watchMain("customerName")
-    //                         )
-    //                         if (selected)
-    //                           setValueMain("customerName", selected.value)
-    //                       }}
-    //                       onChange={(sel) => {
-    //                         handleSelectedCustomer(sel)
-    //                         setSelectedCustomer(sel)
-    //                         setValueMain("customerName", sel.value, {
-    //                           shouldValidate: true
-    //                         })
-    //                         setValueMain("netAmount", "")
-    //                         setSelectedLeadList([{ ...emptyRow }])
-    //                         setSelectedLicense(null)
-    //                       }}
-    //                       styles={{
-    //                         control: (base, state) => ({
-    //                           ...base,
-    //                           backgroundColor: "#EEF2F8",
-    //                           borderColor: "#D1D5DB",
-    //                           minHeight: 34,
-    //                           cursor: state.isDisabled
-    //                             ? "not-allowed"
-    //                             : "pointer",
-    //                           opacity: state.isDisabled ? 0.7 : 1
-    //                         }),
-    //                         menuList: (base) => ({
-    //                           ...base,
-    //                           maxHeight: 200
-    //                         })
-    //                       }}
-    //                       menuPortalTarget={document.body}
-    //                       menuShouldScrollIntoView={false}
-    //                       className="w-full"
-    //                     />
-    //                   </div>
-    //                   <button
-    //                     type="button"
-    //                     onClick={() => handleOpenmodal()}
-    //                     disabled={isReadOnly}
-    //                     className={`bg-[#1B2A4A] hover:bg-[#243660] text-white text-xs font-bold px-4 rounded flex items-center justify-center ${
-    //                       isReadOnly ? "cursor-not-allowed opacity-70" : ""
-    //                     }`}
-    //                   >
-    //                     {Data ? "UPDATE" : "NEW"}
-    //                   </button>
-    //                 </div>
-    //                 {errorsMain.customerName && (
-    //                   <p className="text-red-500 text-xs mt-1">
-    //                     {errorsMain.customerName.message}
-    //                   </p>
-    //                 )}
-    //               </div>
-
-    //               <div className="flex md:justify-end items-end">
-    //                 <select
-    //                   {...registerMain("leadBranch")}
-    //                   disabled={!iscustomerchangeandbranch}
-    //                   onChange={(e) => {
-    //                     setSelectedBranch([e.target.value])
-    //                     setValueMain("customerName", "")
-    //                     setSelectedCustomer(null)
-    //                     setcustomerTableData([])
-    //                     setSelectedLeadList([{ ...emptyRow }])
-    //                     setValueMain("netAmount", "")
-    //                     setSelectedLicense(null)
-    //                   }}
-    //                   className="border border-gray-300 rounded px-3 py-[6px] text-sm bg-[#1B2A4A] hover:bg-[#243660] text-white outline-none min-w-[140px] cursor-pointer"
-    //                 >
-    //                   {companybranches?.map((b, i) => (
-    //                     <option key={i} value={b._id}>
-    //                       {b.branchName}
-    //                     </option>
-    //                   ))}
-    //                 </select>
-    //               </div>
-    //             </div>
-
-    //             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-    //               <div>
-    //                 <label className="block text-xs font-semibold text-gray-600 mb-1">
-    //                   Email id
-    //                 </label>
-    //                 <input
-    //                   {...registerMain("email")}
-    //                   disabled={isReadOnly}
-    //                   placeholder="Email..."
-    //                   className={`w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8] ${
-    //                     isReadOnly ? "cursor-not-allowed opacity-70" : ""
-    //                   }`}
-    //                 />
-    //               </div>
-    //               <div>
-    //                 <label className="block text-xs font-semibold text-gray-600 mb-1">
-    //                   Phone Number
-    //                 </label>
-    //                 <input
-    //                   {...registerMain("phone")}
-    //                   disabled={isReadOnly}
-    //                   placeholder="Landline..."
-    //                   className={`w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8] ${
-    //                     isReadOnly ? "cursor-not-allowed opacity-70" : ""
-    //                   }`}
-    //                 />
-    //               </div>
-    //               <div>
-    //                 <label className="block text-xs font-semibold text-gray-600 mb-1">
-    //                   Mobile Number
-    //                 </label>
-    //                 <input
-    //                   {...registerMain("mobile")}
-    //                   readOnly={isReadOnly}
-    //                   placeholder="Mobile..."
-    //                   className={`w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8] ${
-    //                     isReadOnly ? "cursor-not-allowed opacity-70" : ""
-    //                   }`}
-    //                 />
-    //               </div>
-    //               <div>
-    //                 <label className="block text-xs font-semibold text-gray-600 mb-1">
-    //                   Source of Lead
-    //                 </label>
-    //                 <select
-    //                   {...registerMain("source", {
-    //                     required: "Source is Required"
-    //                   })}
-    //                   className="w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8]"
-    //                 >
-    //                   <option value="">Select Source</option>
-    //                   <option value="whatsapp">WhatsApp</option>
-    //                   <option value="instagram">Instagram</option>
-    //                   <option value="facebook">Facebook</option>
-    //                   <option value="Direct">Direct</option>
-    //                 </select>
-    //                 {errorsMain.source && (
-    //                   <p className="text-red-500 text-xs mt-1">
-    //                     {errorsMain.source.message}
-    //                   </p>
-    //                 )}
-    //               </div>
-    //               <div>
-    //                 <label className="block text-xs font-semibold text-gray-600 mb-1">
-    //                   Trade
-    //                 </label>
-    //                 <Controller
-    //                   name="trade"
-    //                   control={controlMain}
-    //                   rules={{ required: "Trade is required" }}
-    //                   render={({ field }) => (
-    //                     <Select
-    //                       {...field}
-    //                       options={tradeOptions}
-    //                       isDisabled={isReadOnly}
-    //                       placeholder="Select Trade"
-    //                       classNamePrefix="react-select"
-    //                       className={`
-    //   text-sm
-    //   ${isReadOnly ? "cursor-not-allowed opacity-70" : "cursor-pointer"}
-    // `}
-    //                       styles={{
-    //                         control: (base, state) => ({
-    //                           ...base,
-    //                           minHeight: "34px",
-    //                           borderColor: errorsMain.trade
-    //                             ? "#ef4444"
-    //                             : "#d1d5db",
-    //                           backgroundColor: "#EEF2F8",
-    //                           boxShadow: state.isFocused
-    //                             ? "0 0 0 1px #3b82f6"
-    //                             : "none",
-    //                           "&:hover": {
-    //                             borderColor: errorsMain.trade
-    //                               ? "#ef4444"
-    //                               : "#9ca3af"
-    //                           }
-    //                         }),
-    //                         menuPortal: (base) => ({
-    //                           ...base,
-    //                           zIndex: 9999
-    //                         })
-    //                       }}
-    //                       menuPortalTarget={document.body}
-    //                       // react-select expects { value, label }, but your form needs just the value:
-    //                       onChange={(option) =>
-    //                         field.onChange(option?.value || "")
-    //                       }
-    //                       value={
-    //                         tradeOptions.find(
-    //                           (opt) => opt.value === field.value
-    //                         ) || null
-    //                       }
-    //                       isClearable
-    //                     />
-    //                   )}
-    //                 />
-
-    //                 {errorsMain.trade && (
-    //                   <p className="text-red-500 text-xs mt-1">
-    //                     {errorsMain.trade.message}
-    //                   </p>
-    //                 )}
-    //               </div>
-    //               <div>
-    //                 <label className="block text-xs font-semibold text-gray-600 mb-1">
-    //                   Associate with
-    //                 </label>
-    //                 <select
-    //                   {...registerMain("partner", {
-    //                     required: "Partnership is Required"
-    //                   })}
-    //                   disabled={isReadOnly}
-    //                   className={`w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8] ${
-    //                     isReadOnly
-    //                       ? "cursor-not-allowed opacity-70"
-    //                       : "cursor-pointer"
-    //                   }`}
-    //                 >
-    //                   <option value="">Select Partner</option>
-    //                   {partner?.map((p, i) => (
-    //                     <option key={i} value={p._id}>
-    //                       {p.partner}
-    //                     </option>
-    //                   ))}
-    //                 </select>
-    //                 {errorsMain.partner && (
-    //                   <p className="text-red-500 text-xs mt-1">
-    //                     {errorsMain.partner.message}
-    //                   </p>
-    //                 )}
-    //               </div>
-    //             </div>
-
-    //             {process !== "edit" && selfAllocation && (
-    //               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-    //                 <div>
-    //                   <label className="block text-xs font-semibold text-gray-600 mb-1">
-    //                     Allocation Type
-    //                   </label>
-    //                   <select
-    //                     disabled={!isSelfAllocationChangable}
-    //                     {...registerMain("allocationType", {
-    //                       required: "Allocation type is required"
-    //                     })}
-    //                     className={`w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8] ${
-    //                       !isSelfAllocationChangable
-    //                         ? "cursor-not-allowed opacity-70"
-    //                         : ""
-    //                     }`}
-    //                   >
-    //                     <option value="followup">Followup</option>
-    //                   </select>
-    //                   {errorsMain.allocationType && (
-    //                     <p className="text-red-500 text-xs mt-1">
-    //                       {errorsMain.allocationType.message}
-    //                     </p>
-    //                   )}
-    //                 </div>
-    //                 <div>
-    //                   <label className="block text-xs font-semibold text-gray-600 mb-1">
-    //                     Due Date
-    //                   </label>
-    //                   <input
-    //                     type="date"
-    //                     {...registerMain("dueDate", {
-    //                       required: "Due Date is required"
-    //                     })}
-    //                     className="w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8]"
-    //                   />
-    //                   {errorsMain.dueDate && (
-    //                     <p className="text-red-500 text-xs mt-1">
-    //                       {errorsMain.dueDate.message}
-    //                     </p>
-    //                   )}
-    //                 </div>
-    //               </div>
-    //             )}
-
-    //             <div className="border border-gray-300 rounded">
-    //               <table className="w-full border-collapse text-xs table-fixed">
-    //                 <colgroup>
-    //                   <col style={{ width: "22%" }} />
-    //                   <col style={{ width: "22%" }} />
-    //                   <col style={{ width: "15%" }} />
-    //                   <col style={{ width: "12%" }} />
-    //                   <col style={{ width: "15%" }} />
-    //                   <col style={{ width: "7%" }} />
-    //                   <col style={{ width: "7%" }} />
-    //                 </colgroup>
-    //                 <thead>
-    //                   <tr className="bg-[#1B2A4A] text-white">
-    //                     <th
-    //                       rowSpan={2}
-    //                       className="border border-blue-900 px-2 py-2 text-left text-xs"
-    //                     >
-    //                       License No
-    //                     </th>
-    //                     <th
-    //                       rowSpan={2}
-    //                       className="border border-blue-900 px-2 py-2 text-left text-xs"
-    //                     >
-    //                       Product / Service
-    //                     </th>
-    //                     <th
-    //                       colSpan={3}
-    //                       className="border border-blue-900 px-2 py-2 text-center text-xs"
-    //                     >
-    //                       Price Details
-    //                     </th>
-    //                     <th
-    //                       rowSpan={2}
-    //                       className="border border-blue-900 px-2 py-2 text-center text-xs"
-    //                     >
-    //                       Del
-    //                     </th>
-    //                     <th
-    //                       rowSpan={2}
-    //                       className="border border-blue-900 px-2 py-2 text-center text-xs"
-    //                     >
-    //                       <button
-    //                         type="button"
-    //                         disabled={isReadOnly}
-    //                         onClick={handleAddRowFromTable}
-    //                         title="Add Row"
-    //                         className={`mx-auto flex items-center justify-center w-5 h-5 rounded-full bg-white bg-opacity-20 hover:bg-opacity-40 transition ${
-    //                           isReadOnly
-    //                             ? "cursor-not-allowed opacity-50"
-    //                             : ""
-    //                         }`}
-    //                       >
-    //                         <svg
-    //                           xmlns="http://www.w3.org/2000/svg"
-    //                           className="h-3 w-3 text-white"
-    //                           fill="none"
-    //                           viewBox="0 0 24 24"
-    //                           stroke="currentColor"
-    //                           strokeWidth={2.5}
-    //                         >
-    //                           <path
-    //                             strokeLinecap="round"
-    //                             strokeLinejoin="round"
-    //                             d="M12 4v16m8-8H4"
-    //                           />
-    //                         </svg>
-    //                       </button>
-    //                     </th>
-    //                   </tr>
-    //                   <tr className="bg-[#1B2A4A] text-white">
-    //                     <th className="border border-blue-900 px-2 py-1 text-center text-xs">
-    //                       Amount
-    //                     </th>
-    //                     <th className="border border-blue-900 px-2 py-1 text-center text-xs">
-    //                       Tax %
-    //                     </th>
-    //                     <th className="border border-blue-900 px-2 py-1 text-center text-xs">
-    //                       Net Amt
-    //                     </th>
-    //                   </tr>
-    //                 </thead>
-    //                 <tbody>
-    //                   {tableRows.map((item, index) => (
-    //                     <tr
-    //                       key={index}
-    //                       className="border-b even:bg-blue-50 bg-white hover:bg-blue-50 transition-colors"
-    //                     >
-    //                       <td className="border border-gray-300 px-1 py-1">
-    //                         <LicenseDropdown
-    //                           index={index}
-    //                           item={item}
-    //                           isReadOnly={isReadOnly}
-    //                           customerTableData={customerTableData}
-    //                           selectedleadlist={selectedleadlist}
-    //                           setSelectedLeadList={setSelectedLeadList}
-    //                           handleLicenseSelect={handleLicenseSelect}
-    //                         />
-    //                       </td>
-
-    //                       <td className="border border-gray-300 px-1 py-1">
-    //                         <ProductDropdown
-    //                           index={index}
-    //                           item={item}
-    //                           isReadOnly={isReadOnly}
-    //                           leadList={leadList}
-    //                           selectedleadlist={selectedleadlist}
-    //                           selectedBranch={selectedBranch}
-    //                           setSelectedLeadList={setSelectedLeadList}
-    //                         />
-    //                       </td>
-
-    //                       <td className="border border-gray-300 px-1 py-1">
-    //                         <input
-    //                           type="number"
-    //                           readOnly={isReadOnly}
-    //                           value={item.productPrice}
-    //                           onChange={(e) =>
-    //                             handlePriceChange(index, e.target.value)
-    //                           }
-    //                           placeholder="0.00"
-    //                           className={`w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-right ${
-    //                             isReadOnly
-    //                               ? "cursor-not-allowed bg-gray-100"
-    //                               : "bg-white"
-    //                           }`}
-    //                         />
-    //                       </td>
-
-    //                       <td className="border border-gray-300 px-1 py-1">
-    //                         <input
-    //                           type="number"
-    //                           readOnly={isReadOnly}
-    //                           value={item.hsn}
-    //                           onChange={(e) =>
-    //                             handleHsnChange(index, e.target.value)
-    //                           }
-    //                           placeholder="Tax %"
-    //                           className={`w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-center bg-gray-100 ${
-    //                             isReadOnly ? "cursor-not-allowed" : ""
-    //                           }`}
-    //                         />
-    //                       </td>
-
-    //                       <td className="border border-gray-300 px-1 py-1">
-    //                         <input
-    //                           type="text"
-    //                           readOnly
-    //                           value={item.netAmount}
-    //                           placeholder="0.00"
-    //                           className="w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-right cursor-not-allowed bg-gray-100"
-    //                         />
-    //                       </td>
-
-    //                       <td className="border border-gray-300 px-1 py-1 text-center">
-    //                         <button
-    //                           type="button"
-    //                           disabled={isReadOnly}
-    //                           onClick={() =>
-    //                             handleDeletetableData(item, index)
-    //                           }
-    //                           className={`text-red-400 hover:text-red-600 p-1 rounded transition-colors ${
-    //                             isReadOnly
-    //                               ? "cursor-not-allowed opacity-30"
-    //                               : ""
-    //                           }`}
-    //                           title="Delete row"
-    //                         >
-    //                           <svg
-    //                             xmlns="http://www.w3.org/2000/svg"
-    //                             className="h-3.5 w-3.5"
-    //                             fill="none"
-    //                             viewBox="0 0 24 24"
-    //                             stroke="currentColor"
-    //                             strokeWidth={2}
-    //                           >
-    //                             <path d="M3 6h18" />
-    //                             <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-    //                             <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-    //                           </svg>
-    //                         </button>
-    //                       </td>
-
-    //                       <td className="border border-gray-300" />
-    //                     </tr>
-    //                   ))}
-    //                 </tbody>
-    //               </table>
-    //             </div>
-    //             {warningMessage && (
-    //               <p className="text-red-500 text-sm mt-0">
-    //                 {warningMessage}
-    //               </p>
-    //             )}
-    //             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
-    //               <div>
-    //                 <label className="block text-xs font-semibold text-gray-600 mb-1">
-    //                   Remark
-    //                 </label>
-    //                 <textarea
-    //                   {...registerMain("remark")}
-    //                   rows={4}
-    //                   disabled={isReadOnly}
-    //                   placeholder="Remarks..."
-    //                   className={`w-full border border-gray-300 rounded px-3 py-2 text-sm outline-none bg-[#EEF2F8] resize-none ${
-    //                     isReadOnly ? "cursor-not-allowed opacity-70" : ""
-    //                   }`}
-    //                 />
-    //               </div>
-    //               <div className="flex flex-col gap-2 md:justify-end md:pt-5 w-64">
-    //                 {[
-    //                   { label: "Taxable Amount", field: "taxableAmount" },
-    //                   { label: "Tax Amount", field: "taxAmount" },
-    //                   { label: "Net Amount", field: "netAmount" }
-    //                 ].map(({ label, field }) => (
-    //                   <div key={field} className="flex items-center">
-    //                     <span className="text-xs font-bold text-white px-3 py-[7px] bg-[#1B2A4A] rounded-l w-[130px] text-right whitespace-nowrap flex-shrink-0">
-    //                       {label}
-    //                     </span>
-    //                     <input
-    //                       type="number"
-    //                       {...registerMain(field)}
-    //                       readOnly
-    //                       className="flex-1 min-w-0 border border-gray-300 rounded-r px-3 py-[6px] text-sm text-right bg-white outline-none cursor-not-allowed"
-    //                     />
-    //                   </div>
-    //                 ))}
-    //               </div>
-    //             </div>
-
-    //             {validateError?.duplicate && (
-    //               <p className="text-red-500 text-xs">
-    //                 {validateError.duplicate}
-    //               </p>
-    //             )}
-    //             {/* Self allocation / Lead Id + Lead by in same line */}
-    //             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 pt-2">
-    //               {/* left: self allocation or lead id */}
-    //               <div className="w-full sm:w-1/2">
-    //                 {process !== "edit" ? (
-    //                   <>
-    //                     <label className="block text-xs font-semibold text-gray-600 mb-1">
-    //                       Self Allocation / Other
-    //                     </label>
-    //                     {/* <select
-    //                   disabled={!isSelfAllocationChangable}
-    //                   {...registerMain("selfAllocation", {
-    //                     setValueAs: (v) => v === "true",
-    //                     validate: (v) =>
-    //                       v === true || v === false
-    //                         ? true
-    //                         : "This field is required",
-    //                     onChange: (e) =>
-    //                       setselfAllocation(e.target.value === "true")
-    //                   })}
-    //                   className={`w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8] ${
-    //                     !isSelfAllocationChangable
-    //                       ? "cursor-not-allowed opacity-70"
-    //                       : "cursor-pointer"
-    //                   }`}
-    //                 >
-    //                   <option value="">Select</option>
-    //                   {(loggeduser?.department?._id ===
-    //                     "670c866552847bbebbd35748" ||
-    //                     loggeduser?.department?._id ===
-    //                       "670c867352847bbebbd35750") && (
-    //                     <option value="true">Self Allocate</option>
-    //                   )}
-    //                   <option value="false">Allocate To Other</option>
-    //                 </select> */}
-    //                     <select
-    //                       disabled={!isSelfAllocationChangable}
-    //                       {...registerMain("selfAllocation", {
-    //                         setValueAs: (v) => v === "true",
-    //                         validate: (v) =>
-    //                           v === true || v === false
-    //                             ? true
-    //                             : "This field is required",
-    //                         onChange: (e) =>
-    //                           setselfAllocation(e.target.value === "true")
-    //                       })}
-    //                       defaultValue="false" // default is Allocate To Other
-    //                       className={`w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8] ${
-    //                         !isSelfAllocationChangable
-    //                           ? "cursor-not-allowed opacity-70"
-    //                           : "cursor-pointer"
-    //                       }`}
-    //                     >
-    //                       {/* always allow 'Allocate To Other' */}
-    //                       {canSelfAllocate && (
-    //                         <option value="true">Self Allocate</option>
-    //                       )}
-    //                       <option value="false">Allocate To Other</option>
-    //                     </select>
-    //                     {errorsMain.selfAllocation && (
-    //                       <p className="text-red-500 text-xs mt-1">
-    //                         {errorsMain.selfAllocation.message}
-    //                       </p>
-    //                     )}
-    //                   </>
-    //                 ) : (
-    //                   <>
-    //                     <label className="block text-xs font-semibold text-gray-600 mb-1">
-    //                       Lead Id
-    //                     </label>
-    //                     <input
-    //                       {...registerMain("leadId")}
-    //                       disabled
-    //                       placeholder="Lead Id..."
-    //                       className="w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8] cursor-not-allowed opacity-70"
-    //                     />
-    //                   </>
-    //                 )}
-    //               </div>
-
-    //               {/* right: lead by */}
-    //               <div className="w-full sm:w-1/2 flex justify-start sm:justify-end">
-    //                 {editMode ? (
-    //                   <div className="flex items-center gap-2">
-    //                     <label className="text-xs font-semibold text-gray-600 italic whitespace-nowrap">
-    //                       Lead by:
-    //                     </label>
-    //                     <select
-    //                       {...registerMain("leadBy")}
-    //                       className="border border-gray-300 rounded px-2 py-1 text-sm bg-[#EEF2F8] outline-none"
-    //                     >
-    //                       {allstaff?.map((u) => (
-    //                         <option key={u._id} value={u._id}>
-    //                           {u.name}
-    //                         </option>
-    //                       ))}
-    //                     </select>
-    //                   </div>
-    //                 ) : (
-    //                   <div className="flex items-center">
-    //                     <input type="hidden" {...registerMain("leadBy")} />
-    //                     <p className="text-sm italic text-gray-500 whitespace-nowrap">
-    //                       Lead by:{" "}
-    //                       <span className="font-semibold text-[#1B2A4A]">
-    //                         {loggeduser?.name}
-    //                       </span>
-    //                     </p>
-    //                   </div>
-    //                 )}
-    //               </div>
-    //             </div>
-
-    //             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 pt-2">
-    //               <div>
-    //                 {validateError?.emptyleadData && (
-    //                   <p className="text-red-500 text-xs">
-    //                     {validateError.emptyleadData}
-    //                   </p>
-    //                 )}
-    //                 {validateError?.readonlyError && (
-    //                   <p className="text-red-500 text-xs">
-    //                     {validateError.readonlyError}
-    //                   </p>
-    //                 )}
-    //                 <button
-    //                   type="submit"
-    //                   className="bg-[#1B2A4A] hover:bg-[#243660] text-white py-2 px-8 rounded text-sm font-semibold tracking-wide transition-colors mt-1"
-    //                 >
-    //                   {process === "Registration" ? "SUBMIT" : "UPDATE"}
-    //                 </button>
-    //               </div>
-    //             </div>
-    //           </div>
-    //         </div>
-    //       </form>
-
-    //       {popupOpen && (
-    //         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40">
-    //           <div className="bg-white p-4 rounded shadow-md text-center">
-    //             <p className="text-orange-500">{popupMessage}</p>
-    //             <button
-    //               onClick={handlePopupOk}
-    //               className="bg-blue-500 text-white px-4 py-1 rounded mt-3 text-center"
-    //             >
-    //               OK
-    //             </button>
-    //           </div>
-    //         </div>
-    //       )}
-
-    //       {modalOpen && (
-    //         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center px-4 z-50">
-    //           <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-    //             <div className="bg-[#1B2A4A] px-6 py-4 flex items-center justify-between flex-shrink-0">
-    //               <div>
-    //                 <h2 className="text-white text-base font-bold tracking-wide">
-    //                   {Data
-    //                     ? "Update Customer Details"
-    //                     : "Add New Customer"}
-    //                 </h2>
-    //                 {!Data && (
-    //                   <p className="text-blue-300 text-xs mt-0.5">
-    //                     Fill in the details to register a new customer
-    //                   </p>
-    //                 )}
-    //               </div>
-    //               <button
-    //                 type="button"
-    //                 onClick={() => {
-    //                   setModalOpen(false)
-    //                   clearmodalErros()
-    //                   resetModal()
-    //                 }}
-    //                 className="text-blue-200 hover:text-white hover:bg-white hover:bg-opacity-10 rounded-full p-1.5 transition-colors"
-    //               >
-    //                 <svg
-    //                   className="w-5 h-5"
-    //                   fill="none"
-    //                   viewBox="0 0 24 24"
-    //                   stroke="currentColor"
-    //                   strokeWidth="2"
-    //                 >
-    //                   <path
-    //                     strokeLinecap="round"
-    //                     strokeLinejoin="round"
-    //                     d="M6 18L18 6M6 6l12 12"
-    //                   />
-    //                 </svg>
-    //               </button>
-    //             </div>
-
-    //             <form
-    //               onSubmit={handleSubmitModal(onmodalsubmit)}
-    //               className="overflow-y-auto flex-1 px-6 py-4"
-    //             >
-    //               <p className="text-[10px] font-bold text-[#1B2A4A] uppercase tracking-widest mb-2 border-b border-gray-200 pb-1">
-    //                 Basic Information
-    //               </p>
-    //               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-    //                 <div>
-    //                   <label className="block text-xs font-semibold text-gray-600 mb-1">
-    //                     Customer Name{" "}
-    //                     <span className="text-red-500">*</span>
-    //                   </label>
-    //                   <input
-    //                     type="text"
-    //                     {...registerModal("customerName", {
-    //                       required: "Customer Name is required"
-    //                     })}
-    //                     onBlur={(e) =>
-    //                       setValueModal(
-    //                         "customerName",
-    //                         e.target.value.trim()
-    //                       )
-    //                     }
-    //                     placeholder="Customer Name"
-    //                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-    //                   />
-    //                   {errorsModal.customerName && (
-    //                     <p className="text-red-500 text-xs mt-1">
-    //                       {errorsModal.customerName.message}
-    //                     </p>
-    //                   )}
-    //                 </div>
-    //                 <div>
-    //                   <label className="block text-xs font-semibold text-gray-600 mb-1">
-    //                     Email
-    //                   </label>
-    //                   <input
-    //                     type="email"
-    //                     {...registerModal("email")}
-    //                     placeholder="Email"
-    //                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-    //                   />
-    //                 </div>
-    //                 <div>
-    //                   <label className="block text-xs font-semibold text-gray-600 mb-1">
-    //                     Mobile <span className="text-red-500">*</span>
-    //                   </label>
-    //                   <input
-    //                     type="tel"
-    //                     {...registerModal("mobile", {
-    //                       required: "Mobile is Required",
-    //                       validate: (value) => {
-    //                         const cleaned = value
-    //                           .replace(/^\+?91/, "")
-    //                           .replace(/\D/g, "")
-    //                         if (cleaned.length !== 10)
-    //                           return "Must be 10 digits after country code"
-    //                         return true
-    //                       }
-    //                     })}
-    //                     onBlur={(e) =>
-    //                       setValueModal("mobile", e.target.value.trim())
-    //                     }
-    //                     placeholder="Mobile"
-    //                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-    //                   />
-    //                   {errorsModal.mobile && (
-    //                     <p className="text-red-500 text-xs mt-1">
-    //                       {errorsModal.mobile.message}
-    //                     </p>
-    //                   )}
-    //                 </div>
-    //                 <div>
-    //                   <label className="block text-xs font-semibold text-gray-600 mb-1">
-    //                     Landline
-    //                   </label>
-    //                   <input
-    //                     type="tel"
-    //                     {...registerModal("landline")}
-    //                     onBlur={(e) =>
-    //                       setValueModal("landline", e.target.value.trim())
-    //                     }
-    //                     placeholder="Landline"
-    //                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-    //                   />
-    //                 </div>
-    //                 <div>
-    //                   <label className="block text-xs font-semibold text-gray-600 mb-1">
-    //                     Contact Person{" "}
-    //                     <span className="text-red-500">*</span>
-    //                   </label>
-    //                   <input
-    //                     type="text"
-    //                     {...registerModal("contactPerson", {
-    //                       required: "Contact person is Required"
-    //                     })}
-    //                     onBlur={(e) =>
-    //                       setValueModal(
-    //                         "contactPerson",
-    //                         e.target.value.trim()
-    //                       )
-    //                     }
-    //                     placeholder="Contact Person"
-    //                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-    //                   />
-    //                   {errorsModal.contactPerson && (
-    //                     <p className="text-red-500 text-xs mt-1">
-    //                       {errorsModal.contactPerson.message}
-    //                     </p>
-    //                   )}
-    //                 </div>
-    //                 <div>
-    //                   <input
-    //                     type="hidden"
-    //                     {...registerModal("customerid", {
-    //                       required: "Customerid is Required"
-    //                     })}
-    //                     onBlur={(e) =>
-    //                       setValueModal("customerid", e.target.value.trim())
-    //                     }
-    //                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-    //                   />
-    //                   {errorsModal.customerid && (
-    //                     <p className="text-red-500 text-xs mt-1">
-    //                       {errorsModal.customerid.message}
-    //                     </p>
-    //                   )}
-    //                 </div>
-    //                 <div>
-    //                   <input
-    //                     type="hidden"
-    //                     {...registerModal("leadid", {
-    //                       required: "leadid is Required"
-    //                     })}
-    //                     onBlur={(e) =>
-    //                       setValueModal("leadid", e.target.value.trim())
-    //                     }
-    //                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-    //                   />
-    //                   {errorsModal.leadid && (
-    //                     <p className="text-red-500 text-xs mt-1">
-    //                       {errorsModal.leadid.message}
-    //                     </p>
-    //                   )}
-    //                 </div>
-    //                 <div className="md:col-span-2">
-    //                   <label className="block text-xs font-semibold text-gray-600 mb-1">
-    //                     Address
-    //                   </label>
-    //                   <textarea
-    //                     {...registerModal("address1")}
-    //                     onBlur={(e) =>
-    //                       setValueModal("address1", e.target.value.trim())
-    //                     }
-    //                     placeholder="Address"
-    //                     rows={2}
-    //                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition resize-none"
-    //                   />
-    //                 </div>
-    //               </div>
-
-    //               <p className="text-[10px] font-bold text-[#1B2A4A] uppercase tracking-widest mb-2 border-b border-gray-200 pb-1">
-    //                 Location
-    //               </p>
-    //               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-    //                 <div>
-    //                   <label className="block text-xs font-semibold text-gray-600 mb-1">
-    //                     Country
-    //                   </label>
-    //                   {/* <Select
-    //                 options={countryOptions}
-    //                 value={selectedCountry}
-    //                 getOptionLabel={(o) => o.label}
-    //                 getOptionValue={(o) => o.value}
-    //                 {...registerModal("country")}
-
-    //                 onChange={(option) => {
-    //                   console.log("hhhh")
-    //                   setSelectedCountry(option)
-    //                   setValueModal("country", option.value)
-    //                 }}
-    //                 menuPortalTarget={document.body}
-    //                 menuShouldScrollIntoView={false}
-    //                 styles={{
-    //                   control: (base) => ({
-    //                     ...base,
-    //                     border: "1px solid #D1D5DB",
-    //                     borderRadius: "0.5rem",
-    //                     backgroundColor: "#F9FAFB",
-    //                     boxShadow: "none",
-    //                     minHeight: 38,
-    //                     fontSize: 14,
-    //                     "&:hover": { borderColor: "#1B2A4A" }
-    //                   }),
-    //                   menuList: (base) => ({ ...base, maxHeight: 200 })
-    //                 }}
-    //               /> */}
-    //                   <Controller
-    //                     name="country"
-    //                     control={controlModal}
-    //                     render={({ field }) => (
-    //                       <Select
-    //                         options={countryOptions}
-    //                         value={
-    //                           countryOptions.find(
-    //                             (opt) => opt.value === field.value
-    //                           ) || null
-    //                         }
-    //                         onChange={(option) =>
-    //                           field.onChange(option?.value || "")
-    //                         }
-    //                         getOptionLabel={(o) => o.label}
-    //                         getOptionValue={(o) => o.value}
-    //                       />
-    //                     )}
-    //                   />
-    //                 </div>
-    //                 <div>
-    //                   <label className="block text-xs font-semibold text-gray-600 mb-1">
-    //                     State
-    //                   </label>
-    //                   {/* <Select
-    //                 options={stateOptions}
-    //                 value={selectedState}
-    //                 getOptionLabel={(o) => o.label}
-    //                 getOptionValue={(o) => o.value}
-    //                 {...registerModal("state")}
-    //                 onChange={(option) => {
-    //                   setSelectedState(option)
-    //                   setValueModal("state", option.value)
-    //                 }}
-    //                 isDisabled={!selectedCountry}
-    //                 menuPortalTarget={document.body}
-    //                 menuShouldScrollIntoView={false}
-    //                 styles={{
-    //                   control: (base, state) => ({
-    //                     ...base,
-    //                     border: "1px solid #D1D5DB",
-    //                     borderRadius: "0.5rem",
-    //                     backgroundColor: state.isDisabled
-    //                       ? "#F3F4F6"
-    //                       : "#F9FAFB",
-    //                     boxShadow: "none",
-    //                     minHeight: 38,
-    //                     fontSize: 14,
-    //                     "&:hover": { borderColor: "#1B2A4A" }
-    //                   }),
-    //                   menuList: (base) => ({ ...base, maxHeight: 200 })
-    //                 }}
-    //               /> */}
-    //                   <Controller
-    //                     name="state"
-    //                     control={controlModal}
-    //                     render={({ field }) => (
-    //                       <Select
-    //                         options={stateOptions}
-    //                         value={
-    //                           stateOptions.find(
-    //                             (opt) => opt.value === field.value
-    //                           ) || null
-    //                         }
-    //                         onChange={(option) => {
-    //                           field.onChange(option?.value || "")
-    //                           setSelectedState(option)
-    //                         }}
-    //                         isDisabled={!selectedCountry}
-    //                       />
-    //                     )}
-    //                   />
-    //                 </div>
-    //                 <div>
-    //                   <label className="block text-xs font-semibold text-gray-600 mb-1">
-    //                     City
-    //                   </label>
-    //                   <input
-    //                     type="text"
-    //                     {...registerModal("city")}
-    //                     onBlur={(e) =>
-    //                       setValueModal("city", e.target.value.trim())
-    //                     }
-    //                     placeholder="City"
-    //                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-    //                   />
-    //                 </div>
-    //                 <div>
-    //                   <label className="block text-xs font-semibold text-gray-600 mb-1">
-    //                     Pincode
-    //                   </label>
-    //                   <input
-    //                     type="text"
-    //                     {...registerModal("pincode")}
-    //                     onBlur={(e) =>
-    //                       setValueModal("pincode", e.target.value.trim())
-    //                     }
-    //                     placeholder="Pincode"
-    //                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-    //                   />
-    //                 </div>
-    //               </div>
-
-    //               <p className="text-[10px] font-bold text-[#1B2A4A] uppercase tracking-widest mb-2 border-b border-gray-200 pb-1">
-    //                 Business Information
-    //               </p>
-    //               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-2">
-    //                 <div>
-    //                   <label className="block text-xs font-semibold text-gray-600 mb-1">
-    //                     Industry <span className="text-red-500">*</span>
-    //                   </label>
-    //                   <select
-    //                     {...registerModal("industry", {
-    //                       required: "Industry is required"
-    //                     })}
-    //                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] bg-gray-50 cursor-pointer transition"
-    //                   >
-    //                     <option value="">Select Industry</option>
-    //                     {Industries.map((industry, index) => (
-    //                       <option key={index} value={industry}>
-    //                         {industry}
-    //                       </option>
-    //                     ))}
-    //                   </select>
-    //                   {errorsModal.industry && (
-    //                     <p className="text-red-500 text-xs mt-1">
-    //                       {errorsModal.industry.message}
-    //                     </p>
-    //                   )}
-    //                 </div>
-    //                 <div>
-    //                   <label className="block text-xs font-semibold text-gray-600 mb-1">
-    //                     Partnership Type
-    //                   </label>
-    //                   <select
-    //                     {...registerModal("partner")}
-    //                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] bg-gray-50 cursor-pointer transition"
-    //                   >
-    //                     <option value="">Select Partner</option>
-    //                     {partner?.map((p, i) => (
-    //                       <option key={i} value={p._id}>
-    //                         {p.partner}
-    //                       </option>
-    //                     ))}
-    //                   </select>
-    //                 </div>
-    //                 <div>
-    //                   <label className="block text-xs font-semibold text-gray-600 mb-1">
-    //                     Registration Type
-    //                   </label>
-    //                   <select
-    //                     {...registerModal("registrationType")}
-    //                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] bg-gray-50 cursor-pointer transition"
-    //                   >
-    //                     <option value="">Select Type</option>
-    //                     <option value="unregistered">
-    //                       Unregistered / Consumer
-    //                     </option>
-    //                     <option value="regular">Regular</option>
-    //                   </select>
-    //                 </div>
-    //                 {registrationType === "regular" && (
-    //                   <div>
-    //                     <label className="block text-xs font-semibold text-gray-600 mb-1">
-    //                       GSTIN / UIN{" "}
-    //                       <span className="text-red-500">*</span>
-    //                     </label>
-    //                     <input
-    //                       {...registerModal("gstNo", {
-    //                         required: "GST is required"
-    //                       })}
-    //                       placeholder="e.g. 22AAAAA0000A1Z5"
-    //                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-    //                     />
-    //                     {errorsModal.gstNo && (
-    //                       <p className="text-red-500 text-xs mt-1">
-    //                         {errorsModal.gstNo.message}
-    //                       </p>
-    //                     )}
-    //                   </div>
-    //                 )}
-    //               </div>
-
-    //               <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-3">
-    //                 <button
-    //                   type="button"
-    //                   onClick={() => {
-    //                     setModalOpen(false)
-    //                     clearmodalErros()
-    //                     resetModal()
-    //                   }}
-    //                   className="px-5 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition"
-    //                 >
-    //                   Cancel
-    //                 </button>
-    //                 <button
-    //                   type="submit"
-    //                   className="px-6 py-2 rounded-lg bg-[#1B2A4A] hover:bg-[#243660] text-white text-sm font-semibold tracking-wide transition"
-    //                 >
-    //                   Submit
-    //                 </button>
-    //               </div>
-    //             </form>
-    //           </div>
-    //         </div>
-    //       )}
-    //     </div>
-    //   </div>
-    // </div>
-
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#ADD8E6]">
       {(modalloader ||
         loadingState ||
@@ -2665,7 +2564,6 @@ console.log(
             transition: "opacity 0.3s ease-in-out"
           }}
         >
-          {/* your existing form content */}
           {showmessage && (
             <PopUp
               isOpen={ispopupModalOpen}
@@ -2676,6 +2574,7 @@ console.log(
               message={showmessage}
             />
           )}
+          {licenseloading && <FullScreenLoader text="Checking..." />}
 
           <form
             onSubmit={handleSubmitMain(onSubmit)}
@@ -2699,7 +2598,7 @@ console.log(
                       <div className="flex-1 min-w-0">
                         <Select
                           options={customerOptions}
-                          isDisabled={!iscustomerchangeandbranch}
+                          isDisabled={false}
                           value={
                             customerOptions.length > 0
                               ? (customerOptions.find(
@@ -2723,14 +2622,17 @@ console.log(
                               setValueMain("customerName", selected.value)
                           }}
                           onChange={(sel) => {
+                            console.log("hhh")
                             handleSelectedCustomer(sel)
+                            console.log("uu")
                             setSelectedCustomer(sel)
+                            console.log("hhhhhh")
                             setValueMain("customerName", sel.value, {
                               shouldValidate: true
                             })
                             setValueMain("netAmount", "")
-                            setSelectedLeadList([{ ...emptyRow }])
                             setSelectedLicense(null)
+                            console.log("hhhh")
                           }}
                           styles={{
                             control: (base, state) => ({
@@ -2741,7 +2643,7 @@ console.log(
                               cursor: state.isDisabled
                                 ? "not-allowed"
                                 : "pointer",
-                              opacity: state.isDisabled ? 0.7 : 1
+                              opacity: state.isDisabled ? 1 : 1
                             }),
                             menuList: (base) => ({
                               ...base,
@@ -2774,15 +2676,33 @@ console.log(
                   <div className="flex md:justify-end items-end">
                     <select
                       {...registerMain("leadBranch")}
+                      value={selectedBranch}
                       disabled={!iscustomerchangeandbranch}
                       onChange={(e) => {
-                        setSelectedBranch([e.target.value])
+                        setSelectedBranch(e.target.value)
                         setValueMain("customerName", "")
                         setSelectedCustomer(null)
                         setcustomerTableData([])
+                        console.log(emptyRow)
                         setSelectedLeadList([{ ...emptyRow }])
                         setValueMain("netAmount", "")
                         setSelectedLicense(null)
+                        resetMain({
+                          customerName: "",
+                          email: "",
+                          phone: "",
+                          mobile: "",
+                          source: "",
+                          partner: "",
+                          allocationType: null,
+                          dueDate: "",
+                          remark: "",
+                          taxableAmount: "",
+                          taxAmount: "",
+                          netAmount: "",
+                          selfAllocation: false,
+                          leadId: ""
+                        })
                       }}
                       className="border border-gray-300 rounded px-3 py-[6px] text-sm bg-[#1B2A4A] hover:bg-[#243660] text-white outline-none min-w-[140px] cursor-pointer"
                     >
@@ -2794,6 +2714,8 @@ console.log(
                     </select>
                   </div>
                 </div>
+
+                {/* keep the rest of your JSX exactly as in your original file */}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   <div>
@@ -2850,7 +2772,7 @@ console.log(
                       <option value="instagram">Instagram</option>
                       <option value="facebook">Facebook</option>
                       <option value="Direct">Direct</option>
-                      <option value="justdial">Just Dial</option>
+                      <option value="justDial">Just Dial</option>
                     </select>
                     {errorsMain.source && (
                       <p className="text-red-500 text-xs mt-1">
@@ -2858,7 +2780,6 @@ console.log(
                       </p>
                     )}
                   </div>
-
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">
                       Associate with
@@ -2889,7 +2810,7 @@ console.log(
                   </div>
                 </div>
 
-                {process !== "edit" && selfAllocation && (
+                {process === "register" && selfAllocation && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-1">
@@ -2969,13 +2890,14 @@ console.log(
                           rowSpan={2}
                           className="border border-blue-900 px-2 py-2 text-center text-xs"
                         >
-                          Del
+                          Action
                         </th>
                         <th
                           rowSpan={2}
                           className="border border-blue-900 px-2 py-2 text-center text-xs"
                         >
-                          <button
+                          Details
+                          {/* <button
                             type="button"
                             disabled={isReadOnly}
                             onClick={handleAddRowFromTable}
@@ -2998,7 +2920,7 @@ console.log(
                                 d="M12 4v16m8-8H4"
                               />
                             </svg>
-                          </button>
+                          </button> */}
                         </th>
                       </tr>
                       <tr className="bg-[#1B2A4A] text-white">
@@ -3013,108 +2935,362 @@ console.log(
                         </th>
                       </tr>
                     </thead>
-                    <tbody>
-                      {tableRows.map((item, index) => (
-                        <tr
-                          key={index}
-                          className="border-b even:bg-blue-50 bg-white hover:bg-blue-50 transition-colors"
-                        >
-                          <td className="border border-gray-300 px-1 py-1">
-                            <LicenseDropdown
-                              index={index}
-                              item={item}
-                              isReadOnly={isReadOnly}
-                              customerTableData={customerTableData}
-                              selectedleadlist={selectedleadlist}
-                              setSelectedLeadList={setSelectedLeadList}
-                              handleLicenseSelect={handleLicenseSelect}
-                            />
-                          </td>
+                    {/* <tbody>
+                   
 
-                          <td className="border border-gray-300 px-1 py-1">
-                            <ProductDropdown
-                              index={index}
-                              item={item}
-                              isReadOnly={isReadOnly}
-                              leadList={leadList}
-                              selectedleadlist={selectedleadlist}
-                              selectedBranch={selectedBranch}
-                              setSelectedLeadList={setSelectedLeadList}
-                            />
-                          </td>
+                      {tableRows.map((item, index) => {
+                        const showLicenseDropdown =
+                          item?.productorservicetype === "Additionalservice"
+ const isAmountLocked = isReadOnly || isRowPriceLocked(item)
+    const isTaxLocked = isReadOnly || isRowPriceLocked(item)
+                        console.log(showLicenseDropdown)
+                        return (
+                          <tr
+                            key={index}
+                            className="border-b even:bg-blue-50 bg-white hover:bg-blue-50 transition-colors"
+                          >
+                            <td className="border border-gray-300 px-1 py-1">
+                              {showLicenseDropdown ? (
+                                <LicenseDropdown
+                                  index={index}
+                                  item={item}
+                                  isReadOnly={isReadOnly}
+                                  customerTableData={customerTableData}
+                                  selectedleadlist={selectedleadlist}
+                                  setSelectedLeadList={setSelectedLeadList}
+                                  handleLicenseSelect={handleLicenseSelect}
+                                />
+                              ) : (
+                                <input
+                                  value={item.licenseNumber || ""}
+className="py-1 border pl-2 rounded-md border-gray-500"
+                                  onChange={(e) => {
+                                    // updateLicense(index, e.target.value)
+                                    // handleLicenseBlur(index, e.target.value)
+                                    // const licenseValue = e.target.value
 
-                          <td className="border border-gray-300 px-1 py-1">
-                            <input
-                              type="number"
-                              readOnly={isReadOnly}
-                              value={item.productPrice}
-                              onChange={(e) =>
-                                handlePriceChange(index, e.target.value)
-                              }
-                              placeholder="0.00"
-                              className={`w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-right ${
-                                isReadOnly
-                                  ? "cursor-not-allowed bg-gray-100"
-                                  : "bg-white"
-                              }`}
-                            />
-                          </td>
+                                    // updateLicense(index, licenseValue)
 
-                          <td className="border border-gray-300 px-1 py-1">
-                            <input
-                              type="number"
-                              readOnly={isReadOnly}
-                              value={item.hsn}
-                              onChange={(e) =>
-                                handleHsnChange(index, e.target.value)
-                              }
-                              placeholder="Tax %"
-                              className={`w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-center bg-gray-100 ${
-                                isReadOnly ? "cursor-not-allowed" : ""
-                              }`}
-                            />
-                          </td>
+                                    // if (debounceTimersRef.current[index]) {
+                                    //   clearTimeout(
+                                    //     debounceTimersRef.current[index]
+                                    //   )
+                                    // }
 
-                          <td className="border border-gray-300 px-1 py-1">
-                            <input
-                              type="text"
-                              readOnly
-                              value={item.netAmount}
-                              placeholder="0.00"
-                              className="w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-right cursor-not-allowed bg-gray-100"
-                            />
-                          </td>
+                                    // debounceTimersRef.current[index] =
+                                    //   setTimeout(() => {
+                                    //     handleLicenseBlur(index, licenseValue)
+                                    //     delete debounceTimersRef.current[index]
+                                    //   }, 1000)
+ const licenseValue = e.target.value
 
-                          <td className="border border-gray-300 px-1 py-1 text-center">
-                            <button
-                              type="button"
-                              disabled={isReadOnly}
-                              onClick={() => handleDeletetableData(item, index)}
-                              className={`text-red-400 hover:text-red-600 p-1 rounded transition-colors ${
-                                isReadOnly
-                                  ? "cursor-not-allowed opacity-30"
-                                  : ""
-                              }`}
-                              title="Delete row"
-                            >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-3.5 w-3.5"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                strokeWidth={2}
+    updateLicense(index, licenseValue)
+
+    if (debounceTimersRef.current[index]) {
+      clearTimeout(debounceTimersRef.current[index])
+    }
+
+    debounceTimersRef.current[index] = setTimeout(() => {
+      handleLicenseBlur(index, licenseValue)
+      delete debounceTimersRef.current[index]
+    }, 1000)
+                                  }}
+                                  
+                                  placeholder="Enter License Number"
+                                />
+                              )}
+                            </td>
+
+                            <td className="border border-gray-300 px-1 py-1">
+                              <ProductDropdown
+                                index={index}
+                                item={item}
+                                isReadOnly={isReadOnly}
+                                leadList={leadList}
+                                selectedleadlist={selectedleadlist}
+                                selectedBranch={selectedBranch}
+                                selectedCustomer={selectedCustomer}
+                                setSelectedLeadList={setSelectedLeadList}
+                              />
+                            </td>
+
+                            <td className="border border-gray-300 px-1 py-1">
+                              <input
+                                type="number"
+                                readOnly={isAmountLocked}
+                                value={item.productPrice}
+                                onChange={(e) =>
+                                  handlePriceChange(index, e.target.value)
+                                }
+                                placeholder="0.00"
+                                className={`w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-right ${
+                                  isAmountLocked
+                                    ? "cursor-not-allowed bg-gray-100"
+                                    : "bg-white"
+                                }`}
+                              />
+                            </td>
+
+                            <td className="border border-gray-300 px-1 py-1">
+                              <input
+                                type="number"
+                                readOnly={isAmountLocked}
+                                value={item.hsn}
+                                onChange={(e) =>
+                                  handleHsnChange(index, e.target.value)
+                                }
+                                placeholder="Tax %"
+                                className={`w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-center bg-gray-100 ${
+                                  isAmountLocked ? "cursor-not-allowed" : ""
+                                }`}
+                              />
+                            </td>
+
+                            <td className="border border-gray-300 px-1 py-1">
+                              <input
+                                type="text"
+                                readOnly
+                                value={item.netAmount}
+                                placeholder="0.00"
+                                className="w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-right cursor-not-allowed bg-gray-100"
+                              />
+                            </td>
+
+                            <td className="border border-gray-300 px-1 py-1 text-center">
+                              <button
+                                type="button"
+                                disabled={isReadOnly}
+                                onClick={() =>
+                                  handleDeletetableData(item, index)
+                                }
+                                className={`text-red-400 hover:text-red-600 p-1 rounded transition-colors ${
+                                  isReadOnly
+                                    ? "cursor-not-allowed opacity-30"
+                                    : ""
+                                }`}
+                                title="Delete row"
                               >
-                                <path d="M3 6h18" />
-                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                              </svg>
-                            </button>
-                          </td>
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-3.5 w-3.5"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  strokeWidth={2}
+                                >
+                                  <path d="M3 6h18" />
+                                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                </svg>
+                              </button>
+                            </td>
 
-                          <td className="border border-gray-300" />
-                        </tr>
-                      ))}
+                            <td className="border border-gray-300 " ><button 
+type="button"
+onClick={()=>handleDetails(item,index)}
+
+
+className="text-blue-500 font-bold ml-2">Details</button></td>
+                          </tr>
+                        )
+                      })}
+                    </tbody> */}
+                    <tbody>
+                      {tableRows.map((item, index) => {
+                        const showLicenseDropdown =
+                          item?.productorservicetype === "Additionalservice"
+                        console.log("jjj")
+                        const isAmountLocked =
+                          isReadOnly || isRowPriceLocked(item)
+                        const isTaxLocked = isReadOnly || isRowPriceLocked(item)
+
+                        const isPrimaryProduct =
+                          String(
+                            item?.productorservicetype || ""
+                          ).toLowerCase() === "primaryproduct"
+                        console.log(item)
+                        console.log(isPrimaryProduct)
+                        const remainingAdditionalServicesCount =
+                          isPrimaryProduct
+                            ? getRemainingAdditionalServicesCount(item, index)
+                            : 0
+                        console.log(process)
+                        console.log(remainingAdditionalServicesCount)
+                        return (
+                          <tr
+                            key={index}
+                            className="border-b even:bg-blue-50 bg-white hover:bg-blue-50 transition-colors"
+                          >
+                            <td className="border border-gray-300 px-1 py-1">
+                              {showLicenseDropdown ? (
+                                <LicenseDropdown
+                                  index={index}
+                                  item={item}
+                                  isReadOnly={isReadOnly}
+                                  customerTableData={customerTableData}
+                                  selectedleadlist={selectedleadlist}
+                                  setSelectedLeadList={setSelectedLeadList}
+                                  handleLicenseSelect={handleLicenseSelect}
+                                />
+                              ) : (
+                                <input
+                                  value={item.licenseNumber}
+                                  className="py-1 border pl-2 rounded-md border-gray-500 w-full text-xs"
+                                  onChange={(e) => {
+                                    const licenseValue = e.target.value
+console.log(licenseValue)
+                                    updateLicense(index, licenseValue)
+
+                                    if (debounceTimersRef.current[index]) {
+                                      clearTimeout(
+                                        debounceTimersRef.current[index]
+                                      )
+                                    }
+
+                                    debounceTimersRef.current[index] =
+                                      setTimeout(() => {
+                                        handleLicenseBlur(index, licenseValue)
+                                        delete debounceTimersRef.current[index]
+                                      }, 1000)
+                                  }}
+                                  placeholder="Enter License Number"
+                                />
+                              )}
+                            </td>
+
+                            <td className="border border-gray-300 px-1 py-1">
+                              <ProductDropdown
+                                index={index}
+                                item={item}
+                                isReadOnly={isReadOnly}
+                                leadList={leadList}
+                                selectedleadlist={selectedleadlist}
+                                selectedBranch={selectedBranch}
+                                selectedCustomer={selectedCustomer}
+                                process={process}
+                                setSelectedLeadList={setSelectedLeadList}
+                              />
+                            </td>
+
+                            <td className="border border-gray-300 px-1 py-1">
+                              <input
+                                type="number"
+                                readOnly={isAmountLocked}
+                                value={item.productPrice}
+                                onChange={(e) =>
+                                  handlePriceChange(index, e.target.value)
+                                }
+                                placeholder="0.00"
+                                className={`w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-right ${
+                                  isAmountLocked
+                                    ? "cursor-not-allowed bg-gray-100"
+                                    : "bg-white"
+                                }`}
+                              />
+                            </td>
+
+                            <td className="border border-gray-300 px-1 py-1">
+                              <input
+                                type="number"
+                                readOnly={isTaxLocked}
+                                value={item.hsn}
+                                onChange={(e) =>
+                                  handleHsnChange(index, e.target.value)
+                                }
+                                placeholder="Tax"
+                                className={`w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-center ${
+                                  isTaxLocked
+                                    ? "cursor-not-allowed bg-gray-100"
+                                    : "bg-white"
+                                }`}
+                              />
+                            </td>
+
+                            <td className="border border-gray-300 px-1 py-1">
+                              <input
+                                type="text"
+                                readOnly
+                                value={item.netAmount}
+                                placeholder="0.00"
+                                className="w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-right cursor-not-allowed bg-gray-100"
+                              />
+                            </td>
+
+                            <td className="border border-gray-300 px-1 py-1 text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                {/* {isPrimaryProduct && !isReadOnly && (
+              <button
+                type="button"
+                onClick={() => addAdditionalServicesForPrimaryRow(item, index)}
+                title="Add additional services"
+                className="h-6 w-6 rounded-full bg-green-100 text-green-700 hover:bg-green-200 flex items-center justify-center font-bold text-sm"
+              >
+                +
+              </button>
+            )} */}
+                                {isPrimaryProduct &&
+                                  process === "closing" &&
+                                  remainingAdditionalServicesCount > 0 && (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        addAdditionalServicesForPrimaryRow(
+                                          item,
+                                          index
+                                        )
+                                      }
+                                      title={`Add ${remainingAdditionalServicesCount} additional service${
+                                        remainingAdditionalServicesCount > 1
+                                          ? "s"
+                                          : ""
+                                      }`}
+                                      className="h-6 w-6 rounded-full bg-green-100 text-green-700 hover:bg-green-200 flex items-center justify-center font-bold text-sm"
+                                    >
+                                      +
+                                    </button>
+                                  )}
+
+                                <button
+                                  type="button"
+                                  disabled={isReadOnly}
+                                  onClick={() =>
+                                    handleDeletetableData(item, index)
+                                  }
+                                  className={`h-6 w-6 rounded-full flex items-center justify-center text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors ${
+                                    isReadOnly
+                                      ? "cursor-not-allowed opacity-30"
+                                      : ""
+                                  }`}
+                                  title="Delete row"
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-3.5 w-3.5"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    strokeWidth={2}
+                                  >
+                                    <path d="M3 6h18" />
+                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </td>
+
+                            <td className="border border-gray-300 px-1 py-1 text-center">
+                              <button
+                                type="button"
+                                onClick={() => handleDetails(item, index)}
+                                className="text-blue-500 font-bold ml-2"
+                              >
+                                Add
+                              </button>
+                            </td>
+                          </tr>
+                        )
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -3166,7 +3342,7 @@ console.log(
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 pt-2">
                   {/* left: self allocation or lead id */}
                   <div className="w-full sm:w-1/2">
-                    {process !== "edit" ? (
+                    {process === "register" ? (
                       <>
                         <label className="block text-xs font-semibold text-gray-600 mb-1">
                           Self Allocation / Other
@@ -3292,7 +3468,11 @@ console.log(
                       type="submit"
                       className="bg-[#1B2A4A] hover:bg-[#243660] text-white py-2 px-8 rounded text-sm font-semibold tracking-wide transition-colors mt-1"
                     >
-                      {process === "Registration" ? "SUBMIT LEAD" : "UPDATE LEAD"}
+                      {process === "Registration"
+                        ? "SUBMIT LEAD"
+                        : process === "closing"
+                          ? "Closing Lead"
+                          : "UPDATE LEAD"}
                     </button>
                   </div>
                 </div>
@@ -3313,10 +3493,251 @@ console.log(
               </div>
             </div>
           )}
+          {showdetailsopen && (
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4">
+              <div className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl border border-gray-200 overflow-hidden">
+                <div className="flex items-center justify-between px-5 py-4 border-b bg-[#1B2A4A] text-white">
+                  <div>
+                    <h2 className="text-sm font-bold">
+                      {String(
+                        detailsItem?.productorservicetype || ""
+                      ).toLowerCase() === "primaryproduct"
+                        ? "Primary Product Details"
+                        : "Additional Service Details"}
+                    </h2>
+                    <p className="text-xs text-blue-100 mt-1">
+                      Fill the details for the selected item
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setdetailsopen(false)}
+                    className="h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 text-white text-lg flex items-center justify-center"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="p-5">
+                  {String(
+                    detailsItem?.productorservicetype || ""
+                  ).toLowerCase() === "primaryproduct" ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">
+                          Name
+                        </label>
+                        <input
+                          type="text"
+                          name="name"
+                          readOnly
+                          value={detailsForm.name}
+                          onChange={handleDetailsChange}
+                          placeholder="List of Primary Products"
+                          className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] cursor-not-allowed"
+                        />
+                      </div>
+
+                      {/* 
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">
+                Software Trade
+              </label>
+              <input
+                type="text"
+                name="softwareTrade"
+                value={detailsForm.softwareTrade}
+                onChange={handleDetailsChange}
+                placeholder="Software Trade"
+                className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
+              />
+            </div> */}
+
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">
+                          Application Date
+                        </label>
+                        <input
+                          type="date"
+                          name="applicationDate"
+                          value={detailsForm.applicationDate}
+                          onChange={handleDetailsChange}
+                          className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
+                        />
+                      </div>
+
+                      <div className="">
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">
+                          Status
+                        </label>
+                        <select
+                          name="status"
+                          value={detailsForm.status}
+                          onChange={handleDetailsChange}
+                          className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
+                        >
+                          <option value="Running">Active</option>
+                          <option value="Deactive">DE active</option>
+                        </select>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">
+                          Name
+                        </label>
+                        <input
+                          type="text"
+                          name="name"
+                          readOnly
+                          value={detailsForm.name}
+                          onChange={handleDetailsChange}
+                          placeholder="List of additional service"
+                          className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] cursor-not-allowed"
+                        />
+                      </div>
+                      {detailsForm?.taggeddata?.length ? (
+                        <div className="md:col-span-2">
+                          <label className="mb-1.5 block text-[11px] font-medium text-[#5d6983]">
+                            Tagged License Due Details
+                          </label>
+
+                          <div className="overflow-hidden rounded-[8px] border border-[#e7ebf4]">
+                            <div className="max-h-40 overflow-y-auto">
+                              <table className="w-full border-collapse">
+                                <thead className="sticky top-0 bg-[#f8fafc]">
+                                  <tr>
+                                    <th className="border-b border-[#e7ebf4] px-2.5 py-1.5 text-left text-[11px] font-semibold text-[#43506a]">
+                                      License Number
+                                    </th>
+                                    <th className="border-b border-[#e7ebf4] px-2.5 py-1.5 text-left text-[11px] font-semibold text-[#43506a]">
+                                      Next Due
+                                    </th>
+                                  </tr>
+                                </thead>
+                                {/* <tbody>
+                                
+                                </tbody> */}
+                                <tbody>
+                                  {detailsForm.taggeddata.map(
+                                    (tag, rowIndex) => (
+                                      <tr
+                                        key={`${tag?.licensenumber}-${rowIndex}`}
+                                      >
+                                        <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
+                                          <input
+                                            value={tag?.licensenumber || ""}
+                                            readOnly
+                                            className="w-full cursor-not-allowed rounded-[7px] border border-[#dfe5ee] bg-[#f3f6fb] px-2 py-1.5 text-[11px] text-[#1f2a3d] outline-none"
+                                          />
+                                        </td>
+                                        <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
+                                          <input
+                                            type="date"
+                                            value={tag?.nextDue || ""}
+                                            onChange={(e) =>
+                                              handleTaggedDueChange(
+                                                rowIndex,
+                                                e.target.value
+                                              )
+                                            }
+                                            className="w-full rounded-[7px] border border-[#dfe5ee] bg-white px-2 py-1.5 text-[11px] text-[#1f2a3d] outline-none focus:border-[#1B2A4A]"
+                                          />
+                                        </td>
+                                      </tr>
+                                    )
+                                  )}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-600 mb-1">
+                            Next Due
+                          </label>
+                          <input
+                            type="date"
+                            name="nextDue"
+                            value={detailsForm.nextDue}
+                            onChange={handleDetailsChange}
+                            className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
+                          />
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">
+                          No of Quantity / Users
+                        </label>
+                        <input
+                          type="number"
+                          name="quantityUsers"
+                          value={detailsForm.quantityUsers}
+                          onChange={handleDetailsChange}
+                          placeholder="Optional"
+                          className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
+                        />
+                      </div>
+
+                      {/* <div className="md:col-span-2">
+              <label className="block text-xs font-semibold text-gray-600 mb-1">
+                Amount (Incl. of Tax)
+              </label>
+              <input
+                type="number"
+                name="amount"
+                value={detailsForm.amount}
+                onChange={handleDetailsChange}
+                placeholder="Amount"
+                className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
+              />
+            </div> */}
+                      <div className="">
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">
+                          Status
+                        </label>
+                        <select
+                          name="status"
+                          value={detailsForm.status}
+                          onChange={handleDetailsChange}
+                          className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
+                        >
+                          <option value="Running">Active</option>
+                          <option value="Deactive">DE active</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-end gap-3 px-5 py-4 border-t bg-gray-50">
+                  <button
+                    type="button"
+                    onClick={() => setdetailsopen(false)}
+                    className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDetailsSave}
+                    className="rounded-lg bg-[#1B2A4A] px-4 py-2 text-sm font-semibold text-white hover:bg-[#243660]"
+                  >
+                    Save Details
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {modalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center px-4 z-50">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
                 <div className="bg-[#1B2A4A] px-6 py-4 flex items-center justify-between flex-shrink-0">
                   <div>
                     <h2 className="text-white text-base font-bold tracking-wide">
@@ -3360,36 +3781,22 @@ console.log(
                   <div>
                     <input
                       type="hidden"
-                      {...registerModal("customerid", {
-                        required: "Customerid is Required"
-                      })}
+                      {...registerModal("customerid")}
                       onBlur={(e) =>
                         setValueModal("customerid", e.target.value.trim())
                       }
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
                     />
-                    {errorsModal.customerid && (
-                      <p className="text-red-500 text-xs mt-1">
-                        {errorsModal.customerid.message}
-                      </p>
-                    )}
                   </div>
                   <div>
                     <input
                       type="hidden"
-                      {...registerModal("leadid", {
-                        required: "leadid is Required"
-                      })}
+                      {...registerModal("leadid")}
                       onBlur={(e) =>
                         setValueModal("leadid", e.target.value.trim())
                       }
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
                     />
-                    {errorsModal.leadid && (
-                      <p className="text-red-500 text-xs mt-1">
-                        {errorsModal.leadid.message}
-                      </p>
-                    )}
                   </div>
                   <p className="text-[10px] font-bold text-[#1B2A4A] uppercase tracking-widest mb-2 border-b border-gray-200 pb-1">
                     Basic Information

@@ -45,7 +45,9 @@ export default function LostLeads() {
   const [selectedUserName, setselecteduserName] = useState(null)
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
-  const [selectedYear, setSelectedYear] = useState(null)
+  const [activeUserId, setActiveUserId] = useState(null)
+const now=new Date()
+  const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   const [periodMode, setperiodMode] = useState("all")
   const [targetData, settargetData] = useState([])
   console.log(targetData)
@@ -76,6 +78,65 @@ export default function LostLeads() {
   //     selectedCompanyBranch &&
   //     `/lead/lostlead?userId=${loggedUser._id}&role=${loggedUser.role}&selectedBranch=${selectedCompanyBranch}&ownlead=${ownLead}`
   // )
+  useEffect(() => {
+    if (selectedCategory) {
+      console.log("jj")
+      const Datas = targetData?.userWiseResults
+
+      const filteredList = branchProduct
+        .filter(
+          (item) =>
+            item.selected?.some(
+              (selectedItem) =>
+                String(selectedItem.category_id) ===
+                String(selectedCategory?.Id)
+            ) || String(item.category_id) === String(selectedCategory?.Id)
+        )
+        .map((item) => item.productName || item.serviceName)
+      console.log(filteredList)
+      setproductList(filteredList)
+      console.log("J")
+      console.log(targetData)
+     
+      console.log("hhh")
+
+      console.log(Datas)
+      console.log("hhhh")
+
+      const filteredselectedCategory = Datas.flatMap(
+        (user) => user.categories || []
+      ).filter((item) => item.categoryId === selectedCategory?.Id)
+console.log(filteredselectedCategory)
+      console.log("Hh")
+      const summary = filteredselectedCategory.reduce(
+        (acc, cur) => {
+          acc.target += Number(cur.target || 0)
+          acc.achieved += Number(cur.achieved || 0)
+          acc.balance += Number(cur.balance || 0)
+          return acc
+        },
+        { target: 0, achieved: 0, balance: 0 }
+      )
+      console.log("hhh")
+      setselectedDataPopup(summary)
+      console.log(filteredselectedCategory && filteredselectedCategory.length)
+      if (filteredselectedCategory && filteredselectedCategory.length) {
+console.log("hh")
+console.log(filteredselectedCategory)
+        setacheivedProducts((prev) => [
+          ...prev,
+          ...filteredselectedCategory.flatMap((item) =>
+            (item?.products || []).map((product) => ({
+              productname: product.name,
+              amount: product.achieved
+            }))
+          )
+        ])
+      } else {
+        setacheivedProducts([])
+      }
+    }
+  }, [targetData])
 
   useEffect(() => {
     if (companybranches && companybranches.length > 0) {
@@ -182,15 +243,7 @@ export default function LostLeads() {
     console.log("J")
     console.log(targetData)
     console.log(loggedUser?._id)
-    const filteredloggedUserItem = Datas.filter(
-      (item) => item.userId === loggedUser._id
-    )
-    console.log("hhh")
-
-    console.log(Datas)
-    console.log("hhhh")
-    console.log(filteredloggedUserItem)
-    console.log(id)
+  
     // const filteredselectedCategory =
     //   filteredloggedUserItem[0].categories.filter(
     //     (item) => item.categoryId === id
@@ -227,12 +280,13 @@ export default function LostLeads() {
     setOpenModal(true)
   }
   const handleSelectedUser = (category, userId, userName) => {
+setActiveUserId(userId)
     setselecteduserName(userName)
     setselectedCategory({
       Id: category.Id,
       categoryName: category.categoryName
     })
-    const filteredloggedUserItem = data?.userWiseResults.filter(
+    const filteredloggedUserItem = targetData?.userWiseResults.filter(
       (item) => item.userId === userId
     )
     const filteredselectedCategory =
@@ -251,11 +305,19 @@ export default function LostLeads() {
 
     setselectedDataPopup(summary)
     if (filteredselectedCategory && filteredselectedCategory.length) {
-      setacheivedProducts(
-        filteredselectedCategory[0]?.products?.map((product) => ({
-          productname: product.name,
-          amount: product.achieved
-        })) || []
+      // setacheivedProducts(
+      //   filteredselectedCategory[0]?.products?.map((product) => ({
+      //     productname: product.name,
+      //     amount: product.achieved
+      //   })) || []
+      // )
+ setacheivedProducts(
+        filteredselectedCategory.flatMap((item) =>
+          (item.products || []).map((product) => ({
+            productname: product.name,
+            amount: product.achieved
+          }))
+        )
       )
     } else {
       setacheivedProducts([])
@@ -461,20 +523,20 @@ export default function LostLeads() {
           selectedCompanyBranch={selectedCompanyBranch}
           setselectedCompanyBranch={setselectedCompanyBranch}
           parenttargetData={settargetData}
-          parentperiodmode={setperiodMode}
-          parentyear={setSelectedYear}
+          parentperiodmode={periodMode}
+          parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
         />
 
         <div className="flex flex-1 flex-col overflow-hidden">
-          <header className="flex items-center justify-between border-b border-white/10 bg-[#0F172A]/95">
+          <header className="flex items-center justify-between bg-[#ADD8E6]">
             {loggedUser?.role?.toLowerCase() === "admin" ? (
               <AdminHeader hide={true} />
             ) : (
               <StaffHeader hide={true} />
             )}
 
-            <div className="flex items-center gap-1.5  border-b border-white/10 bg-[#0F172A]/95 pr-3 h-full">
+            <div className="flex items-center gap-1.5  bg-[#ADD8E6] pr-3 h-full">
               <button className="rounded-full p-1.5 transition bg-slate-100">
                 <Mail size={15} strokeWidth={2.2} />
               </button>
@@ -521,7 +583,7 @@ export default function LostLeads() {
           <div className="flex justify-between items-center m-3 mb-1">
             <h2 className="text-lg font-bold">Lost Leads</h2>
             <div className="flex justify-end items-center">
-              <select
+              {/* <select
                 value={selectedCompanyBranch || ""}
                 onChange={(e) => {
                   setTableData([])
@@ -534,7 +596,7 @@ export default function LostLeads() {
                     {branch.label}
                   </option>
                 ))}
-              </select>
+              </select> */}
 
               <button
                 onClick={() =>
@@ -617,22 +679,23 @@ export default function LostLeads() {
           setselectedPeriod(val)
         }}
         onMonthChange={(val) => {
-          setcategorylist([])
           setacheivedProducts([])
           setselectedDataPopup([])
           setperiodMode(val)
+ setselecteduserName(null)
         }}
         onYearChange={(val) => {
-          setcategorylist([])
           setacheivedProducts([])
           setselectedDataPopup([])
           setSelectedYear(val)
+ setselecteduserName(null)
         }}
         productlist={productlist}
         onClose={() => {
-          setselecteduserName(loggedUser?.name)
+          setselecteduserName(null)
           setacheivedProducts([])
           setOpenModal(false)
+  setActiveUserId(null)
         }}
         selectedMonth={periodMode}
         selectedYear={selectedYear}
@@ -650,6 +713,7 @@ export default function LostLeads() {
         selectedUser={selectedUserName}
         category={selectedCategory}
         handleSelectedUser={handleSelectedUser}
+ activeUserId={activeUserId}
       />
     </div>
   )

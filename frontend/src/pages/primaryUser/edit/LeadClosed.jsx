@@ -1,12 +1,16 @@
-import { useEffect, useState } from "react"
-import api from "../../../api/api"
-import { toast } from "react-toastify"
-import { useFetcher, useNavigate } from "react-router-dom"
-import LeadMaster from "../../common/LeadMaster"
+import { useState,useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import { BarLoader } from "react-spinners";
+import Breadcrumb from "../../../components/common/Breadcrumb";
+import LeadMaster from "../../common/LeadMaster";
+import api from "../../../api/api";
+import {toast} from "react-toastify"
+import { getLocalStorageItem } from "../../../helper/localstorage";
+import { PerformanceModal } from "../../../components/primaryUser/PerformanceModal";
 import { StaticSidebar } from "../../../components/primaryUser/StaticSidebar"
 import AdminHeader from "../../../header/AdminHeader"
 import StaffHeader from "../../../header/StaffHeader"
-import { PerformanceModal } from "../../../components/primaryUser/PerformanceModal"
+import { useNavigate } from "react-router-dom"
 import {
   Eye,
   Phone,
@@ -26,19 +30,35 @@ import {
   X
 } from "lucide-react"
 import UseFetch from "../../../hooks/useFetch"
-function LeadRegister() {
+function LeadClosed() {
+  const [fetcheddata, setfetchedData] = useState([])
+  console.log(fetcheddata)
   const [loader, setLoader] = useState(false)
-  const [popupMessage, setpopUpMessage] = useState("")
-  const userData = localStorage.getItem("user")
-  const user = JSON.parse(userData)
+  const navigate = useNavigate()
+
+  const location = useLocation()
+  const { leadId, isReadOnly, refreshKey } = location.state || {}
+console.log(isReadOnly)
+  console.log(location?.state)
+  const nav = [
+    { label: "Lead", path: "" },
+    {
+      label: "New Lead",
+      path: ""
+    }
+  ]
+  const Breadcrumblist = location?.state ? location?.state?.breadcrumb : nav
+  console.log(Breadcrumblist)
+  const userData = getLocalStorageItem("user")
   const [selectedUserName, setselecteduserName] = useState(null)
   const [selectedcompanyBranch, setselectedcompanyBranch] = useState(
-    user?.selected[0]?.branch_id
+    userData?.selected[0]?.branch_id
   )
+  const [selectedleadbranch, setselectedleadbranch] = useState(null)
   const [activeUserId, setActiveUserId] = useState(null)
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
-const now =new Date()
+  const now = new Date()
   const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   const [periodMode, setperiodMode] = useState("all")
   const [targetData, settargetData] = useState([])
@@ -47,12 +67,12 @@ const now =new Date()
   const [productlist, setproductList] = useState([])
   const [achievedproducts, setacheivedProducts] = useState([])
   const [selectedPeriod, setselectedPeriod] = useState("")
-  const navigate = useNavigate()
-  // reset functions exposed from LeadMaster
+
   const { data: branchProduct } = UseFetch(
     selectedcompanyBranch &&
       `/product/getallbranchProduct?branch=${selectedcompanyBranch}`
   )
+  console.log(selectedcompanyBranch)
   useEffect(() => {
     if (selectedCategory) {
       console.log("jj")
@@ -70,13 +90,18 @@ const now =new Date()
         .map((item) => item.productName || item.serviceName)
       console.log(filteredList)
       setproductList(filteredList)
-    
-      
+      console.log("J")
+      console.log(targetData)
+
+      console.log("hhh")
+
+      console.log(Datas)
+      console.log("hhhh")
 
       const filteredselectedCategory = Datas.flatMap(
         (user) => user.categories || []
       ).filter((item) => item.categoryId === selectedCategory?.Id)
-console.log(filteredselectedCategory)
+      console.log(filteredselectedCategory)
       console.log("Hh")
       const summary = filteredselectedCategory.reduce(
         (acc, cur) => {
@@ -91,8 +116,8 @@ console.log(filteredselectedCategory)
       setselectedDataPopup(summary)
       console.log(filteredselectedCategory && filteredselectedCategory.length)
       if (filteredselectedCategory && filteredselectedCategory.length) {
-console.log("hh")
-console.log(filteredselectedCategory)
+        console.log("hh")
+        console.log(filteredselectedCategory)
         setacheivedProducts((prev) => [
           ...prev,
           ...filteredselectedCategory.flatMap((item) =>
@@ -107,48 +132,23 @@ console.log(filteredselectedCategory)
       }
     }
   }, [targetData])
-  console.log(selectedCategory)
+  useEffect(() => {
+    console.log("hhhh")
+    if (leadId) {
+      console.log(leadId)
+      const fetchselectedLeadData = async () => {
+        const response = await api.get(`/lead/getSelectedLead?leadId=${leadId}`)
 
-  const handleSubmit = async (leadData, selectedtableLeadData, role) => {
-    console.log(leadData)
-console.log(selectedtableLeadData)
-
-    try {
-      const response = await api.post("/lead/leadRegister", {
-        assignedto: user?.assignedto,
-        leadData,
-        role,
-        selectedtableLeadData
-      })
-      console.log("Hhhhh")
-      if (response.status === 200) {
-        toast.success(response && response.data && response.data.message)
-        console.log("hhh")
-        return { success: true, data: response.data }
-        // wait for toast to be visible, then reload
-        // setTimeout(() => {
-        //   navigate(0) // or window.location.reload()
-        // }, 0)
-      } else if (response.status === 201) {
-        console.log("hhh")
-        setpopUpMessage(response.data.message)
-        return { success: false, warning: response.data.message }
+        if (response.status >= 200 && response.status < 300) {
+          console.log("hhhh")
+          console.log(response.data.data)
+          setselectedleadbranch(response.data.data[0].leadBranch)
+          setfetchedData(response.data.data)
+        }
       }
-      setLoader(false)
-    } catch (error) {
-      console.log("hh")
-      console.error("Error creating product:", error)
-      if (
-        error.response &&
-        error.response.data &&
-        error.response.data.message
-      ) {
-        toast.error(error.response.data.message) // Display the backend error message
-      } else {
-        toast.error("An unexpected error occurred. Please try again.") // Fallback message
-      }
+      fetchselectedLeadData()
     }
-  }
+  }, [leadId, refreshKey])
   const handleMoreClick = (id, name) => {
     const Datas = targetData?.userWiseResults
     console.log(id)
@@ -167,17 +167,12 @@ console.log(selectedtableLeadData)
     setselectedCategory({ Id: id, categoryName: name })
     console.log("J")
     console.log(targetData)
-    console.log(user?._id)
-    const filteredloggedUserItem = Datas.filter(
-      (item) => item.userId === user._id
-    )
-    console.log("hhh")
+    console.log(userData?._id)
 
-    console.log(Datas)
-    console.log("hhhh")
-    console.log(filteredloggedUserItem)
-    console.log(id)
-
+    // const filteredselectedCategory =
+    //   filteredloggedUserItem[0].categories.filter(
+    //     (item) => item.categoryId === id
+    //   )
     const filteredselectedCategory = Datas.flatMap(
       (user) => user.categories || []
     ).filter((item) => item.categoryId === id)
@@ -211,24 +206,18 @@ console.log(selectedtableLeadData)
   }
   const handleSelectedUser = (category, userId, userName) => {
     setActiveUserId(userId)
-    console.log(userId)
-    console.log("Hhh")
     setselecteduserName(userName)
     setselectedCategory({
       Id: category.Id,
       categoryName: category.categoryName
     })
-    const filteredloggedUserItem = targetData?.userWiseResults.filter(
+    const filteredloggedUserItem = data?.userWiseResults.filter(
       (item) => item.userId === userId
     )
-    console.log("Hh")
-    console.log(filteredloggedUserItem[0].categories)
-    console.log(category.Id)
     const filteredselectedCategory =
       filteredloggedUserItem[0].categories.filter(
         (item) => item.categoryId === category.Id
       )
-    console.log(filteredselectedCategory)
     const summary = filteredselectedCategory.reduce(
       (acc, cur) => {
         acc.target += Number(cur.target || 0)
@@ -238,35 +227,50 @@ console.log(selectedtableLeadData)
       },
       { target: 0, achieved: 0, balance: 0 }
     )
-    console.log(filteredselectedCategory)
+
     setselectedDataPopup(summary)
     if (filteredselectedCategory && filteredselectedCategory.length) {
-      console.log("hhh")
-      // setacheivedProducts(
-      //   filteredselectedCategory.map((item)=>products?.map((product) => ({
-      //     productname: product.name,
-      //     amount: product.achieved
-      //   })) || []
-      // )
       setacheivedProducts(
-        filteredselectedCategory.flatMap((item) =>
-          (item.products || []).map((product) => ({
-            productname: product.name,
-            amount: product.achieved
-          }))
-        )
+        filteredselectedCategory[0]?.products?.map((product) => ({
+          productname: product.name,
+          amount: product.achieved
+        })) || []
       )
-      console.log("hhh")
     } else {
-      console.log("hhhh")
       setacheivedProducts([])
     }
   }
-  console.log(achievedproducts)
-  console.log(periodMode)
-  console.log(selectedcompanyBranch)
+  console.log(leadId)
+
+  const handleSubmit = async (data, leadData, objectId) => {
+    console.log(data)
+    console.log(leadData)
+console.log(objectId)
+
+    try {
+      setLoader(true)
+      const response = await api.put(
+        `/lead/closingleads?docID=${objectId}`,
+        {
+          data,
+          leadData
+        }
+      )
+      if (response.status === 200) {
+        toast.success(response.data.message)
+        setLoader(false)
+      }
+      navigate(-1)
+    } catch (error) {
+      setLoader(false)
+      toast.error("Something went wrong")
+      console.error("error:", error)
+console.log(error.message)
+    }
+  }
+console.log("hhhh")
   return (
-    <div className="h-full bg-[#ADD8E6] overflow-hidden">
+    <div className="h-full bg-[#ADD8E6 overflow-hidden">
       <div className="flex h-full flex-row overflow-hidden">
         <StaticSidebar
           handleMoreClick={handleMoreClick}
@@ -277,16 +281,15 @@ console.log(selectedtableLeadData)
           parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
         />
-
         <div className="flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden justify-center">
           <header className="flex items-center justify-between ">
-            {user?.role?.toLowerCase() === "admin" ? (
+            {userData?.role?.toLowerCase() === "admin" ? (
               <AdminHeader hide={true} />
             ) : (
               <StaffHeader hide={true} />
             )}
 
-            <div className="flex h-full items-center gap-1.5  pr-3">
+            <div className="flex h-full items-center gap-1.5  pr-3 bg-[#ADD8E6]">
               <button className="rounded-full bg-slate-100 p-1.5 transition">
                 <Mail size={15} strokeWidth={2.2} />
               </button>
@@ -316,15 +319,22 @@ console.log(selectedtableLeadData)
             </div>
           </header>
 
-          <div className="flex flex-1 min-h-0 min-w-0 overflow-hidden  w-full justify-center">
+          <div className="flex flex-1 flex-col min-h-0 min-w-0 overflow-hidden  w-full justify-center  bg-[#ADD8E6]">
+            {loader && (
+              <BarLoader
+                cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
+                color="#4A90E2" // Change color as needed
+              />
+            )}
+            <Breadcrumb items={Breadcrumblist} />
             <LeadMaster
-              process="Registration"
-              handleleadData={handleSubmit}
-              loadingState={loader}
-              setLoadingState={setLoader}
-              showmessage={popupMessage}
-              showpopupMessage={setpopUpMessage}
-              selectedcompanyBranch={selectedcompanyBranch}
+              process="closing"
+              handleclosingData={handleSubmit}
+              editloadingState={loader}
+              seteditLoadingState={setLoader}
+              Data={fetcheddata}
+              isReadOnly={false}
+              selectedcompanyBranch={selectedleadbranch}
             />
           </div>
         </div>
@@ -338,14 +348,12 @@ console.log(selectedtableLeadData)
             setselectedPeriod(val)
           }}
           onMonthChange={(val) => {
-            // setcategorylist([])
             setacheivedProducts([])
             setselectedDataPopup([])
             setperiodMode(val)
             setselecteduserName(null)
           }}
           onYearChange={(val) => {
-            // setcategorylist([])
             setacheivedProducts([])
             setselectedDataPopup([])
             setSelectedYear(val)
@@ -370,7 +378,7 @@ console.log(selectedtableLeadData)
           }}
           products={achievedproducts}
           targetData={targetData?.userWiseResults}
-          loggedUser={user}
+          loggedUser={userData}
           selectedUser={selectedUserName}
           category={selectedCategory}
           handleSelectedUser={handleSelectedUser}
@@ -381,4 +389,4 @@ console.log(selectedtableLeadData)
   )
 }
 
-export default LeadRegister
+export default LeadClosed
