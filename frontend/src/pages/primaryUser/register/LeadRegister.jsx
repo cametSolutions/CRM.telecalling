@@ -53,6 +53,7 @@ const now =new Date()
     selectedcompanyBranch &&
       `/product/getallbranchProduct?branch=${selectedcompanyBranch}`
   )
+console.log("hhhh")
   useEffect(() => {
     if (selectedCategory) {
       console.log("jj")
@@ -265,6 +266,7 @@ console.log(selectedtableLeadData)
   console.log(achievedproducts)
   console.log(periodMode)
   console.log(selectedcompanyBranch)
+console.log(periodMode)
   return (
     <div className="h-full bg-[#ADD8E6] overflow-hidden">
       <div className="flex h-full flex-row overflow-hidden">
