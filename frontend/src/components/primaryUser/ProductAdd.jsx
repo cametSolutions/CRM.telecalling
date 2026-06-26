@@ -39,6 +39,7 @@ const ProductAdd = ({
   const [editState, seteditState] = useState(true)
   const [showServices, setShowServices] = useState(false)
   const [servicelist, setservicelist] = useState([])
+console.log(servicelist)
   console.log(servicelist)
   const [data, setData] = useState({
     companies: [],
@@ -162,9 +163,14 @@ const ProductAdd = ({
     }
     if (product) {
       Object.keys(product).forEach((key) => {
+console.log(product)
         // Check if the key is not in the ignored list
         setValue(key, product[key])
       })
+setValue(
+  "defaultservices",
+  product.defaultservices?.map((item) => item._id) || []
+);
     }
   }, [data])
 

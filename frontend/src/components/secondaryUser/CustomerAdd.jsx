@@ -3662,18 +3662,11 @@ const CustomerAdd = ({
           shortName: sel?.product_id?.shortName,
           licensenumber: sel?.licensenumber,
           softwareTrade: sel?.softwareTrade,
-          applicationDate: sel?.applicationDate || sel?.customerAddDate,
-          nextDue:
-            sel?.nextDue ||
-            sel?.amcendDate ||
-            sel?.licenseExpiryDate ||
-            sel?.tvuexpiryDate,
+          applicationDate: sel?.customerAddDate,
+          nextDue: sel?.nextDue,
           noofusers: sel?.noofusers,
-          productAmount:
-            sel?.amount ||
-            sel?.productAmount ||
-            sel?.amcAmount ||
-            sel?.tvuAmount,
+          productAmount: sel?.productAmount,
+
           isActive: sel?.isActive || "Running",
           productorservicetype: sel?.product_id?.productorservicetype,
           taggedLicenses:
@@ -3785,6 +3778,7 @@ const CustomerAdd = ({
       companyName: null,
       branchName: null,
       licensenumber: "",
+      shortName: null,
       softwareTrade: "",
       applicationDate: "",
       nextDue: "",
@@ -3848,8 +3842,8 @@ const CustomerAdd = ({
   }
 
   const handleEdit = (item, index) => {
-console.log(item)
-console.log(index)
+    console.log(item)
+    console.log(index)
     setPopupType(item?.productorservicetype)
     setEditIndex(index)
 
@@ -3899,7 +3893,7 @@ console.log(index)
       taggedLicenses: taggedLicensesFromData,
       taggedLicenseDueDates: taggedLicenseDueDatesFromData
     })
-console.log("hh")
+    console.log("hh")
     setShowProductPopup(true)
   }
 
@@ -3991,7 +3985,7 @@ console.log("hh")
           ? null
           : values?.nextDue || "",
       noofusers: values?.noofusers ? Number(values.noofusers) : 0,
-      productAmount: values?.amount ? Number(values.amount) : 0,
+      productAmount: values?.productAmount ? Number(values.productAmount) : 0,
       isActive: values?.isActive || "Running",
       productorservicetype: popupType,
       taggeddata,
@@ -4037,7 +4031,7 @@ console.log("hh")
   const onSubmit = async (data) => {
     console.log(data)
     console.log(tableData)
-console.log(submissionloader)
+    console.log(submissionloader)
     if (submissionloader) return
     setsubmissionloader(true)
     try {
@@ -4396,6 +4390,7 @@ console.log(submissionloader)
                         <ProductCircleCard
                           key={`primary-${actualIndex}`}
                           item={item}
+                          productType="Primaryproduct"
                           actualIndex={actualIndex}
                           variant={isDeactive ? "danger" : "success"}
                           topBadgeIcon={<FaBuilding size={10} />}
@@ -4406,11 +4401,11 @@ console.log(submissionloader)
                           }
                           line2={item?.licensenumber}
                           line3={
-                            item?.nextDue
-                              ? formatDateToDDMMYYYY(item?.nextDue)
+                            item?.applicationDate
+                              ? formatDateToDDMMYYYY(item?.applicationDate)
                               : ""
                           }
-                          line4={isDeactive ? "De Active" : ""}
+                          line4={isDeactive ? "De Active" : "Active"}
                           onEdit={handleEdit}
                           onDelete={handleDelete}
                         />
@@ -4450,11 +4445,13 @@ console.log(submissionloader)
                   <div className="flex flex-wrap gap-4">
                     {additionalServices.map((item) => {
                       const actualIndex = tableData.findIndex((x) => x === item)
-
+                      const isDeactive =
+                        String(item?.isActive).toLowerCase() === "deactive"
                       return (
                         <ProductCircleCard
                           key={`additional-${actualIndex}`}
                           item={item}
+                          productType="Additionalservice"
                           actualIndex={actualIndex}
                           variant="service"
                           topBadgeIcon={<FaBuilding size={10} />}
@@ -4463,25 +4460,16 @@ console.log(submissionloader)
                               ? item?.shortName
                               : item?.productName
                           }
-                          line2={item?.amount ? `Rs. ${item.amount}` : ""}
-                          // line3={
-                          //   item?.taggeddata?.length > 0
-                          //     ? `Tagged ${item.taggeddata.length}`
-                          //     : item[0]?.nextDue
-                          //       ? formatDateToDDMMYYYY(item[0]?.nextDue)
-                          //       : ""
-                          // }
-
-                          line3={
+                          line2={
                             Array.isArray(item?.taggeddata) &&
                             item.taggeddata.length > 0
                               ? item.taggeddata
                                   .map((x) => x.licensenumber)
                                   .join(", ")
                                   .slice(0, 18)
-                              : ""
+                              : item?.licensenumber
                           }
-                          line4={
+                          line3={
                             item?.taggeddata?.length > 0
                               ? formatDateToDDMMYYYY(
                                   item?.taggeddata?.[0]?.nextDue
@@ -4490,6 +4478,8 @@ console.log(submissionloader)
                                 ? formatDateToDDMMYYYY(item?.nextDue)
                                 : ""
                           }
+                          line4={isDeactive ? "De Active" : "Active"}
+line5={item?.productAmount}
                           onEdit={handleEdit}
                           onDelete={handleDelete}
                         />
@@ -4959,61 +4949,286 @@ const PopupField = ({ label, children, error }) => {
   )
 }
 
+// const ProductCircleCard = ({
+//   item,
+//   actualIndex,
+//   productType,
+//   variant,
+//   topBadgeIcon,
+//   line1,
+//   line2,
+//   line3,
+//   line4,
+// line5,
+//   onEdit,
+//   onDelete
+// }) => {
+//   const variantClass =
+//     variant === "danger"
+//       ? "bg-[#ffdedd] border-[#f4c6c2]"
+//       : variant === "service"
+//         ? "bg-[#fff3c9] border-[#f0e1a2]"
+//         : "bg-[#dff3d2] border-[#cce6bc]"
+//   console.log(line3)
+//   console.log(line4)
+//   return (
+//   //   <div className="group relative">
+//   //     <button
+//   //       type="button"
+//   //       onClick={() => onEdit(item, actualIndex)}
+//   //       className={`relative flex h-[120px] w-[120px] flex-col items-center justify-center rounded-full border text-center shadow-sm transition hover:scale-[1.02] ${variantClass}`}
+//   //     >
+//   //       {/* <div className="mb-1 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-[#4e5a72] shadow-sm">
+//   //         {topBadgeIcon}
+//   //       </div> */}
+
+//   //       <p className="px-2 text-[11px] font-medium leading-3 text-[#1e293b]">
+//   //         {line1}
+//   //       </p>
+
+//   //       {line2 ? (
+//   //         <p className="mt-1 px-2 text-[11px] leading-3 text-[#4b5563] font-medium">
+//   //           {line2}
+//   //         </p>
+//   //       ) : null}
+//   //       {line3 ? (
+//   //         <p className="mt-1 px-2 text-[8.5px] font-semibold leading-3 text-[#d35c5c]">
+//   //           {productType === "Primaryproduct" ? "App.Date" : "Due Date"} :{" "}
+//   //           {line3}
+//   //         </p>
+//   //       ) : null}
+//   //       {line4 ? (
+//   //         <p
+//   //           className={`mt-1 px-2 text-[10px] leading-3 text-[#4b5563] font-bold ${
+//   //             line4 === "Active" ? "text-green-600" : "text-orange-500"
+//   //           }`}
+//   //         >
+//   //           {line4}
+//   //         </p>
+//   //       ) : null}
+//   // {line5 ? (
+//   //         <p
+//   //           className="mt-1 px-2 text-[10px] leading-3 text-[#0b66e6] font-bold "
+//   //         >
+//   //           Amount : {line5}
+//   //         </p>
+//   //       ) : null}
+
+//   //       {/* {line3 ? (
+//   //         <p className="mt-1 px-2 text-[8.5px] leading-3 text-[#4b5563]">
+//   //           {`"NextDue":${line3}`}
+//   //         </p>
+//   //       ) : null} */}
+//   //     </button>
+
+//   //     <div className="absolute -right-2 -top-2 hidden gap-1 group-hover:flex">
+//   //       <button
+//   //         type="button"
+//   //         onClick={() => onEdit(item, actualIndex)}
+//   //         className="rounded-full bg-white p-2 text-green-600 shadow"
+//   //       >
+//   //         <FaEdit size={10} />
+//   //       </button>
+//   //       <button
+//   //         type="button"
+//   //         onClick={() => onDelete(actualIndex)}
+//   //         className="rounded-full bg-white p-2 text-red-600 shadow"
+//   //       >
+//   //         <FaTrash size={10} />
+//   //       </button>
+//   //     </div>
+//   //   </div>
+// <div className="group relative">
+//   {/* <button
+//     type="button"
+//     onClick={() => onEdit(item, actualIndex)}
+//     className={`relative flex h-[120px] w-[120px] min-w-0 flex-col items-center justify-center rounded-full border text-center shadow-sm transition hover:scale-[1.02] ${variantClass}`}
+//   >
+//     <p className="px-2 text-[11px] font-medium leading-3 text-[#1e293b] text-wrap break-words">
+//       {line1}
+//     </p>
+
+//     {line2 ? (
+//       <p className="mt-1 px-2 text-[11px] leading-3 text-[#4b5563] font-medium text-wrap break-words">
+//         {line2}
+//       </p>
+//     ) : null}
+
+//     {line3 ? (
+//       <p className="mt-1 px-2 text-[8.5px] font-semibold leading-3 text-[#d35c5c] text-wrap break-words">
+//         {productType === "Primaryproduct" ? "App.Date" : "Due Date"} : {line3}
+//       </p>
+//     ) : null}
+
+//     {line4 ? (
+//       <p
+//         className={`mt-1 px-2 text-[10px] leading-3 font-bold break-words ${
+//           line4 === "Active" ? "text-green-600" : "text-orange-500"
+//         }`}
+//       >
+//         {line4}
+//       </p>
+//     ) : null}
+
+//     {line5 ? (
+//       <p className="mt-1 px-2 text-[10px] leading-3 text-[#0b66e6] font-bold break-words">
+//         Amount : {line5}
+//       </p>
+//     ) : null}
+//   </button> */}
+// <button
+//   type="button"
+//   onClick={() => onEdit(item, actualIndex)}
+//   className={`relative flex h-[120px] w-[120px] flex-col items-center justify-center overflow-hidden rounded-full border text-center shadow-sm transition hover:scale-[1.02] ${variantClass}`}
+// >
+//   <div className="flex w-[76px] flex-col items-center justify-center">
+//     <p className="w-full overflow-hidden text-center text-[10px] font-medium leading-[12px] text-[#1e293b] break-words line-clamp-2">
+//       {line1}
+//     </p>
+
+//     {line2 ? (
+//       <p className="mt-1 w-full truncate text-center text-[10px] leading-[12px] text-[#4b5563] font-medium">
+//         {line2}
+//       </p>
+//     ) : null}
+
+//     {line3 ? (
+//       <p className="mt-1 w-full  text-center text-[10px] font-semibold leading-[11px] text-[#d35c5c]">
+//         {productType === "Primaryproduct" ? "App.Date" : "Due Date"} : {line3}
+//       </p>
+//     ) : null}
+
+//     {line4 ? (
+//       <p
+//         className={`mt-1 w-full truncate text-center text-[9px] font-bold leading-[11px] ${
+//           line4 === "Active" ? "text-green-600" : "text-orange-500"
+//         }`}
+//       >
+//         {line4}
+//       </p>
+//     ) : null}
+
+//     {line5 ? (
+//       <p className="mt-1 w-full truncate text-center text-[9px] font-bold leading-[11px] text-[#0b66e6]">
+//         Amount : {line5}
+//       </p>
+//     ) : null}
+//   </div>
+// </button>
+
+//   <div className="absolute -right-2 -top-2 hidden gap-1 group-hover:flex">
+//     <button
+//       type="button"
+//       onClick={() => onEdit(item, actualIndex)}
+//       className="rounded-full bg-white p-2 text-green-600 shadow"
+//     >
+//       <FaEdit size={10} />
+//     </button>
+//     <button
+//       type="button"
+//       onClick={() => onDelete(actualIndex)}
+//       className="rounded-full bg-white p-2 text-red-600 shadow"
+//     >
+//       <FaTrash size={10} />
+//     </button>
+//   </div>
+// </div>
+//   )
+// }
 const ProductCircleCard = ({
   item,
   actualIndex,
+  productType,
   variant,
   topBadgeIcon,
   line1,
   line2,
   line3,
   line4,
+  line5,
   onEdit,
-  onDelete
+  onDelete,
 }) => {
   const variantClass =
     variant === "danger"
       ? "bg-[#ffdedd] border-[#f4c6c2]"
       : variant === "service"
-        ? "bg-[#fff3c9] border-[#f0e1a2]"
-        : "bg-[#dff3d2] border-[#cce6bc]"
-  console.log(line3)
+      ? "bg-[#fff3c9] border-[#f0e1a2]"
+      : "bg-[#dff3d2] border-[#cce6bc]";
+
   return (
     <div className="group relative">
       <button
         type="button"
         onClick={() => onEdit(item, actualIndex)}
-        className={`relative flex h-[108px] w-[108px] flex-col items-center justify-center rounded-full border text-center shadow-sm transition hover:scale-[1.02] ${variantClass}`}
+        className={`relative flex h-[120px] w-[120px] flex-col items-center justify-center overflow-hidden rounded-full border text-center shadow-sm transition hover:scale-[1.02] ${variantClass}`}
       >
-        {/* <div className="mb-1 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-[#4e5a72] shadow-sm">
-          {topBadgeIcon}
+        {/* <div className="flex w-[76px] flex-col items-center justify-center">
+          <p className="w-full overflow-hidden text-center text-[10px] font-medium leading-[12px] text-[#1e293b] break-words line-clamp-2">
+            {line1}
+          </p>
+
+          {line2 ? (
+            <p className="mt-1 w-full truncate text-center text-[10px] leading-[12px] text-[#4b5563] font-medium">
+              {line2}
+            </p>
+          ) : null}
+
+          {line3 ? (
+            <p className="mt-1 w-full  text-center text-[10px] font-semibold leading-[11px] text-[#d35c5c]">
+              {productType === "Primaryproduct" ? "App.Date" : "Due Date"} : {line3}
+            </p>
+          ) : null}
+
+          {line4 ? (
+            <p
+              className={`mt-1 w-full truncate text-center text-[9px] font-bold leading-[11px] ${
+                line4 === "Active" ? "text-green-600" : "text-orange-500"
+              }`}
+            >
+              {line4}
+            </p>
+          ) : null}
+
+          {line5 ? (
+            <p className="mt-1 w-full truncate text-center text-[9px] font-bold leading-[11px] text-[#0b66e6]">
+              Amount : {line5}
+            </p>
+          ) : null}
         </div> */}
+<div className="flex w-[90px] flex-col items-center justify-center">
+  <p className="w-full overflow-hidden text-center text-[10px] font-medium leading-[12px] text-[#1e293b] break-words line-clamp-2">
+    {line1}
+  </p>
 
-        <p className="px-2 text-[9.5px] font-semibold leading-3 text-[#1e293b]">
-          {line1}
-        </p>
+  {line2 ? (
+    <p className="mt-1 w-full truncate text-center text-[10px] leading-[12px] text-[#4b5563] font-medium">
+      {line2}
+    </p>
+  ) : null}
 
-        {line2 ? (
-          <p className="mt-1 px-2 text-[8.5px] leading-3 text-[#4b5563]">
-            {line2}
-          </p>
-        ) : null}
-        {line3 ? (
-          <p className="mt-1 px-2 text-[8.5px] font-semibold leading-3 text-[#d35c5c]">
-            {line3}
-          </p>
-        ) : null}
-        {line4 ? (
-          <p className="mt-1 px-2 text-[10px] leading-3 text-[#4b5563] font-bold">
-            Due: {line4}
-          </p>
-        ) : null}
+  {line3 ? (
+    <p className="mt-1 w-full whitespace-nowrap text-center text-[10px] font-semibold leading-[10px] text-[#d35c5c]">
+      {productType === "Primaryproduct" ? "App.Date" : "Due Date"} : {line3}
+    </p>
+  ) : null}
 
-        {/* {line3 ? (
-          <p className="mt-1 px-2 text-[8.5px] leading-3 text-[#4b5563]">
-            {`"NextDue":${line3}`}
-          </p>
-        ) : null} */}
+  {line4 ? (
+    <p
+      className={`mt-1 w-full truncate text-center text-[9px] font-bold leading-[11px] ${
+        line4 === "Active" ? "text-green-600" : "text-orange-500"
+      }`}
+    >
+      {line4}
+    </p>
+  ) : null}
+
+  {line5 ? (
+    <p className="mt-1 w-full truncate text-center text-[9px] font-bold leading-[11px] text-[#0b66e6]">
+      Amount : {line5}
+    </p>
+  ) : null}
+</div>
       </button>
 
       <div className="absolute -right-2 -top-2 hidden gap-1 group-hover:flex">
@@ -5033,8 +5248,8 @@ const ProductCircleCard = ({
         </button>
       </div>
     </div>
-  )
-}
+  );
+};
 
 const tileInputClass =
   "w-full border-0 bg-transparent p-0 text-[12px] font-medium text-[#1f2a3d] outline-none placeholder:text-[#c0c8d8]"

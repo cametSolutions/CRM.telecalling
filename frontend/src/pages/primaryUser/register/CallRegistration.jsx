@@ -1338,70 +1338,185 @@ Problem:    \t${selectedText}
       </div>
     )
   }
-  const ProductCircleCard = ({
-    item,
-    actualIndex,
-    variant,
-    topBadgeIcon,
-    isSelected,
-    line1,
-    line2,
-    line3,
-    line4,
-    onEdit,
-    onDelete
-  }) => {
-    const variantClass =
-      variant === "danger"
-        ? "bg-[#ffdedd] border-[#f4c6c2]"
-        : variant === "service"
-          ? "bg-[#fff3c9] border-[#f0e1a2]"
-          : "bg-[#dff3d2] border-[#cce6bc]"
-    console.log(line3)
-console.log(line2)
-    return (
+//   const ProductCircleCard = ({
+//     item,
+//     actualIndex,
+//     variant,
+//     topBadgeIcon,
+//     isSelected,
+//     line1,
+//     line2,
+//     line3,
+//     line4,
+//     onEdit,
+//     onDelete
+//   }) => {
+//     const variantClass =
+//       variant === "danger"
+//         ? "bg-[#ffdedd] border-[#f4c6c2]"
+//         : variant === "service"
+//           ? "bg-[#fff3c9] border-[#f0e1a2]"
+//           : "bg-[#dff3d2] border-[#cce6bc]"
+//     console.log(line3)
+// console.log(line2)
+//     return (
      
-      <div className="group relative">
-        <button
-          type="button"
-          onClick={() => onEdit(item, actualIndex)}
-          className={`relative flex h-[108px] w-[108px] flex-col items-center justify-center rounded-full border text-center shadow-sm transition hover:scale-[1.02] ${variantClass}`}
-        >
-          {isSelected && (
-            <div className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full border border-emerald-200 bg-emerald-500 text-white shadow-md">
-              <Check size={14} strokeWidth={3} />
-            </div>
-          )}
+//       <div className="group relative">
+//         <button
+//           type="button"
+//           onClick={() => onEdit(item, actualIndex)}
+//           className={`relative flex h-[108px] w-[108px] flex-col items-center justify-center rounded-full border text-center shadow-sm transition hover:scale-[1.02] ${variantClass}`}
+//         >
+//           {isSelected && (
+//             <div className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full border border-emerald-200 bg-emerald-500 text-white shadow-md">
+//               <Check size={14} strokeWidth={3} />
+//             </div>
+//           )}
 
-          <div className="mb-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-[#4e5a72] shadow-sm">
-            {topBadgeIcon}
-          </div>
+//           <div className="mb-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-[#4e5a72] shadow-sm">
+//             {topBadgeIcon}
+//           </div>
 
-          <p className="px-2 text-[9.5px] font-semibold leading-3 text-[#1e293b]">
+//           <p className="px-2 text-[9.5px] font-semibold leading-3 text-[#1e293b]">
+//             {line1}
+//           </p>
+
+//           {line2 ? (
+//             <p className="mt-1 px-2 text-[12px] leading-3 text-[#4b5563] font-medium">
+//               {line2}
+//             </p>
+//           ) : null}
+
+//           {line3 ? (
+//             <p className="mt-1 px-2 text-[12px] leading-3 text-[#4b5563] font-medium">
+//               {line3}
+//             </p>
+//           ) : null}
+
+//           {line4 ? (
+//             <p className="mt-1 px-2 text-[8.5px] font-semibold leading-3 text-[#d35c5c]">
+//               {line4}
+//             </p>
+//           ) : null}
+//         </button>
+//       </div>
+//     )
+//   }
+const ProductCircleCard = ({
+  item,
+  actualIndex,
+  productType,
+  variant,
+  topBadgeIcon,
+  line1,
+  line2,
+  line3,
+  line4,
+  line5,
+  onEdit,
+  onDelete,
+}) => {
+  const variantClass =
+    variant === "danger"
+      ? "bg-[#ffdedd] border-[#f4c6c2]"
+      : variant === "service"
+      ? "bg-[#fff3c9] border-[#f0e1a2]"
+      : "bg-[#dff3d2] border-[#cce6bc]";
+
+  return (
+    <div className="group relative">
+      <button
+        type="button"
+        onClick={() => onEdit(item, actualIndex)}
+        className={`relative flex h-[120px] w-[124px] flex-col items-center justify-center overflow-hidden rounded-full border text-center shadow-sm transition hover:scale-[1.02] ${variantClass}`}
+      >
+        {/* <div className="flex w-[76px] flex-col items-center justify-center">
+          <p className="w-full overflow-hidden text-center text-[10px] font-medium leading-[12px] text-[#1e293b] break-words line-clamp-2">
             {line1}
           </p>
 
           {line2 ? (
-            <p className="mt-1 px-2 text-[12px] leading-3 text-[#4b5563] font-medium">
+            <p className="mt-1 w-full truncate text-center text-[10px] leading-[12px] text-[#4b5563] font-medium">
               {line2}
             </p>
           ) : null}
 
           {line3 ? (
-            <p className="mt-1 px-2 text-[12px] leading-3 text-[#4b5563] font-medium">
-              {line3}
+            <p className="mt-1 w-full  text-center text-[10px] font-semibold leading-[11px] text-[#d35c5c]">
+              {productType === "Primaryproduct" ? "App.Date" : "Due Date"} : {line3}
             </p>
           ) : null}
 
           {line4 ? (
-            <p className="mt-1 px-2 text-[8.5px] font-semibold leading-3 text-[#d35c5c]">
+            <p
+              className={`mt-1 w-full truncate text-center text-[9px] font-bold leading-[11px] ${
+                line4 === "Active" ? "text-green-600" : "text-orange-500"
+              }`}
+            >
               {line4}
             </p>
           ) : null}
+
+          {line5 ? (
+            <p className="mt-1 w-full truncate text-center text-[9px] font-bold leading-[11px] text-[#0b66e6]">
+              Amount : {line5}
+            </p>
+          ) : null}
+        </div> */}
+<div className="flex w-[90px] flex-col items-center justify-center">
+  <p className="w-full overflow-hidden text-center text-[10px] font-medium leading-[12px] text-[#1e293b] break-words line-clamp-2">
+    {line1}
+  </p>
+
+  {line2 ? (
+    <p className="mt-1 w-full truncate text-center text-[10px] leading-[12px] text-[#4b5563] font-medium">
+      {line2}
+    </p>
+  ) : null}
+
+  {line3 ? (
+    <p className="mt-1 w-full whitespace-nowrap text-center text-[10px] font-semibold leading-[10px] text-[#d35c5c]">
+      {productType === "Primaryproduct" ? "App.Date" : "Due Date"} : {line3}
+    </p>
+  ) : null}
+
+  {line4 ? (
+    <p
+      className={`mt-1 w-full truncate text-center text-[9px] font-bold leading-[11px] ${
+        line4 === "Active" ? "text-green-600" : "text-orange-500"
+      }`}
+    >
+      {line4}
+    </p>
+  ) : null}
+
+  {line5 ? (
+    <p className="mt-1 w-full truncate text-center text-[9px] font-bold leading-[11px] text-[#0b66e6]">
+      Amount : {line5}
+    </p>
+  ) : null}
+</div>
+      </button>
+
+      <div className="absolute -right-2 -top-2 hidden gap-1 group-hover:flex">
+        <button
+          type="button"
+          onClick={() => onEdit(item, actualIndex)}
+          className="rounded-full bg-white p-2 text-green-600 shadow"
+        >
+          <FaEdit size={10} />
+        </button>
+        <button
+          type="button"
+          onClick={() => onDelete(actualIndex)}
+          className="rounded-full bg-white p-2 text-red-600 shadow"
+        >
+          <FaTrash size={10} />
         </button>
       </div>
-    )
-  }
+    </div>
+  );
+};
   const filteredOptionsByType = useMemo(() => {
     return productOptions.filter(
       (item) =>
@@ -3183,6 +3298,7 @@ console.log(line2)
                               const isDeactive =
                                 String(item?.isActive).toLowerCase() ===
                                 "deactive"
+console.log(item?.isActive)
                               const isSelected =
                                 String(item?.licensenumber ?? "") ===
                                 String(selectedLicenseNumber ?? "")
@@ -3192,6 +3308,7 @@ console.log(line2)
                                   key={`primary-${actualIndex}`}
                                   item={item}
                                   actualIndex={actualIndex}
+ productType="Primaryproduct"
                                   isSelected={isSelected}
                                   variant={isDeactive ? "danger" : "success"}
                                   topBadgeIcon={<FaBuilding size={10} />}
@@ -3201,12 +3318,17 @@ console.log(line2)
                                       : item?.product_id?.productName
                                   }
                                   line2={item?.licensenumber}
-                                  line3={
-                                    item?.nextDue
-                                      ? formatDateToDDMMYYYY(item?.nextDue)
-                                      : ""
-                                  }
-                                  line4={isDeactive ? "De Active" : ""}
+                                  // line3={
+                                  //   item?.nextDue
+                                  //     ? formatDateToDDMMYYYY(item?.nextDue)
+                                  //     : ""
+                                  // }
+ line3={
+                            item?.applicationDate
+                              ? formatDateToDDMMYYYY(item?.applicationDate)
+                              : ""
+                          }
+                                  line4={isDeactive ? "De Active" : "Active"}
                                   onEdit={handleEdit}
                                   // onDelete={handleDelete}
                                 />
@@ -3229,11 +3351,13 @@ console.log(line2)
                               const actualIndex = additionalServices.findIndex(
                                 (x) => x === item
                               )
-
+                      const isDeactive =
+                        String(item?.isActive).toLowerCase() === "deactive"
                               return (
                                 <ProductCircleCard
                                   key={`additional-${actualIndex}`}
                                   item={item}
+ productType="Additionalservice"
                                   actualIndex={actualIndex}
                                   variant="service"
                                   topBadgeIcon={<FaBuilding size={10} />}
@@ -3242,9 +3366,18 @@ console.log(line2)
                                       ? item?.shortName
                                       : item?.productName
                                   }
-                                  line2={
-                                    item?.amount ? `Rs. ${item.amount}` : ""
-                                  }
+                                  // line2={
+                                  //   item?.amount ? `Rs. ${item.amount}` : ""
+                                  // }
+ line2={
+                            Array.isArray(item?.taggeddata) &&
+                            item.taggeddata.length > 0
+                              ? item.taggeddata
+                                  .map((x) => x.licensenumber)
+                                  .join(", ")
+                                  .slice(0, 18)
+                              : item?.licensenumber
+                          }
                                   // line3={
                                   //   item?.taggeddata?.length > 0
                                   //     ? `Tagged ${item.taggeddata.length}`
@@ -3253,24 +3386,35 @@ console.log(line2)
                                   //       : ""
                                   // }
 
-                                  line3={
-                                    Array.isArray(item?.taggeddata) &&
-                                    item.taggeddata.length > 0
-                                      ? item.taggeddata
-                                          .map((x) => x.licensenumber)
-                                          .join(", ")
-                                          .slice(0, 18)
-                                      : ""
-                                  }
-                                  line4={
-                                    item?.taggeddata?.length > 0
-                                      ? formatDateToDDMMYYYY(
-                                          item?.taggeddata?.[0]?.nextDue
-                                        )
-                                      : item?.nextDue
-                                        ? formatDateToDDMMYYYY(item?.nextDue)
-                                        : ""
-                                  }
+                                  // line3={
+                                  //   Array.isArray(item?.taggeddata) &&
+                                  //   item.taggeddata.length > 0
+                                  //     ? item.taggeddata
+                                  //         .map((x) => x.licensenumber)
+                                  //         .join(", ")
+                                  //         .slice(0, 18)
+                                  //     : ""
+                                  // }
+  line3={
+                            item?.taggeddata?.length > 0
+                              ? formatDateToDDMMYYYY(
+                                  item?.taggeddata?.[0]?.nextDue
+                                )
+                              : item?.nextDue
+                                ? formatDateToDDMMYYYY(item?.nextDue)
+                                : ""
+                          }
+                                  // line4={
+                                  //   item?.taggeddata?.length > 0
+                                  //     ? formatDateToDDMMYYYY(
+                                  //         item?.taggeddata?.[0]?.nextDue
+                                  //       )
+                                  //     : item?.nextDue
+                                  //       ? formatDateToDDMMYYYY(item?.nextDue)
+                                  //       : ""
+                                  // }
+     line4={isDeactive ? "De Active" : "Active"}
+line5={item?.productAmount}
                                   onEdit={handleEdit}
                                   // onDelete={handleDelete}
                                 />
