@@ -4477,7 +4477,7 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
         taskName: "Closing"
       }).lean();
     } else if (formData.followupType === "lost") {
-      allocationTask = await TaskfindOne({
+      allocationTask = await Task.findOne({
         taskName: "Lost"
       })
 

@@ -113,6 +113,8 @@ export default function CallRegistration() {
   const [loggeduserCurrentDateCalls, setloggeduserCurrentDateCalls] = useState(
     []
   )
+const [callupdate,setcallupdate]=useState(false)
+const [selectedCard, setSelectedCard] = useState(null);
   const [licenseAvailable, setLicenseAvailable] = useState(true)
   const [productOptions, setProductOptions] = useState([])
   const [companyOptions, setCompanyOptions] = useState([])
@@ -415,24 +417,37 @@ console.log(showCustomerDetails)
   }, [search]) // Only re-run the effect if search changes
   useEffect(() => {
     if (calldetails) {
+console.log(calldetails)
       // Fetch the call details using the ID
       fetchCallDetails(calldetails)
         .then((callData) => {
+console.log("hhh")
+console.log(callData)
+console.log(callData.callDetails.callregistration)
           const matchingRegistration =
             callData.callDetails.callregistration.find(
               (registration) => registration.timedata.token === token
             )
 
+console.log("hhh")
           // /// If a matching registration is found, extract the product details
           const productId = matchingRegistration?.product?._id
-
+const license=matchingRegistration?.license
+setselectedlicense(license)
+console.log(matchingRegistration)
+console.log(productId)
+console.log( callData.callDetails?.customerid?.selected)
           const matchingProducts =
             callData.callDetails?.customerid?.selected.filter(
-              (product) => product?.product_id === productId
+              (product) => product?.product_id === productId&&product?.licensenumber===license
             )
+console.log(matchingProducts)
           setSearch(callData?.callDetails?.customerid?.customerName)
           setSelectedCustomer(callData?.callDetails?.customerid)
+console.log("hhh")
+console.log(matchingProducts)
           if (matchingProducts.length === 0 && productId) {
+console.log("hhh")
             setProductDetails([
               {
                 product_id: matchingRegistration.product._id,
@@ -453,7 +468,7 @@ console.log(showCustomerDetails)
           } else {
             setProductDetails(matchingProducts)
           }
-
+console.log('hhh')
           const editData = {
             incomingNumber: matchingRegistration?.formdata?.incomingNumber,
             token: matchingRegistration?.timedata?.token,
@@ -464,6 +479,45 @@ console.log(showCustomerDetails)
               ? `${matchingRegistration?.formdata?.callnote._id}|${matchingRegistration?.formdata?.callnote?.callNotes}`
               : ""
           }
+console.log("hhhh")
+console.log(callData)
+console.log(  callData?.callDetails?.customerid.selected)
+ const selectedData =
+          callData?.callDetails?.customerid.selected?.map((sel) => ({
+            company_id: sel?.company_id,
+            companyName: sel?.companyName,
+            branch_id: sel?.branch_id,
+            branchName: sel?.branchName,
+            product_id: sel?.product_id,
+            productName: sel?.productName,
+            shortName: sel?.product_id?.shortName,
+            licensenumber: sel?.licensenumber,
+            softwareTrade: sel?.softwareTrade,
+            applicationDate: sel?.applicationDate || sel?.customerAddDate,
+            nextDue:
+              sel?.nextDue ||
+              sel?.amcendDate ||
+              sel?.licenseExpiryDate ||
+              sel?.tvuexpiryDate,
+            noofusers: sel?.noofusers,
+            productAmount:
+              sel?.amount ||
+              sel?.productAmount ||
+              sel?.amcAmount ||
+              sel?.tvuAmount,
+            isActive: sel?.isActive || "Running",
+            productorservicetype: sel?.productorservicetype,
+            taggedLicenses:
+              sel?.taggedLicenses ||
+              sel?.licenseNumbers ||
+              sel?.taggeddata?.map((item) => String(item?.licensenumber)) ||
+              [],
+            taggeddata: sel?.taggeddata || [],
+selected:sel?.licensenumber===license
+          })) || []
+setcallupdate(true)
+console.log(selectedData)
+setTableData(selectedData)
           setLoader(false)
           reset(editData)
           setIsRunning(true)
@@ -904,6 +958,13 @@ console.log(showCustomerDetails)
     setEditIndex(null)
     // clearErrors()
   }
+
+
+const handleSelectCard = (item, index) => {
+  setSelectedCard((prev) =>
+    prev === index ? null : index
+  );
+};
   const handleEdit = (item, index) => {
     console.log(item)
     console.log(index)
@@ -1373,11 +1434,11 @@ console.log(primaryProducts)
   //           onClick={() => onEdit(item, actualIndex)}
   //           className={`relative flex h-[108px] w-[108px] flex-col items-center justify-center rounded-full border text-center shadow-sm transition hover:scale-[1.02] ${variantClass}`}
   //         >
-  //           {isSelected && (
-  //             <div className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full border border-emerald-200 bg-emerald-500 text-white shadow-md">
-  //               <Check size={14} strokeWidth={3} />
-  //             </div>
-  //           )}
+            // {isSelected && (
+            //   <div className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full border border-emerald-200 bg-emerald-500 text-white shadow-md">
+            //     <Check size={14} strokeWidth={3} />
+            //   </div>
+            // )}
 
   //           <div className="mb-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-[#4e5a72] shadow-sm">
   //             {topBadgeIcon}
@@ -1438,47 +1499,61 @@ console.log(primaryProducts)
       </div>
     )
   }
-  const ProductCircleCard = ({
-    item,
-    actualIndex,
-    productType,
-    variant,
-    topBadgeIcon,
-    line1,
-    line2,
-    line3,
-    line4,
-    line5,
-    onEdit,
-    onDelete
-  }) => {
-    const variantClass =
-      variant === "danger"
-        ? "bg-[#ffdedd] border-[#f4c6c2]"
-        : variant === "service"
-          ? "bg-[#fff3c9] border-[#f0e1a2]"
-          : "bg-[#dff3d2] border-[#cce6bc]"
+const ProductCircleCard = ({
+  item,
+  actualIndex,
+  productType,
+  variant,
+  line1,
+  line2,
+  line3,
+  line4,
+  line5,
+  onEdit,
+  onDelete,
+  isSelected,
+  onSelect,
 
-    return (
-      <div className="group relative">
-        <button
-          type="button"
-          onClick={() => onEdit(item, actualIndex)}
-          className={`relative flex h-[120px] w-[124px] flex-col items-center justify-center overflow-hidden rounded-full border text-center shadow-sm transition hover:scale-[1.02] ${variantClass}`}
-        >
-          {/* <div className="flex w-[76px] flex-col items-center justify-center">
-          <p className="w-full overflow-hidden text-center text-[10px] font-medium leading-[12px] text-[#1e293b] break-words line-clamp-2">
+}) => {
+console.log(isSelected)
+  const variantClass =
+    variant === "danger"
+      ? "bg-[#ffdedd] border-[#f4c6c2]"
+      : variant === "service"
+      ? "bg-[#fff3c9] border-[#f0e1a2]"
+      : "bg-[#dff3d2] border-[#cce6bc]";
+
+  return (
+    <div className="group relative inline-block">
+      {isSelected && (
+        <div className="absolute -right-1 -top-1 z-20 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-emerald-500 text-white shadow-md">
+          <Check size={15} strokeWidth={3} />
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={() =>{
+console.log(callupdate)
+ if (callupdate) return;
+ onSelect(item, actualIndex)}}
+        className={`relative flex h-[120px] w-[124px] flex-col items-center justify-center rounded-full border text-center shadow-sm transition hover:scale-[1.02] ${variantClass} ${
+          isSelected ? "ring-2 ring-emerald-500 ring-offset-2" : ""
+        }`}
+      >
+        <div className="flex w-[90px] flex-col items-center justify-center">
+          <p className="w-full break-words text-center text-[10px] font-medium leading-[12px] text-[#1e293b] line-clamp-2">
             {line1}
           </p>
 
           {line2 ? (
-            <p className="mt-1 w-full truncate text-center text-[10px] leading-[12px] text-[#4b5563] font-medium">
+            <p className="mt-1 w-full truncate text-center text-[10px] font-medium leading-[12px] text-[#4b5563]">
               {line2}
             </p>
           ) : null}
 
           {line3 ? (
-            <p className="mt-1 w-full  text-center text-[10px] font-semibold leading-[11px] text-[#d35c5c]">
+            <p className="mt-1 w-full whitespace-nowrap text-center text-[10px] font-semibold leading-[10px] text-[#d35c5c]">
               {productType === "Primaryproduct" ? "App.Date" : "Due Date"} : {line3}
             </p>
           ) : null}
@@ -1498,62 +1573,209 @@ console.log(primaryProducts)
               Amount : {line5}
             </p>
           ) : null}
-        </div> */}
-          <div className="flex w-[90px] flex-col items-center justify-center">
-            <p className="w-full overflow-hidden text-center text-[10px] font-medium leading-[12px] text-[#1e293b] break-words line-clamp-2">
-              {line1}
-            </p>
-
-            {line2 ? (
-              <p className="mt-1 w-full truncate text-center text-[10px] leading-[12px] text-[#4b5563] font-medium">
-                {line2}
-              </p>
-            ) : null}
-
-            {line3 ? (
-              <p className="mt-1 w-full whitespace-nowrap text-center text-[10px] font-semibold leading-[10px] text-[#d35c5c]">
-                {productType === "Primaryproduct" ? "App.Date" : "Due Date"} :{" "}
-                {line3}
-              </p>
-            ) : null}
-
-            {line4 ? (
-              <p
-                className={`mt-1 w-full truncate text-center text-[9px] font-bold leading-[11px] ${
-                  line4 === "Active" ? "text-green-600" : "text-orange-500"
-                }`}
-              >
-                {line4}
-              </p>
-            ) : null}
-
-            {line5 ? (
-              <p className="mt-1 w-full truncate text-center text-[9px] font-bold leading-[11px] text-[#0b66e6]">
-                Amount : {line5}
-              </p>
-            ) : null}
-          </div>
-        </button>
-
-        <div className="absolute -right-2 -top-2 hidden gap-1 group-hover:flex">
-          <button
-            type="button"
-            onClick={() => onEdit(item, actualIndex)}
-            className="rounded-full bg-white p-2 text-green-600 shadow"
-          >
-            <FaEdit size={10} />
-          </button>
-          <button
-            type="button"
-            onClick={() => onDelete(actualIndex)}
-            className="rounded-full bg-white p-2 text-red-600 shadow"
-          >
-            <FaTrash size={10} />
-          </button>
         </div>
+      </button>
+
+      <div className="absolute -right-2 -top-2 z-30 hidden gap-1 group-hover:flex">
+        <button
+          type="button"
+          onClick={() => onEdit(item, actualIndex)}
+          className="rounded-full bg-white p-2 text-green-600 shadow"
+        >
+          <FaEdit size={10} />
+        </button>
+        <button
+          type="button"
+          onClick={() => onDelete(actualIndex)}
+          className="rounded-full bg-white p-2 text-red-600 shadow"
+        >
+          <FaTrash size={10} />
+        </button>
       </div>
-    )
-  }
+    </div>
+  );
+};
+//   const ProductCircleCard = ({
+//     item,
+//     actualIndex,
+//     productType,
+//     variant,
+//     topBadgeIcon,
+//     line1,
+//     line2,
+//     line3,
+//     line4,
+//     line5,
+//     onEdit,
+//     onDelete,
+// isSelected
+//   }) => {
+// console.log(line1)
+//     const variantClass =
+//       variant === "danger"
+//         ? "bg-[#ffdedd] border-[#f4c6c2]"
+//         : variant === "service"
+//           ? "bg-[#fff3c9] border-[#f0e1a2]"
+//           : "bg-[#dff3d2] border-[#cce6bc]"
+
+//     return (
+//       <div className="group relative">
+//         <button
+//           type="button"
+//           onClick={() => onEdit(item, actualIndex)}
+//           className={`relative flex h-[120px] w-[124px] flex-col items-center justify-center overflow-hidden rounded-full border text-center shadow-sm transition hover:scale-[1.02] ${variantClass}`}
+//         >
+        
+//            {isSelected && (
+//               <div className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full border border-emerald-200 bg-emerald-500 text-white shadow-md">
+//                 <Check size={14} strokeWidth={3} />
+//               </div>
+//             )}
+//           <div className="flex w-[90px] flex-col items-center justify-center">
+//             <p className="w-full overflow-hidden text-center text-[10px] font-medium leading-[12px] text-[#1e293b] break-words line-clamp-2">
+//               {line1}
+//             </p>
+
+//             {line2 ? (
+//               <p className="mt-1 w-full truncate text-center text-[10px] leading-[12px] text-[#4b5563] font-medium">
+//                 {line2}
+//               </p>
+//             ) : null}
+
+//             {line3 ? (
+//               <p className="mt-1 w-full whitespace-nowrap text-center text-[10px] font-semibold leading-[10px] text-[#d35c5c]">
+//                 {productType === "Primaryproduct" ? "App.Date" : "Due Date"} :{" "}
+//                 {line3}
+//               </p>
+//             ) : null}
+
+//             {line4 ? (
+//               <p
+//                 className={`mt-1 w-full truncate text-center text-[9px] font-bold leading-[11px] ${
+//                   line4 === "Active" ? "text-green-600" : "text-orange-500"
+//                 }`}
+//               >
+//                 {line4}
+//               </p>
+//             ) : null}
+
+//             {line5 ? (
+//               <p className="mt-1 w-full truncate text-center text-[9px] font-bold leading-[11px] text-[#0b66e6]">
+//                 Amount : {line5}
+//               </p>
+//             ) : null}
+//           </div>
+//         </button>
+
+//         <div className="absolute -right-2 -top-2 hidden gap-1 group-hover:flex">
+//           <button
+//             type="button"
+//             onClick={() => onEdit(item, actualIndex)}
+//             className="rounded-full bg-white p-2 text-green-600 shadow"
+//           >
+//             <FaEdit size={10} />
+//           </button>
+//           <button
+//             type="button"
+//             onClick={() => onDelete(actualIndex)}
+//             className="rounded-full bg-white p-2 text-red-600 shadow"
+//           >
+//             <FaTrash size={10} />
+//           </button>
+//         </div>
+//       </div>
+//     )
+//   }
+// const ProductCircleCard = ({
+//   item,
+//   actualIndex,
+//   productType,
+//   variant,
+//   topBadgeIcon,
+//   line1,
+//   line2,
+//   line3,
+//   line4,
+//   line5,
+//   onEdit,
+//   onDelete,
+//   isSelected,
+// }) => {
+//   const variantClass =
+//     variant === "danger"
+//       ? "bg-[#ffdedd] border-[#f4c6c2]"
+//       : variant === "service"
+//       ? "bg-[#fff3c9] border-[#f0e1a2]"
+//       : "bg-[#dff3d2] border-[#cce6bc]";
+
+//   return (
+//     <div className="group relative inline-block">
+//       {isSelected && (
+//         <div className="absolute right-2 top-2 z-20 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-emerald-500 text-white shadow-md">
+//           <Check size={14} strokeWidth={3} />
+//         </div>
+//       )}
+
+//       <button
+//         type="button"
+//         onClick={() => onEdit(item, actualIndex)}
+//         className={`relative flex h-[120px] w-[124px] flex-col items-center justify-center rounded-full border text-center shadow-sm transition hover:scale-[1.02] ${variantClass}`}
+//       >
+//         <div className="flex w-[90px] flex-col items-center justify-center">
+//           <p className="w-full break-words text-center text-[10px] font-medium leading-[12px] text-[#1e293b] line-clamp-2">
+//             {line1}
+//           </p>
+
+//           {line2 ? (
+//             <p className="mt-1 w-full truncate text-center text-[10px] font-medium leading-[12px] text-[#4b5563]">
+//               {line2}
+//             </p>
+//           ) : null}
+
+//           {line3 ? (
+//             <p className="mt-1 w-full whitespace-nowrap text-center text-[10px] font-semibold leading-[10px] text-[#d35c5c]">
+//               {productType === "Primaryproduct" ? "App.Date" : "Due Date"} :{" "}
+//               {line3}
+//             </p>
+//           ) : null}
+
+//           {line4 ? (
+//             <p
+//               className={`mt-1 w-full truncate text-center text-[9px] font-bold leading-[11px] ${
+//                 line4 === "Active" ? "text-green-600" : "text-orange-500"
+//               }`}
+//             >
+//               {line4}
+//             </p>
+//           ) : null}
+
+//           {line5 ? (
+//             <p className="mt-1 w-full truncate text-center text-[9px] font-bold leading-[11px] text-[#0b66e6]">
+//               Amount : {line5}
+//             </p>
+//           ) : null}
+//         </div>
+//       </button>
+
+//       <div className="absolute -right-2 -top-2 z-30 hidden gap-1 group-hover:flex">
+//         <button
+//           type="button"
+//           onClick={() => onEdit(item, actualIndex)}
+//           className="rounded-full bg-white p-2 text-green-600 shadow"
+//         >
+//           <FaEdit size={10} />
+//         </button>
+//         <button
+//           type="button"
+//           onClick={() => onDelete(actualIndex)}
+//           className="rounded-full bg-white p-2 text-red-600 shadow"
+//         >
+//           <FaTrash size={10} />
+//         </button>
+//       </div>
+//     </div>
+//   );
+// };
   const filteredOptionsByType = useMemo(() => {
     return productOptions.filter(
       (item) =>
@@ -3441,7 +3663,8 @@ console.log(primaryProducts)
                         <h2 className="mb-2 font-medium">Prmimary Products</h2>
                         {primaryProducts.length > 0 ? (
                           <div className="flex flex-wrap gap-4">
-                            {primaryProducts.map((item) => {
+                            {primaryProducts.map((item,index) => {
+console.log(item)
                               const actualIndex = primaryProducts.findIndex(
                                 (x) => x === item
                               )
@@ -3465,7 +3688,7 @@ console.log(primaryProducts)
                                   line1={
                                     item?.shortName
                                       ? item?.shortName
-                                      : item?.product_id?.productName
+                                      : item?.productName
                                   }
                                   line2={item?.licensenumber}
                                   // line3={
@@ -3482,6 +3705,9 @@ console.log(primaryProducts)
                                   }
                                   line4={isDeactive ? "De Active" : "Active"}
                                   onEdit={handleEdit}
+ isSelected={selectedCard === index||item?.selected}
+// nochange={item.selected}
+    onSelect={handleSelectCard}
                                   // onDelete={handleDelete}
                                 />
                               )
