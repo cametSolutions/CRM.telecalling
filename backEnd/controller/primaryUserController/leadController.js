@@ -8657,16 +8657,19 @@ export const GetownLeadList = async (req, res) => {
     console.log("endatae", endDate)
     const objectId = new mongoose.Types.ObjectId(userId);
 
-    let query;
+    let query={leadLost:false}
     if (ownlead === "true") {
       query = {
+...query,
         leadBranch: new mongoose.Types.ObjectId(selectedBranch),
         leadBy: objectId,
       };
     } else if (ownlead === "false" && role !== "Staff") {
-      query = { leadBranch: new mongoose.Types.ObjectId(selectedBranch) };
+      query = { 
+...query,
+leadBranch: new mongoose.Types.ObjectId(selectedBranch) };
     }
-
+console.log('dddddddddddddddddd',query)
     const parsedStart = startDate ? new Date(startDate) : null
     const parsedEnd = endDate ? new Date(endDate) : null
 
