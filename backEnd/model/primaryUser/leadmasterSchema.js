@@ -27,9 +27,9 @@ const leadSchema = new mongoose.Schema(
     trade: { type: String },
     partner: { type: mongoose.Schema.Types.ObjectId, ref: "Partner" },
     //to know lead is confirmed or reject initially its false
-    leadConfirmed: { type: Boolean, default: false },
+    leadConfirmed: { type: Boolean, default: false },//this only true if lead is closed form lead closed page
     //to show closed lead list
-    leadClosed: { type: Boolean, default: false },
+    leadClosed: { type: Boolean, default: false },//this is true when followup is closed
     leadClosedDate: { type: Date },
     leadLostDate: { type: Date },
     leadConvertedDate: { type: Date },

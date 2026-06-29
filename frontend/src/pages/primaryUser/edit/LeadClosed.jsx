@@ -1,12 +1,12 @@
-import { useState,useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import { BarLoader } from "react-spinners";
-import Breadcrumb from "../../../components/common/Breadcrumb";
-import LeadMaster from "../../common/LeadMaster";
-import api from "../../../api/api";
-import {toast} from "react-toastify"
-import { getLocalStorageItem } from "../../../helper/localstorage";
-import { PerformanceModal } from "../../../components/primaryUser/PerformanceModal";
+import { useState, useEffect } from "react"
+import { useLocation } from "react-router-dom"
+import { BarLoader } from "react-spinners"
+import Breadcrumb from "../../../components/common/Breadcrumb"
+import LeadMaster from "../../common/LeadMaster"
+import api from "../../../api/api"
+import { toast } from "react-toastify"
+import { getLocalStorageItem } from "../../../helper/localstorage"
+import { PerformanceModal } from "../../../components/primaryUser/PerformanceModal"
 import { StaticSidebar } from "../../../components/primaryUser/StaticSidebar"
 import AdminHeader from "../../../header/AdminHeader"
 import StaffHeader from "../../../header/StaffHeader"
@@ -33,12 +33,12 @@ import UseFetch from "../../../hooks/useFetch"
 function LeadClosed() {
   const [fetcheddata, setfetchedData] = useState([])
   console.log(fetcheddata)
-  const [loader, setLoader] = useState(false)
+  const [closedloader, setclosedLoader] = useState(false)
   const navigate = useNavigate()
 
   const location = useLocation()
   const { leadId, isReadOnly, refreshKey } = location.state || {}
-console.log(isReadOnly)
+  console.log(isReadOnly)
   console.log(location?.state)
   const nav = [
     { label: "Lead", path: "" },
@@ -245,30 +245,27 @@ console.log(isReadOnly)
   const handleSubmit = async (data, leadData, objectId) => {
     console.log(data)
     console.log(leadData)
-console.log(objectId)
+    console.log(objectId)
 
     try {
-      setLoader(true)
-      const response = await api.put(
-        `/lead/closingleads?docID=${objectId}`,
-        {
-          data,
-          leadData
-        }
-      )
+      setclosedLoader(true)
+      const response = await api.put(`/lead/closingleads?docID=${objectId}`, {
+        data,
+        leadData
+      })
       if (response.status === 200) {
         toast.success(response.data.message)
-        setLoader(false)
+        setclosedLoader(false)
       }
       navigate(-1)
     } catch (error) {
-      setLoader(false)
+      setclosedLoader(false)
       toast.error("Something went wrong")
       console.error("error:", error)
-console.log(error.message)
+      console.log(error.message)
     }
   }
-console.log("hhhh")
+  console.log("hhhh")
   return (
     <div className="h-full bg-[#ADD8E6 overflow-hidden">
       <div className="flex h-full flex-row overflow-hidden">
@@ -320,20 +317,21 @@ console.log("hhhh")
           </header>
 
           <div className="flex flex-1 flex-col min-h-0 min-w-0 overflow-hidden  w-full justify-center  bg-[#ADD8E6]">
-            {loader && (
+            {/* {loader && (
               <BarLoader
                 cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
                 color="#4A90E2" // Change color as needed
               />
-            )}
-            <Breadcrumb items={Breadcrumblist} />
+            )} */}
+            {/* <Breadcrumb items={Breadcrumblist} /> */}
             <LeadMaster
               process="closing"
               handleclosingData={handleSubmit}
-              editloadingState={loader}
-              seteditLoadingState={setLoader}
+              editloadingState={closedloader}
+              seteditLoadingState={setclosedLoader}
               Data={fetcheddata}
               isReadOnly={false}
+              Breadcrumblist={Breadcrumblist}
               selectedcompanyBranch={selectedleadbranch}
             />
           </div>

@@ -406,6 +406,7 @@ setownLead(true)
     setOpenModal(true)
   }
   const LeadRow = ({ item }) => {
+console.log(item)
     const open = openRow === item._id
     const lastLog = item.activityLog?.[item.activityLog.length - 1]
 
@@ -415,6 +416,7 @@ setownLead(true)
           .split("/")
           .join("-")
       : "-"
+console.log(item)
   const isAllocatedToeditable = Array.isArray(item.activityLog)
       ? item.activityLog.some(
           (it) =>
@@ -422,6 +424,9 @@ setownLead(true)
             it?.taskClosed === false
         )
       : false
+console.log(loggedUser)
+const isManager=loggedUser?.role==="Manager"?true:false
+console.log(isManager)
 console.log(isAllocatedToeditable)
     return (
       <>
@@ -499,7 +504,7 @@ console.log(isAllocatedToeditable)
                     })
                   : navigate("/staff/transaction/lead/leadEdit", {
                       state: { leadId: item._id, breadcrumb,
-isReadOnly:!isAllocatedToeditable,from:"Ownleadlist" }
+isReadOnly:isManager?!isManager:!isAllocatedToeditable,from:"Ownleadlist" }
                     })
               }}
               className="bg-blue-600 text-white px-2 py-1 rounded flex justify-center w-full"
