@@ -240,7 +240,7 @@ const CustomerAdd = ({
     const year = date.getFullYear()
     return `${day}-${month}-${year}`
   }
-
+console.log(customer)
   useEffect(() => {
     if (customer) {
       reset({

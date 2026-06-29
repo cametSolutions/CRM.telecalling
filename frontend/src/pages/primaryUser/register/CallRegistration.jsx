@@ -1306,7 +1306,7 @@ console.log(selectedData)
         String(item?.productorservicetype).toLowerCase() === "primaryproduct"
     )
   }, [tableData])
-console.log(productDetails)
+console.log(tableData)
 console.log(primaryProducts)
   const additionalServices = useMemo(() => {
     return tableData.filter(
@@ -3189,33 +3189,7 @@ console.log(primaryProducts)
 
                        
                       <div className="rounded-[20px] border border-[#edf1f7] bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.05)] md:p-5">
-                        <div className="mb-4 flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eef5ff] text-[#4b87ff]">
-                              <FaUser size={14} />
-                            </div>
-                            <div>
-                              <h2 className="text-[16px] font-semibold text-[#162033]">
-                                Customer Details
-                              </h2>
-                              <p className="text-[12px] text-[#7f8aa3]">
-                                Fill customer master information
-                              </p>
-                            </div>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              navigatebackto
-                                ? navigate(navigatebackto)
-                                : navigate(-1)
-                            }
-                            className="rounded-md border border-[#e6ebf3] bg-white px-3 py-2 text-[12px] font-medium text-[#6d7890] hover:bg-[#f8fafc]"
-                          >
-                            Cancel
-                          </button>
-                        </div>
+                    
 
                         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
                           <InfoInputCard
