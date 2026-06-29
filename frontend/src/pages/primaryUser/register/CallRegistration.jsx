@@ -138,6 +138,7 @@ export default function CallRegistration() {
   const [message, setMessage] = useState("")
   const [callList, setCallList] = useState([])
   const [productDetails, setProductDetails] = useState([])
+console.log(productDetails)
   const [user, setUser] = useState(false)
   const [searching, setSearching] = useState(false)
   const [search, setSearch] = useState("")
@@ -269,6 +270,7 @@ export default function CallRegistration() {
       }
     }
   }, [targetData])
+console.log(showCustomerDetails)
   useEffect(() => {
     const submitCallRegistration = async () => {
       try {
@@ -1209,6 +1211,7 @@ Problem:    \t${selectedText}
         // Do something with the fetched data
         console.log("Fetched customer:", response.data.data)
         setProductDetails(data[0].selected)
+console.log(data[0].selected)
         const selectedData =
           data[0].selected?.map((sel) => ({
             company_id: sel?.company_id?._id,
@@ -1241,6 +1244,7 @@ Problem:    \t${selectedText}
               [],
             taggeddata: sel?.taggeddata || []
           })) || []
+console.log(selectedData)
         setTableData(selectedData)
         const filteredlicenseproduct = data[0].selected.filter(
           (item) => item.licensenumber === lic
@@ -1297,17 +1301,19 @@ Problem:    \t${selectedText}
     checkcallnote()
   }
   const primaryProducts = useMemo(() => {
-    return productDetails.filter(
+    return tableData.filter(
       (item) =>
         String(item?.productorservicetype).toLowerCase() === "primaryproduct"
     )
-  }, [productDetails])
+  }, [tableData])
+console.log(productDetails)
+console.log(primaryProducts)
   const additionalServices = useMemo(() => {
-    return productDetails.filter(
+    return tableData.filter(
       (item) =>
         String(item?.productorservicetype).toLowerCase() === "additionalservice"
     )
-  }, [productDetails])
+  }, [tableData])
   console.log(primaryProducts)
   const onSubmit = async (data) => {
     if (selectedProducts && selectedProducts?.length === 0) {
@@ -1338,99 +1344,129 @@ Problem:    \t${selectedText}
       </div>
     )
   }
-//   const ProductCircleCard = ({
-//     item,
-//     actualIndex,
-//     variant,
-//     topBadgeIcon,
-//     isSelected,
-//     line1,
-//     line2,
-//     line3,
-//     line4,
-//     onEdit,
-//     onDelete
-//   }) => {
-//     const variantClass =
-//       variant === "danger"
-//         ? "bg-[#ffdedd] border-[#f4c6c2]"
-//         : variant === "service"
-//           ? "bg-[#fff3c9] border-[#f0e1a2]"
-//           : "bg-[#dff3d2] border-[#cce6bc]"
-//     console.log(line3)
-// console.log(line2)
-//     return (
-     
-//       <div className="group relative">
-//         <button
-//           type="button"
-//           onClick={() => onEdit(item, actualIndex)}
-//           className={`relative flex h-[108px] w-[108px] flex-col items-center justify-center rounded-full border text-center shadow-sm transition hover:scale-[1.02] ${variantClass}`}
-//         >
-//           {isSelected && (
-//             <div className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full border border-emerald-200 bg-emerald-500 text-white shadow-md">
-//               <Check size={14} strokeWidth={3} />
-//             </div>
-//           )}
+  //   const ProductCircleCard = ({
+  //     item,
+  //     actualIndex,
+  //     variant,
+  //     topBadgeIcon,
+  //     isSelected,
+  //     line1,
+  //     line2,
+  //     line3,
+  //     line4,
+  //     onEdit,
+  //     onDelete
+  //   }) => {
+  //     const variantClass =
+  //       variant === "danger"
+  //         ? "bg-[#ffdedd] border-[#f4c6c2]"
+  //         : variant === "service"
+  //           ? "bg-[#fff3c9] border-[#f0e1a2]"
+  //           : "bg-[#dff3d2] border-[#cce6bc]"
+  //     console.log(line3)
+  // console.log(line2)
+  //     return (
 
-//           <div className="mb-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-[#4e5a72] shadow-sm">
-//             {topBadgeIcon}
-//           </div>
+  //       <div className="group relative">
+  //         <button
+  //           type="button"
+  //           onClick={() => onEdit(item, actualIndex)}
+  //           className={`relative flex h-[108px] w-[108px] flex-col items-center justify-center rounded-full border text-center shadow-sm transition hover:scale-[1.02] ${variantClass}`}
+  //         >
+  //           {isSelected && (
+  //             <div className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full border border-emerald-200 bg-emerald-500 text-white shadow-md">
+  //               <Check size={14} strokeWidth={3} />
+  //             </div>
+  //           )}
 
-//           <p className="px-2 text-[9.5px] font-semibold leading-3 text-[#1e293b]">
-//             {line1}
-//           </p>
+  //           <div className="mb-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-[#4e5a72] shadow-sm">
+  //             {topBadgeIcon}
+  //           </div>
 
-//           {line2 ? (
-//             <p className="mt-1 px-2 text-[12px] leading-3 text-[#4b5563] font-medium">
-//               {line2}
-//             </p>
-//           ) : null}
+  //           <p className="px-2 text-[9.5px] font-semibold leading-3 text-[#1e293b]">
+  //             {line1}
+  //           </p>
 
-//           {line3 ? (
-//             <p className="mt-1 px-2 text-[12px] leading-3 text-[#4b5563] font-medium">
-//               {line3}
-//             </p>
-//           ) : null}
+  //           {line2 ? (
+  //             <p className="mt-1 px-2 text-[12px] leading-3 text-[#4b5563] font-medium">
+  //               {line2}
+  //             </p>
+  //           ) : null}
 
-//           {line4 ? (
-//             <p className="mt-1 px-2 text-[8.5px] font-semibold leading-3 text-[#d35c5c]">
-//               {line4}
-//             </p>
-//           ) : null}
-//         </button>
-//       </div>
-//     )
-//   }
-const ProductCircleCard = ({
-  item,
-  actualIndex,
-  productType,
-  variant,
-  topBadgeIcon,
-  line1,
-  line2,
-  line3,
-  line4,
-  line5,
-  onEdit,
-  onDelete,
-}) => {
-  const variantClass =
-    variant === "danger"
-      ? "bg-[#ffdedd] border-[#f4c6c2]"
-      : variant === "service"
-      ? "bg-[#fff3c9] border-[#f0e1a2]"
-      : "bg-[#dff3d2] border-[#cce6bc]";
+  //           {line3 ? (
+  //             <p className="mt-1 px-2 text-[12px] leading-3 text-[#4b5563] font-medium">
+  //               {line3}
+  //             </p>
+  //           ) : null}
 
-  return (
-    <div className="group relative">
-      <button
-        type="button"
-        onClick={() => onEdit(item, actualIndex)}
-        className={`relative flex h-[120px] w-[124px] flex-col items-center justify-center overflow-hidden rounded-full border text-center shadow-sm transition hover:scale-[1.02] ${variantClass}`}
-      >
-        {/* <div className="flex w-[76px] flex-col items-center justify-center">
+  //           {line4 ? (
+  //             <p className="mt-1 px-2 text-[8.5px] font-semibold leading-3 text-[#d35c5c]">
+  //               {line4}
+  //             </p>
+  //           ) : null}
+  //         </button>
+  //       </div>
+  //     )
+  //   }
+  const InfoInputCard = ({
+    icon,
+    iconBg,
+    iconColor,
+    label,
+    children,
+    error
+  }) => {
+    return (
+      <div className="rounded-[14px] border border-[#edf1f7] bg-white px-3 py-3 transition hover:border-[#dbe6ff]">
+        <div className="flex items-start gap-3">
+          <div
+            className={`mt-[2px] flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${iconBg} ${iconColor}`}
+          >
+            {icon}
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p className="mb-1 text-[11px] font-medium text-[#8c96ad]">
+              {label}
+            </p>
+            {children}
+            {error ? (
+              <p className="mt-1 text-[11px] text-red-500">{error}</p>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    )
+  }
+  const ProductCircleCard = ({
+    item,
+    actualIndex,
+    productType,
+    variant,
+    topBadgeIcon,
+    line1,
+    line2,
+    line3,
+    line4,
+    line5,
+    onEdit,
+    onDelete
+  }) => {
+    const variantClass =
+      variant === "danger"
+        ? "bg-[#ffdedd] border-[#f4c6c2]"
+        : variant === "service"
+          ? "bg-[#fff3c9] border-[#f0e1a2]"
+          : "bg-[#dff3d2] border-[#cce6bc]"
+
+    return (
+      <div className="group relative">
+        <button
+          type="button"
+          onClick={() => onEdit(item, actualIndex)}
+          className={`relative flex h-[120px] w-[124px] flex-col items-center justify-center overflow-hidden rounded-full border text-center shadow-sm transition hover:scale-[1.02] ${variantClass}`}
+        >
+          {/* <div className="flex w-[76px] flex-col items-center justify-center">
           <p className="w-full overflow-hidden text-center text-[10px] font-medium leading-[12px] text-[#1e293b] break-words line-clamp-2">
             {line1}
           </p>
@@ -1463,60 +1499,61 @@ const ProductCircleCard = ({
             </p>
           ) : null}
         </div> */}
-<div className="flex w-[90px] flex-col items-center justify-center">
-  <p className="w-full overflow-hidden text-center text-[10px] font-medium leading-[12px] text-[#1e293b] break-words line-clamp-2">
-    {line1}
-  </p>
+          <div className="flex w-[90px] flex-col items-center justify-center">
+            <p className="w-full overflow-hidden text-center text-[10px] font-medium leading-[12px] text-[#1e293b] break-words line-clamp-2">
+              {line1}
+            </p>
 
-  {line2 ? (
-    <p className="mt-1 w-full truncate text-center text-[10px] leading-[12px] text-[#4b5563] font-medium">
-      {line2}
-    </p>
-  ) : null}
+            {line2 ? (
+              <p className="mt-1 w-full truncate text-center text-[10px] leading-[12px] text-[#4b5563] font-medium">
+                {line2}
+              </p>
+            ) : null}
 
-  {line3 ? (
-    <p className="mt-1 w-full whitespace-nowrap text-center text-[10px] font-semibold leading-[10px] text-[#d35c5c]">
-      {productType === "Primaryproduct" ? "App.Date" : "Due Date"} : {line3}
-    </p>
-  ) : null}
+            {line3 ? (
+              <p className="mt-1 w-full whitespace-nowrap text-center text-[10px] font-semibold leading-[10px] text-[#d35c5c]">
+                {productType === "Primaryproduct" ? "App.Date" : "Due Date"} :{" "}
+                {line3}
+              </p>
+            ) : null}
 
-  {line4 ? (
-    <p
-      className={`mt-1 w-full truncate text-center text-[9px] font-bold leading-[11px] ${
-        line4 === "Active" ? "text-green-600" : "text-orange-500"
-      }`}
-    >
-      {line4}
-    </p>
-  ) : null}
+            {line4 ? (
+              <p
+                className={`mt-1 w-full truncate text-center text-[9px] font-bold leading-[11px] ${
+                  line4 === "Active" ? "text-green-600" : "text-orange-500"
+                }`}
+              >
+                {line4}
+              </p>
+            ) : null}
 
-  {line5 ? (
-    <p className="mt-1 w-full truncate text-center text-[9px] font-bold leading-[11px] text-[#0b66e6]">
-      Amount : {line5}
-    </p>
-  ) : null}
-</div>
-      </button>
-
-      <div className="absolute -right-2 -top-2 hidden gap-1 group-hover:flex">
-        <button
-          type="button"
-          onClick={() => onEdit(item, actualIndex)}
-          className="rounded-full bg-white p-2 text-green-600 shadow"
-        >
-          <FaEdit size={10} />
+            {line5 ? (
+              <p className="mt-1 w-full truncate text-center text-[9px] font-bold leading-[11px] text-[#0b66e6]">
+                Amount : {line5}
+              </p>
+            ) : null}
+          </div>
         </button>
-        <button
-          type="button"
-          onClick={() => onDelete(actualIndex)}
-          className="rounded-full bg-white p-2 text-red-600 shadow"
-        >
-          <FaTrash size={10} />
-        </button>
+
+        <div className="absolute -right-2 -top-2 hidden gap-1 group-hover:flex">
+          <button
+            type="button"
+            onClick={() => onEdit(item, actualIndex)}
+            className="rounded-full bg-white p-2 text-green-600 shadow"
+          >
+            <FaEdit size={10} />
+          </button>
+          <button
+            type="button"
+            onClick={() => onDelete(actualIndex)}
+            className="rounded-full bg-white p-2 text-red-600 shadow"
+          >
+            <FaTrash size={10} />
+          </button>
+        </div>
       </div>
-    </div>
-  );
-};
+    )
+  }
   const filteredOptionsByType = useMemo(() => {
     return productOptions.filter(
       (item) =>
@@ -2996,120 +3033,136 @@ const ProductCircleCard = ({
                 {selectedCustomer && (
                   <>
                     {/* <div className="mt-5 grid grid-cols-1 gap-3 rounded-lg bg-[#4888b9] p-4 shadow-md sm:grid-cols-2 lg:grid-cols-4">
-                  <div>
-                    <h4 className="text-sm font-bold text-white">Customer Name</h4>
-                    <p className="break-words text-sm text-white">
-                      {selectedCustomer.customerName}
-                    </p>
-                  </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">
+                          Customer Name
+                        </h4>
+                        <p className="break-words text-sm text-white">
+                          {selectedCustomer.customerName}
+                        </p>
+                      </div>
 
-                  <div>
-                    <h4 className="text-sm font-bold text-white">Email</h4>
-                    <p className="break-words text-sm text-white">
-                      {selectedCustomer.email}
-                    </p>
-                  </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">Email</h4>
+                        <p className="break-words text-sm text-white">
+                          {selectedCustomer.email}
+                        </p>
+                      </div>
 
-                  <div>
-                    <h4 className="text-sm font-bold text-white">Mobile</h4>
-                    <p className="break-words text-sm text-white">
-                      {selectedCustomer.mobile}
-                    </p>
-                  </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">Mobile</h4>
+                        <p className="break-words text-sm text-white">
+                          {selectedCustomer.mobile}
+                        </p>
+                      </div>
 
-                  <div>
-                    <h4 className="text-sm font-bold text-white">Address 1</h4>
-                    <p className="break-words text-sm text-white">
-                      {selectedCustomer.address1}
-                    </p>
-                  </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">
+                          Address 1
+                        </h4>
+                        <p className="break-words text-sm text-white">
+                          {selectedCustomer.address1}
+                        </p>
+                      </div>
 
-                  <div>
-                    <h4 className="text-sm font-bold text-white">Address 2</h4>
-                    <p className="break-words text-sm text-white">
-                      {selectedCustomer.address2}
-                    </p>
-                  </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">
+                          Address 2
+                        </h4>
+                        <p className="break-words text-sm text-white">
+                          {selectedCustomer.address2}
+                        </p>
+                      </div>
 
-                  <div>
-                    <h4 className="text-sm font-bold text-white">City</h4>
-                    <p className="break-words text-sm text-white">
-                      {selectedCustomer.city}
-                    </p>
-                  </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">City</h4>
+                        <p className="break-words text-sm text-white">
+                          {selectedCustomer.city}
+                        </p>
+                      </div>
 
-                  <div>
-                    <h4 className="text-sm font-bold text-white">State</h4>
-                    <p className="break-words text-sm text-white">
-                      {selectedCustomer.state}
-                    </p>
-                  </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">State</h4>
+                        <p className="break-words text-sm text-white">
+                          {selectedCustomer.state}
+                        </p>
+                      </div>
 
-                  <div>
-                    <h4 className="text-sm font-bold text-white">Country</h4>
-                    <p className="break-words text-sm text-white">
-                      {selectedCustomer.country}
-                    </p>
-                  </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">
+                          Country
+                        </h4>
+                        <p className="break-words text-sm text-white">
+                          {selectedCustomer.country}
+                        </p>
+                      </div>
 
-                  <div>
-                    <h4 className="text-sm font-bold text-white">Pincode</h4>
-                    <p className="break-words text-sm text-white">
-                      {selectedCustomer.pincode}
-                    </p>
-                  </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">
+                          Pincode
+                        </h4>
+                        <p className="break-words text-sm text-white">
+                          {selectedCustomer.pincode}
+                        </p>
+                      </div>
 
-                  <div>
-                    <h4 className="text-sm font-bold text-white">Landline</h4>
-                    <p className="break-words text-sm text-white">
-                      {selectedCustomer.landline || "N/A"}
-                    </p>
-                  </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">
+                          Landline
+                        </h4>
+                        <p className="break-words text-sm text-white">
+                          {selectedCustomer.landline || "N/A"}
+                        </p>
+                      </div>
 
-                  <div>
-                    <h4 className="text-sm font-bold text-white">Partnership</h4>
-                    <p className="break-words text-sm text-white">
-                      {selectedCustomer?.partner?.[0]?.partner ||
-                        selectedCustomer?.partner?.partner ||
-                        "N/A"}
-                    </p>
-                  </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">
+                          Partnership
+                        </h4>
+                        <p className="break-words text-sm text-white">
+                          {selectedCustomer?.partner?.[0]?.partner ||
+                            selectedCustomer?.partner?.partner ||
+                            "N/A"}
+                        </p>
+                      </div>
 
-                  <div>
-                    <h4 className="text-sm font-bold text-white">Industry</h4>
-                    <p className="break-words text-sm text-white">
-                      {selectedCustomer?.industry || "N/A"}
-                    </p>
-                  </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">
+                          Industry
+                        </h4>
+                        <p className="break-words text-sm text-white">
+                          {selectedCustomer?.industry || "N/A"}
+                        </p>
+                      </div>
 
-                  <div>
-                    <h4 className="text-sm font-bold text-white">Status</h4>
-                    <p
-                      className={`text-lg font-bold ${
-                        selectedCustomer.selected.some(
-                          (item) => item.isActive === "Running"
-                        )
-                          ? "text-lime-200"
-                          : "text-red-200"
-                      }`}
-                    >
-                      {selectedCustomer.selected.some(
-                        (item) => item.isActive === "Running"
-                      )
-                        ? "Active"
-                        : "Inactive"}
-                    </p>
-                  </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">Status</h4>
+                        <p
+                          className={`text-lg font-bold ${
+                            selectedCustomer.selected.some(
+                              (item) => item.isActive === "Running"
+                            )
+                              ? "text-lime-200"
+                              : "text-red-200"
+                          }`}
+                        >
+                          {selectedCustomer.selected.some(
+                            (item) => item.isActive === "Running"
+                          )
+                            ? "Active"
+                            : "Inactive"}
+                        </p>
+                      </div>
 
-                  <div>
-                    <h4 className="text-sm font-bold text-white">
-                      Reason of Status
-                    </h4>
-                    <p className="break-words text-sm text-white">
-                      {selectedCustomer.reasonofStatus || "N/A"}
-                    </p>
-                  </div>
-                </div> */}
+                      <div>
+                        <h4 className="text-sm font-bold text-white">
+                          Reason of Status
+                        </h4>
+                        <p className="break-words text-sm text-white">
+                          {selectedCustomer.reasonofStatus || "N/A"}
+                        </p>
+                      </div>
+                    </div> */}
                     <div className="mt-5 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                       <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
@@ -3134,151 +3187,274 @@ const ProductCircleCard = ({
                         </button>
                       </div>
 
-                      <div className="grid grid-cols-1 gap-3 bg-[#4888b9] p-4 sm:grid-cols-2 lg:grid-cols-4">
-                        <div>
-                          <h4 className="text-xs font-semibold uppercase tracking-wide text-blue-100">
-                            Customer Name
-                          </h4>
-                          <p className="mt-1 break-words text-sm font-medium text-white">
-                            {selectedCustomer.customerName || "N/A"}
-                          </p>
-                        </div>
+                       
+                      <div className="rounded-[20px] border border-[#edf1f7] bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.05)] md:p-5">
+                        <div className="mb-4 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eef5ff] text-[#4b87ff]">
+                              <FaUser size={14} />
+                            </div>
+                            <div>
+                              <h2 className="text-[16px] font-semibold text-[#162033]">
+                                Customer Details
+                              </h2>
+                              <p className="text-[12px] text-[#7f8aa3]">
+                                Fill customer master information
+                              </p>
+                            </div>
+                          </div>
 
-                        <div>
-                          <h4 className="text-xs font-semibold uppercase tracking-wide text-blue-100">
-                            Mobile
-                          </h4>
-                          <p className="mt-1 break-words text-sm font-medium text-white">
-                            {selectedCustomer.mobile || "N/A"}
-                          </p>
-                        </div>
-
-                        <div>
-                          <h4 className="text-xs font-semibold uppercase tracking-wide text-blue-100">
-                            Partnership
-                          </h4>
-                          <p className="mt-1 break-words text-sm font-medium text-white">
-                            {selectedCustomer?.partner?.[0]?.partner ||
-                              selectedCustomer?.partner?.partner ||
-                              "N/A"}
-                          </p>
-                        </div>
-
-                        <div>
-                          <h4 className="text-xs font-semibold uppercase tracking-wide text-blue-100">
-                            Status
-                          </h4>
-                          <p
-                            className={`mt-1 text-sm font-bold ${
-                              selectedCustomer?.selected?.some(
-                                (item) => item.isActive === "Running"
-                              )
-                                ? "text-lime-200"
-                                : "text-red-200"
-                            }`}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              navigatebackto
+                                ? navigate(navigatebackto)
+                                : navigate(-1)
+                            }
+                            className="rounded-md border border-[#e6ebf3] bg-white px-3 py-2 text-[12px] font-medium text-[#6d7890] hover:bg-[#f8fafc]"
                           >
-                            {selectedCustomer?.selected?.some(
-                              (item) => item.isActive === "Running"
-                            )
-                              ? "Active"
-                              : "Inactive"}
-                          </p>
+                            Cancel
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                          <InfoInputCard
+                            icon={<FaUser size={12} />}
+                            iconBg="bg-[#edf6ff]"
+                            iconColor="text-[#5aa2ff]"
+                            label="Customer Name"
+                            error={errors.customerName?.message}
+                          >
+                            <input
+                              type="text"
+                              value={
+                                typeof selectedCustomer?.customerName ===
+                                "string"
+                                  ? selectedCustomer?.customerName?.toUpperCase()
+                                  : selectedCustomer?.customerName || ""
+                              }
+                              className={tileInputClass}
+                            />
+                          </InfoInputCard>
+{showCustomerDetails&&(
+ <InfoInputCard
+                            icon={<FaHashtag size={12} />}
+                            iconBg="bg-[#f4efff]"
+                            iconColor="text-[#8a5eff]"
+                            label="Pincode"
+                          >
+                            <input
+                              type="number"
+                              value={selectedCustomer?.pincode}
+                              className={tileInputClass}
+                            />
+                          </InfoInputCard>
+
+)}
+             {showCustomerDetails&&(
+  <InfoInputCard
+                            icon={<FaBuilding size={12} />}
+                            iconBg="bg-[#fff4ea]"
+                            iconColor="text-[#f0a24d]"
+                            label="City"
+                          >
+                            <input
+                              type="text"
+                              value={selectedCustomer?.city}
+                              className={tileInputClass}
+                              placeholder="City"
+                            />
+                          </InfoInputCard>
+)}            
+                        
+{showCustomerDetails&&(
+   <InfoInputCard
+                            icon={<FaEnvelope size={12} />}
+                            iconBg="bg-[#eefbf2]"
+                            iconColor="text-[#4cbf73]"
+                            label="Email"
+                            error={errors.email?.message}
+                          >
+                            <input
+                              type="email"
+                              value={selectedCustomer?.email}
+                              className={tileInputClass}
+                            />
+                          </InfoInputCard>
+)}
+                       
+{showCustomerDetails&&(
+  <InfoInputCard
+                            icon={<FaMapMarkerAlt size={12} />}
+                            iconBg="bg-[#fff0f8]"
+                            iconColor="text-[#ef7db2]"
+                            label="Address 1"
+                          >
+                            <input
+                              value={selectedCustomer?.address1}
+                              className={tileInputClass}
+                            />
+                          </InfoInputCard>
+)}
+                        
+{showCustomerDetails&&(
+  <InfoInputCard
+                            icon={<FaUser size={12} />}
+                            iconBg="bg-[#ebfbfb]"
+                            iconColor="text-[#43c7cb]"
+                            label="Contact Person"
+                          >
+                            <input
+                              type="text"
+                              value={selectedCustomer?.contactPerson}
+                              className={tileInputClass}
+                            />
+                          </InfoInputCard>
+)}
+                        
+
+                          <InfoInputCard
+                            icon={<FaPhone size={12} />}
+                            iconBg="bg-[#edf9f0]"
+                            iconColor="text-[#45bf6b]"
+                            label="Mobile No"
+                          >
+                            <input
+                              type="tel"
+                              value={selectedCustomer?.landline}
+                              className={tileInputClass}
+                            />
+                          </InfoInputCard>
+
+                          <InfoInputCard
+                            icon={<FaLandmark size={12} />}
+                            iconBg="bg-[#fff8df]"
+                            iconColor="text-[#d1a91b]"
+                            label="Partnership"
+                          >
+                            <input
+                              type="text"
+                              value={
+                                selectedCustomer?.partner?.[0]?.partner ||
+                                selectedCustomer?.partner?.partner ||
+                                "N/A"
+                              }
+                              className={tileInputClass}
+                            />
+                          </InfoInputCard>
+{showCustomerDetails&&(
+ <InfoInputCard
+                            icon={<FaMapMarkerAlt size={12} />}
+                            iconBg="bg-[#eef5ff]"
+                            iconColor="text-[#3879f2]"
+                            label="Address 2"
+                          >
+                            <input
+                              type="text"
+                              value={selectedCustomer?.address2}
+                              className={tileInputClass}
+                            />
+                          </InfoInputCard>
+)}
+                       {showCustomerDetails&&(
+
+                          <InfoInputCard
+                            icon={<FaBuilding size={12} />}
+                            iconBg="bg-[#edf7ff]"
+                            iconColor="text-[#4f98ff]"
+                            label="State"
+                          >
+                            <input
+                              type="text"
+                              value={selectedCustomer?.state}
+                              className={tileInputClass}
+                            />
+                          </InfoInputCard>
+)}  
+
+{showCustomerDetails&&(
+
+                          <InfoInputCard
+                            icon={<FaGlobeAsia size={12} />}
+                            iconBg="bg-[#fff2e8]"
+                            iconColor="text-[#ef9a47]"
+                            label="Country"
+                          >
+                            <input
+                              type="text"
+                              value={selectedCustomer?.country}
+                              className={tileInputClass}
+                            />
+                          </InfoInputCard>
+)}
+{showCustomerDetails&&(
+    <InfoInputCard
+                            icon={<FaPhone size={12} />}
+                            iconBg="bg-[#fff1f6]"
+                            iconColor="text-[#f07ab1]"
+                            label="Landline No"
+                          >
+                            <input
+                              type="tel"
+                              value={selectedCustomer?.landline}
+                              className={tileInputClass}
+                            />
+                          </InfoInputCard>
+)}
+                      
+{showCustomerDetails&&(
+ <InfoInputCard
+                            icon={<FaStar size={12} />}
+                            iconBg="bg-[#eef4ff]"
+                            iconColor="text-[#6d86ff]"
+                            label="Industry"
+                          >
+                            <input
+                              type="text"
+                              value={selectedCustomer?.industry}
+                              className={tileInputClass}
+                            />
+                          </InfoInputCard>
+)}
+                         
+{showCustomerDetails&&(
+
+                          <InfoInputCard
+                            icon={<FaHashtag size={12} />}
+                            iconBg="bg-[#f5f0ff]"
+                            iconColor="text-[#9967ff]"
+                            label="Registration Type"
+                            error={errors.registrationType?.message}
+                          >
+                            <input
+                              type="text"
+                              value={selectedCustomer?.registrationType}
+                              className={tileInputClass}
+                            />
+                           
+                          </InfoInputCard>
+)}
+
+                          {/* {registrationType === "regular" && (
+                <InfoInputCard
+                  icon={<FaLandmark size={12} />}
+                  iconBg="bg-[#fff1f7]"
+                  iconColor="text-[#ee82a9]"
+                  label="GSTIN / UIN"
+                >
+                  <input
+                    type="text"
+                    {...register("gstNo")}
+                    onBlur={(e) => setValue("gstNo", e.target.value.trim())}
+                    className={tileInputClass}
+                    placeholder="Enter GSTIN"
+                  />
+                </InfoInputCard>
+              )} */}
                         </div>
                       </div>
 
-                      {showCustomerDetails && (
-                        <div className="grid grid-cols-1 gap-3 border-t border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">
-                          <div>
-                            <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                              Email
-                            </h4>
-                            <p className="mt-1 break-words text-sm text-slate-700">
-                              {selectedCustomer.email || "N/A"}
-                            </p>
-                          </div>
-
-                          <div>
-                            <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                              Address 1
-                            </h4>
-                            <p className="mt-1 break-words text-sm text-slate-700">
-                              {selectedCustomer.address1 || "N/A"}
-                            </p>
-                          </div>
-
-                          <div>
-                            <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                              Address 2
-                            </h4>
-                            <p className="mt-1 break-words text-sm text-slate-700">
-                              {selectedCustomer.address2 || "N/A"}
-                            </p>
-                          </div>
-
-                          <div>
-                            <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                              City
-                            </h4>
-                            <p className="mt-1 break-words text-sm text-slate-700">
-                              {selectedCustomer.city || "N/A"}
-                            </p>
-                          </div>
-
-                          <div>
-                            <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                              State
-                            </h4>
-                            <p className="mt-1 break-words text-sm text-slate-700">
-                              {selectedCustomer.state || "N/A"}
-                            </p>
-                          </div>
-
-                          <div>
-                            <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                              Country
-                            </h4>
-                            <p className="mt-1 break-words text-sm text-slate-700">
-                              {selectedCustomer.country || "N/A"}
-                            </p>
-                          </div>
-
-                          <div>
-                            <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                              Pincode
-                            </h4>
-                            <p className="mt-1 break-words text-sm text-slate-700">
-                              {selectedCustomer.pincode || "N/A"}
-                            </p>
-                          </div>
-
-                          <div>
-                            <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                              Landline
-                            </h4>
-                            <p className="mt-1 break-words text-sm text-slate-700">
-                              {selectedCustomer.landline || "N/A"}
-                            </p>
-                          </div>
-
-                          <div>
-                            <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                              Industry
-                            </h4>
-                            <p className="mt-1 break-words text-sm text-slate-700">
-                              {selectedCustomer.industry || "N/A"}
-                            </p>
-                          </div>
-
-                          <div className="sm:col-span-2 lg:col-span-2">
-                            <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                              Reason of Status
-                            </h4>
-                            <p className="mt-1 break-words text-sm text-slate-700">
-                              {selectedCustomer.reasonofStatus || "N/A"}
-                            </p>
-                          </div>
-                        </div>
-                      )}
+                     
                     </div>
 
                     <div className="mt-6 w-full">
@@ -3298,7 +3474,7 @@ const ProductCircleCard = ({
                               const isDeactive =
                                 String(item?.isActive).toLowerCase() ===
                                 "deactive"
-console.log(item?.isActive)
+                              console.log(item?.isActive)
                               const isSelected =
                                 String(item?.licensenumber ?? "") ===
                                 String(selectedLicenseNumber ?? "")
@@ -3308,7 +3484,7 @@ console.log(item?.isActive)
                                   key={`primary-${actualIndex}`}
                                   item={item}
                                   actualIndex={actualIndex}
- productType="Primaryproduct"
+                                  productType="Primaryproduct"
                                   isSelected={isSelected}
                                   variant={isDeactive ? "danger" : "success"}
                                   topBadgeIcon={<FaBuilding size={10} />}
@@ -3323,11 +3499,13 @@ console.log(item?.isActive)
                                   //     ? formatDateToDDMMYYYY(item?.nextDue)
                                   //     : ""
                                   // }
- line3={
-                            item?.applicationDate
-                              ? formatDateToDDMMYYYY(item?.applicationDate)
-                              : ""
-                          }
+                                  line3={
+                                    item?.applicationDate
+                                      ? formatDateToDDMMYYYY(
+                                          item?.applicationDate
+                                        )
+                                      : ""
+                                  }
                                   line4={isDeactive ? "De Active" : "Active"}
                                   onEdit={handleEdit}
                                   // onDelete={handleDelete}
@@ -3351,13 +3529,14 @@ console.log(item?.isActive)
                               const actualIndex = additionalServices.findIndex(
                                 (x) => x === item
                               )
-                      const isDeactive =
-                        String(item?.isActive).toLowerCase() === "deactive"
+                              const isDeactive =
+                                String(item?.isActive).toLowerCase() ===
+                                "deactive"
                               return (
                                 <ProductCircleCard
                                   key={`additional-${actualIndex}`}
                                   item={item}
- productType="Additionalservice"
+                                  productType="Additionalservice"
                                   actualIndex={actualIndex}
                                   variant="service"
                                   topBadgeIcon={<FaBuilding size={10} />}
@@ -3369,15 +3548,15 @@ console.log(item?.isActive)
                                   // line2={
                                   //   item?.amount ? `Rs. ${item.amount}` : ""
                                   // }
- line2={
-                            Array.isArray(item?.taggeddata) &&
-                            item.taggeddata.length > 0
-                              ? item.taggeddata
-                                  .map((x) => x.licensenumber)
-                                  .join(", ")
-                                  .slice(0, 18)
-                              : item?.licensenumber
-                          }
+                                  line2={
+                                    Array.isArray(item?.taggeddata) &&
+                                    item.taggeddata.length > 0
+                                      ? item.taggeddata
+                                          .map((x) => x.licensenumber)
+                                          .join(", ")
+                                          .slice(0, 18)
+                                      : item?.licensenumber
+                                  }
                                   // line3={
                                   //   item?.taggeddata?.length > 0
                                   //     ? `Tagged ${item.taggeddata.length}`
@@ -3395,15 +3574,15 @@ console.log(item?.isActive)
                                   //         .slice(0, 18)
                                   //     : ""
                                   // }
-  line3={
-                            item?.taggeddata?.length > 0
-                              ? formatDateToDDMMYYYY(
-                                  item?.taggeddata?.[0]?.nextDue
-                                )
-                              : item?.nextDue
-                                ? formatDateToDDMMYYYY(item?.nextDue)
-                                : ""
-                          }
+                                  line3={
+                                    item?.taggeddata?.length > 0
+                                      ? formatDateToDDMMYYYY(
+                                          item?.taggeddata?.[0]?.nextDue
+                                        )
+                                      : item?.nextDue
+                                        ? formatDateToDDMMYYYY(item?.nextDue)
+                                        : ""
+                                  }
                                   // line4={
                                   //   item?.taggeddata?.length > 0
                                   //     ? formatDateToDDMMYYYY(
@@ -3413,8 +3592,8 @@ console.log(item?.isActive)
                                   //       ? formatDateToDDMMYYYY(item?.nextDue)
                                   //       : ""
                                   // }
-     line4={isDeactive ? "De Active" : "Active"}
-line5={item?.productAmount}
+                                  line4={isDeactive ? "De Active" : "Active"}
+                                  line5={item?.productAmount}
                                   onEdit={handleEdit}
                                   // onDelete={handleDelete}
                                 />
@@ -4077,7 +4256,7 @@ line5={item?.productAmount}
                           render={({ field }) => (
                             <Select
                               {...field}
- isDisabled={true}
+                              isDisabled={true}
                               options={filteredOptionsByType}
                               value={field.value}
                               onChange={(option) => {
@@ -4106,12 +4285,12 @@ line5={item?.productAmount}
                       <PopupField label="Company">
                         <Controller
                           name="companyName"
-readOnly
+                          readOnly
                           control={control}
                           render={({ field }) => (
                             <Select
                               {...field}
-isDisabled={true}
+                              isDisabled={true}
                               options={companyOptions}
                               value={field.value}
                               onChange={(option) => {
@@ -4129,13 +4308,11 @@ isDisabled={true}
                       <PopupField label="Branch">
                         <Controller
                           name="branchName"
-
                           control={control}
                           render={({ field }) => (
                             <Select
-
                               {...field}
-isDisabled={true}
+                              isDisabled={true}
                               options={branchOptions}
                               value={field.value}
                               onChange={(option) => {
@@ -4152,7 +4329,7 @@ isDisabled={true}
 
                       <PopupField
                         label="License Number"
-readOnly
+                        readOnly
                         error={
                           errors.licensenumber?.message ||
                           (!licenseAvailable && watchedLicense
@@ -4214,7 +4391,7 @@ readOnly
                       {popupType === "Primaryproduct" && (
                         <PopupField label="Software Trade">
                           <select
-disabled
+                            disabled
                             {...register("softwareTrade")}
                             className={compactPopupInputClass}
                           >
@@ -4232,7 +4409,7 @@ disabled
                         <PopupField label="Application Date">
                           <input
                             type="date"
-readOnly
+                            readOnly
                             {...register("applicationDate")}
                             className={compactPopupInputClass}
                           />
@@ -4243,7 +4420,7 @@ readOnly
                         !hasTaggedLicenses && (
                           <PopupField label="Next Due">
                             <input
-readOnly
+                              readOnly
                               type="date"
                               {...register("nextDue")}
                               className={compactPopupInputClass}
@@ -4254,7 +4431,7 @@ readOnly
                       <PopupField label="No of Quantity / Users">
                         <input
                           type="number"
-readOnly
+                          readOnly
                           {...register("noofusers")}
                           // className={`${compactPopupInputClass} no-spinner`}
                           className={`${compactPopupInputClass} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0`}
@@ -4263,7 +4440,7 @@ readOnly
 
                       <PopupField label="Amount">
                         <input
-readOnly
+                          readOnly
                           type="number"
                           {...register("productAmount")}
                           // className={compactPopupInputClass}
@@ -4273,7 +4450,7 @@ readOnly
 
                       <PopupField label="Status">
                         <select
-disabled
+                          disabled
                           {...register("isActive")}
                           className={compactPopupInputClass}
                         >
@@ -4306,7 +4483,7 @@ disabled
                                     >
                                       <input
                                         type="checkbox"
-disabled
+                                        disabled
                                         checked={checked}
                                         onChange={(e) => {
                                           const prev =
@@ -4399,7 +4576,7 @@ disabled
                                         <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
                                           <input
                                             type="date"
-readOnly
+                                            readOnly
                                             value={
                                               watchedTaggedLicenseDueDates?.[
                                                 licenseNo

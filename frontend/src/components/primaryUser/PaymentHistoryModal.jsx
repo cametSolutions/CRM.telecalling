@@ -297,10 +297,10 @@ export const PaymentHistoryModal = ({
                             onChange={(e) =>
                               handleInputChange(
                                 "receivedAmount",
-                                parseFloat(e.target.value) || 0
+                                parseFloat(e.target.value) 
                               )
                             }
-                            className="w-32 px-2 py-1.5 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                            className="w-32 px-2 py-1.5 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm  [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0"
                           />
                         ) : (
                           <span

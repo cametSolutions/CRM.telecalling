@@ -11,6 +11,7 @@ import { toast } from "react-toastify"
 import UseFetch from "../../hooks/useFetch"
 import api from "../../api/api"
 import { useNavigate } from "react-router-dom"
+import Breadcrumb from "../../components/common/Breadcrumb"
 import { Loader } from "lucide-react"
 import { selectedBranch } from "../../../slices/companyBranchSlice"
 import FullScreenLoader from "../../components/common/FullScreenLoader"
@@ -80,6 +81,8 @@ function LicenseDropdown({
   selectedleadlist,
   setSelectedLeadList
 }) {
+  console.log(selectedleadlist)
+  console.log(item)
   console.log(index)
   console.log(customerTableData)
   const isMulti = item?.productorservicetype === "Additionalservice"
@@ -124,11 +127,11 @@ function LicenseDropdown({
   }, [dropdownId])
 
   const selectedLicenses = isMulti ? item?.licenseNumbers || [] : []
-
+  console.log(customerTableData)
   const filtered = (customerTableData || []).filter((lic) => {
     const q = String(search || "").toLowerCase()
     if (!q) return true
-
+    console.log("h")
     const license = String(lic?.licenseNumber ?? "").toLowerCase()
     const product = String(
       lic?.productName || lic?.productorServiceName || ""
@@ -136,6 +139,7 @@ function LicenseDropdown({
 
     return license.includes(q) || product.includes(q)
   })
+  console.log(filtered)
 
   const updateRow = (newRow) => {
     console.log(newRow)
@@ -201,7 +205,7 @@ function LicenseDropdown({
     setSearch(e.target.value)
     setOpen(true)
   }
-
+  console.log(open)
   return (
     <div ref={wrapperRef} className="relative w-full">
       <input
@@ -633,9 +637,9 @@ function ProductDropdown({
 const LeadMaster = ({
   process,
   Data = null,
-
+  Breadcrumblist,
   isReadOnly,
-from=null,
+  from = null,
   handleleadData,
   handleEditData,
   handleclosingData,
@@ -647,7 +651,7 @@ from=null,
   showpopupMessage,
   selectedcompanyBranch
 }) => {
-console.log(from)
+  console.log(from)
   console.log(Data)
   console.log(isReadOnly)
   const {
@@ -909,7 +913,6 @@ console.log(from)
       document.removeEventListener("mousedown", handleClickOutside)
     }
   }, [])
-
   useEffect(() => {
     console.log("hhhh")
     if (loggeduser?._id) {
@@ -919,7 +922,7 @@ console.log(from)
         setValueMain("leadBy", loggeduser._id)
       }
     }
-  }, [loggeduser, setValueMain])
+  }, [loggeduser, setValueMain, Data])
 
   useEffect(() => {
     console.log("hhh")
@@ -1028,11 +1031,23 @@ console.log(from)
       setProductorServiceSelections(groupedByLicenseNumber)
       console.log(Data[0])
       const selectedcustomerlicenseandproduct =
-        Data[0]?.customerName?.selected?.map((sel) => ({
-          licenseNumber: sel.licensenumber || "N/A",
-          productName: sel.productName || "Unknown",
-          productorServiceId: sel?.product_id
-        }))
+        Data[0]?.customerName?.selected
+          ?.filter(
+            (sel) =>
+              sel?.licensenumber != null &&
+              String(sel.licensenumber).trim() !== ""
+          )
+          .map((sel) => ({
+            licenseNumber: sel.licensenumber,
+            productName: sel.productName || "Unknown",
+            productorServiceId: sel?.product_id
+          })) || []
+      // Data[0]?.customerName?.selected?.map((sel) => ({
+      //   licenseNumber: sel.licensenumber || "N/A",
+      //   productName: sel.productName || "Unknown",
+      //   productorServiceId: sel?.product_id
+      // }))
+      console.log("d")
       setcustomerTableData(selectedcustomerlicenseandproduct)
     }
   }, [customerOptions, Data])
@@ -1636,13 +1651,19 @@ console.log(from)
       matchedCustomer?.selected?.find(
         (sel) => String(sel.branch_id) === String(selectedBranch)
       )?.licensenumber || ""
-
+    console.log(matchedCustomer)
     setcustomerTableData(
       matchedCustomer?.selected
-        ?.filter((sel) => String(sel.branch_id) === String(selectedBranch))
+        ?.filter(
+          (sel) =>
+            String(sel.branch_id) === String(selectedBranch) &&
+            sel?.licensenumber != null &&
+            String(sel.licensenumber).trim() !== ""
+        )
         ?.map((sel) => ({
           licenseNumber: sel.licensenumber || "",
-          productName: sel.productName || "Unknown"
+          productName: sel.productName || "Unknown",
+          productorServiceId: sel?.product_id
         })) || []
     )
 
@@ -2032,30 +2053,36 @@ console.log(from)
       if (!hasBranch) {
         return `Branch is required in row ${rowNo}`
       }
-
+      console.log(row)
       const productPrice = Number(
         row?.productprice ?? row?.productPrice ?? row?.amount ?? 0
       )
+      console.log(type)
       console.log(productPrice)
       const netAmount = Number(row?.netamount ?? row?.netAmount ?? 0)
-
+      console.log(
+        !String(row?.licensenumber || row?.licenseNumber || "").trim()
+      )
       if (type === "primaryproduct") {
         if (!String(row?.licensenumber || row?.licenseNumber || "").trim()) {
-          return `License number is required for primary product in row ${rowNo}`
+          console.log("hhh")
+          return `License number is required for  ${row?.productorServiceName || row?.productName}`
         }
-if(!row.applicationDate){
-return `Application date is requiered for primary product in row ${rowNo},please add details`}
+        if (!row.applicationDate) {
+          return `Application date is requiered for  ${row?.productName || row?.productorServiceName},please add details`
+        }
         if (!(productPrice > 0)) {
           console.log("hhh")
-          return `Product price must be greater than 0 for primary product in row ${rowNo}`
+          return `Product price must be greater than 0 for ${row?.productName || row?.productorServiceName}`
         }
 
         if (!(netAmount > 0)) {
-          return `Net amount is required for primary product in row ${rowNo}`
+          return `Net amount is required for ${row?.productName || row?.productorServiceName}`
         }
       }
 
       if (type === "additionalservice") {
+        console.log(row)
         const taggeddata = Array.isArray(row?.taggeddata) ? row.taggeddata : []
         const outerLicense = String(
           row?.licensenumber || row?.licenseNumber || ""
@@ -2069,11 +2096,11 @@ return `Application date is requiered for primary product in row ${rowNo},please
         console.log(!hasAdditionalService && !(productPrice > 0))
         if (!hasAdditionalService && !(productPrice > 0)) {
           console.log("jjjj")
-          return `Product price must be greater than 0 for additional service in row ${rowNo}`
+          return `Product price must be greater than 0 for ${row?.productName}`
         }
 
         if (!hasAdditionalService && !(netAmount > 0)) {
-          return `Net amount is required for additional service in row ${rowNo}`
+          return `Net amount is required for  ${row?.productName || row?.productorServiceName}`
         }
         console.log(taggeddata)
         if (taggeddata.length > 0) {
@@ -2086,41 +2113,41 @@ return `Application date is requiered for primary product in row ${rowNo},please
 
             if (!tagLicense) {
               console.log("hh")
-              return `Tagged license number is required in row ${rowNo}, tagged row ${j + 1}`
+              return `Tagged license number is required for ${row?.productName || row?.productorServiceName}`
             }
 
             if (!due) {
-              return `Next due is required for tagged license ${tagLicense} in row ${rowNo}`
+              return `Next due is required for  ${row?.productName || row?.productorServiceName}`
             }
 
             if (due < today) {
-              return `Next due cannot be less than current date for tagged license ${tagLicense} in row ${rowNo}`
+              return `Next due cannot be less than current date for ${row?.productName || row?.productorServiceName}`
             }
           }
         } else {
           console.log(taggeddata)
           if (!row.nextDue) {
             console.log("hh")
-            return `Additonal service in row ${rowNo} must have a nextDue please add Details`
+            return `Additonal service  ${row?.productName || row?.productorServiceName} must have a nextDue please add Details`
           }
           if (!outerLicense && taggeddata.length === 0) {
             console.log("hhh")
-            return `Additional service in row ${rowNo} must have a license number or tagged license`
+            return `Additional service  ${row?.productName || row?.productorServiceName} must have a license number or tagged license`
           }
 
           const due = parseDateOnly(row?.nextDue)
           if (!due) {
-            return `Next due is required for additional service in row ${rowNo}`
+            return `Next due is required for ${row?.productName || row?.productorServiceName}`
           }
 
           if (due < today) {
-            return `Next due cannot be less than current date for additional service in row ${rowNo}`
+            return `Next due cannot be less than current date for ${row?.productName || row?.productorServiceName}`
           }
         }
 
         if (!hasAnyLicense) {
           console.log("Hhh")
-          return `Additional service in row ${rowNo} must have a license number or tagged license`
+          return `Additional service ${row?.productName || row?.productorServiceName} must have a license number or tagged license`
         }
       }
     }
@@ -2150,7 +2177,7 @@ return `Application date is requiered for primary product in row ${rowNo},please
         )
 
         if (!outerLicense && !hasTaggedLicense) {
-          return `Additional service in row ${rowNo} should have any one license number or tagged license number`
+          return `Additional service  ${row?.productName || row?.productorServiceName} should have any one license number or tagged license number`
         }
       }
     }
@@ -2230,13 +2257,14 @@ return `Application date is requiered for primary product in row ${rowNo},please
         )
       } else if (process === "closing") {
         const validationMessage = validateSelectedLeadList(selectedleadlist)
-
+        console.log(validationMessage)
         if (validationMessage) {
           toast.error(validationMessage)
           return
         }
-console.log(selectedleadlist)
-        
+
+        console.log(selectedleadlist)
+
         seteditLoadingState(true)
         const updated = await handleclosingData(
           data,
@@ -2487,6 +2515,7 @@ console.log(selectedleadlist)
   //   })
   //   setdetailsopen(true)
   // }
+  console.log(detailsForm)
   const handleDetails = (item, index) => {
     const isAdditionalService =
       String(item?.productorservicetype || "").toLowerCase() ===
@@ -2550,6 +2579,7 @@ console.log(selectedleadlist)
           color="#4A90E2"
         />
       )}
+      <Breadcrumb items={Breadcrumblist} />
 
       <div className="flex-1 min-h-0 overflow-y-auto p-3">
         <div
@@ -2872,13 +2902,13 @@ console.log(selectedleadlist)
                           rowSpan={2}
                           className="border border-blue-900 px-2 py-2 text-left text-xs"
                         >
-                          License No
+                          Product / Service
                         </th>
                         <th
                           rowSpan={2}
                           className="border border-blue-900 px-2 py-2 text-left text-xs"
                         >
-                          Product / Service
+                          License No
                         </th>
                         <th
                           colSpan={3}
@@ -2897,30 +2927,6 @@ console.log(selectedleadlist)
                           className="border border-blue-900 px-2 py-2 text-center text-xs"
                         >
                           Details
-                          {/* <button
-                            type="button"
-                            disabled={isReadOnly}
-                            onClick={handleAddRowFromTable}
-                            title="Add Row"
-                            className={`mx-auto flex items-center justify-center w-5 h-5 rounded-full bg-white bg-opacity-20 hover:bg-opacity-40 transition ${
-                              isReadOnly ? "cursor-not-allowed opacity-50" : ""
-                            }`}
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-3 w-3 text-white"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              strokeWidth={2.5}
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M12 4v16m8-8H4"
-                              />
-                            </svg>
-                          </button> */}
                         </th>
                       </tr>
                       <tr className="bg-[#1B2A4A] text-white">
@@ -2935,171 +2941,14 @@ console.log(selectedleadlist)
                         </th>
                       </tr>
                     </thead>
-                    {/* <tbody>
-                   
 
-                      {tableRows.map((item, index) => {
-                        const showLicenseDropdown =
-                          item?.productorservicetype === "Additionalservice"
- const isAmountLocked = isReadOnly || isRowPriceLocked(item)
-    const isTaxLocked = isReadOnly || isRowPriceLocked(item)
-                        console.log(showLicenseDropdown)
-                        return (
-                          <tr
-                            key={index}
-                            className="border-b even:bg-blue-50 bg-white hover:bg-blue-50 transition-colors"
-                          >
-                            <td className="border border-gray-300 px-1 py-1">
-                              {showLicenseDropdown ? (
-                                <LicenseDropdown
-                                  index={index}
-                                  item={item}
-                                  isReadOnly={isReadOnly}
-                                  customerTableData={customerTableData}
-                                  selectedleadlist={selectedleadlist}
-                                  setSelectedLeadList={setSelectedLeadList}
-                                  handleLicenseSelect={handleLicenseSelect}
-                                />
-                              ) : (
-                                <input
-                                  value={item.licenseNumber || ""}
-className="py-1 border pl-2 rounded-md border-gray-500"
-                                  onChange={(e) => {
-                                    // updateLicense(index, e.target.value)
-                                    // handleLicenseBlur(index, e.target.value)
-                                    // const licenseValue = e.target.value
-
-                                    // updateLicense(index, licenseValue)
-
-                                    // if (debounceTimersRef.current[index]) {
-                                    //   clearTimeout(
-                                    //     debounceTimersRef.current[index]
-                                    //   )
-                                    // }
-
-                                    // debounceTimersRef.current[index] =
-                                    //   setTimeout(() => {
-                                    //     handleLicenseBlur(index, licenseValue)
-                                    //     delete debounceTimersRef.current[index]
-                                    //   }, 1000)
- const licenseValue = e.target.value
-
-    updateLicense(index, licenseValue)
-
-    if (debounceTimersRef.current[index]) {
-      clearTimeout(debounceTimersRef.current[index])
-    }
-
-    debounceTimersRef.current[index] = setTimeout(() => {
-      handleLicenseBlur(index, licenseValue)
-      delete debounceTimersRef.current[index]
-    }, 1000)
-                                  }}
-                                  
-                                  placeholder="Enter License Number"
-                                />
-                              )}
-                            </td>
-
-                            <td className="border border-gray-300 px-1 py-1">
-                              <ProductDropdown
-                                index={index}
-                                item={item}
-                                isReadOnly={isReadOnly}
-                                leadList={leadList}
-                                selectedleadlist={selectedleadlist}
-                                selectedBranch={selectedBranch}
-                                selectedCustomer={selectedCustomer}
-                                setSelectedLeadList={setSelectedLeadList}
-                              />
-                            </td>
-
-                            <td className="border border-gray-300 px-1 py-1">
-                              <input
-                                type="number"
-                                readOnly={isAmountLocked}
-                                value={item.productPrice}
-                                onChange={(e) =>
-                                  handlePriceChange(index, e.target.value)
-                                }
-                                placeholder="0.00"
-                                className={`w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-right ${
-                                  isAmountLocked
-                                    ? "cursor-not-allowed bg-gray-100"
-                                    : "bg-white"
-                                }`}
-                              />
-                            </td>
-
-                            <td className="border border-gray-300 px-1 py-1">
-                              <input
-                                type="number"
-                                readOnly={isAmountLocked}
-                                value={item.hsn}
-                                onChange={(e) =>
-                                  handleHsnChange(index, e.target.value)
-                                }
-                                placeholder="Tax %"
-                                className={`w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-center bg-gray-100 ${
-                                  isAmountLocked ? "cursor-not-allowed" : ""
-                                }`}
-                              />
-                            </td>
-
-                            <td className="border border-gray-300 px-1 py-1">
-                              <input
-                                type="text"
-                                readOnly
-                                value={item.netAmount}
-                                placeholder="0.00"
-                                className="w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-right cursor-not-allowed bg-gray-100"
-                              />
-                            </td>
-
-                            <td className="border border-gray-300 px-1 py-1 text-center">
-                              <button
-                                type="button"
-                                disabled={isReadOnly}
-                                onClick={() =>
-                                  handleDeletetableData(item, index)
-                                }
-                                className={`text-red-400 hover:text-red-600 p-1 rounded transition-colors ${
-                                  isReadOnly
-                                    ? "cursor-not-allowed opacity-30"
-                                    : ""
-                                }`}
-                                title="Delete row"
-                              >
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  className="h-3.5 w-3.5"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                  strokeWidth={2}
-                                >
-                                  <path d="M3 6h18" />
-                                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                                </svg>
-                              </button>
-                            </td>
-
-                            <td className="border border-gray-300 " ><button 
-type="button"
-onClick={()=>handleDetails(item,index)}
-
-
-className="text-blue-500 font-bold ml-2">Details</button></td>
-                          </tr>
-                        )
-                      })}
-                    </tbody> */}
                     <tbody>
                       {tableRows.map((item, index) => {
+                        console.log(item)
                         const showLicenseDropdown =
                           item?.productorservicetype === "Additionalservice"
                         console.log("jjj")
+                        console.log(showLicenseDropdown)
                         const isAmountLocked =
                           isReadOnly || isRowPriceLocked(item)
                         const isTaxLocked = isReadOnly || isRowPriceLocked(item)
@@ -3122,6 +2971,19 @@ className="text-blue-500 font-bold ml-2">Details</button></td>
                             className="border-b even:bg-blue-50 bg-white hover:bg-blue-50 transition-colors"
                           >
                             <td className="border border-gray-300 px-1 py-1">
+                              <ProductDropdown
+                                index={index}
+                                item={item}
+                                isReadOnly={isReadOnly}
+                                leadList={leadList}
+                                selectedleadlist={selectedleadlist}
+                                selectedBranch={selectedBranch}
+                                selectedCustomer={selectedCustomer}
+                                process={process}
+                                setSelectedLeadList={setSelectedLeadList}
+                              />
+                            </td>
+                            <td className="border border-gray-300 px-1 py-1">
                               {showLicenseDropdown ? (
                                 <LicenseDropdown
                                   index={index}
@@ -3137,8 +2999,17 @@ className="text-blue-500 font-bold ml-2">Details</button></td>
                                   value={item.licenseNumber}
                                   className="py-1 border pl-2 rounded-md border-gray-500 w-full text-xs"
                                   onChange={(e) => {
+                                    console.log(item)
                                     const licenseValue = e.target.value
-console.log(licenseValue)
+                                    setcustomerTableData([
+                                      {
+                                        licenseNumber: licenseValue,
+                                        productName: item?.productorServiceName,
+                                        productorServiceId:
+                                          item?.productorServiceId
+                                      }
+                                    ])
+                                    console.log(licenseValue)
                                     updateLicense(index, licenseValue)
 
                                     if (debounceTimersRef.current[index]) {
@@ -3156,20 +3027,6 @@ console.log(licenseValue)
                                   placeholder="Enter License Number"
                                 />
                               )}
-                            </td>
-
-                            <td className="border border-gray-300 px-1 py-1">
-                              <ProductDropdown
-                                index={index}
-                                item={item}
-                                isReadOnly={isReadOnly}
-                                leadList={leadList}
-                                selectedleadlist={selectedleadlist}
-                                selectedBranch={selectedBranch}
-                                selectedCustomer={selectedCustomer}
-                                process={process}
-                                setSelectedLeadList={setSelectedLeadList}
-                              />
                             </td>
 
                             <td className="border border-gray-300 px-1 py-1">

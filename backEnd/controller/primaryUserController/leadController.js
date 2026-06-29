@@ -1384,6 +1384,7 @@ export const Leadclosing = async (req, res) => {
         objectId,
         {
           ...data,
+          leadConfirmed: true,
           balanceAmount: newbalance,
           leadFor: mappedleadData
         },
@@ -1501,52 +1502,210 @@ export const Leadclosing = async (req, res) => {
     await session.endSession()
   }
 }
+
+
 export const UpdateLeadRegister = async (req, res) => {
+  const session = await mongoose.startSession();
+
   try {
+    session.startTransaction();
+
     const { data, leadData } = req.body;
-    console.log("leaddtaa", leadData)
-    // return
     const { docID } = req.query;
+
+    if (!docID) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: "docID is required" });
+    }
+
+    if (!Array.isArray(leadData) || leadData.length === 0) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: "leadData is required" });
+    }
+
     const objectId = new mongoose.Types.ObjectId(docID);
-    const matchedDoc = await LeadMaster.findById(objectId);
+
+    const matchedDoc = await LeadMaster.findById(objectId).session(session);
+
+    if (!matchedDoc) {
+      await session.abortTransaction();
+      return res.status(404).json({ message: "Lead not found" });
+    }
 
     const mappedleadData = leadData.map((item) => {
+      const productPrice = Number(item?.productPrice || 0);
+      const hsn = Number(item?.hsn || 0);
+      const netAmount = Number(item?.netAmount || 0);
+      const taxAmount = netAmount - productPrice;
+
       return {
-        licenseNumber: item.licenseNumber,
-        productorServiceId: item.productorServiceId,
-        productorServicemodel: item.itemType,
-        price: item.price,
-        productPrice: Number(item.productPrice),
-        hsn: Number(item.hsn),
-        netAmount: Number(item.netAmount),
+        licenseNumber: item?.licenseNumber ?? null,
+        productorServiceName: item?.productorServiceName || "",
+        productorServiceId: item?.productorServiceId || null,
+        productorServicemodel: item?.itemType || "",
+        price: item?.price ?? null,
+        productPrice,
+        hsn,
+        netAmount,
+        taxAmount,
+        productorservicetype: item?.productorservicetype || "",
+        company_id: item?.company_id || null,
+        branch_id: item?.branch_id || null,
       };
     });
 
-    const newbalance = data.netAmount - matchedDoc.totalPaidAmount;
+    const newTaxableAmount = mappedleadData.reduce(
+      (sum, item) => sum + Number(item.productPrice || 0),
+      0
+    );
 
-    const updatedLead = await LeadMaster.findByIdAndUpdate(objectId, {
-      ...data,
-      balanceAmount: newbalance,
-      leadFor: mappedleadData,
+    
+
+    const newNetAmount = mappedleadData.reduce(
+      (sum, item) => sum + Number(item.netAmount || 0),
+      0
+    );
+const newTaxAmount = newNetAmount - newTaxableAmount;
+
+    const totalPaidAmount = Number(matchedDoc.totalPaidAmount || 0);
+    const rawBalanceAmount = newNetAmount - totalPaidAmount;
+    const newBalanceAmount = rawBalanceAmount < 0 ? 0 : rawBalanceAmount;
+    const excessPaidAmount = rawBalanceAmount < 0 ? Math.abs(rawBalanceAmount) : 0;
+
+    const primaryProduct = mappedleadData.find(
+      (item) => item.productorservicetype === "Primaryproduct"
+    );
+
+    const primaryProductId = primaryProduct?.productorServiceId || null;
+    const primaryProductModel = primaryProduct?.productorServicemodel || "Product";
+
+    const existingPaymentHistory = Array.isArray(matchedDoc.paymentHistory)
+      ? matchedDoc.paymentHistory
+      : [];
+
+    const updatedPaymentHistory = existingPaymentHistory.map((history) => {
+      const paymentEntries = Array.isArray(history.paymentEntries)
+        ? history.paymentEntries
+        : [];
+
+      const updatedEntries = paymentEntries.map((entry) => {
+        const existingReceivedAmount = Number(entry?.receivedAmount || 0);
+
+        return {
+          ...entry.toObject?.() ? entry.toObject() : entry,
+          productorServiceId: primaryProductId,
+          productorServicemodel: primaryProductModel,
+          receivedAmount: existingReceivedAmount,
+          balanceAmount: Math.max(newNetAmount - existingReceivedAmount, 0),
+          netAmount: newNetAmount,
+        };
+      });
+
+      return {
+        ...history.toObject?.() ? history.toObject() : history,
+        paymentEntries: updatedEntries,
+      };
     });
-    const updatedcustomer = await Customer.findByIdAndUpdate(data.customerName, {
-      $set: {
-        mobile: data.mobile,
-        email: data.email,
-        landline: data.phone
-      }
-    })
 
-    if (!updatedLead) {
-      return res.status(404).json({ message: "Lead not found" });
-    } else {
-      return res.status(200).json({ message: "Lead Updated Successfully" });
-    }
+    const updatePayload = {
+      ...data,
+      taxableAmount: newTaxableAmount,
+      taxAmount: newTaxAmount,
+      netAmount: newNetAmount,
+      balanceAmount: newBalanceAmount,
+      leadFor: mappedleadData,
+      paymentHistory: updatedPaymentHistory,
+    };
+
+  
+    const updatedLead = await LeadMaster.findByIdAndUpdate(
+      objectId,
+      { $set: updatePayload },
+      { new: true, runValidators: true, session }
+    );
+
+    await Customer.findByIdAndUpdate(
+      data.customerName,
+      {
+        $set: {
+          mobile: data.mobile,
+          email: data.email,
+          landline: data.phone,
+        },
+      },
+      { session }
+    );
+
+    await session.commitTransaction();
+
+    return res.status(200).json({
+      message: "Lead Updated Successfully",
+      data: updatedLead,
+      
+    });
   } catch (error) {
+    await session.abortTransaction();
     console.log("error:", error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
+  } finally {
+    session.endSession();
   }
 };
+// export const UpdateLeadRegister = async (req, res) => {
+//   try {
+//     const { data, leadData } = req.body;
+//     console.log("leaddtaa", leadData)
+//     // return
+//     const { docID } = req.query;
+//     const objectId = new mongoose.Types.ObjectId(docID);
+//     const matchedDoc = await LeadMaster.findById(objectId);
+
+//     const mappedleadData = leadData.map((item) => {
+//       return {
+//         licenseNumber: item.licenseNumber,
+//         productorServiceId: item.productorServiceId,
+//         productorServicemodel: item.itemType,
+//         price: item.price,
+//         productPrice: Number(item.productPrice),
+//         hsn: Number(item.hsn),
+//         netAmount: Number(item.netAmount),
+// productorservicetype:item?.productorservicetype,
+// company_id:item?.company_id,
+// branch_id:item?.branch_id
+//       };
+//     });
+// const newnetamount = leadData.reduce(
+//   (sum, item) => sum + Number(item.netAmount || 0),
+//   0
+// );
+//     const newbalance = newnetamount- matchedDoc.totalPaidAmount;
+
+//     const updatedLead = await LeadMaster.findByIdAndUpdate(objectId, {
+//       ...data,
+//       balanceAmount: newbalance,
+//       leadFor: mappedleadData,
+//     });
+//     const updatedcustomer = await Customer.findByIdAndUpdate(data.customerName, {
+//       $set: {
+//         mobile: data.mobile,
+//         email: data.email,
+//         landline: data.phone
+//       }
+//     })
+
+//     if (!updatedLead) {
+//       return res.status(404).json({ message: "Lead not found" });
+//     } else {
+//       return res.status(200).json({ message: "Lead Updated Successfully" });
+//     }
+//   } catch (error) {
+//     console.log("error:", error.message);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// };
 export const GetAllservices = async (req, res) => {
   try {
     const allservices = await Service.find({});
@@ -3495,7 +3654,7 @@ export const GetallReallocatedLead = async (req, res) => {
   try {
     const { selectedBranch } = req.query;
     const branchObjectId = new mongoose.Types.ObjectId(selectedBranch);
-    const query = { leadBranch: branchObjectId, reallocatedTo: true };
+    const query = { leadBranch: branchObjectId, reallocatedTo: true, leadConfirmed: false };
 
     const reallocatedLeads = await LeadMaster.find(query)
       .populate({ path: "customerName" })

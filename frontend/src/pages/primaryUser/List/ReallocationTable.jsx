@@ -41,6 +41,7 @@ const ReallocationTable = () => {
 
   const [toggleLoading, setToggleLoading] = useState(false)
   const [isClosed, setIsclosed] = useState(false)
+console.log(isClosed)
   const [selectedLeadId, setselectedLeadId] = useState(null)
   const [selectedType, setselectedType] = useState(null)
   const [selectedData, setselectedData] = useState({})
