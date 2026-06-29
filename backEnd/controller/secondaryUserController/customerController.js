@@ -4101,7 +4101,7 @@ export const GetCallRegister = async (req, res) => {
       const customerId = new mongoose.Types.ObjectId(customerid)
       const registeredCall = await CallRegistration.findOne({
         customerid: customerId
-      }).populate({ path: "callregistration.product", select: "productName" })
+      }).populate({ path: "callregistration.product", select: "productName shortName productorservicetype" })
 
       const attendedByIds = new Set()
       const completedByIds = new Set()
