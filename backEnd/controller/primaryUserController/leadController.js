@@ -315,7 +315,8 @@ export const LeadRegister = async (req, res) => {
         netAmount: item.netAmount,
         price: item.price,
         company_id: item.company_id,
-        branch_id: item.branch_id
+        branch_id: item.branch_id,
+        licenseNumbers: item?.licenseNumbers
       })
     )
 
@@ -336,6 +337,7 @@ export const LeadRegister = async (req, res) => {
           mobile: mobile,
           landline: phone,
           email: email,
+          partner: partner
         },
       },
       { session, new: true }
@@ -1502,11 +1504,61 @@ export const TaskRegistration = async (req, res) => {
 //     await session.endSession()
 //   }
 // }
+export const Checkduplicatecustomer = async (req, res) => {
+  try {
+    const { mobile, customerName, customerId } = req.body;
+
+    const cleanedMobile = String(mobile || "")
+      .replace(/^\+?91/, "")
+      .replace(/\D/g, "");
+
+    const cleanedName = String(customerName || "").trim();
+
+    if (!cleanedMobile || cleanedMobile.length !== 10 || !cleanedName) {
+      return res.json({
+        exists: false,
+        message: "",
+      });
+    }
+
+    const query = {
+      mobile: cleanedMobile,
+      customerName: { $regex: `^${cleanedName}$`, $options: "i" },
+    };
+
+    if (customerId) {
+      query._id = { $ne: customerId };
+    }
+
+    const existingCustomer = await Customer.findOne(query).select(
+      "_id customerName mobile"
+    );
+
+    if (existingCustomer) {
+      return res.json({
+        exists: true,
+        message: "Customer already exists with this name and mobile number",
+        customer: existingCustomer,
+      });
+    }
+
+    return res.json({
+      exists: false,
+      message: "",
+    });
+  } catch (error) {
+    console.error("check-customer-duplicate error", error);
+    return res.status(500).json({
+      exists: false,
+      message: "Something went wrong while checking customer duplicate",
+    });
+  }
+}
 export const Leadclosing = async (req, res) => {
   const session = await mongoose.startSession();
 
   try {
-    const { data, leadData } = req.body;
+    const { data, leadData, userId, role } = req.body;
     const { docID } = req.query;
 
     if (!docID) {
@@ -1562,12 +1614,14 @@ export const Leadclosing = async (req, res) => {
         product_id: item?.productorServiceId || null,
         licensenumber:
           item?.licenseNumber !== null &&
-          item?.licenseNumber !== undefined &&
-          String(item?.licenseNumber).trim() !== ""
+            item?.licenseNumber !== undefined &&
+            String(item?.licenseNumber).trim() !== ""
             ? Number(item?.licenseNumber)
             : null,
         noofusers: item?.quantityUsers,
         applicationDate: item?.applicationDate,
+productAmount:item?.netAmount,
+softwareTrade:item?.softwareTrade,
         nextDue: item?.nextDue,
         taggeddata: Array.isArray(item?.taggeddata) ? item.taggeddata : [],
         productorservicetype: item?.productorservicetype || "",
@@ -1628,7 +1682,14 @@ export const Leadclosing = async (req, res) => {
           paymentEntries: updatedEntries,
         };
       });
-
+      const taskName = await Task.findOne({ taskName: "Lead Closing" }).lean()
+      const activityLogEntry = {
+        submissionDate: new Date(),
+        submittedUser: userId,
+        submissiondoneByModel: role === "Admin" ? "Admin" : "Staff",
+        remarks: data?.remarks,
+        taskBy: taskName?._id
+      }
       const leadUpdatePayload = {
         ...data,
         leadConfirmed: true,
@@ -1640,10 +1701,28 @@ export const Leadclosing = async (req, res) => {
         paymentHistory: updatedPaymentHistory,
       };
 
+      //       const updatedLead = await LeadMaster.findByIdAndUpdate(
+      //         objectId,
+      // {
+      //  $push: {
+      //         activityLog: activityLogEntry,
+      //       },
+      //         { $set: leadUpdatePayload },
+      //         { new: true, runValidators: true, session }}
+      //       );
       const updatedLead = await LeadMaster.findByIdAndUpdate(
         objectId,
-        { $set: leadUpdatePayload },
-        { new: true, runValidators: true, session }
+        {
+          $push: {
+            activityLog: activityLogEntry,
+          },
+          $set: leadUpdatePayload,
+        },
+        {
+          new: true,
+          runValidators: true,
+          session,
+        }
       );
 
       if (!updatedLead) {
@@ -1826,13 +1905,13 @@ export const UpdateLeadRegister = async (req, res) => {
       0
     );
 
-    
+
 
     const newNetAmount = mappedleadData.reduce(
       (sum, item) => sum + Number(item.netAmount || 0),
       0
     );
-const newTaxAmount = newNetAmount - newTaxableAmount;
+    const newTaxAmount = newNetAmount - newTaxableAmount;
 
     const totalPaidAmount = Number(matchedDoc.totalPaidAmount || 0);
     const rawBalanceAmount = newNetAmount - totalPaidAmount;
@@ -1884,7 +1963,7 @@ const newTaxAmount = newNetAmount - newTaxableAmount;
       paymentHistory: updatedPaymentHistory,
     };
 
-  
+
     const updatedLead = await LeadMaster.findByIdAndUpdate(
       objectId,
       { $set: updatePayload },
@@ -1908,7 +1987,7 @@ const newTaxAmount = newNetAmount - newTaxableAmount;
     return res.status(200).json({
       message: "Lead Updated Successfully",
       data: updatedLead,
-      
+
     });
   } catch (error) {
     await session.abortTransaction();
@@ -4103,9 +4182,28 @@ export const GetallLead = async (req, res) => {
               const populatedSubmissionUser = await submissionUserModel
                 .findById(log.submittedUser)
                 .select("name");
+              let populatetaskBy
+              let populateTask
+              let populateTaskallocatedTo
+              if (log?.taskBy) {
+                populatetaskBy = await Task.findById(log?.taskBy).select("taskName").lean()
+              }
+              if (log?.taskId) {
+                populateTask = await Task.findById(log?.taskId).select("taskName").lean()
+              }
+              if (log?.taskallocatedTo && log?.taskallocatedToModel) {
+                const taskalocatedtomodel = mongoose.model(
+                  log?.taskallocatedToModel
+                );
+                
+                populateTaskallocatedTo = await taskalocatedtomodel.findById(log?.taskallocatedTo).select("name").lean()
+              }
 
               return {
                 ...log,
+                taskBy: populatetaskBy,
+                taskId: populateTask,
+                taskallocatedTo: populateTaskallocatedTo,
                 submittedUser: populatedSubmissionUser,
               };
             })
@@ -4474,7 +4572,7 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
     let allocationTask = null
     if (formData.followupType === "closed") {
       allocationTask = await Task.findOne({
-        taskName: "Closing"
+        taskName: "Follow-Up Closing"
       }).lean();
     } else if (formData.followupType === "lost") {
       allocationTask = await Task.findOne({
@@ -4486,7 +4584,8 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
         taskName: "Followup"
       }).lean();
     }
-
+    console.log("allocationtask", allocationTask)
+    console.log("formdataaaaaaaaaaaaaaaaaaaa", formData.followupType)
 
     const activityEntry = {
       submissionDate: formData.followUpDate,
@@ -5439,9 +5538,14 @@ export const GetselectedLeadData = async (req, res) => {
     const selectedLead = await LeadMaster.findById({ _id: leadId })
       .populate({
         path: "customerName",
-        populate: {
-          path: "partner"
-        }
+        populate: [
+          {
+            path: "partner",
+          },
+          {
+            path: "selected.product_id",
+          },
+        ],
       })
       .lean();
 
@@ -6870,6 +6974,16 @@ export const GetcollectionLeads = async (req, res) => {
                 .findById(activity.submittedUser)
                 .select("name")
                 .lean();
+            }
+            // console.log("taskbjyuyyyyyyyyyyyyy",activity?.taskBy)
+            if (activity?.taskBy) {
+              populatedActivity.taskBy = await Task.findById(activity?.taskBy).select("taskName").lean()
+              console.log("populatedd", populatedActivity?.taskBy)
+            }
+            if (activity?.taskTo) {
+              console.log("tasktoooo", activity?.taskId)
+              populatedActivity.taskId = await Task.findById(activity?.taskId).select("taskName").lean()
+              console.log("poplatedtaktooo", populatedActivity.taskId)
             }
 
             if (activity.taskallocatedByModel && activity.taskallocatedBy) {
@@ -8657,19 +8771,20 @@ export const GetownLeadList = async (req, res) => {
     console.log("endatae", endDate)
     const objectId = new mongoose.Types.ObjectId(userId);
 
-    let query={leadLost:false}
+    let query
     if (ownlead === "true") {
       query = {
-...query,
+
         leadBranch: new mongoose.Types.ObjectId(selectedBranch),
         leadBy: objectId,
       };
     } else if (ownlead === "false" && role !== "Staff") {
-      query = { 
-...query,
-leadBranch: new mongoose.Types.ObjectId(selectedBranch) };
+      query = {
+
+        leadBranch: new mongoose.Types.ObjectId(selectedBranch)
+      };
     }
-console.log('dddddddddddddddddd',query)
+    console.log('dddddddddddddddddd', query)
     const parsedStart = startDate ? new Date(startDate) : null
     const parsedEnd = endDate ? new Date(endDate) : null
 
@@ -8709,7 +8824,7 @@ console.log('dddddddddddddddddd',query)
             const populatedActivity = { ...activity };
 
             // Populate taskallocatedTo
-            if (activity.submissiondoneByModel && activity.submittedUser) {
+            if (activity.submissiondoneByModel && activity.submittedUser && activity?.taskallocatedTo) {
               const model = mongoose.model(activity.submissiondoneByModel);
               taskallocatedTo = populatedActivity.submittedUser = await model
                 .findById(activity.submittedUser)
@@ -8724,6 +8839,10 @@ console.log('dddddddddddddddddd',query)
                 .findById(activity.taskallocatedBy)
                 .select("name")
                 .lean();
+            }
+            if (activity.submittedUser) {
+              const model = mongoose.model(activity.submissiondoneByModel);
+              populatedActivity.submittedUser = await model.findById(activity.submittedUser).select("name").lean()
             }
             if (activity.taskId && isValidObjectId(activity.taskId)) {
               populatedActivity.taskId = await Task.findById(activity.taskId)

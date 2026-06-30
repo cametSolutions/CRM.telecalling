@@ -44,6 +44,7 @@ const LeadAllocationTable = () => {
   const [selectedPeriod, setselectedPeriod] = useState("")
   const [showeventLog, setshoweventLog] = useState(false)
   const [selectedAllocationType, setselectedAllocationType] = useState({})
+
   const [selectedAllocationtypeNames, setselectedallocatiotypeNames] = useState(
     {}
   )
@@ -74,12 +75,14 @@ const LeadAllocationTable = () => {
   const [tableData, setTableData] = useState([])
   const [activeUserId, setActiveUserId] = useState(null)
   const [selectedData, setselectedData] = useState([])
+console.log(selectedData)
   const { data: branches } = UseFetch("/branch/getBranch")
   const [formData, setFormData] = useState({
     allocationDate: "",
     allocationDescription: ""
   })
-const [filteredtasklist,setfilteredtasklist]=useState([])
+const today = new Date().toISOString().split("T")[0];
+  const [filteredtasklist, setfilteredtasklist] = useState([])
   const { data: tasks } = UseFetch("/lead/getallTask")
   console.log(tasks)
   const { data: leadPendinglist, loading } = UseFetch(
@@ -91,6 +94,8 @@ const [filteredtasklist,setfilteredtasklist]=useState([])
   const { data: branchProduct } = UseFetch(
     `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
   )
+console.log(selectedAllocationType)
+console.log(selectedItem)
   console.log("hhhh")
   const { data: alluserdata } = UseFetch("/auth/getallUsers")
   const navigate = useNavigate()
@@ -102,9 +107,9 @@ const [filteredtasklist,setfilteredtasklist]=useState([])
   useEffect(() => {
     if (tasks) {
       console.log(tasks)
-      const filteredtask=tasks.filter((item)=>item.taskName==="Followup")
-console.log(filteredtask)
-setfilteredtasklist(filteredtask)
+      const filteredtask = tasks.filter((item) => item.taskName === "Followup")
+      console.log(filteredtask)
+      setfilteredtasklist(filteredtask)
     }
   }, [tasks])
   useEffect(() => {
@@ -246,7 +251,9 @@ setfilteredtasklist(filteredtask)
       )
 
       if (response.status >= 200 && response.status < 300) {
+
         const data = response.data.data //gets only allocated leads with reallocatedto field false which means reallocatedto true are in the reallocation page not need to display here
+console.log(data)
         getgroupingData(data)
         // setTableData(data)
         data.forEach((item) => {
@@ -677,8 +684,18 @@ setfilteredtasklist(filteredtask)
               <button
                 onClick={() =>
                   loggedUser.role === "Admin"
-                    ? navigate("/admin/transaction/lead")
-                    : navigate("/staff/transaction/lead")
+                    ? navigate("/admin/transaction/lead", {
+                        state: {
+                          from: "leadEdit",
+                          isReadOnly: true
+                        }
+                      })
+                    : navigate("/staff/transaction/lead", {
+                        state: {
+                          from: "leadEdit",
+                          isReadOnly: true
+                        }
+                      })
                 }
                 className="bg-black text-white py-1 px-3 rounded-lg shadow-lg hover:bg-gray-600"
               >
@@ -833,9 +850,10 @@ setfilteredtasklist(filteredtask)
                                     <select
                                       value={selectedAllocationType?.[item._id]}
                                       onChange={(e) => {
-                                        const selectedtask = filteredtasklist.find(
-                                          (t) => t._id === e.target.value
-                                        )
+                                        const selectedtask =
+                                          filteredtasklist.find(
+                                            (t) => t._id === e.target.value
+                                          )
                                         setselectedAllocationType((prev) => ({
                                           ...prev,
                                           [item._id]: e.target.value
@@ -1083,7 +1101,7 @@ setfilteredtasklist(filteredtask)
                   <Calendar size={14} className="text-blue-500" />
                   Completion Date
                 </label>
-                <input
+                {/* <input
                   type="date"
                   className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-gray-700"
                   onChange={(e) => {
@@ -1096,7 +1114,34 @@ setfilteredtasklist(filteredtask)
                       allocationDateError: ""
                     }))
                   }}
-                />
+                /> */}
+<input
+  type="date"
+  min={today}
+  value={formData.allocationDate || ""}
+  className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-gray-700"
+  onChange={(e) => {
+    const selectedDate = e.target.value;
+
+    if (selectedDate && selectedDate < today) {
+      setValidateError((prev) => ({
+        ...prev,
+        allocationDateError: "Completion date cannot be less than current date",
+      }));
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      allocationDate: selectedDate,
+    }));
+
+    setValidateError((prev) => ({
+      ...prev,
+      allocationDateError: "",
+    }));
+  }}
+/>
                 {validateError.allocationDateError && (
                   <div className="flex items-center gap-1.5 text-red-600 text-xs bg-red-50 px-2.5 py-1.5 rounded-lg">
                     <AlertCircle size={14} />
@@ -1231,7 +1276,7 @@ setfilteredtasklist(filteredtask)
       {/* Event Log Modal */}
       {showeventLog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-40">
-          <div className="relative overflow-x-auto overflow-y-auto md:max-h-64 lg:max-h-96 shadow-xl rounded-lg mx-3 md:mx-5 px-7 p-3 bg-white w-full max-w-4xl">
+          <div className="relative overflow-x-auto overflow-y-auto md:max-h-90v lg:max-h-90v shadow-xl rounded-lg mx-3 md:mx-5 px-7 p-3 bg-white w-full md:max-w-4/6">
             <button
               onClick={() => {
                 setselectedLeadId(null)
@@ -1274,7 +1319,7 @@ setfilteredtasklist(filteredtask)
                     const hasFollowerData =
                       Array.isArray(item.folowerData) &&
                       item.folowerData.length > 0
-
+console.log(item?.taskallocatedTo)
                     return hasFollowerData ? (
                       item.folowerData.map((subItem, subIndex) => (
                         <tr
@@ -1320,14 +1365,14 @@ setfilteredtasklist(filteredtask)
                           <div>
                             {item?.taskallocatedTo ? (
                               <>
-                                <span>{item?.taskBy || "N/A"}</span>
+                                <span>{item?.taskBy?.taskName || "N/A"}</span>
                                 <span className="text-red-500">
                                   {" "}
                                   - {item?.taskallocatedTo?.name || ""}
                                 </span>
                                 <br />
                                 <span className="text-red-500">
-                                  {item.taskTo}
+                                  {item.taskId?.taskName}
                                 </span>
                                 {item.allocationDate && (
                                   <span>
@@ -1341,7 +1386,7 @@ setfilteredtasklist(filteredtask)
                                 )}
                               </>
                             ) : (
-                              <span>{item.taskBy}</span>
+                              <span>{item.taskBy?.taskName}</span>
                             )}
                           </div>
                         </td>

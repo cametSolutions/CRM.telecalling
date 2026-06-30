@@ -60,6 +60,7 @@ const leadSchema = new mongoose.Schema(
         hsn: { type: Number },
         netAmount: { type: Number },
         price: { type: Number },
+taggeddata:[{licensenumber:{type:Number},nextDue:{type:Date}}],
       },
     ],
     //lead done by
