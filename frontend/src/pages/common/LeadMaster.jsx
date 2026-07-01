@@ -79,14 +79,16 @@ function LicenseDropdown({
   isReadOnly,
   customerTableData,
   selectedleadlist,
-  setSelectedLeadList
+  setSelectedLeadList,
+  setunselectedtaggedlicense,
+  setTakenLicense
 }) {
   console.log(selectedleadlist)
   console.log(item)
   console.log(index)
   console.log(customerTableData)
   const isMulti = item?.productorservicetype === "Additionalservice"
-
+  console.log(isMulti)
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState("")
 
@@ -144,51 +146,39 @@ function LicenseDropdown({
   })
   console.log(filtered)
 
-  // const updateRow = (newRow) => {
-  //   console.log(newRow)
-  //   console.log(selectedleadlist)
-  //   console.log(index)
-  //   setSelectedLeadList((prev) =>
-  //     prev.map((row, i) => (i === index ? { ...row, ...newRow } : row))
-  //   )
-  // }
   const updateRow = (newRow) => {
+    console.log("h")
     console.log(newRow)
-    console.log(selectedleadlist)
     setSelectedLeadList((prev) =>
       prev.map((row, i) =>
         i === index
           ? {
               ...row,
-              ...newRow,
-              licenseNumbers: [
-                ...(row?.licenseNumbers || []),
-                ...(newRow?.licenseNumbers || [])
-              ]
+              ...newRow
             }
           : row
       )
     )
   }
-  console.log(selectedleadlist)
-  const addLicense = (lic) => {
-    console.log(lic)
-    console.log(selectedleadlist)
-    if (!lic) return
 
+  console.log(selectedleadlist)
+
+  const addLicense = (lic) => {
+    if (!lic) return
+    console.log("hh")
     if (isMulti) {
-      console.log(selectedLicenses)
-      const exists = selectedLicenses.some(
+      const exists = (item?.licenseNumbers || []).some(
         (x) => String(x?.licenseNumber) === String(lic?.licenseNumber)
       )
 
       if (exists) return
+      console.log("hh")
       console.log(lic)
+      console.log(item?.licenseNumbers)
       if (!Array.isArray(lic)) {
-        console.log(lic)
-        console.log(lic?.sourceIndex)
         updateRow({
           licenseNumbers: [
+            ...(item?.licenseNumbers || []),
             {
               licenseNumber: lic?.licenseNumber,
               productorServiceId: lic?.productorServiceId || "",
@@ -198,7 +188,6 @@ function LicenseDropdown({
             }
           ]
         })
-        return
       }
 
       return
@@ -207,10 +196,12 @@ function LicenseDropdown({
     updateRow({
       licenseNumber: lic?.licenseNumber || ""
     })
+
     setSearch(String(lic?.licenseNumber ?? ""))
     setOpen(false)
   }
   console.log(selectedleadlist)
+
   const removeLicense = (licenseNumber) => {
     if (!isMulti) return
 
@@ -222,8 +213,6 @@ function LicenseDropdown({
   }
 
   const toggleLicense = (lic, checked) => {
-    console.log(lic)
-    console.log(checked)
     if (!lic || isReadOnly) return
 
     if (checked) {
@@ -234,11 +223,13 @@ function LicenseDropdown({
   }
 
   const handleInputChange = (e) => {
+    console.log(e.target.value)
     setSearch(e.target.value)
     setOpen(true)
   }
   console.log(filtered)
   console.log(open)
+  console.log(item)
   return (
     <div ref={wrapperRef} className="relative w-full">
       <input
@@ -283,8 +274,9 @@ function LicenseDropdown({
                     ? (item?.licenseNumbers || []).some(
                         (x) => String(x?.licenseNumber) === valStr
                       )
-                    : valStr === String(item?.licenseNumber ?? "")
-
+                    : false
+                  console.log(alreadyAdded)
+                  console.log(valStr, alreadyAdded)
                   return (
                     <li
                       key={lic?.licenseNumber ?? i}
@@ -301,12 +293,50 @@ function LicenseDropdown({
                               type="checkbox"
                               checked={alreadyAdded}
                               disabled={isReadOnly}
-                              onChange={(e) =>
+                              onChange={(e) => {
+                                console.log(e.target?.value)
+                                console.log(e.target?.checked)
+                                const checkedvalue = e.target.checked
+                                // setwarningError((prev) => ({
+                                //   ...prev,
+                                //   taggedlicenseError: ""
+                                // }))
+                                const productId = item.productorServiceId
+                                setunselectedtaggedlicense((prev) => {
+                                  const updated = { ...prev }
+                                  delete updated[productId]
+                                  return updated
+                                })
+                                console.log(item)
+
+                                setTakenLicense((prev) => {
+                                  console.log(checkedvalue)
+                                  const updatedLicenses = checkedvalue
+                                    ? [
+                                        ...(prev[item?.productorServiceName] ||
+                                          []),
+                                        valStr
+                                      ]
+                                    : (
+                                        prev[item?.productorServiceName] || []
+                                      ).filter((license) => license !== valStr)
+
+                                  const updated = { ...prev }
+
+                                  if (updatedLicenses.length > 0) {
+                                    updated[item?.productorServiceName] =
+                                      updatedLicenses
+                                  } else {
+                                    delete updated[item?.productorServiceName]
+                                  }
+
+                                  return updated
+                                })
                                 toggleLicense(lic, e.target.checked)
-                              }
-                              onMouseDown={(e) => e.stopPropagation()}
-                              onTouchStart={(e) => e.stopPropagation()}
-                              onClick={(e) => e.stopPropagation()}
+                              }}
+                              // onMouseDown={(e) => e.stopPropagation()}
+                              // onTouchStart={(e) => e.stopPropagation()}
+                              // onClick={(e) => e.stopPropagation()}
                               className="h-3.5 w-3.5 cursor-pointer accent-blue-600"
                             />
                             <span className="font-medium">{valStr}</span>
@@ -359,6 +389,7 @@ function ProductDropdown({
   selectedBranch,
   selectedCustomer
 }) {
+  console.log(item)
   console.log(selectedBranch)
   console.log(leadList)
   const emptyRow = {
@@ -659,7 +690,12 @@ const LeadMaster = ({
     {}
   )
   const today = new Date().toISOString().split("T")[0]
+  const [takenLicenses, setTakenLicense] = useState([])
+  console.log(takenLicenses)
   const [warningErrors, setwarningError] = useState({})
+  const [unselectedtaggedlicense, zsetunselectedtaggedlicense] = useState({})
+  console.log(unselectedtaggedlicense)
+  console.log(warningErrors)
   const [licenseloading, setlicenseloading] = useState(false)
   const [leadList, setLeadList] = useState([])
   const [submitLoading, setsubmitLoading] = useState(false)
@@ -671,6 +707,7 @@ const LeadMaster = ({
   const [openProductDropdown, setOpenProductDropdown] = useState(null)
   const [popupMessage, setPopupMessage] = useState("")
   const [warningMessage, setwarningMessage] = useState("")
+  console.log(warningErrors)
   const [showdetailsopen, setdetailsopen] = useState(false)
   const [detailsItem, setDetailsItem] = useState(null)
   const [detailsIndex, setDetailsIndex] = useState(null)
@@ -1070,6 +1107,7 @@ const LeadMaster = ({
         return
       }
       console.log(selectedleadlist)
+
       setSelectedLeadList((prev) => {
         const rows = leadData
         console.log(rows)
@@ -1078,9 +1116,11 @@ const LeadMaster = ({
           0,
           primaryProductId
         )
+console.log(defaultServices)
         console.log(existingIds)
         const servicesToAdd = defaultServices.filter((service) => {
           const serviceId = getRowId(service)
+console.log(serviceId)
           return serviceId && !existingIds.has(serviceId)
         })
         console.log(servicesToAdd)
@@ -1197,7 +1237,7 @@ const LeadMaster = ({
     }
   }, [customerOptions, Data])
   console.log(customerTableData)
-
+  console.log(selectedleadlist)
   useEffect(() => {
     console.log("hhh")
     if (customerData && customerData.length > 0) {
@@ -1284,6 +1324,7 @@ const LeadMaster = ({
   //   )
   // }
   const updateLicense = (index, licenseNumber) => {
+    console.log(licenseNumber)
     setSelectedLeadList((prev) =>
       prev.map((row, i) =>
         i === index
@@ -1296,31 +1337,235 @@ const LeadMaster = ({
     )
   }
   console.log(selectedleadlist)
+  // const handleLicenseBlur = async (index, licenseNumber) => {
+  //   console.log(licenseNumber)
+  //   if (!String(licenseNumber).trim()) return
+  //   console.log(licenseNumber)
+  //   try {
+  //     setlicenseloading(true)
+  //     const { data } = await api.get(
+  //       `/customer/checkLicense?licenseNumber=${licenseNumber}`
+  //     )
+  //     console.log(data)
+  //     if (data.exists) {
+  //       toast.error(`License ${licenseNumber} already exists`)
+
+  //       setSelectedLeadList((prev) =>
+  //         prev.map((row, i) => (i === index ? { ...row } : row))
+  //       )
+
+  //       return
+  //     }
+  //     // setlicenseloading(false)
+  //     toast.success("License available")
+  //   } catch (error) {
+  //     // setlicenseloading(false)
+  //     console.error(error)
+  //     toast.error("Failed to validate license")
+  //   } finally {
+  //     setlicenseloading(false)
+  //   }
+  // }
+  //   const processLicenseChange = async (index, licenseValue, item) => {
+  //     const isValid = await handleLicenseBlur(index, licenseValue)
+
+  //     if (!isValid) return
+  // console.log(detailsForm)
+  //     setDetailsForm((prev) => {
+  //       const tagged = prev.taggeddata || []
+  //       const existingIndex = tagged.findIndex((x) => x.sourceIndex === index)
+
+  //       const newEntry = {
+  //         sourceIndex: index,
+  //         licensenumber: licenseValue,
+  //         nextDue: ""
+  //       }
+
+  //       const updatedTagged =
+  //         existingIndex !== -1
+  //           ? tagged.map((x) => (x?.sourceIndex === index ? newEntry : x))
+  //           : [...tagged, newEntry]
+
+  //       return {
+  //         ...prev,
+  //         taggeddata: updatedTagged
+  //       }
+  //     })
+
+  //     const filteredadditionalservice = selectedleadlist.filter(
+  //       (item) => item.productorservicetype?.toLowerCase() === "additionalservice"
+  //     )
+  // console.log(filteredadditionalservice)
+  // console.log(selectedleadlist)
+  //     if (filteredadditionalservice.length) {
+  //       setSelectedLeadList((prev) =>
+  //         prev.map((row) => ({
+  //           ...row,
+  //           licenseNumbers: (row.licenseNumbers || []).map((lic) =>
+  //             lic.sourceIndex === index
+  //               ? {
+  //                   ...lic,
+  //                   licenseNumber: licenseValue,
+  //                   nextDue: ""
+  //                 }
+  //               : lic
+  //           )
+  //         }))
+  //       )
+  //     }
+  // console.log(customerTableData)
+  // const exists = customerTableData.some(
+  //   (row) => String(row.licenseNumber) === String(licenseValue)
+  // );
+
+  // if (exists) {
+  //   console.log("License already present");
+  // } else {
+  //   console.log("License not found");
+  // }
+  //     // setcustomerTableData((prev) =>
+  //     //   prev.map((row) =>
+  //     //     row?.sourceIndex === index
+  //     //       ? {
+  //     //           ...row,
+  //     //           licenseNumber: licenseValue,
+  //     //           productName: item?.productorServiceName,
+  //     //           productorServiceId: item?.productorServiceId,
+  //     //           sourceIndex: index
+  //     //         }
+  //     //       : row
+  //     //   )
+  //     // )
+  // setcustomerTableData((prev) => {
+  //   const existingIndex = prev.findIndex(
+  //     (row) => row?.sourceIndex === index
+  //   );
+
+  //   const newRow = {
+  //     licenseNumber: licenseValue,
+  //     productName: item?.productorServiceName,
+  //     productorServiceId: item?.productorServiceId,
+  //     sourceIndex: index,
+  //   };
+
+  //   if (existingIndex !== -1) {
+  //     return prev.map((row, i) =>
+  //       i === existingIndex ? { ...row, ...newRow } : row
+  //     );
+  //   }
+
+  //   return [...prev, newRow];
+  // });
+
+  //     updateLicense(index, licenseValue)
+  //   }
+  // const handleLicenseBlur = async (index, licenseNumber) => {
+  //   if (!String(licenseNumber).trim()) return false
+
+  //   try {
+  //     setlicenseloading(true)
+
+  //     const { data } = await api.get(
+  //       `/customer/checkLicense?licenseNumber=${licenseNumber}`
+  //     )
+
+  //     if (data.exists) {
+  //       toast.error(`License ${licenseNumber} already exists`)
+  //       return false
+  //     }
+
+  //     toast.success("License available")
+  //     return true
+  //   } catch (error) {
+  //     console.error(error)
+  //     toast.error("Failed to validate license")
+  //     return false
+  //   } finally {
+  //     setlicenseloading(false)
+  //   }
+  // }
+  const processLicenseChange = async (index, licenseValue, item) => {
+    console.log("hh")
+    const isValid = await handleLicenseBlur(index, licenseValue)
+
+    if (!isValid) return
+
+    setDetailsForm((prev) => {
+      const tagged = prev.taggeddata || []
+      const existingIndex = tagged.findIndex((x) => x.sourceIndex === index)
+
+      const newEntry = {
+        sourceIndex: index,
+        licensenumber: licenseValue,
+        nextDue: ""
+      }
+
+      const updatedTagged =
+        existingIndex !== -1
+          ? tagged.map((x) => (x?.sourceIndex === index ? newEntry : x))
+          : [...tagged, newEntry]
+
+      return {
+        ...prev,
+        taggeddata: updatedTagged
+      }
+    })
+
+    setSelectedLeadList((prev) =>
+      prev.map((row) => ({
+        ...row,
+        licenseNumbers: (row.licenseNumbers || []).map((lic) =>
+          lic.sourceIndex === index
+            ? {
+                ...lic,
+                licenseNumber: licenseValue,
+                nextDue: ""
+              }
+            : lic
+        )
+      }))
+    )
+
+    setcustomerTableData((prev) => {
+      const existingIndex = prev.findIndex((row) => row?.sourceIndex === index)
+
+      const newRow = {
+        licenseNumber: licenseValue,
+        productName: item?.productorServiceName,
+        productorServiceId: item?.productorServiceId,
+        sourceIndex: index
+      }
+
+      if (existingIndex !== -1) {
+        return prev.map((row, i) =>
+          i === existingIndex ? { ...row, ...newRow } : row
+        )
+      }
+
+      return [...prev, newRow]
+    })
+  }
+
   const handleLicenseBlur = async (index, licenseNumber) => {
-    console.log(licenseNumber)
-    if (!String(licenseNumber).trim()) return
-    console.log(licenseNumber)
+    if (!String(licenseNumber).trim()) return false
+
     try {
       setlicenseloading(true)
+
       const { data } = await api.get(
         `/customer/checkLicense?licenseNumber=${licenseNumber}`
       )
-      console.log(data)
+
       if (data.exists) {
         toast.error(`License ${licenseNumber} already exists`)
-
-        setSelectedLeadList((prev) =>
-          prev.map((row, i) => (i === index ? { ...row } : row))
-        )
-
-        return
+        return false
       }
-      // setlicenseloading(false)
-      toast.success("License available")
+      toast.success(`License ${licenseNumber} available `)
+      return true
     } catch (error) {
-      // setlicenseloading(false)
       console.error(error)
       toast.error("Failed to validate license")
+      return false
     } finally {
       setlicenseloading(false)
     }
@@ -1755,7 +2000,28 @@ const LeadMaster = ({
   //   )
   // }
   const handleDeletetableData = (item, indexNum) => {
-    const productId = item?.productorServiceId || item?.productId
+    console.log(item)
+    console.log(takenLicenses)
+  const productId = item.productorServiceId|| item?.productId
+setunselectedtaggedlicense((prev) => {
+      const updated = { ...prev }
+      delete updated[productId]
+      return updated
+    })
+    setTakenLicense((prev) => {
+      const updated = { ...prev }
+
+      const keyToDelete = Object.keys(updated).find(
+        (key) => key.toLowerCase() === item.productorServiceName.toLowerCase()
+      )
+
+      if (keyToDelete) {
+        delete updated[keyToDelete]
+      }
+
+      return updated
+    })
+
 
     if (item?.licenseNumber) {
       const updatedProductList = (
@@ -2293,7 +2559,7 @@ const LeadMaster = ({
       setsubmitLoading(false)
     }
   }
-
+  console.log(selectedleadlist)
   const handlePopupOk = async (ischek = false, leadData = null) => {
     console.log(formData)
     console.log(leadData)
@@ -2328,34 +2594,11 @@ const LeadMaster = ({
     }))
   }
 
-  // const handleDetailsSave = () => {
-  //   setSelectedLeadList((prev) =>
-  //     prev.map((row, i) =>
-  //       i === detailsIndex
-  //         ? {
-  //             ...row,
-  //             productorServiceName: detailsForm.name,
-  //             licenseNumber: detailsForm.licenseNumber,
-  //             softwareTrade: detailsForm.softwareTrade,
-  //             applicationDate: detailsForm.applicationDate,
-  //             status: detailsForm.status,
-  //             nextDue: detailsForm.nextDue,
-  //             quantityUsers: detailsForm.quantityUsers,
-  //             amount: detailsForm.amount
-  //           }
-  //         : row
-  //     )
-  //   )
-
-  //   setdetailsopen(false)
-  //   setDetailsItem(null)
-  //   setDetailsIndex(null)
-  // }
   const handleDetailsSave = () => {
     const itemType = String(
       detailsItem?.productorservicetype || ""
     ).toLowerCase()
-
+    console.log("hh")
     const cleanedTaggedData = Array.isArray(detailsForm.taggeddata)
       ? detailsForm.taggeddata
           .map((tag) => ({
@@ -2516,10 +2759,26 @@ const LeadMaster = ({
     }
   }
   console.log(process)
-
+  console.log(warningErrors)
   console.log(detailsForm)
   const handleDetails = (item, index) => {
     console.log(item)
+
+    const productId = item.productorServiceId
+
+    if (!item?.licenseNumbers?.length) {
+      setunselectedtaggedlicense((prev) => ({
+        ...prev,
+        [productId]: "Please tag any of the license"
+      }))
+      return
+    }
+   
+    setunselectedtaggedlicense((prev) => {
+      const updated = { ...prev }
+      delete updated[productId]
+      return updated
+    })
     const isAdditionalService =
       String(item?.productorservicetype || "").toLowerCase() ===
       "additionalservice"
@@ -3003,21 +3262,171 @@ const LeadMaster = ({
                                   item={item}
                                   isReadOnly={isReadOnly}
                                   customerTableData={customerTableData}
+                                  setunselectedtaggedlicense={
+                                    setunselectedtaggedlicense
+                                  }
+                                  setTakenLicense={setTakenLicense}
                                   selectedleadlist={selectedleadlist}
                                   setSelectedLeadList={setSelectedLeadList}
                                   handleLicenseSelect={handleLicenseSelect}
                                 />
                               ) : (
+                                // <input
+                                //   value={item.licenseNumber}
+                                //   readOnly={isReadOnly}
+                                //   // className=`py-1 border pl-2 rounded-md border-gray-500 w-full text-xs ${isReadOnly?"cursor-not-allowed":""}`
+                                //   className={`py-1 border pl-2 rounded-md border-gray-500 w-full text-xs ${
+                                //     isReadOnly ? "cursor-not-allowed" : ""
+                                //   }`}
+                                //   onChange={(e) => {
+                                //     console.log(item)
+                                //     const licenseValue = e.target.value
+                                //     if (debounceTimersRef.current[index]) {
+                                //       clearTimeout(
+                                //         debounceTimersRef.current[index]
+                                //       )
+                                //     }
+
+                                //     debounceTimersRef.current[index] =
+                                //       setTimeout(() => {
+                                //         handleLicenseBlur(index, licenseValue)
+                                //         delete debounceTimersRef.current[index]
+                                //       }, 1000)
+                                //     console.log(customerTableData)
+
+                                //     console.log(licenseValue)
+                                //     console.log(item)
+                                //     console.log("hhh")
+                                //     console.log(detailsForm)
+                                //     console.log(index)
+                                //     setDetailsForm((prev) => {
+                                //       const tagged = prev.taggeddata || []
+                                //       console.log(tagged)
+                                //       const existingIndex = tagged.findIndex(
+                                //         (x) => x.sourceIndex === index
+                                //       )
+                                //       console.log(existingIndex)
+
+                                //       const newEntry = {
+                                //         sourceIndex: index,
+                                //         licensenumber: licenseValue,
+                                //         nextDue: ""
+                                //       }
+
+                                //       let updatedTagged
+
+                                //       if (existingIndex !== -1) {
+                                //         console.log(existingIndex)
+                                //         console.log(tagged)
+                                //         console.log(newEntry)
+                                //         updatedTagged = tagged.map((x, i) =>
+                                //           x?.sourceIndex === existingIndex
+                                //             ? newEntry
+                                //             : x
+                                //         )
+                                //         console.log(updatedTagged)
+                                //       } else {
+                                //         console.log(newEntry)
+                                //         updatedTagged = [...tagged, newEntry]
+                                //       }
+                                //       console.log(updatedTagged)
+                                //       return {
+                                //         ...prev,
+                                //         taggeddata: updatedTagged
+                                //       }
+                                //     })
+                                //     console.log(selectedleadlist)
+                                //     const filteredadditionalservice =
+                                //       selectedleadlist.filter(
+                                //         (item) =>
+                                //           item.productorservicetype.toLowerCase() ===
+                                //           "additionalservice"
+                                //       )
+                                //     console.log(filteredadditionalservice)
+                                //     // setSelectedLeadList((prev)=>({
+                                //     // ...prev,
+                                //     // }))
+                                //     if (
+                                //       filteredadditionalservice &&
+                                //       filteredadditionalservice.length
+                                //     ) {
+                                //       setSelectedLeadList((prev) =>
+                                //         prev.map((row) => ({
+                                //           ...row,
+                                //           licenseNumbers: (
+                                //             row.licenseNumbers || []
+                                //           ).map((lic) =>
+                                //             lic.sourceIndex === index
+                                //               ? {
+                                //                   ...lic,
+                                //                   licenseNumber: e.target.value,
+                                //                   nextDue: ""
+                                //                 }
+                                //               : lic
+                                //           )
+                                //         }))
+                                //       )
+                                //     }
+                                //     console.log(customerTableData)
+                                //     setcustomerTableData((prev) =>
+                                //       prev.map((row, i) =>
+                                //         row?.sourceIndex === index
+                                //           ? {
+                                //               ...row,
+                                //               licenseNumber: licenseValue,
+                                //               productName:
+                                //                 item?.productorServiceName,
+                                //               productorServiceId:
+                                //                 item?.productorServiceId,
+                                //               sourceIndex: index
+                                //             }
+                                //           : row
+                                //       )
+                                //     )
+                                //     console.log("hhhhh")
+                                //     console.log(licenseValue)
+                                //     updateLicense(index, licenseValue)
+                                //   }}
+                                //   placeholder="Enter License Number"
+                                // />
+                                // <input
+                                //   value={item.licenseNumber}
+                                //   readOnly={isReadOnly}
+                                //   className={`py-1 border pl-2 rounded-md border-gray-500 w-full text-xs ${
+                                //     isReadOnly ? "cursor-not-allowed" : ""
+                                //   }`}
+                                //   onChange={(e) => {
+                                //     const licenseValue = e.target.value
+
+                                //     if (debounceTimersRef.current[index]) {
+                                //       clearTimeout(
+                                //         debounceTimersRef.current[index]
+                                //       )
+                                //     }
+
+                                //     debounceTimersRef.current[index] =
+                                //       setTimeout(async () => {
+                                //         await processLicenseChange(
+                                //           index,
+                                //           licenseValue,
+                                //           item
+                                //         )
+                                //         delete debounceTimersRef.current[index]
+                                //       }, 1000)
+                                //   }}
+                                //   placeholder="Enter License Number"
+                                // />
                                 <input
                                   value={item.licenseNumber}
                                   readOnly={isReadOnly}
-                                  // className=`py-1 border pl-2 rounded-md border-gray-500 w-full text-xs ${isReadOnly?"cursor-not-allowed":""}`
                                   className={`py-1 border pl-2 rounded-md border-gray-500 w-full text-xs ${
                                     isReadOnly ? "cursor-not-allowed" : ""
                                   }`}
                                   onChange={(e) => {
-                                    console.log(item)
                                     const licenseValue = e.target.value
+
+                                    updateLicense(index, licenseValue)
+
                                     if (debounceTimersRef.current[index]) {
                                       clearTimeout(
                                         debounceTimersRef.current[index]
@@ -3025,104 +3434,23 @@ const LeadMaster = ({
                                     }
 
                                     debounceTimersRef.current[index] =
-                                      setTimeout(() => {
-                                        handleLicenseBlur(index, licenseValue)
+                                      setTimeout(async () => {
+                                        await processLicenseChange(
+                                          index,
+                                          licenseValue,
+                                          item
+                                        )
+                                        const currentValue =
+                                          selectedleadlist[index]?.licenseNumber
+
+                                        if (
+                                          String(currentValue) !==
+                                          String(licenseValue)
+                                        ) {
+                                          return
+                                        }
                                         delete debounceTimersRef.current[index]
                                       }, 1000)
-                                    console.log(customerTableData)
-
-                                    console.log(licenseValue)
-                                    console.log(item)
-                                    console.log("hhh")
-                                    console.log(detailsForm)
-                                    console.log(index)
-                                    setDetailsForm((prev) => {
-                                      const tagged = prev.taggeddata || []
-                                      console.log(tagged)
-                                      const existingIndex = tagged.findIndex(
-                                        (x) => x.sourceIndex === index
-                                      )
-                                      console.log(existingIndex)
-
-                                      const newEntry = {
-                                        sourceIndex: index,
-                                        licensenumber: licenseValue,
-                                        nextDue: ""
-                                      }
-
-                                      let updatedTagged
-
-                                      if (existingIndex !== -1) {
-                                        console.log(existingIndex)
-                                        console.log(tagged)
-                                        console.log(newEntry)
-                                        updatedTagged = tagged.map((x, i) =>
-                                          x?.sourceIndex === existingIndex
-                                            ? newEntry
-                                            : x
-                                        )
-                                        console.log(updatedTagged)
-                                      } else {
-                                        console.log(newEntry)
-                                        updatedTagged = [...tagged, newEntry]
-                                      }
-                                      console.log(updatedTagged)
-                                      return {
-                                        ...prev,
-                                        taggeddata: updatedTagged
-                                      }
-                                    })
-                                    console.log(selectedleadlist)
-                                    const filteredadditionalservice =
-                                      selectedleadlist.filter(
-                                        (item) =>
-                                          item.productorservicetype.toLowerCase() ===
-                                          "additionalservice"
-                                      )
-                                    console.log(filteredadditionalservice)
-                                    // setSelectedLeadList((prev)=>({
-                                    // ...prev,
-                                    // }))
-                                    if (
-                                      filteredadditionalservice &&
-                                      filteredadditionalservice.length
-                                    ) {
-                                      setSelectedLeadList((prev) =>
-                                        prev.map((row) => ({
-                                          ...row,
-                                          licenseNumbers: (
-                                            row.licenseNumbers || []
-                                          ).map((lic) =>
-                                            lic.sourceIndex === index
-                                              ? {
-                                                  ...lic,
-                                                  licenseNumber: e.target.value,
-                                                  nextDue: ""
-                                                }
-                                              : lic
-                                          )
-                                        }))
-                                      )
-                                    }
-                                    console.log(customerTableData)
-                                    setcustomerTableData((prev) =>
-                                      prev.map((row, i) =>
-                                        row?.sourceIndex === index
-                                          ? {
-                                              ...row,
-                                              licenseNumber: licenseValue,
-                                              productName:
-                                                item?.productorServiceName,
-                                              productorServiceId:
-                                                item?.productorServiceId,
-                                              sourceIndex: index
-                                            }
-                                          : row
-                                      )
-                                    )
-                                    console.log("hhhhh")
-                                    console.log(licenseValue)
-                                    updateLicense(index, licenseValue)
                                   }}
                                   placeholder="Enter License Number"
                                 />
@@ -3228,14 +3556,36 @@ const LeadMaster = ({
                             </td>
                             {process === "closing" && (
                               <td className="border border-gray-300 px-1 py-1 text-center">
-                                <button
-                                  type="button"
-                                  disabled={isReadOnly}
-                                  onClick={() => handleDetails(item, index)}
-                                  className={`text-blue-500 font-bold ml-2 ${isReadOnly ? "cursor-not-allowed" : "cursor-pointer"}`}
-                                >
-                                  Add
-                                </button>
+                                <div className="relative inline-block group">
+                                  <button
+                                    type="button"
+                                    disabled={isReadOnly}
+                                    onClick={() => handleDetails(item, index)}
+                                    className={`ml-2 font-bold text-blue-500 ${
+                                      isReadOnly
+                                        ? "cursor-not-allowed"
+                                        : "cursor-pointer"
+                                    }`}
+                                  >
+                                    Add
+                                  </button>
+                                  {/* {warningErrors?.taggedlicenseError && (
+                                    <div className="pointer-events-none absolute bottom-full right-0 z-50 mb-2 hidden whitespace-nowrap rounded bg-red-500 px-2 py-1 text-[11px] text-white shadow-lg group-hover:block">
+                                      {warningErrors.taggedlicenseError}
+                                    </div>
+                                  )} */}
+                                  {unselectedtaggedlicense[
+                                    item.productorServiceId
+                                  ] && (
+                                    <div className="pointer-events-none absolute bottom-full right-0 z-50 mb-2 hidden whitespace-nowrap rounded bg-red-500 px-2 py-1 text-[11px] text-white shadow-lg group-hover:block">
+                                      {
+                                        unselectedtaggedlicense[
+                                          item.productorServiceId
+                                        ]
+                                      }
+                                    </div>
+                                  )}
+                                </div>
                               </td>
                             )}
                           </tr>
@@ -3247,6 +3597,44 @@ const LeadMaster = ({
                 {warningMessage && (
                   <p className="text-red-500 text-sm mt-0">{warningMessage}</p>
                 )}
+                <div className="">
+                  {Object.entries(takenLicenses).map(
+                    ([productName, licenses]) => (
+                      <div
+                        key={productName}
+                        className="rounded-xl border border-gray-200 bg-white p-1 shadow-sm"
+                      >
+                        {/* Product Name */}
+                        <div className="flex">
+                          <div className=" flex items-center gap-3 w-[180px]">
+                            <div className="h-3 w-1 rounded-full bg-blue-600"></div>
+
+                            <h2 className="text-xs font-bold uppercase tracking-wider text-gray-800">
+                              {productName}
+                            </h2>
+                          </div>
+
+                          <div className="flex flex-wrap gap-3">
+                            {licenses.map((license) => (
+                              <button
+                                key={license}
+                                type="button"
+                                disabled
+                                className="flex items-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-0.5 text-sm font-medium text-gray-700 shadow-sm cursor-default min-w-[128px]"
+                              >
+                                <span className="h-3 w-3 rounded-full border-2 border-blue-600 flex items-center justify-center">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-blue-600"></span>
+                                </span>
+
+                                {license}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">
