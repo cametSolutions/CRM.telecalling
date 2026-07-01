@@ -658,6 +658,8 @@ const LeadMaster = ({
   const [productOrserviceSelections, setProductorServiceSelections] = useState(
     {}
   )
+  const today = new Date().toISOString().split("T")[0]
+  const [warningErrors, setwarningError] = useState({})
   const [licenseloading, setlicenseloading] = useState(false)
   const [leadList, setLeadList] = useState([])
   const [submitLoading, setsubmitLoading] = useState(false)
@@ -1048,7 +1050,89 @@ const LeadMaster = ({
         productorservicetype: item?.productorservicetype
       }))
       console.log(leadData)
-      setSelectedLeadList(leadData.length ? leadData : [{ ...emptyRow }])
+      const primary = leadData[0]
+
+      const primaryProductId = getRowId(primary?.productorServiceId)
+      const primaryProduct = getPrimaryProductFromLeadList(primary)
+      console.log(primaryProduct)
+      if (!primaryProduct) {
+        toast.error("Primary product details not found")
+        return
+      }
+
+      const defaultServices = Array.isArray(primaryProduct?.defaultservices)
+        ? primaryProduct.defaultservices
+        : []
+      console.log(defaultServices)
+
+      if (!defaultServices.length) {
+        toast.info("No additional services available for this primary product")
+        return
+      }
+      console.log(selectedleadlist)
+      setSelectedLeadList((prev) => {
+        const rows = leadData
+        console.log(rows)
+        const existingIds = getExistingAdditionalServiceIdsForPrimary(
+          rows,
+          0,
+          primaryProductId
+        )
+        console.log(existingIds)
+        const servicesToAdd = defaultServices.filter((service) => {
+          const serviceId = getRowId(service)
+          return serviceId && !existingIds.has(serviceId)
+        })
+        console.log(servicesToAdd)
+        if (!servicesToAdd.length) {
+          toast.info(
+            "Additional services already added for this primary product"
+          )
+          return prev
+        }
+        console.log(servicesToAdd)
+
+        const newRows = servicesToAdd.map((service) => {
+          console.log(service)
+          const serviceId = getRowId(service)
+          const igstRate = getBranchIgstRate(service)
+          const productPrice = Number(service?.productPrice ?? 0)
+          const taxAmount = (productPrice * igstRate) / 100
+          const actualNetAmount = productPrice + taxAmount
+          return {
+            ...emptyRow,
+            licenseNumber: "",
+            licenseNumbers: [],
+            productorServiceId: serviceId,
+            productorServiceName:
+              service?.productName || service?.serviceName || "",
+            itemType: service?.productName ? "Product" : "Service",
+            productorservicetype:
+              service?.productorservicetype || "Additionalservice",
+            productPrice: 0,
+            hsn: igstRate || 0,
+            netAmount: 0,
+            isDefaultService: true,
+            parentPrimaryProductId: primaryProductId,
+            company_id: service?.selected[0]?.company_id,
+            branch_id: service?.selected[0]?.branch_id,
+            actualNetAmount
+          }
+        })
+
+        let insertAt = 0 + 1
+        while (insertAt < rows.length) {
+          const nextType = String(
+            rows[insertAt]?.productorservicetype || ""
+          ).toLowerCase()
+          if (nextType === "primaryproduct") break
+          insertAt++
+        }
+        console.log(newRows)
+        rows.splice(insertAt, 0, ...newRows)
+        return rows
+      })
+      // setSelectedLeadList(leadData.length ? leadData : [{ ...emptyRow }])
 
       const productListwithoutlicenseOnEdit = leadList?.map((product) => {
         const match = Data[0].leadFor?.find((lead) => {
@@ -1063,6 +1147,7 @@ const LeadMaster = ({
           selectedArray: product.selected
         }
       })
+      console.log(productListwithoutlicenseOnEdit)
       setlicenseWithoutProductSelection(productListwithoutlicenseOnEdit)
 
       const groupedByLicenseNumber = {}
@@ -1106,11 +1191,7 @@ const LeadMaster = ({
             productName: sel?.product_id?.productName || "Unknown",
             productorServiceId: sel?.product_id?._id
           })) || []
-      // Data[0]?.customerName?.selected?.map((sel) => ({
-      //   licenseNumber: sel.licensenumber || "N/A",
-      //   productName: sel.productName || "Unknown",
-      //   productorServiceId: sel?.product_id
-      // }))
+
       console.log("d")
       setcustomerTableData(selectedcustomerlicenseandproduct)
     }
@@ -1460,7 +1541,7 @@ const LeadMaster = ({
         console.log(service)
         const serviceId = getRowId(service)
         const igstRate = getBranchIgstRate(service)
- const productPrice = Number(service?.productPrice ?? 0);
+        const productPrice = Number(service?.productPrice ?? 0)
         const taxAmount = (productPrice * igstRate) / 100
         const actualNetAmount = productPrice + taxAmount
         return {
@@ -2037,15 +2118,15 @@ const LeadMaster = ({
               tag?.licensenumber || tag?.licenseNumber || ""
             ).trim()
             const due = parseDateOnly(tag?.nextDue)
-const productAmount=Number(tag?.productAmount)
+            const productAmount = Number(tag?.productAmount)
             if (!tagLicense) {
               console.log("hh")
               return `Tagged license number is required for ${row?.productName || row?.productorServiceName}`
             }
-if(!productAmount>0){
-console.log("hh")
-return `Product amount is required for License ${tag?.licensenumber},not less than 0`
-}
+            if (!productAmount > 0) {
+              console.log("hh")
+              return `Product amount is required for License ${tag?.licensenumber},not less than 0`
+            }
             if (!due) {
               return `Next due is required for  ${row?.productName || row?.productorServiceName}`
             }
@@ -2280,7 +2361,7 @@ return `Product amount is required for License ${tag?.licensenumber},not less th
           .map((tag) => ({
             licensenumber: String(tag?.licensenumber || "").trim(),
             nextDue: String(tag?.nextDue || "").trim(),
-productAmount:tag?.productAmount
+            productAmount: tag?.productAmount
           }))
           .filter((tag) => tag.licensenumber !== "")
       : []
@@ -2459,14 +2540,14 @@ productAmount:tag?.productAmount
               licensenumber: lic?.licenseNumber || "",
               nextDue: existingTag?.nextDue || "",
               sourceIndex: lic?.sourceIndex,
-productAmount:existingTag?.productAmount||item?.actualNetAmount
+              productAmount: existingTag?.productAmount || item?.actualNetAmount
             }
           })
         : Array.isArray(item?.taggeddata)
           ? item.taggeddata.map((tag) => ({
               licensenumber: tag?.licensenumber || "",
               nextDue: tag?.nextDue || "",
-productAmount:item?.actualNetAmount
+              productAmount: item?.actualNetAmount
             }))
           : []
     console.log(item)
@@ -2937,7 +3018,17 @@ productAmount:item?.actualNetAmount
                                   onChange={(e) => {
                                     console.log(item)
                                     const licenseValue = e.target.value
+                                    if (debounceTimersRef.current[index]) {
+                                      clearTimeout(
+                                        debounceTimersRef.current[index]
+                                      )
+                                    }
 
+                                    debounceTimersRef.current[index] =
+                                      setTimeout(() => {
+                                        handleLicenseBlur(index, licenseValue)
+                                        delete debounceTimersRef.current[index]
+                                      }, 1000)
                                     console.log(customerTableData)
 
                                     console.log(licenseValue)
@@ -3013,9 +3104,10 @@ productAmount:item?.actualNetAmount
                                         }))
                                       )
                                     }
+                                    console.log(customerTableData)
                                     setcustomerTableData((prev) =>
                                       prev.map((row, i) =>
-                                        i === index
+                                        row?.sourceIndex === index
                                           ? {
                                               ...row,
                                               licenseNumber: licenseValue,
@@ -3031,18 +3123,6 @@ productAmount:item?.actualNetAmount
                                     console.log("hhhhh")
                                     console.log(licenseValue)
                                     updateLicense(index, licenseValue)
-
-                                    if (debounceTimersRef.current[index]) {
-                                      clearTimeout(
-                                        debounceTimersRef.current[index]
-                                      )
-                                    }
-
-                                    debounceTimersRef.current[index] =
-                                      setTimeout(() => {
-                                        handleLicenseBlur(index, licenseValue)
-                                        delete debounceTimersRef.current[index]
-                                      }, 1000)
                                   }}
                                   placeholder="Enter License Number"
                                 />
@@ -3542,7 +3622,7 @@ productAmount:item?.actualNetAmount
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-semibold text-gray-600 mb-1">
-                         Product Name
+                          Product Name
                         </label>
                         <input
                           type="text"
@@ -3592,19 +3672,103 @@ productAmount:item?.actualNetAmount
                                             className="w-full cursor-not-allowed rounded-[7px] border border-[#dfe5ee] bg-[#f3f6fb] px-2 py-1.5 text-[11px] text-[#1f2a3d] outline-none"
                                           />
                                         </td>
-                                        <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
+                                        {/* <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
                                           <input
                                             type="date"
+min={today}
                                             value={tag?.nextDue || ""}
-                                            onChange={(e) =>
-                                              handleTaggedDueChange(
+                                            onChange={(e) =>{
+const selectedDate=e.target.value
+
+ if (selectedDate && selectedDate < today) {
+    setwarningError((prev) => ({
+      ...prev,
+      nextduewarning: {
+        ...(prev.nextduewarning || {}),
+        [rowIndex]: "Due date must be today or a future date.",
+      },
+    }));
+    return;
+  }
+
+  setwarningError((prev) => ({
+    ...prev,
+    nextduewarning: {
+      ...(prev.nextduewarning || {}),
+      [rowIndex]: "",
+    },
+  }));
+ handleTaggedDueChange(
                                                 rowIndex,
                                                 e.target.value,
                                                 "nextDue"
                                               )
+}
+                                             
                                             }
                                             className="w-full rounded-[7px] border border-[#dfe5ee] bg-white px-2 py-1.5 text-[11px] text-[#1f2a3d] outline-none focus:border-[#1B2A4A]"
                                           />
+                                        </td> */}
+                                        <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
+                                          <input
+                                            type="date"
+                                            min={today}
+                                            value={tag?.nextDue || ""}
+                                            onChange={(e) => {
+                                              const selectedDate =
+                                                e.target.value
+
+                                              if (
+                                                selectedDate &&
+                                                selectedDate < today
+                                              ) {
+                                                setwarningError((prev) => ({
+                                                  ...prev,
+                                                  nextduewarning: {
+                                                    ...(prev.nextduewarning ||
+                                                      {}),
+                                                    [rowIndex]:
+                                                      "Due date must be today or a future date."
+                                                  }
+                                                }))
+                                                return
+                                              }
+
+                                              setwarningError((prev) => ({
+                                                ...prev,
+                                                nextduewarning: {
+                                                  ...(prev.nextduewarning ||
+                                                    {}),
+                                                  [rowIndex]: ""
+                                                }
+                                              }))
+
+                                              handleTaggedDueChange(
+                                                rowIndex,
+                                                selectedDate,
+                                                "nextDue"
+                                              )
+                                            }}
+                                            className={`w-full rounded-[7px] border bg-white px-2 py-1.5 text-[11px] text-[#1f2a3d] outline-none ${
+                                              warningErrors?.nextduewarning?.[
+                                                rowIndex
+                                              ]
+                                                ? "border-red-400"
+                                                : "border-[#dfe5ee] focus:border-[#1B2A4A]"
+                                            }`}
+                                          />
+
+                                          {warningErrors?.nextduewarning?.[
+                                            rowIndex
+                                          ] && (
+                                            <p className="mt-1 text-[10px] text-red-500">
+                                              {
+                                                warningErrors.nextduewarning[
+                                                  rowIndex
+                                                ]
+                                              }
+                                            </p>
+                                          )}
                                         </td>
                                         <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
                                           <input
