@@ -204,10 +204,16 @@ console.log(selectedItem)
       const { allusers = [], allAdmins = [] } = alluserdata
 
       // Combine allusers and allAdmins
-
-      const filter = allusers.filter((staff) =>
-        staff.selected.some((s) => selectedCompanyBranch === s.branch_id)
-      )
+console.log(allusers)
+      // const filter = allusers.filter((staff) =>
+      //   staff.selected.some((s) => selectedCompanyBranch === s.branch_id)
+      // )
+const filter = allusers.filter(
+  (staff) =>
+    staff.isVerified === true &&
+    staff.selected.some((s) => selectedCompanyBranch === s.branch_id)
+);
+console.log(filter)
       const combinedUsers = [...filter, ...allAdmins]
       setAllocationOptions(
         combinedUsers.map((item) => ({
