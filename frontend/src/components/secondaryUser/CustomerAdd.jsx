@@ -33,6 +33,7 @@ const CustomerAdd = ({
   handleEditedData,
   customer
 }) => {
+  console.log(process)
   const navigate = useNavigate()
 
   const {
@@ -168,6 +169,7 @@ const CustomerAdd = ({
       setPartner(partners)
     }
   }, [partners])
+console.log(partner)
 
   useEffect(() => {
     if (productData) {
@@ -240,7 +242,7 @@ const CustomerAdd = ({
     const year = date.getFullYear()
     return `${day}-${month}-${year}`
   }
-console.log(customer)
+  
   useEffect(() => {
     if (customer) {
       reset({
@@ -303,7 +305,7 @@ console.log(customer)
       console.log(selectedData)
       setTableData(selectedData)
     }
-  }, [customer, reset])
+  }, [customer, reset,partner])
 
   useEffect(() => {
     if (!debouncedLicenseNo || !String(debouncedLicenseNo).trim()) return
@@ -496,14 +498,25 @@ console.log(customer)
       item?.taggeddata?.map((entry) => String(entry?.licensenumber)) ||
       item?.taggedLicenses ||
       []
-
+    console.log(item)
+    // const taggedLicenseDueDatesFromData =
+    //   item?.taggeddata?.reduce((acc, entry) => {
+    //     if (entry?.licensenumber) {
+    //       acc[String(entry.licensenumber)] = entry?.nextDue || ""
+    //     }
+    //     return acc
+    //   }, {}) || {}
     const taggedLicenseDueDatesFromData =
       item?.taggeddata?.reduce((acc, entry) => {
         if (entry?.licensenumber) {
-          acc[String(entry.licensenumber)] = entry?.nextDue || ""
+          acc[String(entry.licensenumber)] = {
+            nextDue: entry?.nextDue || "",
+            productAmount: entry?.productAmount ?? ""
+          }
         }
         return acc
       }, {}) || {}
+    console.log(taggedLicenseDueDatesFromData)
 
     setCompanyOptions(getCompaniesForProduct(item?.productid))
     setBranchOptions(getBranchesForCompany(item?.productid, item?.companyid))
@@ -858,8 +871,11 @@ console.log(customer)
       popupType === "Additionalservice" &&
       selectedTaggedLicenses.length > 0
     ) {
+      // const hasEmptyDueDate = selectedTaggedLicenses.some(
+      //   (licenseNo) => !String(dueMap[String(licenseNo)] || "").trim()
+      // )
       const hasEmptyDueDate = selectedTaggedLicenses.some(
-        (licenseNo) => !String(dueMap[String(licenseNo)] || "").trim()
+        (licenseNo) => !String(dueMap[String(licenseNo)]?.nextDue || "").trim()
       )
 
       if (hasEmptyDueDate) {
@@ -868,11 +884,19 @@ console.log(customer)
       }
     }
 
+    // const taggeddata =
+    //   popupType === "Additionalservice" && selectedTaggedLicenses.length > 0
+    //     ? selectedTaggedLicenses.map((licenseNo) => ({
+    //         licensenumber: Number(licenseNo),
+    //         nextDue: dueMap[String(licenseNo)] || ""
+    //       }))
+    //     : []
     const taggeddata =
       popupType === "Additionalservice" && selectedTaggedLicenses.length > 0
         ? selectedTaggedLicenses.map((licenseNo) => ({
             licensenumber: Number(licenseNo),
-            nextDue: dueMap[String(licenseNo)] || ""
+            nextDue: dueMap[String(licenseNo)]?.nextDue || "",
+            productAmount: Number(dueMap[String(licenseNo)]?.productAmount || 0)
           }))
         : []
     console.log(values)
@@ -942,6 +966,15 @@ console.log(customer)
     console.log(editIndex)
     console.log(tableData)
     console.log("hh")
+    // setTableData((prev) => {
+    //   if (editIndex !== null) {
+    //     const updated = [...prev]
+    //     updated[editIndex] = row
+    //     return updated
+    //   }
+
+    //   return [...prev, row, ...defaultServiceRows]
+    // })
     setTableData((prev) => {
       if (editIndex !== null) {
         const updated = [...prev]
@@ -949,19 +982,63 @@ console.log(customer)
         return updated
       }
 
-      return [...prev, row, ...defaultServiceRows]
+      // Existing additional service product ids
+      const existingAdditionalServiceIds = new Set(
+        prev
+          .filter(
+            (item) =>
+              String(item.productorservicetype).toLowerCase() ===
+              "additionalservice"
+          )
+          .map((item) => String(item.product_id))
+      )
+
+      // Only keep default services that don't already exist
+      const newDefaultServices = defaultServiceRows.filter(
+        (service) =>
+          !existingAdditionalServiceIds.has(String(service.product_id))
+      )
+
+      return [...prev, row, ...newDefaultServices]
     })
 
     closePopup()
   }
 
+  // const filteredOptionsByType = useMemo(() => {
+  //   return productOptions.filter(
+  //     (item) =>
+  //       String(item?.productorservicetype).toLowerCase() ===
+  //       String(popupType).toLowerCase()
+  //   )
+  // }, [productOptions, popupType])
   const filteredOptionsByType = useMemo(() => {
-    return productOptions.filter(
+    let options = productOptions.filter(
       (item) =>
         String(item?.productorservicetype).toLowerCase() ===
         String(popupType).toLowerCase()
     )
-  }, [productOptions, popupType])
+
+    if (String(popupType).toLowerCase() === "additionalservice") {
+      const existingServiceIds = new Set(
+        tableData
+          .filter(
+            (item) =>
+              String(item?.productorservicetype).toLowerCase() ===
+              "additionalservice"
+          )
+          .map((item) => String(item.product_id))
+      )
+
+      options = options.filter(
+        (item) => !existingServiceIds.has(String(item.value))
+        // or String(item._id) depending on your productOptions structure
+      )
+    }
+
+    return options
+  }, [productOptions, popupType, tableData])
+  console.log(popupType)
 
   const primaryProducts = useMemo(() => {
     return tableData.filter(
@@ -1200,7 +1277,7 @@ console.log(customer)
                 <select {...register("partner")} className={tileInputClass}>
                   <option value="">Select Partner</option>
                   {partner?.map((partnr, index) => (
-                    <option key={index} value={partnr.id}>
+                    <option key={index} value={partnr._id}>
                       {partnr.partner}
                     </option>
                   ))}
@@ -1338,7 +1415,7 @@ console.log(customer)
                   onClick={() => openAddPopup("Primaryproduct")}
                   className="text-[11px] font-medium text-[#2f80ed] hover:underline"
                 >
-                  Add Product
+                  Add Products
                 </button>
               </div>
 
@@ -1771,20 +1848,19 @@ console.log(customer)
                       <input
                         type="number"
                         {...register("noofusers")}
-                        // className={`${compactPopupInputClass} no-spinner`}
                         className={`${compactPopupInputClass} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0`}
                       />
                     </PopupField>
                   )}
-
-                  <PopupField label="Amount">
-                    <input
-                      type="number"
-                      {...register("productAmount")}
-                      // className={compactPopupInputClass}
-                      className={`${compactPopupInputClass} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0`}
-                    />
-                  </PopupField>
+                  {popupType === "Primaryproduct" && (
+                    <PopupField label="Amount">
+                      <input
+                        type="number"
+                        {...register("productAmount")}
+                        className={`${compactPopupInputClass} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0`}
+                      />
+                    </PopupField>
+                  )}
 
                   <PopupField label="Status">
                     <select
@@ -1891,9 +1967,12 @@ console.log(customer)
                                 <th className="border-b border-[#e7ebf4] px-2.5 py-1.5 text-left text-[11px] font-semibold text-[#43506a]">
                                   Next Due
                                 </th>
+                                <th className="border-b border-[#e7ebf4] px-2.5 py-1.5 text-left text-[11px] font-semibold text-[#43506a]">
+                                  Product Amount
+                                </th>
                               </tr>
                             </thead>
-                            <tbody>
+                            {/* <tbody>
                               {watchedTaggedLicenses.map((licenseNo) => (
                                 <tr key={licenseNo}>
                                   <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
@@ -1906,11 +1985,7 @@ console.log(customer)
                                   <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
                                     <input
                                       type="date"
-                                      // value={
-                                      //   watchedTaggedLicenseDueDates?.[
-                                      //     licenseNo
-                                      //   ] || ""
-                                      // }
+                                     
                                       value={formatDateForInput(
                                         watchedTaggedLicenseDueDates?.[
                                           licenseNo
@@ -1926,6 +2001,67 @@ console.log(customer)
                                         })
                                       }}
                                       className={compactPopupInputClass}
+                                    />
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody> */}
+                            <tbody>
+                              {watchedTaggedLicenses.map((licenseNo) => (
+                                <tr key={licenseNo}>
+                                  <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
+                                    <input
+                                      value={licenseNo}
+                                      readOnly
+                                      className="w-full cursor-not-allowed rounded-[7px] border border-[#dfe5ee] bg-[#f3f6fb] px-2 py-1.5 text-[11px] text-[#1f2a3d] outline-none"
+                                    />
+                                  </td>
+
+                                  <td className="border-b border-[#eef2f7] px-2.5 py-1.5 ">
+                                    <input
+                                      type="date"
+                                      value={formatDateForInput(
+                                        watchedTaggedLicenseDueDates?.[
+                                          licenseNo
+                                        ]?.nextDue
+                                      )}
+                                      onChange={(e) => {
+                                        const dueMap =
+                                          watch("taggedLicenseDueDates") || {}
+
+                                        setValue("taggedLicenseDueDates", {
+                                          ...dueMap,
+                                          [licenseNo]: {
+                                            ...dueMap[licenseNo],
+                                            nextDue: e.target.value
+                                          }
+                                        })
+                                      }}
+                                      className={compactPopupInputClass}
+                                    />
+                                  </td>
+
+                                  <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
+                                    <input
+                                      type="number"
+                                      value={
+                                        watchedTaggedLicenseDueDates?.[
+                                          licenseNo
+                                        ]?.productAmount ?? ""
+                                      }
+                                      onChange={(e) => {
+                                        const dueMap =
+                                          watch("taggedLicenseDueDates") || {}
+
+                                        setValue("taggedLicenseDueDates", {
+                                          ...dueMap,
+                                          [licenseNo]: {
+                                            ...dueMap[licenseNo],
+                                            productAmount: e.target.value
+                                          }
+                                        })
+                                      }}
+                                      className={`${compactPopupInputClass} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0`}
                                     />
                                   </td>
                                 </tr>
@@ -1997,8 +2133,6 @@ const PopupField = ({ label, children, error }) => {
   )
 }
 
-
-
 const ProductCircleCard = ({
   item,
   actualIndex,
@@ -2040,7 +2174,7 @@ const ProductCircleCard = ({
 
           {line3 ? (
             <p className="mt-1 w-full whitespace-nowrap text-center text-[10px] font-semibold leading-[10px] text-[#d35c5c]">
-              {productType === "Primaryproduct" ? "App.Date" : "Due Date"} :{" "}
+              {productType === "Primaryproduct" ? "Date" : "Due"} :{" "}
               {line3}
             </p>
           ) : null}
@@ -2087,6 +2221,6 @@ const tileInputClass =
   "w-full border-0 bg-transparent p-0 text-[12px] font-medium text-[#1f2a3d] outline-none placeholder:text-[#c0c8d8]"
 
 const compactPopupInputClass =
-  "w-full rounded-[8px] border border-[#dfe5ee] bg-white px-2.5 py-1.5 text-[12px] text-[#1f2a3d] outline-none focus:border-[#7ba7ff]"
+  "w-full rounded-[8px] border border-[#dfe5ee] bg-white px-2.5 py-1.5 text-[12px] text-[#1f2a3d] outline-none focus:border-[#7ba7ff] "
 
 export default CustomerAdd

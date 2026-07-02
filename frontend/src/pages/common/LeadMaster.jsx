@@ -573,7 +573,7 @@ function ProductDropdown({
     applySelection(null)
     setOpen(false)
   }
-
+  console.log(search)
   return (
     <div className="relative w-full">
       <input
@@ -693,7 +693,7 @@ const LeadMaster = ({
   const [takenLicenses, setTakenLicense] = useState([])
   console.log(takenLicenses)
   const [warningErrors, setwarningError] = useState({})
-  const [unselectedtaggedlicense, zsetunselectedtaggedlicense] = useState({})
+  const [unselectedtaggedlicense, setunselectedtaggedlicense] = useState({})
   console.log(unselectedtaggedlicense)
   console.log(warningErrors)
   const [licenseloading, setlicenseloading] = useState(false)
@@ -772,6 +772,7 @@ const LeadMaster = ({
   const customerNameValue = watchModal("customerName")
   const customerIdValue = watchModal("customerid")
   const [isTradeOpen, setIsTradeOpen] = useState(false)
+  const discountAmount = watchMain("discamnt")
   const tradeDropdownRef = useRef(null)
   console.log(mobileValue)
   console.log(customerNameValue)
@@ -1040,12 +1041,6 @@ const LeadMaster = ({
         setselfAllocationChangable(false)
       }
 
-      // if (Data[0].followupClosed) {
-      //   setcustomerchangeandbranch(false)
-      // } else {
-      //   setcustomerchangeandbranch(true)
-      // }
-
       setValueMain("leadId", Data[0]?.leadId)
       setValueMain("partner", Data[0]?.partner)
       setValueMain("remark", Data[0].remark)
@@ -1097,82 +1092,152 @@ const LeadMaster = ({
         return
       }
 
-      const defaultServices = Array.isArray(primaryProduct?.defaultservices)
-        ? primaryProduct.defaultservices
-        : []
-      console.log(defaultServices)
+      // const defaultServices = Array.isArray(primaryProduct?.defaultservices)
+      //   ? primaryProduct.defaultservices
+      //   : []
+      // console.log(defaultServices)
 
-      if (!defaultServices.length) {
-        toast.info("No additional services available for this primary product")
-        return
-      }
-      console.log(selectedleadlist)
+      // if (!defaultServices.length) {
+      //   toast.info("No additional services available for this primary product")
+      //   return
+      // }
+      // console.log(selectedleadlist)
+      // console.log(leadData)
+      // setSelectedLeadList((prev) => {
+      //   const rows = leadData
 
-      setSelectedLeadList((prev) => {
-        const rows = leadData
-        console.log(rows)
-        const existingIds = getExistingAdditionalServiceIdsForPrimary(
-          rows,
-          0,
-          primaryProductId
-        )
-console.log(defaultServices)
-        console.log(existingIds)
-        const servicesToAdd = defaultServices.filter((service) => {
-          const serviceId = getRowId(service)
-console.log(serviceId)
-          return serviceId && !existingIds.has(serviceId)
-        })
-        console.log(servicesToAdd)
-        if (!servicesToAdd.length) {
-          toast.info(
-            "Additional services already added for this primary product"
-          )
-          return prev
-        }
-        console.log(servicesToAdd)
+      //   const existingIds = getExistingAdditionalServiceIdsForPrimary(
+      //     rows,
+      //     0,
+      //     primaryProductId
+      //   )
+      //   console.log(existingIds)
+      //   const servicesToAdd = defaultServices.filter((service) => {
+      //     console.log(service)
+      //     const serviceId = getRowId(service)
+      //     console.log(serviceId)
+      //     return serviceId && !existingIds.has(serviceId)
+      //   })
+      //   if (!servicesToAdd.length) {
+      //     toast.info(
+      //       "Additional services already added for this primary product"
+      //     )
+      //     return prev
+      //   }
 
-        const newRows = servicesToAdd.map((service) => {
-          console.log(service)
-          const serviceId = getRowId(service)
-          const igstRate = getBranchIgstRate(service)
-          const productPrice = Number(service?.productPrice ?? 0)
-          const taxAmount = (productPrice * igstRate) / 100
-          const actualNetAmount = productPrice + taxAmount
-          return {
-            ...emptyRow,
-            licenseNumber: "",
-            licenseNumbers: [],
-            productorServiceId: serviceId,
-            productorServiceName:
-              service?.productName || service?.serviceName || "",
-            itemType: service?.productName ? "Product" : "Service",
-            productorservicetype:
-              service?.productorservicetype || "Additionalservice",
-            productPrice: 0,
-            hsn: igstRate || 0,
-            netAmount: 0,
-            isDefaultService: true,
-            parentPrimaryProductId: primaryProductId,
-            company_id: service?.selected[0]?.company_id,
-            branch_id: service?.selected[0]?.branch_id,
-            actualNetAmount
-          }
-        })
+      //   const newRows = servicesToAdd.map((service) => {
+      //     const serviceId = getRowId(service)
+      //     const igstRate = getBranchIgstRate(service)
+      //     const productPrice = Number(service?.productPrice ?? 0)
+      //     const taxAmount = (productPrice * igstRate) / 100
+      //     const actualNetAmount = productPrice + taxAmount
+      //     return {
+      //       ...emptyRow,
+      //       licenseNumber: "",
+      //       licenseNumbers: [],
+      //       productorServiceId: serviceId,
+      //       productorServiceName:
+      //         service?.productName || service?.serviceName || "",
+      //       itemType: service?.productName ? "Product" : "Service",
+      //       productorservicetype:
+      //         service?.productorservicetype || "Additionalservice",
+      //       productPrice: 0,
+      //       hsn: igstRate || 0,
+      //       netAmount: 0,
+      //       isDefaultService: true,
+      //       parentPrimaryProductId: primaryProductId,
+      //       company_id: service?.selected[0]?.company_id,
+      //       branch_id: service?.selected[0]?.branch_id,
+      //       actualNetAmount
+      //     }
+      //   })
 
-        let insertAt = 0 + 1
-        while (insertAt < rows.length) {
-          const nextType = String(
-            rows[insertAt]?.productorservicetype || ""
-          ).toLowerCase()
-          if (nextType === "primaryproduct") break
-          insertAt++
-        }
-        console.log(newRows)
-        rows.splice(insertAt, 0, ...newRows)
-        return rows
-      })
-      // setSelectedLeadList(leadData.length ? leadData : [{ ...emptyRow }])
+      //   let insertAt = 0 + 1
+      //   while (insertAt < rows.length) {
+      //     const nextType = String(
+      //       rows[insertAt]?.productorservicetype || ""
+      //     ).toLowerCase()
+      //     if (nextType === "primaryproduct") break
+      //     insertAt++
+      //   }
+      //   console.log(newRows)
+      //   rows.splice(insertAt, 0, ...newRows)
+      //   return rows
+      // })
+const defaultServices = Array.isArray(primaryProduct?.defaultservices)
+  ? primaryProduct.defaultservices
+  : [];
+
+
+
+// Always initialize with the lead data first
+setSelectedLeadList((prev) => {
+  const rows = [...leadData];
+
+  // If there are no default services, just return the lead data.
+  if (!defaultServices.length) {
+    return rows;
+  }
+
+  const existingIds = getExistingAdditionalServiceIdsForPrimary(
+    rows,
+    0,
+    primaryProductId
+  );
+
+  const servicesToAdd = defaultServices.filter((service) => {
+    const serviceId = getRowId(service);
+    return serviceId && !existingIds.has(serviceId);
+  });
+
+  if (!servicesToAdd.length) {
+    return rows;
+  }
+
+  const newRows = servicesToAdd.map((service) => {
+    const serviceId = getRowId(service);
+    const igstRate = getBranchIgstRate(service);
+    const productPrice = Number(service?.productPrice ?? 0);
+    const taxAmount = (productPrice * igstRate) / 100;
+    const actualNetAmount = productPrice + taxAmount;
+
+    return {
+      ...emptyRow,
+      licenseNumber: "",
+      licenseNumbers: [],
+      productorServiceId: serviceId,
+      productorServiceName:
+        service?.productName || service?.serviceName || "",
+      itemType: service?.productName ? "Product" : "Service",
+      productorservicetype:
+        service?.productorservicetype || "Additionalservice",
+      productPrice: 0,
+      hsn: igstRate || 0,
+      netAmount: 0,
+      isDefaultService: true,
+      parentPrimaryProductId: primaryProductId,
+      company_id: service?.selected?.[0]?.company_id,
+      branch_id: service?.selected?.[0]?.branch_id,
+      actualNetAmount
+    };
+  });
+
+  let insertAt = 1;
+
+  while (insertAt < rows.length) {
+    const nextType = String(
+      rows[insertAt]?.productorservicetype || ""
+    ).toLowerCase();
+
+    if (nextType === "primaryproduct") break;
+
+    insertAt++;
+  }
+
+  rows.splice(insertAt, 0, ...newRows);
+
+  return rows;
+});
 
       const productListwithoutlicenseOnEdit = leadList?.map((product) => {
         const match = Data[0].leadFor?.find((lead) => {
@@ -1187,7 +1252,6 @@ console.log(serviceId)
           selectedArray: product.selected
         }
       })
-      console.log(productListwithoutlicenseOnEdit)
       setlicenseWithoutProductSelection(productListwithoutlicenseOnEdit)
 
       const groupedByLicenseNumber = {}
@@ -1236,17 +1300,14 @@ console.log(serviceId)
       setcustomerTableData(selectedcustomerlicenseandproduct)
     }
   }, [customerOptions, Data])
-  console.log(customerTableData)
-  console.log(selectedleadlist)
+ 
   useEffect(() => {
-    console.log("hhh")
     if (customerData && customerData.length > 0) {
       setallcustomer(customerData)
     }
   }, [customerData])
 
   useEffect(() => {
-    console.log("hhh")
     if (customerData && customerData.length && selectedBranch) {
       const options = customerData.map((item) => {
         const matchingSelected = item.selected?.find(
@@ -1284,12 +1345,21 @@ console.log(serviceId)
     }
   }, [alluser])
 
+  // useEffect(() => {
+  //   console.log("hhh")
+  //   setValueMain("netAmount", calculateTotalAmount())
+  //   setValueMain("taxAmount", calculatetaxAmount())
+  //   setValueMain("taxableAmount", calculatetaxableAmount())
+  // }, [selectedleadlist])
   useEffect(() => {
-    console.log("hhh")
-    setValueMain("netAmount", calculateTotalAmount())
+    const total = Number(calculateTotalAmount()) || 0
+    const discount = Number(discountAmount) || 0
+
     setValueMain("taxAmount", calculatetaxAmount())
     setValueMain("taxableAmount", calculatetaxableAmount())
-  }, [selectedleadlist])
+
+    setValueMain("netAmount", Math.max(total - discount, 0).toFixed(2))
+  }, [selectedleadlist, discountAmount])
 
   useEffect(() => {
     console.log("hhh")
@@ -1660,10 +1730,16 @@ console.log(serviceId)
     return Number(filteredbranch?.[0]?.hsnid?.onValue?.igstRate || 0)
   }
 
+  // const getRowId = (value) => {
+  //   console.log(value)
+  //   return String(value?._id || value?.id || value || "")
+  // }//old
   const getRowId = (value) => {
     console.log(value)
-    return String(value?._id || value?.id || value || "")
-  }
+    if (!value) return ""
+
+    return String(value._id ?? value.id ?? value).trim()
+  } //new code
 
   const getPrimaryProductFromLeadList = (row) => {
     const primaryProductId = getRowId(row?.productorServiceId)
@@ -1675,41 +1751,68 @@ console.log(serviceId)
     })
   }
 
+  // const getExistingAdditionalServiceIdsForPrimary = (
+  //   rows,
+  //   rowIndex,
+  //   primaryProductId
+  // ) => {
+  //   const existingIds = new Set()
+  //   console.log(rows)
+  //   console.log(rowIndex)
+  //   console.log(primaryProductId)
+  //   rows.forEach((item) => {
+  //     const itemType = String(item?.productorservicetype || "").toLowerCase()
+  //     const parentId = getRowId(item?.parentPrimaryProductId)
+
+  //     if (itemType === "additionalservice" && parentId === primaryProductId) {
+  //       existingIds.add(getRowId(item?.productorServiceId))
+  //     }
+  //   })
+
+  //   let pointer = rowIndex + 1
+  //   while (pointer < rows.length) {
+  //     const nextRow = rows[pointer]
+  //     const nextType = String(nextRow?.productorservicetype || "").toLowerCase()
+
+  //     if (nextType === "primaryproduct") break
+
+  //     if (nextType === "additionalservice") {
+  //       existingIds.add(getRowId(nextRow?.productorServiceId))
+  //     }
+
+  //     pointer++
+  //   }
+
+  //   return existingIds
+  // }
   const getExistingAdditionalServiceIdsForPrimary = (
     rows,
     rowIndex,
     primaryProductId
   ) => {
     const existingIds = new Set()
-    console.log(rows)
-    console.log(rowIndex)
-    console.log(primaryProductId)
-    rows.forEach((item) => {
-      const itemType = String(item?.productorservicetype || "").toLowerCase()
-      const parentId = getRowId(item?.parentPrimaryProductId)
-
-      if (itemType === "additionalservice" && parentId === primaryProductId) {
-        existingIds.add(getRowId(item?.productorServiceId))
-      }
-    })
 
     let pointer = rowIndex + 1
+
     while (pointer < rows.length) {
-      const nextRow = rows[pointer]
-      const nextType = String(nextRow?.productorservicetype || "").toLowerCase()
+      const row = rows[pointer]
+      const rowType = String(row?.productorservicetype || "").toLowerCase()
 
-      if (nextType === "primaryproduct") break
+      // Stop when the next primary product starts
+      if (rowType === "primaryproduct") break
 
-      if (nextType === "additionalservice") {
-        existingIds.add(getRowId(nextRow?.productorServiceId))
+      if (
+        rowType === "additionalservice" &&
+        getRowId(row?.parentPrimaryProductId) === getRowId(primaryProductId)
+      ) {
+        existingIds.add(getRowId(row?.productorServiceId))
       }
 
       pointer++
     }
-
+    // console.log(existingIds)
     return existingIds
   }
-
   const getRemainingAdditionalServicesCount = (row, rowIndex) => {
     const primaryProduct = getPrimaryProductFromLeadList(row)
     console.log(primaryProduct)
@@ -2002,8 +2105,8 @@ console.log(serviceId)
   const handleDeletetableData = (item, indexNum) => {
     console.log(item)
     console.log(takenLicenses)
-  const productId = item.productorServiceId|| item?.productId
-setunselectedtaggedlicense((prev) => {
+    const productId = item.productorServiceId || item?.productId
+    setunselectedtaggedlicense((prev) => {
       const updated = { ...prev }
       delete updated[productId]
       return updated
@@ -2021,7 +2124,6 @@ setunselectedtaggedlicense((prev) => {
 
       return updated
     })
-
 
     if (item?.licenseNumber) {
       const updatedProductList = (
@@ -2117,19 +2219,18 @@ setunselectedtaggedlicense((prev) => {
     const result = await api.get("/lead/checkexistinglead", {
       params: { leadData, selectedleadlist, role }
     })
+    // if (
+    //   result.data.message ===
+    //     "This customer already has a lead with the same product."
+    // ) {
+    //   return {
+    //     eligible: false,
+    //     message: `${result.data.message},You can't make leads`
+    //   }
+    // } else
     if (
       result.data.message ===
-        "This customer already has a lead with the same product." &&
-      loggeduser.role === "Staff"
-    ) {
-      return {
-        eligible: false,
-        message: `${result.data.message},You can't make leads`
-      }
-    } else if (
-      result.data.message ===
-        "This customer already has a lead with the same product." &&
-      loggeduser.role !== "Staff"
+      "This customer already has a lead with the same product."
     ) {
       return { eligible: true, message: result.data.message }
     } else if (
@@ -2391,7 +2492,7 @@ setunselectedtaggedlicense((prev) => {
             }
             if (!productAmount > 0) {
               console.log("hh")
-              return `Product amount is required for License ${tag?.licensenumber},not less than 0`
+              return `Product amount is required for ${row?.productName || row?.productorServiceName} ${tag?.licensenumber},not less than 0`
             }
             if (!due) {
               return `Next due is required for  ${row?.productName || row?.productorServiceName}`
@@ -2504,6 +2605,7 @@ setunselectedtaggedlicense((prev) => {
           filteredleadlist,
           loggeduser.role
         )
+        console.log(validation)
         setFormData(submitData)
         setPopupMessage(validation.message)
         if (validation.message === "") {
@@ -2543,6 +2645,7 @@ setunselectedtaggedlicense((prev) => {
 
         console.log(selectedleadlist)
         console.log(loggeduser)
+        console.log(data)
 
         seteditLoadingState(true)
         const updated = await handleclosingData(
@@ -2765,20 +2868,22 @@ setunselectedtaggedlicense((prev) => {
     console.log(item)
 
     const productId = item.productorServiceId
+    if (item?.productorservicetype === "Additionalservice") {
+      if (!item?.licenseNumbers?.length) {
+        setunselectedtaggedlicense((prev) => ({
+          ...prev,
+          [productId]: "Please tag any of the license"
+        }))
+        return
+      }
 
-    if (!item?.licenseNumbers?.length) {
-      setunselectedtaggedlicense((prev) => ({
-        ...prev,
-        [productId]: "Please tag any of the license"
-      }))
-      return
+      setunselectedtaggedlicense((prev) => {
+        const updated = { ...prev }
+        delete updated[productId]
+        return updated
+      })
     }
-   
-    setunselectedtaggedlicense((prev) => {
-      const updated = { ...prev }
-      delete updated[productId]
-      return updated
-    })
+
     const isAdditionalService =
       String(item?.productorservicetype || "").toLowerCase() ===
       "additionalservice"
@@ -3652,10 +3757,31 @@ setunselectedtaggedlicense((prev) => {
                   </div>
                   <div className="flex flex-col gap-2 md:justify-end md:pt-5 w-64">
                     {[
-                      { label: "Taxable Amount", field: "taxableAmount" },
-                      { label: "Tax Amount", field: "taxAmount" },
-                      { label: "Net Amount", field: "netAmount" }
-                    ].map(({ label, field }) => (
+                      {
+                        label: "Taxable Amount",
+                        field: "taxableAmount",
+                        viewonly: true
+                      },
+                      {
+                        label: "Tax Amount",
+                        field: "taxAmount",
+                        viewonly: true
+                      },
+                      ...(process === "closing"
+                        ? [
+                            {
+                              label: "Disc.Amount",
+                              field: "discamnt",
+                              viewonly: false
+                            }
+                          ]
+                        : []),
+                      {
+                        label: "Net Amount",
+                        field: "netAmount",
+                        viewonly: true
+                      }
+                    ].map(({ label, field, viewonly }) => (
                       <div key={field} className="flex items-center">
                         <span className="text-xs font-bold text-white px-3 py-[7px] bg-[#1B2A4A] rounded-l w-[130px] text-right whitespace-nowrap flex-shrink-0">
                           {label}
@@ -3663,8 +3789,8 @@ setunselectedtaggedlicense((prev) => {
                         <input
                           type="number"
                           {...registerMain(field)}
-                          readOnly
-                          className="flex-1 min-w-0 border border-gray-300 rounded-r px-3 py-[6px] text-sm text-right bg-white outline-none cursor-not-allowed"
+                          readOnly={viewonly}
+                          className={`flex-1 min-w-0 border border-gray-300 rounded-r px-3 py-[6px] text-sm text-right bg-white outline-none ${viewonly ? "cursor-not-allowed" : ""} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0`}
                         />
                       </div>
                     ))}

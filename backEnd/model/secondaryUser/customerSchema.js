@@ -112,6 +112,7 @@ const SelectedItemSchema = new mongoose.Schema(
       trim: true,
       default: ""
     },
+createdFrom:{type:String},
 
     branch_id: {
       type: mongoose.Schema.Types.ObjectId,
@@ -185,7 +186,33 @@ const SelectedItemSchema = new mongoose.Schema(
       type: Date,
       default: null
     },
-taggeddata:[{licensenumber:{type:Number},nextDue:{type:Date}}],
+    licenseNumbers: {
+      type: [
+        {
+          licenseNumber: Number,
+          productorServiceId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Product",
+          },
+          productorServiceName: String,
+          sourceIndex: {
+            type: Number,
+            default: undefined,
+          },
+        },
+      ],
+      default: [],
+    },
+    taggeddata: {
+      type: [
+        {
+          licensenumber: Number,
+          nextDue: Date,
+          productAmount: Number,
+        },
+      ],
+      default: [],
+    },
 
     amcstartDate: {
       type: Date,

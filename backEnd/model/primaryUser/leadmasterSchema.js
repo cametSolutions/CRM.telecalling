@@ -60,7 +60,35 @@ const leadSchema = new mongoose.Schema(
         hsn: { type: Number },
         netAmount: { type: Number },
         price: { type: Number },
-taggeddata:[{licensenumber:{type:Number},nextDue:{type:Date}}],
+        licenseNumbers: {
+          type: [
+            {
+              licenseNumber: Number,
+              productorServiceId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "Product",
+              },
+              productorServiceName: String,
+              sourceIndex: {
+                type: Number,
+                default: undefined,
+              },
+            },
+          ],
+          default: [],
+        },
+
+        taggeddata: {
+          type: [
+            {
+              licensenumber: Number,
+              nextDue: Date,
+              productAmount: Number,
+            },
+          ],
+          default: [],
+        },
+
       },
     ],
     //lead done by
@@ -88,7 +116,7 @@ taggeddata:[{licensenumber:{type:Number},nextDue:{type:Date}}],
     netAmount: {
       type: Number,
     },
-
+discountAmount:{type:Number},
     //balance amount given by the customer
     balanceAmount: {
       type: Number,

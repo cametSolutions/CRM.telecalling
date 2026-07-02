@@ -1564,11 +1564,9 @@ export const Leadclosing = async (req, res) => {
     if (!docID) {
       return res.status(400).json({ message: "docID is required" });
     }
-
     if (!data) {
       return res.status(400).json({ message: "data is required" });
     }
-
     if (!Array.isArray(leadData) || leadData.length === 0) {
       return res
         .status(400)
@@ -1576,70 +1574,119 @@ export const Leadclosing = async (req, res) => {
     }
 
     const objectId = new mongoose.Types.ObjectId(docID);
-
     let responsePayload = null;
 
     await session.withTransaction(async () => {
       const matchedDoc = await LeadMaster.findById(objectId).session(session);
-
       if (!matchedDoc) {
         throw new Error("Lead not found");
       }
 
-      const mappedleadData = leadData.map((item) => {
-        const productPrice = Number(item?.productPrice || 0);
-        const hsn = Number(item?.hsn || 0);
-        const netAmount = Number(item?.netAmount || 0);
-        const taxAmount = netAmount - productPrice;
+      const discountAmount = Number(data?.discamnt || 0);
+
+      // Gross total of raw (pre-discount) item net amounts
+      const grossAmount = leadData.reduce(
+        (sum, item) => sum + Number(item?.netAmount || 0),
+        0
+      );
+
+      // Final net amount for the whole lead (single source of truth)
+      const newNetAmount = Number(
+        data?.netAmount ?? grossAmount - discountAmount
+      );
+
+      // ---------------------------------------------------------------
+      // Single pass: apportion the discount across items proportionally,
+      // fix rounding drift on the last item, and scale productPrice /
+      // taxAmount so netAmount = productPrice + taxAmount stays true.
+      // This replaces the two separate (and inconsistent) calculations
+      // that used to live in mappedleadData and mappedproductData.
+      // ---------------------------------------------------------------
+      let runningTotal = 0;
+
+      const adjustedItems = leadData.map((item, index) => {
+        const originalNetAmount = Number(item?.netAmount || 0);
+        const ratio = grossAmount > 0 ? originalNetAmount / grossAmount : 0;
+
+        let finalNetAmount = Number(
+          (originalNetAmount - ratio * discountAmount).toFixed(2)
+        );
+
+        const isLastItem = index === leadData.length - 1;
+        if (isLastItem) {
+          // absorb rounding leftovers so items sum exactly to newNetAmount
+          finalNetAmount = Number((newNetAmount - runningTotal).toFixed(2));
+        }
+
+        runningTotal = Number((runningTotal + finalNetAmount).toFixed(2));
+
+        const originalProductPrice = Number(item?.productPrice || 0);
+        const scaleFactor =
+          originalNetAmount > 0 ? finalNetAmount / originalNetAmount : 0;
+
+        const scaledProductPrice = Number(
+          (originalProductPrice * scaleFactor).toFixed(2)
+        );
+        const scaledTaxAmount = Number(
+          (finalNetAmount - scaledProductPrice).toFixed(2)
+        );
 
         return {
+          item,
+          originalNetAmount,
+          finalNetAmount,
+          scaledProductPrice,
+          scaledTaxAmount,
+        };
+      });
+
+      const mappedleadData = adjustedItems.map(
+        ({ item, finalNetAmount, scaledProductPrice, scaledTaxAmount }) => ({
           licenseNumber: item?.licenseNumber ?? null,
+          licenseNumbers: item?.licenseNumbers,
+          taggeddata: item?.taggeddata,
           productorServiceName: item?.productorServiceName || "",
           productorServiceId: item?.productorServiceId || null,
           productorServicemodel: item?.itemType || "",
           price: item?.price ?? null,
-          productPrice,
-          hsn,
-          netAmount,
-          taxAmount,
+          productPrice: scaledProductPrice,
+          hsn: Number(item?.hsn || 0),
+          netAmount: finalNetAmount, // now discount-adjusted, in sync with header
+          taxAmount: scaledTaxAmount,
           productorservicetype: item?.productorservicetype || "",
           company_id: item?.company_id || null,
           branch_id: item?.branch_id || null,
-        };
-      });
+        })
+      );
 
-      const mappedproductData = leadData.map((item) => ({
+      const mappedproductData = adjustedItems.map(({ item, finalNetAmount }) => ({
         company_id: item?.company_id || null,
         branch_id: item?.branch_id || null,
         product_id: item?.productorServiceId || null,
+
         licensenumber:
-          item?.licenseNumber !== null &&
-            item?.licenseNumber !== undefined &&
-            String(item?.licenseNumber).trim() !== ""
-            ? Number(item?.licenseNumber)
+          item?.licenseNumber != null &&
+          String(item.licenseNumber).trim() !== ""
+            ? Number(item.licenseNumber)
             : null,
+
         noofusers: item?.quantityUsers,
         applicationDate: item?.applicationDate,
-productAmount:item?.netAmount,
-softwareTrade:item?.softwareTrade,
+
+        // same value as leadFor[].netAmount now — no more drift
+        productAmount: finalNetAmount,
+
+        softwareTrade: item?.softwareTrade,
         nextDue: item?.nextDue,
+        licenseNumbers: item?.licenseNumbers,
         taggeddata: Array.isArray(item?.taggeddata) ? item.taggeddata : [],
         productorservicetype: item?.productorservicetype || "",
         isActive: item?.status,
         version: item?.version,
       }));
 
-      const newTaxableAmount = mappedleadData.reduce(
-        (sum, item) => sum + Number(item.productPrice || 0),
-        0
-      );
-
-      const newNetAmount = mappedleadData.reduce(
-        (sum, item) => sum + Number(item.netAmount || 0),
-        0
-      );
-
-      const newTaxAmount = newNetAmount - newTaxableAmount;
+      const newTaxableAmount = Number(data?.taxableAmount || 0);
+      const newTaxAmount = Number(data?.taxAmount || 0);
 
       const totalPaidAmount = Number(matchedDoc.totalPaidAmount || 0);
       const rawBalanceAmount = newNetAmount - totalPaidAmount;
@@ -1650,7 +1697,6 @@ softwareTrade:item?.softwareTrade,
       const primaryProduct = mappedleadData.find(
         (item) => item.productorservicetype === "Primaryproduct"
       );
-
       const primaryProductId = primaryProduct?.productorServiceId || null;
       const primaryProductModel =
         primaryProduct?.productorServicemodel || "Product";
@@ -1659,6 +1705,7 @@ softwareTrade:item?.softwareTrade,
         ? matchedDoc.paymentHistory
         : [];
 
+      // paymentHistory[].netAmount kept in sync with the same newNetAmount
       const updatedPaymentHistory = existingPaymentHistory.map((history) => {
         const paymentEntries = Array.isArray(history.paymentEntries)
           ? history.paymentEntries
@@ -1682,16 +1729,19 @@ softwareTrade:item?.softwareTrade,
           paymentEntries: updatedEntries,
         };
       });
-      const taskName = await Task.findOne({ taskName: "Lead Closing" }).lean()
+
+      const taskName = await Task.findOne({ taskName: "Lead Closing" }).lean();
       const activityLogEntry = {
         submissionDate: new Date(),
         submittedUser: userId,
         submissiondoneByModel: role === "Admin" ? "Admin" : "Staff",
-        remarks: data?.remarks,
-        taskBy: taskName?._id
-      }
+        remarks: data?.remark,
+        taskBy: taskName?._id,
+      };
+
       const leadUpdatePayload = {
         ...data,
+        discountAmount,
         leadConfirmed: true,
         taxableAmount: newTaxableAmount,
         taxAmount: newTaxAmount,
@@ -1701,28 +1751,13 @@ softwareTrade:item?.softwareTrade,
         paymentHistory: updatedPaymentHistory,
       };
 
-      //       const updatedLead = await LeadMaster.findByIdAndUpdate(
-      //         objectId,
-      // {
-      //  $push: {
-      //         activityLog: activityLogEntry,
-      //       },
-      //         { $set: leadUpdatePayload },
-      //         { new: true, runValidators: true, session }}
-      //       );
       const updatedLead = await LeadMaster.findByIdAndUpdate(
         objectId,
         {
-          $push: {
-            activityLog: activityLogEntry,
-          },
+          $push: { activityLog: activityLogEntry },
           $set: leadUpdatePayload,
         },
-        {
-          new: true,
-          runValidators: true,
-          session,
-        }
+        { new: true, runValidators: true, session }
       );
 
       if (!updatedLead) {
@@ -1734,11 +1769,9 @@ softwareTrade:item?.softwareTrade,
       }
 
       const custobjectId = new mongoose.Types.ObjectId(data.customerName);
-
       const existingCustomer = await Customer.findById(custobjectId).session(
         session
       );
-
       if (!existingCustomer) {
         throw new Error("Customer not found");
       }
@@ -1760,7 +1793,6 @@ softwareTrade:item?.softwareTrade,
         }));
 
       const uniqueLicenseMap = new Map();
-
       for (const item of directLicenseNumbers) {
         if (!uniqueLicenseMap.has(String(item.licensenumber))) {
           uniqueLicenseMap.set(String(item.licensenumber), item);
@@ -1792,28 +1824,74 @@ softwareTrade:item?.softwareTrade,
             customerName: existingCustomer._id,
             licensenumber: item.licensenumber,
           }));
-
           await License.insertMany(licenseDocs, { session });
         }
       }
 
-      const updatedcustomer = await Customer.findByIdAndUpdate(
-        data.customerName,
-        {
-          $set: {
-            mobile: data.mobile,
-            email: data.email,
-            landline: data.phone,
-          },
-          $push: {
-            selected: {
-              $each: mappedproductData,
-            },
-          },
-        },
-        { new: true, session }
+      const customerDoc = await Customer.findById(data.customerName).session(
+        session
       );
+      const selected = [...customerDoc.selected];
 
+      for (const item of mappedproductData) {
+        if (item.productorservicetype !== "Additionalservice") {
+          selected.push(item);
+          continue;
+        }
+
+        const existingIndex = selected.findIndex(
+          (s) =>
+            String(s.product_id) === String(item.product_id) &&
+            String(s.productorservicetype).toLowerCase() === "additionalservice"
+        );
+
+        if (existingIndex === -1) {
+          selected.push(item);
+          continue;
+        }
+
+        const existing = selected[existingIndex];
+
+        const mergedLicenseNumbers = [...(existing.licenseNumbers || [])];
+        for (const license of item.licenseNumbers || []) {
+          const exists = mergedLicenseNumbers.some(
+            (l) =>
+              String(l.licenseNumber) === String(license.licenseNumber) &&
+              String(l.productorServiceId) === String(license.productorServiceId)
+          );
+          if (!exists) mergedLicenseNumbers.push(license);
+        }
+
+        const mergedTagged = [...(existing.taggeddata || [])];
+        for (const tag of item.taggeddata || []) {
+          const exists = mergedTagged.some(
+            (t) => String(t.licensenumber) === String(tag.licensenumber)
+          );
+          if (!exists) {
+            mergedTagged.push(tag);
+          } else {
+            const idx = mergedTagged.findIndex(
+              (t) => String(t.licensenumber) === String(tag.licensenumber)
+            );
+            mergedTagged[idx] = { ...mergedTagged[idx], ...tag };
+          }
+        }
+
+        selected[existingIndex] = {
+          ...(existing.toObject ? existing.toObject() : existing),
+          licenseNumbers: mergedLicenseNumbers,
+          taggeddata: mergedTagged,
+        };
+      }
+
+      customerDoc.mobile = data.mobile;
+      customerDoc.email = data.email;
+      customerDoc.landline = data.phone;
+      customerDoc.partner = data.partner;
+      customerDoc.createdFrom = "Lead";
+      customerDoc.selected = selected;
+
+      const updatedcustomer = await customerDoc.save({ session });
       if (!updatedcustomer) {
         throw new Error("Customer update failed");
       }
@@ -1837,7 +1915,6 @@ softwareTrade:item?.softwareTrade,
     return res.status(200).json(responsePayload);
   } catch (error) {
     console.error("Leadclosing error:", error);
-
     return res.status(500).json({
       message: error?.message || "Something went wrong while closing lead",
       error: {
@@ -1848,8 +1925,876 @@ softwareTrade:item?.softwareTrade,
   } finally {
     await session.endSession();
   }
-};
+};///claude code
+// export const Leadclosing = async (req, res) => {
+//   const session = await mongoose.startSession();
 
+//   try {
+//     const { data, leadData, userId, role } = req.body;
+//     const { docID } = req.query;
+
+//     if (!docID) {
+//       return res.status(400).json({ message: "docID is required" });
+//     }
+
+//     if (!data) {
+//       return res.status(400).json({ message: "data is required" });
+//     }
+
+//     if (!Array.isArray(leadData) || leadData.length === 0) {
+//       return res
+//         .status(400)
+//         .json({ message: "leadData must be a non-empty array" });
+//     }
+
+//     const objectId = new mongoose.Types.ObjectId(docID);
+
+//     let responsePayload = null;
+
+//     await session.withTransaction(async () => {
+//       const matchedDoc = await LeadMaster.findById(objectId).session(session);
+
+//       if (!matchedDoc) {
+//         throw new Error("Lead not found");
+//       }
+
+//       const mappedleadData = leadData.map((item) => {
+//         const productPrice = Number(item?.productPrice || 0);
+//         const hsn = Number(item?.hsn || 0);
+//         const netAmount = Number(item?.netAmount || 0);
+//         const taxAmount = netAmount - productPrice;
+
+//         return {
+//           licenseNumber: item?.licenseNumber ?? null,
+//           licenseNumbers: item?.licenseNumbers,
+//           taggeddata: item?.taggeddata,
+//           productorServiceName: item?.productorServiceName || "",
+//           productorServiceId: item?.productorServiceId || null,
+//           productorServicemodel: item?.itemType || "",
+//           price: item?.price ?? null,
+//           productPrice,
+//           hsn,
+//           netAmount,
+//           taxAmount,
+//           productorservicetype: item?.productorservicetype || "",
+//           company_id: item?.company_id || null,
+//           branch_id: item?.branch_id || null,
+//         };
+//       });
+//       console.log("leaddataaaaaa", leadData)
+//       const grossAmount = leadData.reduce(
+//         (sum, item) => sum + Number(item?.netAmount || 0),
+//         0
+//       );
+
+//       const discountAmount = Number(data?.discamnt || 0);
+
+//       const mappedproductData = leadData.map((item, index) => {
+
+//         const originalAmount = Number(item?.netAmount || 0);
+
+//         const ratio =
+//           grossAmount > 0 ? originalAmount / grossAmount : 0;
+
+//         let finalProductAmount =
+//           originalAmount - ratio * discountAmount;
+
+//         // Fix rounding difference on last item
+//         if (index === leadData.length - 1) {
+//           const previousTotal = leadData
+//             .slice(0, index)
+//             .reduce((sum, p) => {
+//               const amt = Number(p?.netAmount || 0);
+//               const r = grossAmount > 0 ? amt / grossAmount : 0;
+//               return sum + Number((amt - r * discountAmount).toFixed(2));
+//             }, 0);
+
+//           finalProductAmount =
+//             Number(data.netAmount) - previousTotal;
+//         }
+
+//         return {
+//           company_id: item?.company_id || null,
+//           branch_id: item?.branch_id || null,
+//           product_id: item?.productorServiceId || null,
+
+//           licensenumber:
+//             item?.licenseNumber != null &&
+//               String(item.licenseNumber).trim() !== ""
+//               ? Number(item.licenseNumber)
+//               : null,
+
+//           noofusers: item?.quantityUsers,
+//           applicationDate: item?.applicationDate,
+
+//           // Updated amount after discount
+//           productAmount: Number(finalProductAmount.toFixed(2)),
+
+//           softwareTrade: item?.softwareTrade,
+//           nextDue: item?.nextDue,
+//           licenseNumbers: item?.licenseNumbers,
+//           taggeddata: Array.isArray(item?.taggeddata)
+//             ? item.taggeddata
+//             : [],
+//           productorservicetype: item?.productorservicetype || "",
+//           isActive: item?.status,
+//           version: item?.version,
+//         };
+//       });
+//       // const mappedproductData = leadData.map((item) => ({
+//       //   company_id: item?.company_id || null,
+//       //   branch_id: item?.branch_id || null,
+//       //   product_id: item?.productorServiceId || null,
+//       //   licensenumber:
+//       //     item?.licenseNumber !== null &&
+//       //       item?.licenseNumber !== undefined &&
+//       //       String(item?.licenseNumber).trim() !== ""
+//       //       ? Number(item?.licenseNumber)
+//       //       : null,
+//       //   noofusers: item?.quantityUsers,
+//       //   applicationDate: item?.applicationDate,
+//       //   productAmount: item?.netAmount,
+//       //   softwareTrade: item?.softwareTrade,
+//       //   nextDue: item?.nextDue,
+//       //   licenseNumbers: item?.licenseNumbers,
+//       //   taggeddata: Array.isArray(item?.taggeddata) ? item.taggeddata : [],
+//       //   productorservicetype: item?.productorservicetype || "",
+//       //   isActive: item?.status,
+//       //   version: item?.version,
+//       // }));
+//       console.log("mappedproductdataaaaaaaa", mappedproductData)
+//       // const newTaxableAmount = mappedleadData.reduce(
+//       //   (sum, item) => sum + Number(item.productPrice || 0),
+//       //   0
+//       // );
+
+//       // const newNetAmount = mappedleadData.reduce(
+//       //   (sum, item) => sum + Number(item.netAmount || 0),
+//       //   0
+//       // );
+
+//       // const newTaxAmount = newNetAmount - newTaxableAmount;
+
+//       const newTaxableAmount = Number(data?.taxableAmount || 0);
+
+//       const newTaxAmount = Number(data?.taxAmount || 0);
+
+//       const grossNetAmount = mappedleadData.reduce(
+//         (sum, item) => sum + Number(item.netAmount || 0),
+//         0
+//       );
+
+//       // use the value coming from frontend
+//       const newNetAmount = Number(data?.netAmount || grossNetAmount - discountAmount);
+
+//       const totalPaidAmount = Number(matchedDoc.totalPaidAmount || 0);
+//       const rawBalanceAmount = newNetAmount - totalPaidAmount;
+//       const newBalanceAmount = rawBalanceAmount < 0 ? 0 : rawBalanceAmount;
+//       const excessPaidAmount =
+//         rawBalanceAmount < 0 ? Math.abs(rawBalanceAmount) : 0;
+
+//       const primaryProduct = mappedleadData.find(
+//         (item) => item.productorservicetype === "Primaryproduct"
+//       );
+
+//       const primaryProductId = primaryProduct?.productorServiceId || null;
+//       const primaryProductModel =
+//         primaryProduct?.productorServicemodel || "Product";
+
+//       const existingPaymentHistory = Array.isArray(matchedDoc.paymentHistory)
+//         ? matchedDoc.paymentHistory
+//         : [];
+
+//       const updatedPaymentHistory = existingPaymentHistory.map((history) => {
+//         const paymentEntries = Array.isArray(history.paymentEntries)
+//           ? history.paymentEntries
+//           : [];
+
+//         const updatedEntries = paymentEntries.map((entry) => {
+//           const existingReceivedAmount = Number(entry?.receivedAmount || 0);
+
+//           return {
+//             ...(entry?.toObject ? entry.toObject() : entry),
+//             productorServiceId: primaryProductId,
+//             productorServicemodel: primaryProductModel,
+//             receivedAmount: existingReceivedAmount,
+//             netAmount: newNetAmount,
+//             balanceAmount: Math.max(newNetAmount - existingReceivedAmount, 0),
+//           };
+//         });
+
+//         return {
+//           ...(history?.toObject ? history.toObject() : history),
+//           paymentEntries: updatedEntries,
+//         };
+//       });
+//       const taskName = await Task.findOne({ taskName: "Lead Closing" }).lean()
+//       const activityLogEntry = {
+//         submissionDate: new Date(),
+//         submittedUser: userId,
+//         submissiondoneByModel: role === "Admin" ? "Admin" : "Staff",
+//         remarks: data?.remark,
+//         taskBy: taskName?._id
+//       }
+
+
+//       // const leadUpdatePayload = {
+//       //   ...data,
+//       //   discountAmount: data?.discamnt,
+//       //   leadConfirmed: true,
+//       //   taxableAmount: newTaxableAmount,
+//       //   taxAmount: newTaxAmount,
+//       //   netAmount: newNetAmount,
+//       //   balanceAmount: newBalanceAmount,
+//       //   leadFor: mappedleadData,
+//       //   paymentHistory: updatedPaymentHistory,
+//       // };
+//       const leadUpdatePayload = {
+//         ...data,
+//         discountAmount,
+//         leadConfirmed: true,
+//         taxableAmount: newTaxableAmount,
+//         taxAmount: newTaxAmount,
+//         netAmount: newNetAmount,
+//         balanceAmount: newBalanceAmount,
+//         leadFor: mappedleadData,
+//         paymentHistory: updatedPaymentHistory,
+//       };
+
+
+//       const updatedLead = await LeadMaster.findByIdAndUpdate(
+//         objectId,
+//         {
+//           $push: {
+//             activityLog: activityLogEntry,
+//           },
+//           $set: leadUpdatePayload,
+//         },
+//         {
+//           new: true,
+//           runValidators: true,
+//           session,
+//         }
+//       );
+
+//       if (!updatedLead) {
+//         throw new Error("Lead update failed");
+//       }
+
+//       if (!data?.customerName) {
+//         throw new Error("Customer id is required");
+//       }
+
+//       const custobjectId = new mongoose.Types.ObjectId(data.customerName);
+
+//       const existingCustomer = await Customer.findById(custobjectId).session(
+//         session
+//       );
+
+//       if (!existingCustomer) {
+//         throw new Error("Customer not found");
+//       }
+
+//       const directLicenseNumbers = leadData
+//         .filter(
+//           (item) =>
+//             item?.licenseNumber !== null &&
+//             item?.licenseNumber !== undefined &&
+//             String(item?.licenseNumber).trim() !== ""
+//         )
+//         .map((item) => ({
+//           licensenumber: Number(item.licenseNumber),
+//           productid:
+//             item?.productid ||
+//             item?.product_id ||
+//             item?.productorServiceId ||
+//             null,
+//         }));
+
+//       const uniqueLicenseMap = new Map();
+
+//       for (const item of directLicenseNumbers) {
+//         if (!uniqueLicenseMap.has(String(item.licensenumber))) {
+//           uniqueLicenseMap.set(String(item.licensenumber), item);
+//         }
+//       }
+
+//       const uniqueLicenses = Array.from(uniqueLicenseMap.values());
+//       const licenseNumbers = uniqueLicenses.map((item) => item.licensenumber);
+
+//       if (licenseNumbers.length > 0) {
+//         const existingLicenses = await License.find({
+//           customerName: existingCustomer._id,
+//           licensenumber: { $in: licenseNumbers },
+//         })
+//           .select("licensenumber")
+//           .session(session);
+
+//         const existingLicenseSet = new Set(
+//           existingLicenses.map((item) => String(item.licensenumber))
+//         );
+
+//         const newLicenses = uniqueLicenses.filter(
+//           (item) => !existingLicenseSet.has(String(item.licensenumber))
+//         );
+
+//         if (newLicenses.length > 0) {
+//           const licenseDocs = newLicenses.map((item) => ({
+//             products: item.productid,
+//             customerName: existingCustomer._id,
+//             licensenumber: item.licensenumber,
+//           }));
+
+//           await License.insertMany(licenseDocs, { session });
+//         }
+//       }
+
+//       //       const updatedcustomer = await Customer.findByIdAndUpdate(
+//       //         data.customerName,
+//       //         {
+//       //           $set: {
+//       //             mobile: data.mobile,
+//       //             email: data.email,
+//       //             landline: data.phone,
+//       // partner:data.partner
+//       //           },
+//       //           $push: {
+//       //             selected: {
+//       //               $each: mappedproductData,
+//       //             },
+//       //           },
+//       //         },
+//       //         { new: true, session }
+//       //       );
+//       const customerDoc = await Customer.findById(data.customerName).session(session);
+
+//       const selected = [...customerDoc.selected];
+
+//       for (const item of mappedproductData) {
+
+//         if (item.productorservicetype !== "Additionalservice") {
+//           selected.push(item);
+//           continue;
+//         }
+
+//         const existingIndex = selected.findIndex(
+//           s =>
+//             String(s.product_id) === String(item.product_id) &&
+//             String(s.productorservicetype).toLowerCase() === "additionalservice"
+//         );
+
+//         if (existingIndex === -1) {
+//           selected.push(item);
+//           continue;
+//         }
+
+//         const existing = selected[existingIndex];
+
+//         //----------------------------------
+//         // Merge licenseNumbers
+//         //----------------------------------
+
+//         const mergedLicenseNumbers = [
+//           ...(existing.licenseNumbers || [])
+//         ];
+
+//         for (const license of item.licenseNumbers || []) {
+
+//           const exists = mergedLicenseNumbers.some(l =>
+//             String(l.licenseNumber) === String(license.licenseNumber) &&
+//             String(l.productorServiceId) === String(license.productorServiceId)
+//           );
+
+//           if (!exists) {
+//             mergedLicenseNumbers.push(license);
+//           }
+//         }
+
+//         //----------------------------------
+//         // Merge taggeddata
+//         //----------------------------------
+
+//         const mergedTagged = [
+//           ...(existing.taggeddata || [])
+//         ];
+
+//         for (const tag of item.taggeddata || []) {
+
+//           const exists = mergedTagged.some(t =>
+//             String(t.licensenumber) === String(tag.licensenumber)
+//           );
+
+//           if (!exists) {
+//             mergedTagged.push(tag);
+//           } else {
+
+//             const index = mergedTagged.findIndex(
+//               t => String(t.licensenumber) === String(tag.licensenumber)
+//             );
+
+//             mergedTagged[index] = {
+//               ...mergedTagged[index],
+//               ...tag
+//             };
+//           }
+//         }
+
+//         selected[existingIndex] = {
+//           ...existing.toObject(),
+//           licenseNumbers: mergedLicenseNumbers,
+//           taggeddata: mergedTagged
+//         };
+//       }
+
+//       customerDoc.mobile = data.mobile;
+//       customerDoc.email = data.email;
+//       customerDoc.landline = data.phone;
+//       customerDoc.partner = data.partner;
+//       customerDoc.createdFrom = "Lead"
+//       customerDoc.selected = selected;
+
+//       const updatedcustomer = await customerDoc.save({ session });
+
+//       if (!updatedcustomer) {
+//         throw new Error("Customer update failed");
+//       }
+
+//       responsePayload = {
+//         message: "Lead Closed successfully",
+//         lead: updatedLead,
+//         customer: updatedcustomer,
+//         extra: {
+//           newTaxableAmount,
+//           newTaxAmount,
+//           newNetAmount,
+//           totalPaidAmount,
+//           balanceAmount: newBalanceAmount,
+//           excessPaidAmount,
+//           primaryProductId,
+//         },
+//       };
+//     });
+
+//     return res.status(200).json(responsePayload);
+//   } catch (error) {
+//     console.error("Leadclosing error:", error);
+
+//     return res.status(500).json({
+//       message: error?.message || "Something went wrong while closing lead",
+//       error: {
+//         name: error?.name || "Error",
+//         message: error?.message || "Unknown error",
+//       },
+//     });
+//   } finally {
+//     await session.endSession();
+//   }
+// };
+
+// export const Leadclosing = async (req, res) => {
+//   const session = await mongoose.startSession();
+
+//   try {
+//     const { data, leadData, userId, role } = req.body;
+//     const { docID } = req.query;
+
+//     if (!docID) {
+//       return res.status(400).json({ message: "docID is required" });
+//     }
+
+//     if (!data) {
+//       return res.status(400).json({ message: "data is required" });
+//     }
+
+//     if (!Array.isArray(leadData) || leadData.length === 0) {
+//       return res
+//         .status(400)
+//         .json({ message: "leadData must be a non-empty array" });
+//     }
+
+//     const objectId = new mongoose.Types.ObjectId(docID);
+
+//     let responsePayload = null;
+
+//     await session.withTransaction(async () => {
+//       const matchedDoc = await LeadMaster.findById(objectId).session(session);
+
+//       if (!matchedDoc) {
+//         throw new Error("Lead not found");
+//       }
+
+//       const mappedleadData = leadData.map((item) => {
+//         const productPrice = Number(item?.productPrice || 0);
+//         const hsn = Number(item?.hsn || 0);
+//         const netAmount = Number(item?.netAmount || 0);
+//         const taxAmount = netAmount - productPrice;
+
+//         return {
+//           licenseNumber: item?.licenseNumber ?? null,
+//           licenseNumbers: item?.licenseNumbers,
+//           taggeddata: item?.taggeddata,
+//           productorServiceName: item?.productorServiceName || "",
+//           productorServiceId: item?.productorServiceId || null,
+//           productorServicemodel: item?.itemType || "",
+//           price: item?.price ?? null,
+//           productPrice,
+//           hsn,
+//           netAmount,
+//           taxAmount,
+//           productorservicetype: item?.productorservicetype || "",
+//           company_id: item?.company_id || null,
+//           branch_id: item?.branch_id || null,
+//         };
+//       });
+//       console.log("leaddataaaaaa", leadData)
+//       const grossAmount = leadData.reduce(
+//         (sum, item) => sum + Number(item?.netAmount || 0),
+//         0
+//       );
+
+//       const discountAmount = Number(data?.discamnt || 0);
+
+//       const mappedproductData = leadData.map((item, index) => {
+
+//         const originalAmount = Number(item?.netAmount || 0);
+
+//         const ratio =
+//           grossAmount > 0 ? originalAmount / grossAmount : 0;
+
+//         let finalProductAmount =
+//           originalAmount - ratio * discountAmount;
+
+//         // Fix rounding difference on last item
+//         if (index === leadData.length - 1) {
+//           const previousTotal = leadData
+//             .slice(0, index)
+//             .reduce((sum, p) => {
+//               const amt = Number(p?.netAmount || 0);
+//               const r = grossAmount > 0 ? amt / grossAmount : 0;
+//               return sum + Number((amt - r * discountAmount).toFixed(2));
+//             }, 0);
+
+//           finalProductAmount =
+//             Number(data.netAmount) - previousTotal;
+//         }
+
+//         return {
+//           company_id: item?.company_id || null,
+//           branch_id: item?.branch_id || null,
+//           product_id: item?.productorServiceId || null,
+
+//           licensenumber:
+//             item?.licenseNumber != null &&
+//               String(item.licenseNumber).trim() !== ""
+//               ? Number(item.licenseNumber)
+//               : null,
+
+//           noofusers: item?.quantityUsers,
+//           applicationDate: item?.applicationDate,
+
+//           // Updated amount after discount
+//           productAmount: Number(finalProductAmount.toFixed(2)),
+
+//           softwareTrade: item?.softwareTrade,
+//           nextDue: item?.nextDue,
+//           licenseNumbers: item?.licenseNumbers,
+//           taggeddata: Array.isArray(item?.taggeddata)
+//             ? item.taggeddata
+//             : [],
+//           productorservicetype: item?.productorservicetype || "",
+//           isActive: item?.status,
+//           version: item?.version,
+//         };
+//       });
+    
+
+//       const newTaxableAmount = Number(data?.taxableAmount || 0);
+
+//       const newTaxAmount = Number(data?.taxAmount || 0);
+
+//       const grossNetAmount = mappedleadData.reduce(
+//         (sum, item) => sum + Number(item.netAmount || 0),
+//         0
+//       );
+
+//       // use the value coming from frontend
+//       const newNetAmount = Number(data?.netAmount || grossNetAmount - discountAmount);
+
+//       const totalPaidAmount = Number(matchedDoc.totalPaidAmount || 0);
+//       const rawBalanceAmount = newNetAmount - totalPaidAmount;
+//       const newBalanceAmount = rawBalanceAmount < 0 ? 0 : rawBalanceAmount;
+//       const excessPaidAmount =
+//         rawBalanceAmount < 0 ? Math.abs(rawBalanceAmount) : 0;
+
+//       const primaryProduct = mappedleadData.find(
+//         (item) => item.productorservicetype === "Primaryproduct"
+//       );
+
+//       const primaryProductId = primaryProduct?.productorServiceId || null;
+//       const primaryProductModel =
+//         primaryProduct?.productorServicemodel || "Product";
+
+//       const existingPaymentHistory = Array.isArray(matchedDoc.paymentHistory)
+//         ? matchedDoc.paymentHistory
+//         : [];
+
+//       const updatedPaymentHistory = existingPaymentHistory.map((history) => {
+//         const paymentEntries = Array.isArray(history.paymentEntries)
+//           ? history.paymentEntries
+//           : [];
+
+//         const updatedEntries = paymentEntries.map((entry) => {
+//           const existingReceivedAmount = Number(entry?.receivedAmount || 0);
+
+//           return {
+//             ...(entry?.toObject ? entry.toObject() : entry),
+//             productorServiceId: primaryProductId,
+//             productorServicemodel: primaryProductModel,
+//             receivedAmount: existingReceivedAmount,
+//             netAmount: newNetAmount,
+//             balanceAmount: Math.max(newNetAmount - existingReceivedAmount, 0),
+//           };
+//         });
+
+//         return {
+//           ...(history?.toObject ? history.toObject() : history),
+//           paymentEntries: updatedEntries,
+//         };
+//       });
+//       const taskName = await Task.findOne({ taskName: "Lead Closing" }).lean()
+//       const activityLogEntry = {
+//         submissionDate: new Date(),
+//         submittedUser: userId,
+//         submissiondoneByModel: role === "Admin" ? "Admin" : "Staff",
+//         remarks: data?.remark,
+//         taskBy: taskName?._id
+//       }
+
+
+//       const leadUpdatePayload = {
+//         ...data,
+//         discountAmount,
+//         leadConfirmed: true,
+//         taxableAmount: newTaxableAmount,
+//         taxAmount: newTaxAmount,
+//         netAmount: newNetAmount,
+//         balanceAmount: newBalanceAmount,
+//         leadFor: mappedleadData,
+//         paymentHistory: updatedPaymentHistory,
+//       };
+
+
+//       const updatedLead = await LeadMaster.findByIdAndUpdate(
+//         objectId,
+//         {
+//           $push: {
+//             activityLog: activityLogEntry,
+//           },
+//           $set: leadUpdatePayload,
+//         },
+//         {
+//           new: true,
+//           runValidators: true,
+//           session,
+//         }
+//       );
+
+//       if (!updatedLead) {
+//         throw new Error("Lead update failed");
+//       }
+
+//       if (!data?.customerName) {
+//         throw new Error("Customer id is required");
+//       }
+
+//       const custobjectId = new mongoose.Types.ObjectId(data.customerName);
+
+//       const existingCustomer = await Customer.findById(custobjectId).session(
+//         session
+//       );
+
+//       if (!existingCustomer) {
+//         throw new Error("Customer not found");
+//       }
+
+//       const directLicenseNumbers = leadData
+//         .filter(
+//           (item) =>
+//             item?.licenseNumber !== null &&
+//             item?.licenseNumber !== undefined &&
+//             String(item?.licenseNumber).trim() !== ""
+//         )
+//         .map((item) => ({
+//           licensenumber: Number(item.licenseNumber),
+//           productid:
+//             item?.productid ||
+//             item?.product_id ||
+//             item?.productorServiceId ||
+//             null,
+//         }));
+
+//       const uniqueLicenseMap = new Map();
+
+//       for (const item of directLicenseNumbers) {
+//         if (!uniqueLicenseMap.has(String(item.licensenumber))) {
+//           uniqueLicenseMap.set(String(item.licensenumber), item);
+//         }
+//       }
+
+//       const uniqueLicenses = Array.from(uniqueLicenseMap.values());
+//       const licenseNumbers = uniqueLicenses.map((item) => item.licensenumber);
+
+//       if (licenseNumbers.length > 0) {
+//         const existingLicenses = await License.find({
+//           customerName: existingCustomer._id,
+//           licensenumber: { $in: licenseNumbers },
+//         })
+//           .select("licensenumber")
+//           .session(session);
+
+//         const existingLicenseSet = new Set(
+//           existingLicenses.map((item) => String(item.licensenumber))
+//         );
+
+//         const newLicenses = uniqueLicenses.filter(
+//           (item) => !existingLicenseSet.has(String(item.licensenumber))
+//         );
+
+//         if (newLicenses.length > 0) {
+//           const licenseDocs = newLicenses.map((item) => ({
+//             products: item.productid,
+//             customerName: existingCustomer._id,
+//             licensenumber: item.licensenumber,
+//           }));
+
+//           await License.insertMany(licenseDocs, { session });
+//         }
+//       }
+
+//       const customerDoc = await Customer.findById(data.customerName).session(session);
+
+//       const selected = [...customerDoc.selected];
+
+//       for (const item of mappedproductData) {
+
+//         if (item.productorservicetype !== "Additionalservice") {
+//           selected.push(item);
+//           continue;
+//         }
+
+//         const existingIndex = selected.findIndex(
+//           s =>
+//             String(s.product_id) === String(item.product_id) &&
+//             String(s.productorservicetype).toLowerCase() === "additionalservice"
+//         );
+
+//         if (existingIndex === -1) {
+//           selected.push(item);
+//           continue;
+//         }
+
+//         const existing = selected[existingIndex];
+
+//         //----------------------------------
+//         // Merge licenseNumbers
+//         //----------------------------------
+
+//         const mergedLicenseNumbers = [
+//           ...(existing.licenseNumbers || [])
+//         ];
+
+//         for (const license of item.licenseNumbers || []) {
+
+//           const exists = mergedLicenseNumbers.some(l =>
+//             String(l.licenseNumber) === String(license.licenseNumber) &&
+//             String(l.productorServiceId) === String(license.productorServiceId)
+//           );
+
+//           if (!exists) {
+//             mergedLicenseNumbers.push(license);
+//           }
+//         }
+
+//         //----------------------------------
+//         // Merge taggeddata
+//         //----------------------------------
+
+//         const mergedTagged = [
+//           ...(existing.taggeddata || [])
+//         ];
+
+//         for (const tag of item.taggeddata || []) {
+
+//           const exists = mergedTagged.some(t =>
+//             String(t.licensenumber) === String(tag.licensenumber)
+//           );
+
+//           if (!exists) {
+//             mergedTagged.push(tag);
+//           } else {
+
+//             const index = mergedTagged.findIndex(
+//               t => String(t.licensenumber) === String(tag.licensenumber)
+//             );
+
+//             mergedTagged[index] = {
+//               ...mergedTagged[index],
+//               ...tag
+//             };
+//           }
+//         }
+
+//         selected[existingIndex] = {
+//           ...existing.toObject(),
+//           licenseNumbers: mergedLicenseNumbers,
+//           taggeddata: mergedTagged
+//         };
+//       }
+
+//       customerDoc.mobile = data.mobile;
+//       customerDoc.email = data.email;
+//       customerDoc.landline = data.phone;
+//       customerDoc.partner = data.partner;
+//       customerDoc.createdFrom = "Lead"
+//       customerDoc.selected = selected;
+
+//       const updatedcustomer = await customerDoc.save({ session });
+
+//       if (!updatedcustomer) {
+//         throw new Error("Customer update failed");
+//       }
+
+//       responsePayload = {
+//         message: "Lead Closed successfully",
+//         lead: updatedLead,
+//         customer: updatedcustomer,
+//         extra: {
+//           newTaxableAmount,
+//           newTaxAmount,
+//           newNetAmount,
+//           totalPaidAmount,
+//           balanceAmount: newBalanceAmount,
+//           excessPaidAmount,
+//           primaryProductId,
+//         },
+//       };
+//     });
+
+//     return res.status(200).json(responsePayload);
+//   } catch (error) {
+//     console.error("Leadclosing error:", error);
+
+//     return res.status(500).json({
+//       message: error?.message || "Something went wrong while closing lead",
+//       error: {
+//         name: error?.name || "Error",
+//         message: error?.message || "Unknown error",
+//       },
+//     });
+//   } finally {
+//     await session.endSession();
+//   }
+// };
 export const UpdateLeadRegister = async (req, res) => {
   const session = await mongoose.startSession();
 
@@ -4195,7 +5140,7 @@ export const GetallLead = async (req, res) => {
                 const taskalocatedtomodel = mongoose.model(
                   log?.taskallocatedToModel
                 );
-                
+
                 populateTaskallocatedTo = await taskalocatedtomodel.findById(log?.taskallocatedTo).select("name").lean()
               }
 
