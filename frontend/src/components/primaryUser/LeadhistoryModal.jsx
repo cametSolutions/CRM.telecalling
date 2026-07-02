@@ -1,9 +1,9 @@
 export const LeadhistoryModal = ({
   selectedLeadId,
   historyList,
-  handlecloseModal,
+  handlecloseModal
 }) => {
-  console.log(historyList);
+  console.log(historyList)
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-40 ">
       <div className="bg-white shadow-xl   text-center md:w-auto w-full px-2 md:px-5 rounded-lg pb-3 ">
@@ -39,10 +39,12 @@ export const LeadhistoryModal = ({
             <tbody>
               {historyList && historyList.length > 0 ? (
                 historyList.map((item, index) => {
+                  console.log(item)
                   const hasFollowerData =
                     Array.isArray(item.folowerData) &&
-                    item.folowerData.length > 0;
-
+                    item.folowerData.length > 0
+                  console.log(hasFollowerData)
+console.log(item)
                   return hasFollowerData ? (
                     item.folowerData.map((subItem, subIndex) => (
                       <tr
@@ -94,7 +96,7 @@ export const LeadhistoryModal = ({
                               -
                             </>
                           ) : (
-                            item?.taskBy?.taskName ?? ""
+                            (item?.taskBy?.taskName ?? "")
                           )}
                           {item?.taskId && (
                             <>
@@ -126,7 +128,7 @@ export const LeadhistoryModal = ({
                           : "-"}
                       </td>
                     </tr>
-                  );
+                  )
                 })
               ) : (
                 <tr>
@@ -150,5 +152,5 @@ export const LeadhistoryModal = ({
         </button>
       </div>
     </div>
-  );
-};
+  )
+}

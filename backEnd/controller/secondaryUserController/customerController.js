@@ -284,7 +284,6 @@ export const GetscrollCustomer = async (req, res) => {
     // -------------------------- Build base match -----------------------
     let baseMatch = {};
 
-    console.log("customertype", customerType);
 
     if (customerType === "ProductMissing") {
       baseMatch = {

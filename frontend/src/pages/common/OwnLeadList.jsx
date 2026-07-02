@@ -51,7 +51,7 @@ export default function OwnLeadList() {
   const [selectedLeadId, setselectedLeadId] = useState(null)
   console.log(location?.state)
   const [ownLead, setownLead] = useState(!!location?.state?.ownLead)
-console.log(ownLead)
+  console.log(ownLead)
   console.log("hhhhh")
   console.log(!!location?.state?.ownLead)
   console.log(ownLead)
@@ -61,8 +61,8 @@ console.log(ownLead)
   const [selecteduserBranch, setselecteduserBranch] = useState(
     location?.state ? location?.state?.selecteduserBranch : null
   )
-console.log(location?.state?.selecteduserBranch)
-console.log(selecteduserBranch)
+  console.log(location?.state?.selecteduserBranch)
+  console.log(selecteduserBranch)
   const [showhistoryModal, sethistoryModal] = useState(false)
   const [historyList, setHistoryList] = useState([])
   const [openRow, setOpenRow] = useState(null)
@@ -89,27 +89,25 @@ console.log(selecteduserBranch)
   //       location?.state?.role ? false : ownLead
   //     }&startDate=${dates.startDate}&endDate=${dates.endDate}`
   // )
-const useOwnedLead = ({
-  loggedUser,
-  selecteduserBranch,
-  dates,
-  location,
-  ownLead
-}) => {
-  return useQuery({
-    queryKey: [
-      "ownedlead",
-      loggedUser?._id,
-      selecteduserBranch,
-      dates?.startDate,
-      dates?.endDate,
-      ownLead,
-      location?.state?.role
-    ],
-    queryFn: async () => {
-      const res = await api.get(
-        `/lead/ownregisteredLead`,
-        {
+  const useOwnedLead = ({
+    loggedUser,
+    selecteduserBranch,
+    dates,
+    location,
+    ownLead
+  }) => {
+    return useQuery({
+      queryKey: [
+        "ownedlead",
+        loggedUser?._id,
+        selecteduserBranch,
+        dates?.startDate,
+        dates?.endDate,
+        ownLead,
+        location?.state?.role
+      ],
+      queryFn: async () => {
+        const res = await api.get(`/lead/ownregisteredLead`, {
           params: {
             userId: loggedUser._id,
             role: location?.state?.role
@@ -120,44 +118,43 @@ const useOwnedLead = ({
             startDate: dates.startDate,
             endDate: dates.endDate
           }
-        }
-      );
-console.log(res.data.data)
-      return res.data.data
-    },
-    enabled:
-      !!loggedUser &&
-      !!selecteduserBranch &&
-      !!dates?.startDate &&
-      !!dates?.endDate,
-    staleTime: 1000 * 60 * 5 
-  });
-};
-const { data: ownedlead, isLoading: loading } = useOwnedLead({
-  loggedUser,
-  selecteduserBranch,
-  dates,
-  location,
-  ownLead
-});
- const useCompanyBranches = () => {
-console.log("hhhh")
-  return useQuery({
-    queryKey: ["companybranches"],
-    queryFn: async () => {
-console.log("hhh")
-      const res = await api.get("/branch/getBranch");
-console.log(res.data.data)
-      return res.data.data
-    },
-    // staleTime: 1000 * 60 * 10 
-  });
-};
-const { data: companybranches } = useCompanyBranches();
-console.log(selecteduserBranch)
-console.log(companybranches)
-console.log(loading)
-console.log(ownedlead)
+        })
+        console.log(res.data.data)
+        return res.data.data
+      },
+      enabled:
+        !!loggedUser &&
+        !!selecteduserBranch &&
+        !!dates?.startDate &&
+        !!dates?.endDate,
+      staleTime: 1000 * 60 * 5
+    })
+  }
+  const { data: ownedlead, isLoading: loading } = useOwnedLead({
+    loggedUser,
+    selecteduserBranch,
+    dates,
+    location,
+    ownLead
+  })
+  const useCompanyBranches = () => {
+    console.log("hhhh")
+    return useQuery({
+      queryKey: ["companybranches"],
+      queryFn: async () => {
+        console.log("hhh")
+        const res = await api.get("/branch/getBranch")
+        console.log(res.data.data)
+        return res.data.data
+      }
+      // staleTime: 1000 * 60 * 10
+    })
+  }
+  const { data: companybranches } = useCompanyBranches()
+  console.log(selecteduserBranch)
+  console.log(companybranches)
+  console.log(loading)
+  console.log(ownedlead)
   console.log(selecteduserBranch)
   console.log(selectedCompanyBranch)
   console.log(ownedlead)
@@ -175,13 +172,15 @@ console.log(ownedlead)
     }
 
     const today = formatDate(now)
-if(location?.state?.dates){
-console.log("hhh")
-setDates({startDate:location?.state?.dates?.startDate,endDate:location?.state?.dates?.endDate})
-}else{
- setDates({ startDate: now, endDate: now })
-}
-   
+    if (location?.state?.dates) {
+      console.log("hhh")
+      setDates({
+        startDate: location?.state?.dates?.startDate,
+        endDate: location?.state?.dates?.endDate
+      })
+    } else {
+      setDates({ startDate: now, endDate: now })
+    }
   }, [])
   useEffect(() => {
     if (selectedCategory) {
@@ -236,7 +235,7 @@ setDates({startDate:location?.state?.dates?.startDate,endDate:location?.state?.d
     }
   }, [targetData])
   console.log(dates)
-console.log(selecteduserBranch)
+  console.log(selecteduserBranch)
   useEffect(() => {
     if (companybranches && companybranches.length > 0) {
       const userData = getLocalStorageItem("user")
@@ -246,11 +245,11 @@ console.log(selecteduserBranch)
       }))
       console.log(branch)
       setcompanyBranches(branch)
-if(!location?.state){
-console.log("hhh")
-  setselecteduserBranch(branch[0].value)
-}
-    
+      if (!location?.state) {
+        console.log("hhh")
+        setselecteduserBranch(branch[0].value)
+      }
+
       setselectedCompanyBranch(branch[0].value)
       setLoggedUser(userData)
       console.log(location?.state)
@@ -258,9 +257,9 @@ console.log("hhh")
       //   console.log("hhh")
       //   setownLead(location?.state?.role ? false : true)
       // }
-if(!location?.state){
-setownLead(true)
-}
+      if (!location?.state) {
+        setownLead(true)
+      }
     }
   }, [companybranches])
 
@@ -406,7 +405,7 @@ setownLead(true)
     setOpenModal(true)
   }
   const LeadRow = ({ item }) => {
-console.log(item)
+    console.log(item)
     const open = openRow === item._id
     const lastLog = item.activityLog?.[item.activityLog.length - 1]
 
@@ -416,18 +415,34 @@ console.log(item)
           .split("/")
           .join("-")
       : "-"
-console.log(item)
-  const isAllocatedToeditable = Array.isArray(item.activityLog)
+    console.log(item)
+    const isAllocatedToeditable = Array.isArray(item.activityLog)
       ? item.activityLog.some(
           (it) =>
             it?.taskallocatedTo?._id === loggedUser?._id &&
             it?.taskClosed === false
         )
       : false
-console.log(loggedUser)
-const isManager=loggedUser?.role==="Manager"?true:false
-console.log(isManager)
-console.log(isAllocatedToeditable)
+    console.log(isAllocatedToeditable)
+
+    console.log(item?.leadBy)
+    console.log(loggedUser)
+    const isManager = loggedUser?.role === "Manager" ? true : false
+    console.log(isManager)
+    console.log(isAllocatedToeditable)
+    console.log(
+      item?.activityLog?.length === 1
+        ? item?.leadBy?._id !== loggedUser?._id
+        : "0"
+    )
+    console.log(item)
+    console.log(
+      item?.activityLog?.length === 1
+        ? item?.leadBy?._id !== loggedUser?._id
+        : isManager
+          ? !isManager
+          : !isAllocatedToeditable
+    )
     return (
       <>
         {/* MAIN ROW */}
@@ -462,7 +477,7 @@ console.log(isAllocatedToeditable)
             </span>
           </td>
 
-          <td className="px-3 py-2 border border-gray-200 text-xs">
+          <td className="px-3 py-2 border border-gray-200 text-xs text-center">
             {followupDate}
           </td>
 
@@ -486,6 +501,8 @@ console.log(isAllocatedToeditable)
               onClick={() => {
                 console.log("hhhh")
                 console.log(ownLead)
+                console.log(isManager)
+                console.log(isAllocatedToeditable)
                 const breadcrumb = [
                   { label: "Lead", path: "", state: "" },
                   {
@@ -498,13 +515,69 @@ console.log(isAllocatedToeditable)
                   },
                   { label: "New Lead", path: "" }
                 ]
+
+                console.log(item)
+                console.log(loggedUser)
+                const hasOpenTaskForLoggedUser = item?.activityLog?.some(
+                  (log) =>
+                    log?.followupClosed === false &&
+                    log?.taskallocatedTo?._id === loggedUser?._id
+                )
+                const hasFollowupTaskForLoggedUser = item?.activityLog?.some(
+                  (log) =>
+                    log?.followupClosed === false &&
+                    log?.taskallocatedTo?._id === loggedUser?._id &&
+                    log?.taskTo === "followup"
+                )
+                console.log(hasOpenTaskForLoggedUser)
+                // const isReadOnly = item?.leadConfirmed
+                //   ? true
+                //   : item?.leadLost
+                //   ? true
+                //   : item?.reallocatedTo
+                //   ? (loggedUser?.role === "Admin" || loggedUser?.role === "Manager")
+                //       ? false
+                //       : !hasOpenTaskForLoggedUser
+                //   : item?.activityLog?.some(
+                //       (log) =>
+                //         log?.followupClosed === false &&
+                //         log?.taskallocatedTo &&
+                //         log?.taskTo === "followup"
+                //     )
+                //   ? true
+                //   : item?.leadBy?._id !== loggedUser?._id;
+                console.log(item)
+                const isReadOnly = item?.leadConfirmed
+                  ? true
+                  : item?.leadLost
+                    ? true
+                    : item?.reallocatedTo
+                      ? loggedUser?.role === "Admin" ||
+                        loggedUser?.role === "Manager"
+                        ? false
+                        : !hasOpenTaskForLoggedUser // if hasOpenTaskForLoggedUser === true → readonly false
+                      : hasFollowupTaskForLoggedUser
+                        ? false // non-reallocated + followup assigned to user → readonly false
+                        : item?.leadBy?._id !== loggedUser?._id
+
+                console.log(isReadOnly)
+
                 loggedUser.role === "Admin"
                   ? navigate("/admin/transaction/lead/leadEdit", {
-                      state: { leadId: item._id, breadcrumb,isReadOnly:!isAllocatedToeditable,from:"Ownleadlist" }
+                      state: {
+                        leadId: item._id,
+                        breadcrumb,
+                        isReadOnly,
+                        from: "Ownleadlist"
+                      }
                     })
                   : navigate("/staff/transaction/lead/leadEdit", {
-                      state: { leadId: item._id, breadcrumb,
-isReadOnly:isManager?!isManager:!isAllocatedToeditable,from:"Ownleadlist" }
+                      state: {
+                        leadId: item._id,
+                        breadcrumb,
+                        isReadOnly,
+                        from: "Ownleadlist"
+                      }
                     })
               }}
               className="bg-blue-600 text-white px-2 py-1 rounded flex justify-center w-full"
@@ -529,7 +602,7 @@ isReadOnly:isManager?!isManager:!isAllocatedToeditable,from:"Ownleadlist" }
               <td className="border border-gray-200 px-3 py-1">Lead By</td>
               <td className="border border-gray-200 px-3 py-1">Assigned To</td>
               <td className="border border-gray-200 px-3 py-1">Assigned By</td>
-              <td className="border border-gray-200 px-3 py-1">Followups</td>
+              <td className="border border-gray-200 px-3 py-1 text-center">Follow-Ups</td>
               <td className="border border-gray-200 px-3 py-1">Lead Date</td>
               <td className="border border-gray-200 px-3 py-1">Lead ID</td>
               <td className="border border-gray-200 px-3 py-1">Phone</td>
@@ -546,8 +619,12 @@ isReadOnly:isManager?!isManager:!isAllocatedToeditable,from:"Ownleadlist" }
               <td className="border border-gray-200 px-3 py-1">
                 {item?.taskallocatedBy?.name || "-"}
               </td>
-              <td className="border border-gray-200 px-3 py-1">
-                {item.activityLog?.length || 0}
+              <td className="border border-gray-200 px-3 py-1 text-center">
+                {item?.activityLog?.filter(
+                  (log) =>
+                    log?.taskBy?.taskName?.toLowerCase() === "followup" &&
+                    log?.nextFollowUpDate
+                ).length || 0}
               </td>
               <td className="border border-gray-200 px-3 py-1">
                 {item.leadDate?.toString().split("T")[0] || "-"}
@@ -575,8 +652,8 @@ isReadOnly:isManager?!isManager:!isAllocatedToeditable,from:"Ownleadlist" }
           <th className="border border-blue-500 px-3 py-2 text-left">
             Last Remark
           </th>
-          <th className="border border-blue-500 px-3 py-2 text-left">
-            Followup
+          <th className="border border-blue-500 px-3 py-2 text-center">
+            Follow-Up Date
           </th>
           <th className="border border-blue-500 px-3 py-2 text-center">
             Event

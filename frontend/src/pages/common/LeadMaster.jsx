@@ -79,14 +79,16 @@ function LicenseDropdown({
   isReadOnly,
   customerTableData,
   selectedleadlist,
-  setSelectedLeadList
+  setSelectedLeadList,
+  setunselectedtaggedlicense,
+  setTakenLicense
 }) {
   console.log(selectedleadlist)
   console.log(item)
   console.log(index)
   console.log(customerTableData)
   const isMulti = item?.productorservicetype === "Additionalservice"
-
+  console.log(isMulti)
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState("")
 
@@ -97,7 +99,10 @@ function LicenseDropdown({
   useEffect(() => {
     if (isMulti) {
       setSearch("")
+      console.log(filtered)
+      toggleLicense(filtered, true)
     } else {
+      console.log("hhh")
       setSearch(String(item?.licenseNumber ?? ""))
     }
   }, [item?.licenseNumber, isMulti])
@@ -142,34 +147,48 @@ function LicenseDropdown({
   console.log(filtered)
 
   const updateRow = (newRow) => {
+    console.log("h")
     console.log(newRow)
     setSelectedLeadList((prev) =>
-      prev.map((row, i) => (i === index ? { ...row, ...newRow } : row))
+      prev.map((row, i) =>
+        i === index
+          ? {
+              ...row,
+              ...newRow
+            }
+          : row
+      )
     )
   }
 
-  const addLicense = (lic) => {
-    console.log(lic)
-    if (!lic) return
+  console.log(selectedleadlist)
 
+  const addLicense = (lic) => {
+    if (!lic) return
+    console.log("hh")
     if (isMulti) {
-      const exists = selectedLicenses.some(
+      const exists = (item?.licenseNumbers || []).some(
         (x) => String(x?.licenseNumber) === String(lic?.licenseNumber)
       )
 
       if (exists) return
-
-      updateRow({
-        licenseNumbers: [
-          ...(item?.licenseNumbers || []),
-          {
-            licenseNumber: lic?.licenseNumber,
-            productorServiceId: lic?.productorServiceId || "",
-            productorServiceName:
-              lic?.productName || lic?.productorServiceName || ""
-          }
-        ]
-      })
+      console.log("hh")
+      console.log(lic)
+      console.log(item?.licenseNumbers)
+      if (!Array.isArray(lic)) {
+        updateRow({
+          licenseNumbers: [
+            ...(item?.licenseNumbers || []),
+            {
+              licenseNumber: lic?.licenseNumber,
+              productorServiceId: lic?.productorServiceId || "",
+              productorServiceName:
+                lic?.productName || lic?.productorServiceName || "",
+              sourceIndex: lic?.sourceIndex
+            }
+          ]
+        })
+      }
 
       return
     }
@@ -177,9 +196,11 @@ function LicenseDropdown({
     updateRow({
       licenseNumber: lic?.licenseNumber || ""
     })
+
     setSearch(String(lic?.licenseNumber ?? ""))
     setOpen(false)
   }
+  console.log(selectedleadlist)
 
   const removeLicense = (licenseNumber) => {
     if (!isMulti) return
@@ -202,10 +223,13 @@ function LicenseDropdown({
   }
 
   const handleInputChange = (e) => {
+    console.log(e.target.value)
     setSearch(e.target.value)
     setOpen(true)
   }
+  console.log(filtered)
   console.log(open)
+  console.log(item)
   return (
     <div ref={wrapperRef} className="relative w-full">
       <input
@@ -231,11 +255,11 @@ function LicenseDropdown({
             id={dropdownId}
             onMouseDown={(e) => e.stopPropagation()}
             onTouchStart={(e) => e.stopPropagation()}
-            className="bg-white border border-gray-200 rounded shadow-xl overflow-hidden max-h-52"
+            className="max-h-52 overflow-hidden rounded border border-gray-200 bg-white shadow-xl"
           >
             <ul className="max-h-52 overflow-y-auto text-xs">
               {filtered.length === 0 ? (
-                <li className="px-3 py-2 text-gray-400 italic">
+                <li className="px-3 py-2 italic text-gray-400">
                   No results found
                 </li>
               ) : (
@@ -243,41 +267,82 @@ function LicenseDropdown({
                   const valStr = String(lic?.licenseNumber ?? "")
                   const productName =
                     lic?.productName || lic?.productorServiceName || ""
-
+                  console.log(isMulti)
+                  console.log(item)
+                  console.log(valStr)
                   const alreadyAdded = isMulti
                     ? (item?.licenseNumbers || []).some(
                         (x) => String(x?.licenseNumber) === valStr
                       )
-                    : valStr === String(item?.licenseNumber ?? "")
-
+                    : false
+                  console.log(alreadyAdded)
+                  console.log(valStr, alreadyAdded)
                   return (
                     <li
                       key={lic?.licenseNumber ?? i}
-                      className={`px-3 py-2 hover:bg-blue-50 flex items-center justify-between gap-2 ${
+                      className={`flex items-center justify-between gap-2 px-3 py-2 hover:bg-blue-50 ${
                         alreadyAdded
                           ? "bg-blue-50 font-semibold text-[#1B2A4A]"
                           : "text-gray-700"
                       }`}
                     >
                       {isMulti ? (
-                        <label className="flex items-center justify-between gap-2 w-full cursor-pointer">
-                          <div className="flex items-center gap-2 min-w-0">
+                        <label className="flex w-full cursor-pointer items-center justify-between gap-2">
+                          <div className="flex min-w-0 items-center gap-2">
                             <input
                               type="checkbox"
                               checked={alreadyAdded}
                               disabled={isReadOnly}
-                              onChange={(e) =>
+                              onChange={(e) => {
+                                console.log(e.target?.value)
+                                console.log(e.target?.checked)
+                                const checkedvalue = e.target.checked
+                                // setwarningError((prev) => ({
+                                //   ...prev,
+                                //   taggedlicenseError: ""
+                                // }))
+                                const productId = item.productorServiceId
+                                setunselectedtaggedlicense((prev) => {
+                                  const updated = { ...prev }
+                                  delete updated[productId]
+                                  return updated
+                                })
+                                console.log(item)
+
+                                setTakenLicense((prev) => {
+                                  console.log(checkedvalue)
+                                  const updatedLicenses = checkedvalue
+                                    ? [
+                                        ...(prev[item?.productorServiceName] ||
+                                          []),
+                                        valStr
+                                      ]
+                                    : (
+                                        prev[item?.productorServiceName] || []
+                                      ).filter((license) => license !== valStr)
+
+                                  const updated = { ...prev }
+
+                                  if (updatedLicenses.length > 0) {
+                                    updated[item?.productorServiceName] =
+                                      updatedLicenses
+                                  } else {
+                                    delete updated[item?.productorServiceName]
+                                  }
+
+                                  return updated
+                                })
                                 toggleLicense(lic, e.target.checked)
-                              }
-                              onMouseDown={(e) => e.stopPropagation()}
-                              onTouchStart={(e) => e.stopPropagation()}
-                              onClick={(e) => e.stopPropagation()}
-                              className="h-3.5 w-3.5 accent-blue-600 cursor-pointer"
+                              }}
+                              // onMouseDown={(e) => e.stopPropagation()}
+                              // onTouchStart={(e) => e.stopPropagation()}
+                              // onClick={(e) => e.stopPropagation()}
+                              className="h-3.5 w-3.5 cursor-pointer accent-blue-600"
                             />
                             <span className="font-medium">{valStr}</span>
                           </div>
 
-                          <span className="text-gray-400 truncate">
+                          <span className="truncate text-gray-400">
                             {productName}
                           </span>
                         </label>
@@ -290,10 +355,10 @@ function LicenseDropdown({
                             e.stopPropagation()
                             addLicense(lic)
                           }}
-                          className="flex items-center justify-between gap-2 w-full text-left"
+                          className="flex w-full items-center justify-between gap-2 text-left"
                         >
                           <span className="font-medium">{valStr}</span>
-                          <span className="text-gray-400 truncate">
+                          <span className="truncate text-gray-400">
                             {productName}
                           </span>
                         </button>
@@ -324,6 +389,7 @@ function ProductDropdown({
   selectedBranch,
   selectedCustomer
 }) {
+  console.log(item)
   console.log(selectedBranch)
   console.log(leadList)
   const emptyRow = {
@@ -369,59 +435,11 @@ function ProductDropdown({
   })
   console.log(filtered)
   console.log(selectedleadlist)
-  // const applySelection = (prod) => {
-  //   const base = selectedleadlist?.length
-  //     ? [...selectedleadlist]
-  //     : [{ ...emptyRow }]
-  //   console.log(selectedleadlist)
-  //   console.log(base)
-  //   console.log("hhhhhh")
-  //   const updated = [...base]
-  //   console.log(updated)
-  //   console.log(selectedBranch)
-  //   const filteredbranch = prod?.selected?.filter(
-  //     (item) => item.branch_id === selectedBranch
-  //   )
-  //   console.log(filteredbranch)
-  //   const igstRate = filteredbranch?.[0]?.hsn_id?.onValue?.igstRate
 
-  //   if (!prod) {
-  //     updated[index] = {
-  //       ...updated[index],
-  //       productorServiceId: "",
-  //       productorServiceName: "",
-  //       productPrice: "",
-  //       hsn: "",
-  //       netAmount: ""
-  //     }
-  //     setSearch("")
-  //   } else {
-  //     const price = Number(prod?.productPrice || 0)
-  //     const igst = Number(igstRate || 0)
-  //     console.log(igst)
-  //     const rawNet = price + (igst / 100) * price
-  //     const netAmount = Math.round(rawNet)
-
-  //     updated[index] = {
-  //       ...updated[index],
-  //       productorServiceId: prod._id,
-  //       productorServiceName: prod.productName || prod.serviceName,
-  //       itemType: prod.productName ? "Product" : "Service",
-  //       productPrice: prod.productPrice,
-  //       hsn: igstRate,
-  //       netAmount
-  //     }
-  //     setSearch(prod.productName || prod.serviceName || "")
-  //   }
-  //   console.log(updated)
-  //   setSelectedLeadList(updated)
-  // }
   console.log(selectedCustomer)
   const applySelection = (prod) => {
     console.log(prod)
-    // const branchdata=prod?.selected.map((item)=>item.branch_id===selectedBranch).map((item)=>return{
-    // company_id:item.company_id,
-    // branch_id:item.branch_id})
+
     const branchdata = (prod?.selected || [])
       .filter((item) => item.branch_id === selectedBranch)
       .map((item) => ({
@@ -506,19 +524,7 @@ function ProductDropdown({
     // Add default services immediately after selected product
     if (prod?.defaultservices?.length > 0 && process === "closing") {
       console.log("Hhh")
-      // const defaultServiceRows = prod.defaultservices.map((service) => ({
-      //   ...emptyRow,
-      //   productorServiceId: service._id,
-      //   productorServiceName: service.productName,
-      //   itemType: "Service",
-      //   productPrice: 0,
-      //   hsn: 0,
-      //   productorservicetype: service?.productorservicetype,
-      //   netAmount: 0,
-      //   isDefaultService: true
-      // }))
 
-      // updated.splice(index + 1, 0, ...defaultServiceRows)
       const primaryId = getRowId(prod)
       console.log(primaryId)
       console.log("hhh")
@@ -567,7 +573,7 @@ function ProductDropdown({
     applySelection(null)
     setOpen(false)
   }
-
+  console.log(search)
   return (
     <div className="relative w-full">
       <input
@@ -638,7 +644,7 @@ const LeadMaster = ({
   process,
   Data = null,
   Breadcrumblist,
-  isReadOnly,
+  isReadOnly = false,
   from = null,
   handleleadData,
   handleEditData,
@@ -683,6 +689,13 @@ const LeadMaster = ({
   const [productOrserviceSelections, setProductorServiceSelections] = useState(
     {}
   )
+  const today = new Date().toISOString().split("T")[0]
+  const [takenLicenses, setTakenLicense] = useState([])
+  console.log(takenLicenses)
+  const [warningErrors, setwarningError] = useState({})
+  const [unselectedtaggedlicense, setunselectedtaggedlicense] = useState({})
+  console.log(unselectedtaggedlicense)
+  console.log(warningErrors)
   const [licenseloading, setlicenseloading] = useState(false)
   const [leadList, setLeadList] = useState([])
   const [submitLoading, setsubmitLoading] = useState(false)
@@ -694,6 +707,7 @@ const LeadMaster = ({
   const [openProductDropdown, setOpenProductDropdown] = useState(null)
   const [popupMessage, setPopupMessage] = useState("")
   const [warningMessage, setwarningMessage] = useState("")
+  console.log(warningErrors)
   const [showdetailsopen, setdetailsopen] = useState(false)
   const [detailsItem, setDetailsItem] = useState(null)
   const [detailsIndex, setDetailsIndex] = useState(null)
@@ -705,9 +719,10 @@ const LeadMaster = ({
     status: "Running",
     nextDue: "",
     quantityUsers: "",
-    amount: "",
+    productAmount: "",
     taggeddata: []
   })
+  console.log(detailsForm?.length)
   console.log(detailsForm)
   console.log(warningMessage)
   const [ispopupModalOpen, setIspopupModalOpen] = useState(false)
@@ -719,7 +734,8 @@ const LeadMaster = ({
   const [selectedCountry, setSelectedCountry] = useState(null)
   const [licensewithoutProductSelection, setlicenseWithoutProductSelection] =
     useState({})
-  const [iscustomerchangeandbranch, setcustomerchangeandbranch] = useState(true)
+  const [iscustomerchangeandbranch, setcustomerchangeandbranch] =
+    useState(isReadOnly)
   const [selectedState, setSelectedState] = useState(null)
   const [selectedleadlist, setSelectedLeadList] = useState([])
   console.log(selectedleadlist)
@@ -752,6 +768,17 @@ const LeadMaster = ({
   const registrationType = watchModal("registrationType")
   const navigate = useNavigate()
   const location = useLocation()
+  const mobileValue = watchModal("mobile")
+  const customerNameValue = watchModal("customerName")
+  const customerIdValue = watchModal("customerid")
+  const [isTradeOpen, setIsTradeOpen] = useState(false)
+  const discountAmount = watchMain("discamnt")
+  const tradeDropdownRef = useRef(null)
+  console.log(mobileValue)
+  console.log(customerNameValue)
+  console.log(customerIdValue)
+  const [duplicateWarning, setDuplicateWarning] = useState("")
+  const [checkingDuplicate, setCheckingDuplicate] = useState(false)
   const { data: productData, loading: productLoading } = UseFetch(
     loggeduser &&
       selectedBranch &&
@@ -773,6 +800,41 @@ const LeadMaster = ({
       selectedBranch &&
       `/product/getallServices?branchselected=${selectedBranch}`
   )
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        tradeDropdownRef.current &&
+        !tradeDropdownRef.current.contains(event.target)
+      ) {
+        setIsTradeOpen(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+  const softwareTrades = [
+    "Agriculture",
+    "Business Services",
+    "Computer Hardware Software",
+    "Electronics Electrical Supplies",
+    "FMCG-Fast Moving Consumable Goods",
+    "Garment,Fashion Apparel",
+    "Health Beauty",
+    "Industrial Supplies",
+    "Jewelry Gemstones",
+    "Mobile Accessories",
+    "Pharmaceutical Chemicals",
+    "Textiles Chemicals",
+    "Textiles Fabrics",
+    "Others",
+    "Restaurant, Food And Beverage",
+    "Accounts Chartered Account",
+    "Stationery, Printing Publishing",
+    "Hotel",
+    "Pipes, Tubes Fittings"
+  ]
 
   const { data: alluser, loading: usersLoading } = UseFetch("/auth/getallUsers")
   const {
@@ -816,6 +878,42 @@ const LeadMaster = ({
   //     unregister("dueDate");
   //   }
   // }, [selfAllocation, unregister]);
+  useEffect(() => {
+    const cleanedMobile = String(mobileValue || "")
+      .replace(/^\+?91/, "")
+      .replace(/\D/g, "")
+    console.log(cleanedMobile)
+    const cleanedName = String(customerNameValue || "").trim()
+
+    if (cleanedMobile.length !== 10 || !cleanedName) {
+      setDuplicateWarning("")
+      return
+    }
+    console.log("hh")
+    const timer = setTimeout(async () => {
+      try {
+        setCheckingDuplicate(true)
+
+        const res = await api.post("/lead/check-customer-duplicate", {
+          mobile: cleanedMobile,
+          customerName: cleanedName,
+          customerId: customerIdValue || ""
+        })
+        console.log(res)
+        if (res?.data?.exists) {
+          setDuplicateWarning(res.data.message)
+        } else {
+          setDuplicateWarning("")
+        }
+      } catch (error) {
+        setDuplicateWarning("")
+      } finally {
+        setCheckingDuplicate(false)
+      }
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [mobileValue, customerNameValue, customerIdValue])
   useEffect(() => {
     if (!selectedleadlist || selectedleadlist.length === 0) {
       console.log("hh")
@@ -887,8 +985,14 @@ const LeadMaster = ({
       )
       setPartner(filteredPartners)
       const combinedlead = [...productData]
-      console.log(combinedlead)
-      setLeadList(combinedlead)
+      const productsWithType = productData.filter(
+        (item) =>
+          item?.productorservicetype !== null &&
+          item?.productorservicetype !== undefined &&
+          String(item?.productorservicetype).trim() !== ""
+      )
+      console.log(productsWithType)
+      setLeadList(productsWithType)
     }
   }, [loggeduser, branches, productData, serviceData, partners, selectedBranch])
 
@@ -937,12 +1041,6 @@ const LeadMaster = ({
         setselfAllocationChangable(false)
       }
 
-      if (Data[0].followupClosed) {
-        setcustomerchangeandbranch(false)
-      } else {
-        setcustomerchangeandbranch(true)
-      }
-
       setValueMain("leadId", Data[0]?.leadId)
       setValueMain("partner", Data[0]?.partner)
       setValueMain("remark", Data[0].remark)
@@ -984,7 +1082,162 @@ const LeadMaster = ({
         productorservicetype: item?.productorservicetype
       }))
       console.log(leadData)
-      setSelectedLeadList(leadData.length ? leadData : [{ ...emptyRow }])
+      const primary = leadData[0]
+
+      const primaryProductId = getRowId(primary?.productorServiceId)
+      const primaryProduct = getPrimaryProductFromLeadList(primary)
+      console.log(primaryProduct)
+      if (!primaryProduct) {
+        toast.error("Primary product details not found")
+        return
+      }
+
+      // const defaultServices = Array.isArray(primaryProduct?.defaultservices)
+      //   ? primaryProduct.defaultservices
+      //   : []
+      // console.log(defaultServices)
+
+      // if (!defaultServices.length) {
+      //   toast.info("No additional services available for this primary product")
+      //   return
+      // }
+      // console.log(selectedleadlist)
+      // console.log(leadData)
+      // setSelectedLeadList((prev) => {
+      //   const rows = leadData
+
+      //   const existingIds = getExistingAdditionalServiceIdsForPrimary(
+      //     rows,
+      //     0,
+      //     primaryProductId
+      //   )
+      //   console.log(existingIds)
+      //   const servicesToAdd = defaultServices.filter((service) => {
+      //     console.log(service)
+      //     const serviceId = getRowId(service)
+      //     console.log(serviceId)
+      //     return serviceId && !existingIds.has(serviceId)
+      //   })
+      //   if (!servicesToAdd.length) {
+      //     toast.info(
+      //       "Additional services already added for this primary product"
+      //     )
+      //     return prev
+      //   }
+
+      //   const newRows = servicesToAdd.map((service) => {
+      //     const serviceId = getRowId(service)
+      //     const igstRate = getBranchIgstRate(service)
+      //     const productPrice = Number(service?.productPrice ?? 0)
+      //     const taxAmount = (productPrice * igstRate) / 100
+      //     const actualNetAmount = productPrice + taxAmount
+      //     return {
+      //       ...emptyRow,
+      //       licenseNumber: "",
+      //       licenseNumbers: [],
+      //       productorServiceId: serviceId,
+      //       productorServiceName:
+      //         service?.productName || service?.serviceName || "",
+      //       itemType: service?.productName ? "Product" : "Service",
+      //       productorservicetype:
+      //         service?.productorservicetype || "Additionalservice",
+      //       productPrice: 0,
+      //       hsn: igstRate || 0,
+      //       netAmount: 0,
+      //       isDefaultService: true,
+      //       parentPrimaryProductId: primaryProductId,
+      //       company_id: service?.selected[0]?.company_id,
+      //       branch_id: service?.selected[0]?.branch_id,
+      //       actualNetAmount
+      //     }
+      //   })
+
+      //   let insertAt = 0 + 1
+      //   while (insertAt < rows.length) {
+      //     const nextType = String(
+      //       rows[insertAt]?.productorservicetype || ""
+      //     ).toLowerCase()
+      //     if (nextType === "primaryproduct") break
+      //     insertAt++
+      //   }
+      //   console.log(newRows)
+      //   rows.splice(insertAt, 0, ...newRows)
+      //   return rows
+      // })
+const defaultServices = Array.isArray(primaryProduct?.defaultservices)
+  ? primaryProduct.defaultservices
+  : [];
+
+
+
+// Always initialize with the lead data first
+setSelectedLeadList((prev) => {
+  const rows = [...leadData];
+
+  // If there are no default services, just return the lead data.
+  if (!defaultServices.length) {
+    return rows;
+  }
+
+  const existingIds = getExistingAdditionalServiceIdsForPrimary(
+    rows,
+    0,
+    primaryProductId
+  );
+
+  const servicesToAdd = defaultServices.filter((service) => {
+    const serviceId = getRowId(service);
+    return serviceId && !existingIds.has(serviceId);
+  });
+
+  if (!servicesToAdd.length) {
+    return rows;
+  }
+
+  const newRows = servicesToAdd.map((service) => {
+    const serviceId = getRowId(service);
+    const igstRate = getBranchIgstRate(service);
+    const productPrice = Number(service?.productPrice ?? 0);
+    const taxAmount = (productPrice * igstRate) / 100;
+    const actualNetAmount = productPrice + taxAmount;
+
+    return {
+      ...emptyRow,
+      licenseNumber: "",
+      licenseNumbers: [],
+      productorServiceId: serviceId,
+      productorServiceName:
+        service?.productName || service?.serviceName || "",
+      itemType: service?.productName ? "Product" : "Service",
+      productorservicetype:
+        service?.productorservicetype || "Additionalservice",
+      productPrice: 0,
+      hsn: igstRate || 0,
+      netAmount: 0,
+      isDefaultService: true,
+      parentPrimaryProductId: primaryProductId,
+      company_id: service?.selected?.[0]?.company_id,
+      branch_id: service?.selected?.[0]?.branch_id,
+      actualNetAmount
+    };
+  });
+
+  let insertAt = 1;
+
+  while (insertAt < rows.length) {
+    const nextType = String(
+      rows[insertAt]?.productorservicetype || ""
+    ).toLowerCase();
+
+    if (nextType === "primaryproduct") break;
+
+    insertAt++;
+  }
+
+  rows.splice(insertAt, 0, ...newRows);
+
+  return rows;
+});
 
       const productListwithoutlicenseOnEdit = leadList?.map((product) => {
         const match = Data[0].leadFor?.find((lead) => {
@@ -1039,28 +1292,22 @@ const LeadMaster = ({
           )
           .map((sel) => ({
             licenseNumber: sel.licensenumber,
-            productName: sel.productName || "Unknown",
-            productorServiceId: sel?.product_id
+            productName: sel?.product_id?.productName || "Unknown",
+            productorServiceId: sel?.product_id?._id
           })) || []
-      // Data[0]?.customerName?.selected?.map((sel) => ({
-      //   licenseNumber: sel.licensenumber || "N/A",
-      //   productName: sel.productName || "Unknown",
-      //   productorServiceId: sel?.product_id
-      // }))
+
       console.log("d")
       setcustomerTableData(selectedcustomerlicenseandproduct)
     }
   }, [customerOptions, Data])
-
+ 
   useEffect(() => {
-    console.log("hhh")
     if (customerData && customerData.length > 0) {
       setallcustomer(customerData)
     }
   }, [customerData])
 
   useEffect(() => {
-    console.log("hhh")
     if (customerData && customerData.length && selectedBranch) {
       const options = customerData.map((item) => {
         const matchingSelected = item.selected?.find(
@@ -1098,12 +1345,21 @@ const LeadMaster = ({
     }
   }, [alluser])
 
+  // useEffect(() => {
+  //   console.log("hhh")
+  //   setValueMain("netAmount", calculateTotalAmount())
+  //   setValueMain("taxAmount", calculatetaxAmount())
+  //   setValueMain("taxableAmount", calculatetaxableAmount())
+  // }, [selectedleadlist])
   useEffect(() => {
-    console.log("hhh")
-    setValueMain("netAmount", calculateTotalAmount())
+    const total = Number(calculateTotalAmount()) || 0
+    const discount = Number(discountAmount) || 0
+
     setValueMain("taxAmount", calculatetaxAmount())
     setValueMain("taxableAmount", calculatetaxableAmount())
-  }, [selectedleadlist])
+
+    setValueMain("netAmount", Math.max(total - discount, 0).toFixed(2))
+  }, [selectedleadlist, discountAmount])
 
   useEffect(() => {
     console.log("hhh")
@@ -1138,6 +1394,7 @@ const LeadMaster = ({
   //   )
   // }
   const updateLicense = (index, licenseNumber) => {
+    console.log(licenseNumber)
     setSelectedLeadList((prev) =>
       prev.map((row, i) =>
         i === index
@@ -1150,31 +1407,235 @@ const LeadMaster = ({
     )
   }
   console.log(selectedleadlist)
+  // const handleLicenseBlur = async (index, licenseNumber) => {
+  //   console.log(licenseNumber)
+  //   if (!String(licenseNumber).trim()) return
+  //   console.log(licenseNumber)
+  //   try {
+  //     setlicenseloading(true)
+  //     const { data } = await api.get(
+  //       `/customer/checkLicense?licenseNumber=${licenseNumber}`
+  //     )
+  //     console.log(data)
+  //     if (data.exists) {
+  //       toast.error(`License ${licenseNumber} already exists`)
+
+  //       setSelectedLeadList((prev) =>
+  //         prev.map((row, i) => (i === index ? { ...row } : row))
+  //       )
+
+  //       return
+  //     }
+  //     // setlicenseloading(false)
+  //     toast.success("License available")
+  //   } catch (error) {
+  //     // setlicenseloading(false)
+  //     console.error(error)
+  //     toast.error("Failed to validate license")
+  //   } finally {
+  //     setlicenseloading(false)
+  //   }
+  // }
+  //   const processLicenseChange = async (index, licenseValue, item) => {
+  //     const isValid = await handleLicenseBlur(index, licenseValue)
+
+  //     if (!isValid) return
+  // console.log(detailsForm)
+  //     setDetailsForm((prev) => {
+  //       const tagged = prev.taggeddata || []
+  //       const existingIndex = tagged.findIndex((x) => x.sourceIndex === index)
+
+  //       const newEntry = {
+  //         sourceIndex: index,
+  //         licensenumber: licenseValue,
+  //         nextDue: ""
+  //       }
+
+  //       const updatedTagged =
+  //         existingIndex !== -1
+  //           ? tagged.map((x) => (x?.sourceIndex === index ? newEntry : x))
+  //           : [...tagged, newEntry]
+
+  //       return {
+  //         ...prev,
+  //         taggeddata: updatedTagged
+  //       }
+  //     })
+
+  //     const filteredadditionalservice = selectedleadlist.filter(
+  //       (item) => item.productorservicetype?.toLowerCase() === "additionalservice"
+  //     )
+  // console.log(filteredadditionalservice)
+  // console.log(selectedleadlist)
+  //     if (filteredadditionalservice.length) {
+  //       setSelectedLeadList((prev) =>
+  //         prev.map((row) => ({
+  //           ...row,
+  //           licenseNumbers: (row.licenseNumbers || []).map((lic) =>
+  //             lic.sourceIndex === index
+  //               ? {
+  //                   ...lic,
+  //                   licenseNumber: licenseValue,
+  //                   nextDue: ""
+  //                 }
+  //               : lic
+  //           )
+  //         }))
+  //       )
+  //     }
+  // console.log(customerTableData)
+  // const exists = customerTableData.some(
+  //   (row) => String(row.licenseNumber) === String(licenseValue)
+  // );
+
+  // if (exists) {
+  //   console.log("License already present");
+  // } else {
+  //   console.log("License not found");
+  // }
+  //     // setcustomerTableData((prev) =>
+  //     //   prev.map((row) =>
+  //     //     row?.sourceIndex === index
+  //     //       ? {
+  //     //           ...row,
+  //     //           licenseNumber: licenseValue,
+  //     //           productName: item?.productorServiceName,
+  //     //           productorServiceId: item?.productorServiceId,
+  //     //           sourceIndex: index
+  //     //         }
+  //     //       : row
+  //     //   )
+  //     // )
+  // setcustomerTableData((prev) => {
+  //   const existingIndex = prev.findIndex(
+  //     (row) => row?.sourceIndex === index
+  //   );
+
+  //   const newRow = {
+  //     licenseNumber: licenseValue,
+  //     productName: item?.productorServiceName,
+  //     productorServiceId: item?.productorServiceId,
+  //     sourceIndex: index,
+  //   };
+
+  //   if (existingIndex !== -1) {
+  //     return prev.map((row, i) =>
+  //       i === existingIndex ? { ...row, ...newRow } : row
+  //     );
+  //   }
+
+  //   return [...prev, newRow];
+  // });
+
+  //     updateLicense(index, licenseValue)
+  //   }
+  // const handleLicenseBlur = async (index, licenseNumber) => {
+  //   if (!String(licenseNumber).trim()) return false
+
+  //   try {
+  //     setlicenseloading(true)
+
+  //     const { data } = await api.get(
+  //       `/customer/checkLicense?licenseNumber=${licenseNumber}`
+  //     )
+
+  //     if (data.exists) {
+  //       toast.error(`License ${licenseNumber} already exists`)
+  //       return false
+  //     }
+
+  //     toast.success("License available")
+  //     return true
+  //   } catch (error) {
+  //     console.error(error)
+  //     toast.error("Failed to validate license")
+  //     return false
+  //   } finally {
+  //     setlicenseloading(false)
+  //   }
+  // }
+  const processLicenseChange = async (index, licenseValue, item) => {
+    console.log("hh")
+    const isValid = await handleLicenseBlur(index, licenseValue)
+
+    if (!isValid) return
+
+    setDetailsForm((prev) => {
+      const tagged = prev.taggeddata || []
+      const existingIndex = tagged.findIndex((x) => x.sourceIndex === index)
+
+      const newEntry = {
+        sourceIndex: index,
+        licensenumber: licenseValue,
+        nextDue: ""
+      }
+
+      const updatedTagged =
+        existingIndex !== -1
+          ? tagged.map((x) => (x?.sourceIndex === index ? newEntry : x))
+          : [...tagged, newEntry]
+
+      return {
+        ...prev,
+        taggeddata: updatedTagged
+      }
+    })
+
+    setSelectedLeadList((prev) =>
+      prev.map((row) => ({
+        ...row,
+        licenseNumbers: (row.licenseNumbers || []).map((lic) =>
+          lic.sourceIndex === index
+            ? {
+                ...lic,
+                licenseNumber: licenseValue,
+                nextDue: ""
+              }
+            : lic
+        )
+      }))
+    )
+
+    setcustomerTableData((prev) => {
+      const existingIndex = prev.findIndex((row) => row?.sourceIndex === index)
+
+      const newRow = {
+        licenseNumber: licenseValue,
+        productName: item?.productorServiceName,
+        productorServiceId: item?.productorServiceId,
+        sourceIndex: index
+      }
+
+      if (existingIndex !== -1) {
+        return prev.map((row, i) =>
+          i === existingIndex ? { ...row, ...newRow } : row
+        )
+      }
+
+      return [...prev, newRow]
+    })
+  }
+
   const handleLicenseBlur = async (index, licenseNumber) => {
-    console.log(licenseNumber)
-    if (!String(licenseNumber).trim()) return
-    console.log(licenseNumber)
+    if (!String(licenseNumber).trim()) return false
+
     try {
       setlicenseloading(true)
+
       const { data } = await api.get(
         `/customer/checkLicense?licenseNumber=${licenseNumber}`
       )
-      console.log(data)
+
       if (data.exists) {
         toast.error(`License ${licenseNumber} already exists`)
-
-        setSelectedLeadList((prev) =>
-          prev.map((row, i) => (i === index ? { ...row } : row))
-        )
-
-        return
+        return false
       }
-      // setlicenseloading(false)
-      toast.success("License available")
+      toast.success(`License ${licenseNumber} available `)
+      return true
     } catch (error) {
-      // setlicenseloading(false)
       console.error(error)
       toast.error("Failed to validate license")
+      return false
     } finally {
       setlicenseloading(false)
     }
@@ -1268,163 +1729,17 @@ const LeadMaster = ({
     )
     return Number(filteredbranch?.[0]?.hsnid?.onValue?.igstRate || 0)
   }
-  // const addAdditionalServicesForPrimaryRow = (row, rowIndex) => {
-  // console.log(row)
-  // console.log(!row?.productorServiceId)
-  //   if (!row?.productorServiceId) return
-  // console.log(leadList)
-  //   const primaryProduct = (leadList || []).find(
-  //     (prod) =>
-  //       String(prod?._id) === String(row?.productorServiceId) &&
-  //       String(prod?.productorservicetype || "").toLowerCase() === "primaryproduct"
-  //   )
 
-  //   if (!primaryProduct) {
-  //     toast.error("Primary product details not found")
-  //     return
-  //   }
-
-  //   const defaultServices = primaryProduct?.defaultservices || []
-
-  //   if (!defaultServices.length) {
-  //     toast.info("No additional services available for this primary product")
-  //     return
-  //   }
-
-  //   setSelectedLeadList((prev) => {
-  //     const rows = Array.isArray(prev) ? [...prev] : []
-
-  //     const existingServiceIds = new Set(
-  //       rows
-  //         .filter(
-  //           (item) =>
-  //             String(item?.productorservicetype || "").toLowerCase() ===
-  //             "additionalservice"
-  //         )
-  //         .map((item) => String(item?.productorServiceId))
-  //     )
-
-  //     const servicesToAdd = defaultServices.filter(
-  //       (service) => !existingServiceIds.has(String(service?.id))
-  //     )
-
-  //     if (!servicesToAdd.length) {
-  //       toast.info("All additional services are already added")
-  //       return prev
-  //     }
-
-  //     const newRows = servicesToAdd.map((service) => {
-  //       const igstRate = getBranchIgstRate(service)
-
-  //       return {
-  //         ...emptyRow,
-  //         licenseNumber: "",
-  //         licenseNumbers: [],
-  //         productorServiceId: service?.id || "",
-  //         productorServiceName: service?.productName || service?.serviceName || "",
-  //         itemType: service?.productName ? "Product" : "Service",
-  //         productorservicetype: service?.productorservicetype || "Additionalservice",
-  //         productPrice: 0,
-  //         hsn: igstRate || 0,
-  //         netAmount: 0,
-  //         isDefaultService: true,
-  //         parentPrimaryProductId: row?.productorServiceId
-  //       }
-  //     })
-
-  //     rows.splice(rowIndex + 1, 0, ...newRows)
-  //     return rows
-  //   })
-  // }
-  // const addAdditionalServicesForPrimaryRow = (row, rowIndex) => {
-  //   if (!row?.productorServiceId) return
-
-  //   const primaryProductId = String(row?.productorServiceId)
-
-  //   const primaryProduct = (leadList || []).find((prod) => {
-  //     const prodId = String(prod?._id || prod?.id || "")
-  //     const prodType = String(prod?.productorservicetype || "").toLowerCase()
-
-  //     return prodId === primaryProductId && prodType === "primaryproduct"
-  //   })
-
-  //   if (!primaryProduct) {
-  //     toast.error("Primary product details not found")
-  //     return
-  //   }
-
-  //   const defaultServices = Array.isArray(primaryProduct?.defaultservices)
-  //     ? primaryProduct.defaultservices
-  //     : []
-
-  //   if (!defaultServices.length) {
-  //     toast.info("No additional services available for this primary product")
-  //     return
-  //   }
-
-  //   setSelectedLeadList((prev) => {
-  //     const rows = Array.isArray(prev) ? [...prev] : []
-
-  //     const existingServiceIdsForThisPrimary = new Set(
-  //       rows
-  //         .filter((item) => {
-  //           const itemType = String(item?.productorservicetype || "").toLowerCase()
-  //           const parentId = String(item?.parentPrimaryProductId || "")
-  //           return (
-  //             itemType === "additionalservice" &&
-  //             parentId === primaryProductId
-  //           )
-  //         })
-  //         .map((item) => String(item?.productorServiceId || ""))
-  //     )
-
-  //     const servicesToAdd = defaultServices.filter((service) => {
-  //       const serviceId = String(service?._id || service?.id || "")
-  //       return serviceId && !existingServiceIdsForThisPrimary.has(serviceId)
-  //     })
-
-  //     if (!servicesToAdd.length) {
-  //       toast.info("Additional services already added for this primary product")
-  //       return prev
-  //     }
-
-  //     const newRows = servicesToAdd.map((service) => {
-  //       const serviceId = String(service?._id || service?.id || "")
-  //       const igstRate = getBranchIgstRate(service)
-
-  //       return {
-  //         ...emptyRow,
-  //         licenseNumber: "",
-  //         licenseNumbers: [],
-  //         productorServiceId: serviceId,
-  //         productorServiceName: service?.productName || service?.serviceName || "",
-  //         itemType: service?.productName ? "Product" : "Service",
-  //         productorservicetype: service?.productorservicetype || "Additionalservice",
-  //         productPrice: 0,
-  //         hsn: igstRate || 0,
-  //         netAmount: 0,
-  //         isDefaultService: true,
-  //         parentPrimaryProductId: primaryProductId
-  //       }
-  //     })
-
-  //     let insertAt = rowIndex + 1
-
-  //     while (
-  //       rows[insertAt] &&
-  //       String(rows[insertAt]?.parentPrimaryProductId || "") === primaryProductId
-  //     ) {
-  //       insertAt++
-  //     }
-
-  //     rows.splice(insertAt, 0, ...newRows)
-  //     return rows
-  //   })
-  // }
+  // const getRowId = (value) => {
+  //   console.log(value)
+  //   return String(value?._id || value?.id || value || "")
+  // }//old
   const getRowId = (value) => {
     console.log(value)
-    return String(value?._id || value?.id || value || "")
-  }
+    if (!value) return ""
+
+    return String(value._id ?? value.id ?? value).trim()
+  } //new code
 
   const getPrimaryProductFromLeadList = (row) => {
     const primaryProductId = getRowId(row?.productorServiceId)
@@ -1436,41 +1751,68 @@ const LeadMaster = ({
     })
   }
 
+  // const getExistingAdditionalServiceIdsForPrimary = (
+  //   rows,
+  //   rowIndex,
+  //   primaryProductId
+  // ) => {
+  //   const existingIds = new Set()
+  //   console.log(rows)
+  //   console.log(rowIndex)
+  //   console.log(primaryProductId)
+  //   rows.forEach((item) => {
+  //     const itemType = String(item?.productorservicetype || "").toLowerCase()
+  //     const parentId = getRowId(item?.parentPrimaryProductId)
+
+  //     if (itemType === "additionalservice" && parentId === primaryProductId) {
+  //       existingIds.add(getRowId(item?.productorServiceId))
+  //     }
+  //   })
+
+  //   let pointer = rowIndex + 1
+  //   while (pointer < rows.length) {
+  //     const nextRow = rows[pointer]
+  //     const nextType = String(nextRow?.productorservicetype || "").toLowerCase()
+
+  //     if (nextType === "primaryproduct") break
+
+  //     if (nextType === "additionalservice") {
+  //       existingIds.add(getRowId(nextRow?.productorServiceId))
+  //     }
+
+  //     pointer++
+  //   }
+
+  //   return existingIds
+  // }
   const getExistingAdditionalServiceIdsForPrimary = (
     rows,
     rowIndex,
     primaryProductId
   ) => {
     const existingIds = new Set()
-    console.log(rows)
-    console.log(rowIndex)
-    console.log(primaryProductId)
-    rows.forEach((item) => {
-      const itemType = String(item?.productorservicetype || "").toLowerCase()
-      const parentId = getRowId(item?.parentPrimaryProductId)
-
-      if (itemType === "additionalservice" && parentId === primaryProductId) {
-        existingIds.add(getRowId(item?.productorServiceId))
-      }
-    })
 
     let pointer = rowIndex + 1
+
     while (pointer < rows.length) {
-      const nextRow = rows[pointer]
-      const nextType = String(nextRow?.productorservicetype || "").toLowerCase()
+      const row = rows[pointer]
+      const rowType = String(row?.productorservicetype || "").toLowerCase()
 
-      if (nextType === "primaryproduct") break
+      // Stop when the next primary product starts
+      if (rowType === "primaryproduct") break
 
-      if (nextType === "additionalservice") {
-        existingIds.add(getRowId(nextRow?.productorServiceId))
+      if (
+        rowType === "additionalservice" &&
+        getRowId(row?.parentPrimaryProductId) === getRowId(primaryProductId)
+      ) {
+        existingIds.add(getRowId(row?.productorServiceId))
       }
 
       pointer++
     }
-
+    // console.log(existingIds)
     return existingIds
   }
-
   const getRemainingAdditionalServicesCount = (row, rowIndex) => {
     const primaryProduct = getPrimaryProductFromLeadList(row)
     console.log(primaryProduct)
@@ -1499,6 +1841,8 @@ const LeadMaster = ({
   }
 
   const addAdditionalServicesForPrimaryRow = (row, rowIndex) => {
+    console.log(row)
+
     if (!row?.productorServiceId) return
 
     const primaryProductId = getRowId(row?.productorServiceId)
@@ -1512,11 +1856,13 @@ const LeadMaster = ({
     const defaultServices = Array.isArray(primaryProduct?.defaultservices)
       ? primaryProduct.defaultservices
       : []
+    console.log(defaultServices)
 
     if (!defaultServices.length) {
       toast.info("No additional services available for this primary product")
       return
     }
+    console.log(selectedleadlist)
 
     setSelectedLeadList((prev) => {
       const rows = Array.isArray(prev) ? [...prev] : []
@@ -1537,11 +1883,15 @@ const LeadMaster = ({
         return prev
       }
       console.log(row)
+      console.log(servicesToAdd)
+
       const newRows = servicesToAdd.map((service) => {
         console.log(service)
         const serviceId = getRowId(service)
         const igstRate = getBranchIgstRate(service)
-
+        const productPrice = Number(service?.productPrice ?? 0)
+        const taxAmount = (productPrice * igstRate) / 100
+        const actualNetAmount = productPrice + taxAmount
         return {
           ...emptyRow,
           licenseNumber: "",
@@ -1558,7 +1908,8 @@ const LeadMaster = ({
           isDefaultService: true,
           parentPrimaryProductId: primaryProductId,
           company_id: service?.selected[0]?.company_id,
-          branch_id: service?.selected[0]?.branch_id
+          branch_id: service?.selected[0]?.branch_id,
+          actualNetAmount
         }
       })
 
@@ -1570,11 +1921,12 @@ const LeadMaster = ({
         if (nextType === "primaryproduct") break
         insertAt++
       }
-
+      console.log(newRows)
       rows.splice(insertAt, 0, ...newRows)
       return rows
     })
   }
+  console.log(selectedleadlist)
   const handleProductORserviceSelect = (productId) => {
     if (selectedLicense) {
       if (
@@ -1620,18 +1972,19 @@ const LeadMaster = ({
   const handleToggleDropdown = () => {
     setIsleadForOpen((prev) => !prev)
   }
-  const handleTaggedDueChange = (rowIndex, value) => {
+  const handleTaggedDueChange = (rowIndex, value, term) => {
+    console.log(term)
     console.log(value)
     console.log(rowIndex)
     console.log(detailsForm)
     setDetailsForm((prev) => ({
       ...prev,
       taggeddata: prev.taggeddata.map((row, i) =>
-        i === rowIndex ? { ...row, nextDue: value } : row
+        i === rowIndex ? { ...row, [term]: value } : row
       )
     }))
   }
-
+  console.log(detailsForm)
   const handleSelectedCustomer = (option) => {
     console.log(option)
     console.log(allcustomer)
@@ -1750,7 +2103,27 @@ const LeadMaster = ({
   //   )
   // }
   const handleDeletetableData = (item, indexNum) => {
-    const productId = item?.productorServiceId || item?.productId
+    console.log(item)
+    console.log(takenLicenses)
+    const productId = item.productorServiceId || item?.productId
+    setunselectedtaggedlicense((prev) => {
+      const updated = { ...prev }
+      delete updated[productId]
+      return updated
+    })
+    setTakenLicense((prev) => {
+      const updated = { ...prev }
+
+      const keyToDelete = Object.keys(updated).find(
+        (key) => key.toLowerCase() === item.productorServiceName.toLowerCase()
+      )
+
+      if (keyToDelete) {
+        delete updated[keyToDelete]
+      }
+
+      return updated
+    })
 
     if (item?.licenseNumber) {
       const updatedProductList = (
@@ -1846,19 +2219,18 @@ const LeadMaster = ({
     const result = await api.get("/lead/checkexistinglead", {
       params: { leadData, selectedleadlist, role }
     })
+    // if (
+    //   result.data.message ===
+    //     "This customer already has a lead with the same product."
+    // ) {
+    //   return {
+    //     eligible: false,
+    //     message: `${result.data.message},You can't make leads`
+    //   }
+    // } else
     if (
       result.data.message ===
-        "This customer already has a lead with the same product." &&
-      loggeduser.role === "Staff"
-    ) {
-      return {
-        eligible: false,
-        message: `${result.data.message},You can't make leads`
-      }
-    } else if (
-      result.data.message ===
-        "This customer already has a lead with the same product." &&
-      loggeduser.role !== "Staff"
+      "This customer already has a lead with the same product."
     ) {
       return { eligible: true, message: result.data.message }
     } else if (
@@ -2071,6 +2443,9 @@ const LeadMaster = ({
         if (!row.applicationDate) {
           return `Application date is requiered for  ${row?.productName || row?.productorServiceName},please add details`
         }
+        if (!row?.softwareTrade) {
+          return `SoftwareTrade is required for ${row?.productName || row?.productorServiceName}`
+        }
         if (!(productPrice > 0)) {
           console.log("hhh")
           return `Product price must be greater than 0 for ${row?.productName || row?.productorServiceName}`
@@ -2110,12 +2485,15 @@ const LeadMaster = ({
               tag?.licensenumber || tag?.licenseNumber || ""
             ).trim()
             const due = parseDateOnly(tag?.nextDue)
-
+            const productAmount = Number(tag?.productAmount)
             if (!tagLicense) {
               console.log("hh")
               return `Tagged license number is required for ${row?.productName || row?.productorServiceName}`
             }
-
+            if (!productAmount > 0) {
+              console.log("hh")
+              return `Product amount is required for ${row?.productName || row?.productorServiceName} ${tag?.licensenumber},not less than 0`
+            }
             if (!due) {
               return `Next due is required for  ${row?.productName || row?.productorServiceName}`
             }
@@ -2210,6 +2588,7 @@ const LeadMaster = ({
       }
 
       if (process === "Registration") {
+        console.log("HHH")
         const filteredleadlist = selectedleadlist.filter(
           (item) => item.productorServiceId && item.productorServiceId !== ""
         )
@@ -2226,6 +2605,7 @@ const LeadMaster = ({
           filteredleadlist,
           loggeduser.role
         )
+        console.log(validation)
         setFormData(submitData)
         setPopupMessage(validation.message)
         if (validation.message === "") {
@@ -2264,12 +2644,16 @@ const LeadMaster = ({
         }
 
         console.log(selectedleadlist)
+        console.log(loggeduser)
+        console.log(data)
 
         seteditLoadingState(true)
         const updated = await handleclosingData(
           data,
           selectedleadlist,
-          Data[0]?._id
+          Data[0]?._id,
+          loggeduser._id,
+          loggeduser?.role
         )
       }
     } catch (error) {
@@ -2278,7 +2662,7 @@ const LeadMaster = ({
       setsubmitLoading(false)
     }
   }
-
+  console.log(selectedleadlist)
   const handlePopupOk = async (ischek = false, leadData = null) => {
     console.log(formData)
     console.log(leadData)
@@ -2286,6 +2670,7 @@ const LeadMaster = ({
     const filteredleadlist = selectedleadlist.filter(
       (item) => item.productorServiceId && item.productorServiceId !== ""
     )
+    console.log(filteredleadlist)
     let response
     if (isEligible && leadData === null) {
       response = await handleleadData(
@@ -2312,39 +2697,17 @@ const LeadMaster = ({
     }))
   }
 
-  // const handleDetailsSave = () => {
-  //   setSelectedLeadList((prev) =>
-  //     prev.map((row, i) =>
-  //       i === detailsIndex
-  //         ? {
-  //             ...row,
-  //             productorServiceName: detailsForm.name,
-  //             licenseNumber: detailsForm.licenseNumber,
-  //             softwareTrade: detailsForm.softwareTrade,
-  //             applicationDate: detailsForm.applicationDate,
-  //             status: detailsForm.status,
-  //             nextDue: detailsForm.nextDue,
-  //             quantityUsers: detailsForm.quantityUsers,
-  //             amount: detailsForm.amount
-  //           }
-  //         : row
-  //     )
-  //   )
-
-  //   setdetailsopen(false)
-  //   setDetailsItem(null)
-  //   setDetailsIndex(null)
-  // }
   const handleDetailsSave = () => {
     const itemType = String(
       detailsItem?.productorservicetype || ""
     ).toLowerCase()
-
+    console.log("hh")
     const cleanedTaggedData = Array.isArray(detailsForm.taggeddata)
       ? detailsForm.taggeddata
           .map((tag) => ({
             licensenumber: String(tag?.licensenumber || "").trim(),
-            nextDue: String(tag?.nextDue || "").trim()
+            nextDue: String(tag?.nextDue || "").trim(),
+            productAmount: tag?.productAmount
           }))
           .filter((tag) => tag.licensenumber !== "")
       : []
@@ -2359,6 +2722,7 @@ const LeadMaster = ({
           return {
             ...row,
             applicationDate: detailsForm.applicationDate,
+
             quantityUsers: detailsForm.quantityUsers,
             amount: detailsForm.amount,
             status: detailsForm.status,
@@ -2374,6 +2738,7 @@ const LeadMaster = ({
         return {
           ...row,
           applicationDate: detailsForm.applicationDate,
+          softwareTrade: detailsForm.softwareTrade,
           status: detailsForm.status,
           isActive: detailsForm.status
         }
@@ -2393,10 +2758,11 @@ const LeadMaster = ({
         String(item?.productorservicetype || "").toLowerCase() ===
         "primaryproduct"
     )
-
+    console.log(hasPrimaryProduct)
     if (!hasPrimaryProduct) return false
-
-    if (currentType === "primaryproduct") return true
+    console.log(!hasPrimaryProduct)
+    console.log("k")
+    if (currentType === "primaryproduct") return false
     if (currentType === "additionalservice") return true
 
     return false
@@ -2425,8 +2791,13 @@ const LeadMaster = ({
       return normalizedStored === normalizedInput
     })
   }
-
+  console.log(duplicateWarning)
   const onmodalsubmit = async (data) => {
+    console.log("hhhh")
+    console.log(duplicateWarning)
+    if (duplicateWarning) return
+    console.log(duplicateWarning)
+
     if (modalloader) return
     try {
       const checkexistingNumber = isMobileExists(
@@ -2491,36 +2862,32 @@ const LeadMaster = ({
     }
   }
   console.log(process)
-  // const handleDetails = (item, index) => {
-  //   console.log(item)
-  //   console.log(index)
-  //   setDetailsItem(item)
-  //   setDetailsIndex(index)
-  //   setDetailsForm({
-  //     name: item?.productorServiceName || "",
-  //     licenseNumber: item?.licenseNumber || "",
-  //     softwareTrade: item?.softwareTrade || "",
-  //     applicationDate: item?.applicationDate || "",
-  //     status: "Running",
-  //     nextDue: item?.nextDue || "",
-  //     quantityUsers: item?.quantityUsers || "",
-  //     amount: item?.amount || item?.netAmount || "",
-  //     taggedLicenseNumbers: item?.licenseNumbers,
-  //     taggeddata: Array.isArray(item?.taggeddata)
-  //       ? item.taggeddata.map((tag) => ({
-  //           licensenumber: tag?.licensenumber || "",
-  //           nextDue: tag?.nextDue || ""
-  //         }))
-  //       : []
-  //   })
-  //   setdetailsopen(true)
-  // }
+  console.log(warningErrors)
   console.log(detailsForm)
   const handleDetails = (item, index) => {
+    console.log(item)
+
+    const productId = item.productorServiceId
+    if (item?.productorservicetype === "Additionalservice") {
+      if (!item?.licenseNumbers?.length) {
+        setunselectedtaggedlicense((prev) => ({
+          ...prev,
+          [productId]: "Please tag any of the license"
+        }))
+        return
+      }
+
+      setunselectedtaggedlicense((prev) => {
+        const updated = { ...prev }
+        delete updated[productId]
+        return updated
+      })
+    }
+
     const isAdditionalService =
       String(item?.productorservicetype || "").toLowerCase() ===
       "additionalservice"
-
+    console.log(item)
     const normalizedTaggedData =
       isAdditionalService &&
       Array.isArray(item?.licenseNumbers) &&
@@ -2535,16 +2902,20 @@ const LeadMaster = ({
 
             return {
               licensenumber: lic?.licenseNumber || "",
-              nextDue: existingTag?.nextDue || ""
+              nextDue: existingTag?.nextDue || "",
+              sourceIndex: lic?.sourceIndex,
+              productAmount: existingTag?.productAmount || item?.actualNetAmount
             }
           })
         : Array.isArray(item?.taggeddata)
           ? item.taggeddata.map((tag) => ({
               licensenumber: tag?.licensenumber || "",
-              nextDue: tag?.nextDue || ""
+              nextDue: tag?.nextDue || "",
+              productAmount: item?.actualNetAmount
             }))
           : []
-
+    console.log(item)
+    console.log(normalizedTaggedData)
     setDetailsItem(item)
     setDetailsIndex(index)
     setDetailsForm({
@@ -2555,7 +2926,7 @@ const LeadMaster = ({
       status: item?.status || item?.isActive || "Running",
       nextDue: item?.nextDue || "",
       quantityUsers: item?.quantityUsers || "",
-      amount: item?.amount || item?.netAmount || "",
+      productAmount: item?.actualNetAmount || 0,
       taggeddata: normalizedTaggedData
     })
     setdetailsopen(true)
@@ -2628,7 +2999,7 @@ const LeadMaster = ({
                       <div className="flex-1 min-w-0">
                         <Select
                           options={customerOptions}
-                          isDisabled={false}
+                          isDisabled={isReadOnly}
                           value={
                             customerOptions.length > 0
                               ? (customerOptions.find(
@@ -2707,7 +3078,7 @@ const LeadMaster = ({
                     <select
                       {...registerMain("leadBranch")}
                       value={selectedBranch}
-                      disabled={!iscustomerchangeandbranch}
+                      disabled={isReadOnly}
                       onChange={(e) => {
                         setSelectedBranch(e.target.value)
                         setValueMain("customerName", "")
@@ -2734,7 +3105,7 @@ const LeadMaster = ({
                           leadId: ""
                         })
                       }}
-                      className="border border-gray-300 rounded px-3 py-[6px] text-sm bg-[#1B2A4A] hover:bg-[#243660] text-white outline-none min-w-[140px] cursor-pointer"
+                      className={`border border-gray-300 rounded px-3 py-[6px] text-sm bg-[#1B2A4A] hover:bg-[#243660] text-white outline-none min-w-[140px]  ${isReadOnly ? "cursor-not-allowed" : "cursor-pointer "}`}
                     >
                       {companybranches?.map((b, i) => (
                         <option key={i} value={b._id}>
@@ -2792,10 +3163,11 @@ const LeadMaster = ({
                       Source of Lead
                     </label>
                     <select
+                      disabled={isReadOnly}
                       {...registerMain("source", {
                         required: "Source is Required"
                       })}
-                      className="w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8]"
+                      className={`w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8] ${isReadOnly ? "cursor-not-allowed" : "cursor-pointer"}`}
                     >
                       <option value="">Select Source</option>
                       <option value="whatsapp">WhatsApp</option>
@@ -2894,7 +3266,7 @@ const LeadMaster = ({
                       <col style={{ width: "12%" }} />
                       <col style={{ width: "15%" }} />
                       <col style={{ width: "7%" }} />
-                      <col style={{ width: "7%" }} />
+                      {process === "closing" && <col style={{ width: "7%" }} />}
                     </colgroup>
                     <thead>
                       <tr className="bg-[#1B2A4A] text-white">
@@ -2922,12 +3294,14 @@ const LeadMaster = ({
                         >
                           Action
                         </th>
-                        <th
-                          rowSpan={2}
-                          className="border border-blue-900 px-2 py-2 text-center text-xs"
-                        >
-                          Details
-                        </th>
+                        {process === "closing" && (
+                          <th
+                            rowSpan={2}
+                            className="border border-blue-900 px-2 py-2 text-center text-xs"
+                          >
+                            Details
+                          </th>
+                        )}
                       </tr>
                       <tr className="bg-[#1B2A4A] text-white">
                         <th className="border border-blue-900 px-2 py-1 text-center text-xs">
@@ -2952,7 +3326,10 @@ const LeadMaster = ({
                         const isAmountLocked =
                           isReadOnly || isRowPriceLocked(item)
                         const isTaxLocked = isReadOnly || isRowPriceLocked(item)
-
+                        console.log(isReadOnly)
+                        console.log(isAmountLocked)
+                        const a = isRowPriceLocked(item)
+                        console.log(a)
                         const isPrimaryProduct =
                           String(
                             item?.productorservicetype || ""
@@ -2990,26 +3367,169 @@ const LeadMaster = ({
                                   item={item}
                                   isReadOnly={isReadOnly}
                                   customerTableData={customerTableData}
+                                  setunselectedtaggedlicense={
+                                    setunselectedtaggedlicense
+                                  }
+                                  setTakenLicense={setTakenLicense}
                                   selectedleadlist={selectedleadlist}
                                   setSelectedLeadList={setSelectedLeadList}
                                   handleLicenseSelect={handleLicenseSelect}
                                 />
                               ) : (
+                                // <input
+                                //   value={item.licenseNumber}
+                                //   readOnly={isReadOnly}
+                                //   // className=`py-1 border pl-2 rounded-md border-gray-500 w-full text-xs ${isReadOnly?"cursor-not-allowed":""}`
+                                //   className={`py-1 border pl-2 rounded-md border-gray-500 w-full text-xs ${
+                                //     isReadOnly ? "cursor-not-allowed" : ""
+                                //   }`}
+                                //   onChange={(e) => {
+                                //     console.log(item)
+                                //     const licenseValue = e.target.value
+                                //     if (debounceTimersRef.current[index]) {
+                                //       clearTimeout(
+                                //         debounceTimersRef.current[index]
+                                //       )
+                                //     }
+
+                                //     debounceTimersRef.current[index] =
+                                //       setTimeout(() => {
+                                //         handleLicenseBlur(index, licenseValue)
+                                //         delete debounceTimersRef.current[index]
+                                //       }, 1000)
+                                //     console.log(customerTableData)
+
+                                //     console.log(licenseValue)
+                                //     console.log(item)
+                                //     console.log("hhh")
+                                //     console.log(detailsForm)
+                                //     console.log(index)
+                                //     setDetailsForm((prev) => {
+                                //       const tagged = prev.taggeddata || []
+                                //       console.log(tagged)
+                                //       const existingIndex = tagged.findIndex(
+                                //         (x) => x.sourceIndex === index
+                                //       )
+                                //       console.log(existingIndex)
+
+                                //       const newEntry = {
+                                //         sourceIndex: index,
+                                //         licensenumber: licenseValue,
+                                //         nextDue: ""
+                                //       }
+
+                                //       let updatedTagged
+
+                                //       if (existingIndex !== -1) {
+                                //         console.log(existingIndex)
+                                //         console.log(tagged)
+                                //         console.log(newEntry)
+                                //         updatedTagged = tagged.map((x, i) =>
+                                //           x?.sourceIndex === existingIndex
+                                //             ? newEntry
+                                //             : x
+                                //         )
+                                //         console.log(updatedTagged)
+                                //       } else {
+                                //         console.log(newEntry)
+                                //         updatedTagged = [...tagged, newEntry]
+                                //       }
+                                //       console.log(updatedTagged)
+                                //       return {
+                                //         ...prev,
+                                //         taggeddata: updatedTagged
+                                //       }
+                                //     })
+                                //     console.log(selectedleadlist)
+                                //     const filteredadditionalservice =
+                                //       selectedleadlist.filter(
+                                //         (item) =>
+                                //           item.productorservicetype.toLowerCase() ===
+                                //           "additionalservice"
+                                //       )
+                                //     console.log(filteredadditionalservice)
+                                //     // setSelectedLeadList((prev)=>({
+                                //     // ...prev,
+                                //     // }))
+                                //     if (
+                                //       filteredadditionalservice &&
+                                //       filteredadditionalservice.length
+                                //     ) {
+                                //       setSelectedLeadList((prev) =>
+                                //         prev.map((row) => ({
+                                //           ...row,
+                                //           licenseNumbers: (
+                                //             row.licenseNumbers || []
+                                //           ).map((lic) =>
+                                //             lic.sourceIndex === index
+                                //               ? {
+                                //                   ...lic,
+                                //                   licenseNumber: e.target.value,
+                                //                   nextDue: ""
+                                //                 }
+                                //               : lic
+                                //           )
+                                //         }))
+                                //       )
+                                //     }
+                                //     console.log(customerTableData)
+                                //     setcustomerTableData((prev) =>
+                                //       prev.map((row, i) =>
+                                //         row?.sourceIndex === index
+                                //           ? {
+                                //               ...row,
+                                //               licenseNumber: licenseValue,
+                                //               productName:
+                                //                 item?.productorServiceName,
+                                //               productorServiceId:
+                                //                 item?.productorServiceId,
+                                //               sourceIndex: index
+                                //             }
+                                //           : row
+                                //       )
+                                //     )
+                                //     console.log("hhhhh")
+                                //     console.log(licenseValue)
+                                //     updateLicense(index, licenseValue)
+                                //   }}
+                                //   placeholder="Enter License Number"
+                                // />
+                                // <input
+                                //   value={item.licenseNumber}
+                                //   readOnly={isReadOnly}
+                                //   className={`py-1 border pl-2 rounded-md border-gray-500 w-full text-xs ${
+                                //     isReadOnly ? "cursor-not-allowed" : ""
+                                //   }`}
+                                //   onChange={(e) => {
+                                //     const licenseValue = e.target.value
+
+                                //     if (debounceTimersRef.current[index]) {
+                                //       clearTimeout(
+                                //         debounceTimersRef.current[index]
+                                //       )
+                                //     }
+
+                                //     debounceTimersRef.current[index] =
+                                //       setTimeout(async () => {
+                                //         await processLicenseChange(
+                                //           index,
+                                //           licenseValue,
+                                //           item
+                                //         )
+                                //         delete debounceTimersRef.current[index]
+                                //       }, 1000)
+                                //   }}
+                                //   placeholder="Enter License Number"
+                                // />
                                 <input
                                   value={item.licenseNumber}
-                                  className="py-1 border pl-2 rounded-md border-gray-500 w-full text-xs"
+                                  readOnly={isReadOnly}
+                                  className={`py-1 border pl-2 rounded-md border-gray-500 w-full text-xs ${
+                                    isReadOnly ? "cursor-not-allowed" : ""
+                                  }`}
                                   onChange={(e) => {
-                                    console.log(item)
                                     const licenseValue = e.target.value
-                                    setcustomerTableData([
-                                      {
-                                        licenseNumber: licenseValue,
-                                        productName: item?.productorServiceName,
-                                        productorServiceId:
-                                          item?.productorServiceId
-                                      }
-                                    ])
-                                    console.log(licenseValue)
+
                                     updateLicense(index, licenseValue)
 
                                     if (debounceTimersRef.current[index]) {
@@ -3019,8 +3539,21 @@ const LeadMaster = ({
                                     }
 
                                     debounceTimersRef.current[index] =
-                                      setTimeout(() => {
-                                        handleLicenseBlur(index, licenseValue)
+                                      setTimeout(async () => {
+                                        await processLicenseChange(
+                                          index,
+                                          licenseValue,
+                                          item
+                                        )
+                                        const currentValue =
+                                          selectedleadlist[index]?.licenseNumber
+
+                                        if (
+                                          String(currentValue) !==
+                                          String(licenseValue)
+                                        ) {
+                                          return
+                                        }
                                         delete debounceTimersRef.current[index]
                                       }, 1000)
                                   }}
@@ -3042,7 +3575,7 @@ const LeadMaster = ({
                                   isAmountLocked
                                     ? "cursor-not-allowed bg-gray-100"
                                     : "bg-white"
-                                }`}
+                                } [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0`}
                               />
                             </td>
 
@@ -3059,7 +3592,7 @@ const LeadMaster = ({
                                   isTaxLocked
                                     ? "cursor-not-allowed bg-gray-100"
                                     : "bg-white"
-                                }`}
+                                } [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0`}
                               />
                             </td>
 
@@ -3075,21 +3608,12 @@ const LeadMaster = ({
 
                             <td className="border border-gray-300 px-1 py-1 text-center">
                               <div className="flex items-center justify-center gap-1">
-                                {/* {isPrimaryProduct && !isReadOnly && (
-              <button
-                type="button"
-                onClick={() => addAdditionalServicesForPrimaryRow(item, index)}
-                title="Add additional services"
-                className="h-6 w-6 rounded-full bg-green-100 text-green-700 hover:bg-green-200 flex items-center justify-center font-bold text-sm"
-              >
-                +
-              </button>
-            )} */}
                                 {isPrimaryProduct &&
                                   process === "closing" &&
                                   remainingAdditionalServicesCount > 0 && (
                                     <button
                                       type="button"
+                                      disabled={isReadOnly}
                                       onClick={() =>
                                         addAdditionalServicesForPrimaryRow(
                                           item,
@@ -3135,16 +3659,40 @@ const LeadMaster = ({
                                 </button>
                               </div>
                             </td>
-
-                            <td className="border border-gray-300 px-1 py-1 text-center">
-                              <button
-                                type="button"
-                                onClick={() => handleDetails(item, index)}
-                                className="text-blue-500 font-bold ml-2"
-                              >
-                                Add
-                              </button>
-                            </td>
+                            {process === "closing" && (
+                              <td className="border border-gray-300 px-1 py-1 text-center">
+                                <div className="relative inline-block group">
+                                  <button
+                                    type="button"
+                                    disabled={isReadOnly}
+                                    onClick={() => handleDetails(item, index)}
+                                    className={`ml-2 font-bold text-blue-500 ${
+                                      isReadOnly
+                                        ? "cursor-not-allowed"
+                                        : "cursor-pointer"
+                                    }`}
+                                  >
+                                    Add
+                                  </button>
+                                  {/* {warningErrors?.taggedlicenseError && (
+                                    <div className="pointer-events-none absolute bottom-full right-0 z-50 mb-2 hidden whitespace-nowrap rounded bg-red-500 px-2 py-1 text-[11px] text-white shadow-lg group-hover:block">
+                                      {warningErrors.taggedlicenseError}
+                                    </div>
+                                  )} */}
+                                  {unselectedtaggedlicense[
+                                    item.productorServiceId
+                                  ] && (
+                                    <div className="pointer-events-none absolute bottom-full right-0 z-50 mb-2 hidden whitespace-nowrap rounded bg-red-500 px-2 py-1 text-[11px] text-white shadow-lg group-hover:block">
+                                      {
+                                        unselectedtaggedlicense[
+                                          item.productorServiceId
+                                        ]
+                                      }
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            )}
                           </tr>
                         )
                       })}
@@ -3154,6 +3702,44 @@ const LeadMaster = ({
                 {warningMessage && (
                   <p className="text-red-500 text-sm mt-0">{warningMessage}</p>
                 )}
+                <div className="">
+                  {Object.entries(takenLicenses).map(
+                    ([productName, licenses]) => (
+                      <div
+                        key={productName}
+                        className="rounded-xl border border-gray-200 bg-white p-1 shadow-sm"
+                      >
+                        {/* Product Name */}
+                        <div className="flex">
+                          <div className=" flex items-center gap-3 w-[180px]">
+                            <div className="h-3 w-1 rounded-full bg-blue-600"></div>
+
+                            <h2 className="text-xs font-bold uppercase tracking-wider text-gray-800">
+                              {productName}
+                            </h2>
+                          </div>
+
+                          <div className="flex flex-wrap gap-3">
+                            {licenses.map((license) => (
+                              <button
+                                key={license}
+                                type="button"
+                                disabled
+                                className="flex items-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-0.5 text-sm font-medium text-gray-700 shadow-sm cursor-default min-w-[128px]"
+                              >
+                                <span className="h-3 w-3 rounded-full border-2 border-blue-600 flex items-center justify-center">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-blue-600"></span>
+                                </span>
+
+                                {license}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">
@@ -3171,10 +3757,31 @@ const LeadMaster = ({
                   </div>
                   <div className="flex flex-col gap-2 md:justify-end md:pt-5 w-64">
                     {[
-                      { label: "Taxable Amount", field: "taxableAmount" },
-                      { label: "Tax Amount", field: "taxAmount" },
-                      { label: "Net Amount", field: "netAmount" }
-                    ].map(({ label, field }) => (
+                      {
+                        label: "Taxable Amount",
+                        field: "taxableAmount",
+                        viewonly: true
+                      },
+                      {
+                        label: "Tax Amount",
+                        field: "taxAmount",
+                        viewonly: true
+                      },
+                      ...(process === "closing"
+                        ? [
+                            {
+                              label: "Disc.Amount",
+                              field: "discamnt",
+                              viewonly: false
+                            }
+                          ]
+                        : []),
+                      {
+                        label: "Net Amount",
+                        field: "netAmount",
+                        viewonly: true
+                      }
+                    ].map(({ label, field, viewonly }) => (
                       <div key={field} className="flex items-center">
                         <span className="text-xs font-bold text-white px-3 py-[7px] bg-[#1B2A4A] rounded-l w-[130px] text-right whitespace-nowrap flex-shrink-0">
                           {label}
@@ -3182,8 +3789,8 @@ const LeadMaster = ({
                         <input
                           type="number"
                           {...registerMain(field)}
-                          readOnly
-                          className="flex-1 min-w-0 border border-gray-300 rounded-r px-3 py-[6px] text-sm text-right bg-white outline-none cursor-not-allowed"
+                          readOnly={viewonly}
+                          className={`flex-1 min-w-0 border border-gray-300 rounded-r px-3 py-[6px] text-sm text-right bg-white outline-none ${viewonly ? "cursor-not-allowed" : ""} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0`}
                         />
                       </div>
                     ))}
@@ -3323,7 +3930,8 @@ const LeadMaster = ({
                     )}
                     <button
                       type="submit"
-                      className="bg-[#1B2A4A] hover:bg-[#243660] text-white py-2 px-8 rounded text-sm font-semibold tracking-wide transition-colors mt-1"
+                      disabled={isReadOnly}
+                      className={`bg-[#1B2A4A] hover:bg-[#243660] text-white py-2 px-8 rounded text-sm font-semibold tracking-wide transition-colors mt-1 ${isReadOnly ? "cursor-not-allowed" : "cursor-pointer"}`}
                     >
                       {process === "Registration"
                         ? "SUBMIT LEAD"
@@ -3396,20 +4004,105 @@ const LeadMaster = ({
                         />
                       </div>
 
-                      {/* 
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">
-                Software Trade
-              </label>
-              <input
-                type="text"
-                name="softwareTrade"
-                value={detailsForm.softwareTrade}
-                onChange={handleDetailsChange}
-                placeholder="Software Trade"
-                className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
-              />
-            </div> */}
+                      <div className="relative" ref={tradeDropdownRef}>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">
+                          Software Trade
+                        </label>
+
+                        <button
+                          type="button"
+                          onClick={() => setIsTradeOpen((prev) => !prev)}
+                          className="flex w-full items-center justify-between rounded-xl border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm text-left text-gray-700 outline-none transition-all focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/15"
+                        >
+                          <span
+                            className={
+                              detailsForm.softwareTrade
+                                ? "text-gray-800"
+                                : "text-gray-400"
+                            }
+                          >
+                            {detailsForm.softwareTrade ||
+                              "Select Software Trade"}
+                          </span>
+
+                          <svg
+                            className={`h-4 w-4 text-gray-500 transition-transform ${
+                              isTradeOpen ? "rotate-180" : ""
+                            }`}
+                            viewBox="0 0 20 20"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          >
+                            <path
+                              d="M5 7.5L10 12.5L15 7.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </button>
+
+                        {isTradeOpen && (
+                          <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+                            <div className="max-h-56 overflow-y-auto py-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setDetailsForm((prev) => ({
+                                    ...prev,
+                                    softwareTrade: ""
+                                  }))
+                                  setIsTradeOpen(false)
+                                }}
+                                className={`flex w-full items-center justify-between px-3 py-2 text-sm text-left transition-colors ${
+                                  !detailsForm.softwareTrade
+                                    ? "bg-[#1B2A4A]/8 text-[#1B2A4A] font-medium"
+                                    : "text-gray-700 hover:bg-gray-50"
+                                }`}
+                              >
+                                <span>Select Software Trade</span>
+                              </button>
+
+                              {softwareTrades.map((trade, index) => (
+                                <button
+                                  key={index}
+                                  type="button"
+                                  onClick={() => {
+                                    setDetailsForm((prev) => ({
+                                      ...prev,
+                                      softwareTrade: trade
+                                    }))
+                                    setIsTradeOpen(false)
+                                  }}
+                                  className={`flex w-full items-center justify-between px-3 py-2 text-sm text-left transition-colors ${
+                                    detailsForm.softwareTrade === trade
+                                      ? "bg-[#1B2A4A]/8 text-[#1B2A4A] font-medium"
+                                      : "text-gray-700 hover:bg-gray-50"
+                                  }`}
+                                >
+                                  <span>{trade}</span>
+
+                                  {detailsForm.softwareTrade === trade && (
+                                    <svg
+                                      className="h-4 w-4 text-[#1B2A4A]"
+                                      viewBox="0 0 20 20"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                    >
+                                      <path
+                                        d="M5 10.5L8.5 14L15 7.5"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                      />
+                                    </svg>
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
 
                       <div>
                         <label className="block text-xs font-semibold text-gray-600 mb-1">
@@ -3443,11 +4136,11 @@ const LeadMaster = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-semibold text-gray-600 mb-1">
-                          Name
+                          Product Name
                         </label>
                         <input
                           type="text"
-                          name="name"
+                          name="productName"
                           readOnly
                           value={detailsForm.name}
                           onChange={handleDetailsChange}
@@ -3465,12 +4158,15 @@ const LeadMaster = ({
                             <div className="max-h-40 overflow-y-auto">
                               <table className="w-full border-collapse">
                                 <thead className="sticky top-0 bg-[#f8fafc]">
-                                  <tr>
-                                    <th className="border-b border-[#e7ebf4] px-2.5 py-1.5 text-left text-[11px] font-semibold text-[#43506a]">
+                                  <tr className="text-center">
+                                    <th className="border-b border-[#e7ebf4] px-2.5 py-1.5  text-[11px] font-semibold text-[#43506a]">
                                       License Number
                                     </th>
-                                    <th className="border-b border-[#e7ebf4] px-2.5 py-1.5 text-left text-[11px] font-semibold text-[#43506a]">
+                                    <th className="border-b border-[#e7ebf4] px-2.5 py-1.5  text-[11px] font-semibold text-[#43506a]">
                                       Next Due
+                                    </th>
+                                    <th className="border-b border-[#e7ebf4] px-2.5 py-1.5  text-[11px] font-semibold text-[#43506a]">
+                                      Amount(tax.incls)
                                     </th>
                                   </tr>
                                 </thead>
@@ -3490,17 +4186,116 @@ const LeadMaster = ({
                                             className="w-full cursor-not-allowed rounded-[7px] border border-[#dfe5ee] bg-[#f3f6fb] px-2 py-1.5 text-[11px] text-[#1f2a3d] outline-none"
                                           />
                                         </td>
+                                        {/* <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
+                                          <input
+                                            type="date"
+min={today}
+                                            value={tag?.nextDue || ""}
+                                            onChange={(e) =>{
+const selectedDate=e.target.value
+
+ if (selectedDate && selectedDate < today) {
+    setwarningError((prev) => ({
+      ...prev,
+      nextduewarning: {
+        ...(prev.nextduewarning || {}),
+        [rowIndex]: "Due date must be today or a future date.",
+      },
+    }));
+    return;
+  }
+
+  setwarningError((prev) => ({
+    ...prev,
+    nextduewarning: {
+      ...(prev.nextduewarning || {}),
+      [rowIndex]: "",
+    },
+  }));
+ handleTaggedDueChange(
+                                                rowIndex,
+                                                e.target.value,
+                                                "nextDue"
+                                              )
+}
+                                             
+                                            }
+                                            className="w-full rounded-[7px] border border-[#dfe5ee] bg-white px-2 py-1.5 text-[11px] text-[#1f2a3d] outline-none focus:border-[#1B2A4A]"
+                                          />
+                                        </td> */}
                                         <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
                                           <input
                                             type="date"
+                                            min={today}
                                             value={tag?.nextDue || ""}
+                                            onChange={(e) => {
+                                              const selectedDate =
+                                                e.target.value
+
+                                              if (
+                                                selectedDate &&
+                                                selectedDate < today
+                                              ) {
+                                                setwarningError((prev) => ({
+                                                  ...prev,
+                                                  nextduewarning: {
+                                                    ...(prev.nextduewarning ||
+                                                      {}),
+                                                    [rowIndex]:
+                                                      "Due date must be today or a future date."
+                                                  }
+                                                }))
+                                                return
+                                              }
+
+                                              setwarningError((prev) => ({
+                                                ...prev,
+                                                nextduewarning: {
+                                                  ...(prev.nextduewarning ||
+                                                    {}),
+                                                  [rowIndex]: ""
+                                                }
+                                              }))
+
+                                              handleTaggedDueChange(
+                                                rowIndex,
+                                                selectedDate,
+                                                "nextDue"
+                                              )
+                                            }}
+                                            className={`w-full rounded-[7px] border bg-white px-2 py-1.5 text-[11px] text-[#1f2a3d] outline-none ${
+                                              warningErrors?.nextduewarning?.[
+                                                rowIndex
+                                              ]
+                                                ? "border-red-400"
+                                                : "border-[#dfe5ee] focus:border-[#1B2A4A]"
+                                            }`}
+                                          />
+
+                                          {warningErrors?.nextduewarning?.[
+                                            rowIndex
+                                          ] && (
+                                            <p className="mt-1 text-[10px] text-red-500">
+                                              {
+                                                warningErrors.nextduewarning[
+                                                  rowIndex
+                                                ]
+                                              }
+                                            </p>
+                                          )}
+                                        </td>
+                                        <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
+                                          <input
+                                            type="number"
+                                            value={tag?.productAmount}
                                             onChange={(e) =>
                                               handleTaggedDueChange(
                                                 rowIndex,
-                                                e.target.value
+                                                e.target.value,
+                                                "productAmount"
                                               )
                                             }
-                                            className="w-full rounded-[7px] border border-[#dfe5ee] bg-white px-2 py-1.5 text-[11px] text-[#1f2a3d] outline-none focus:border-[#1B2A4A]"
+                                            className="w-full  rounded-[7px] border border-[#dfe5ee] bg-white px-2 py-1.5 text-[11px] text-[#1f2a3d] outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0"
                                           />
                                         </td>
                                       </tr>
@@ -3591,8 +4386,388 @@ const LeadMaster = ({
               </div>
             </div>
           )}
-
           {modalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-3 sm:p-4">
+              <div className="flex w-full max-w-4xl max-h-[88vh] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+                {/* Header */}
+                <div className="flex shrink-0 items-start justify-between border-b border-slate-200 bg-[#1B2A4A] px-5 py-3.5 sm:px-6">
+                  <div>
+                    <h2 className="text-sm font-semibold tracking-wide text-white sm:text-base">
+                      {Data ? "Update Customer Details" : "Add New Customer"}
+                    </h2>
+                    {!Data && (
+                      <p className="mt-0.5 text-[11px] text-blue-200">
+                        Fill in the details to register a new customer
+                      </p>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModalOpen(false)
+                      clearmodalErros()
+                      resetModal()
+                    }}
+                    className="rounded-full p-1.5 text-blue-200 transition hover:bg-white/10 hover:text-white"
+                  >
+                    <svg
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Form */}
+                <form
+                  onSubmit={handleSubmitModal(onmodalsubmit)}
+                  className="flex min-h-0 flex-1 flex-col"
+                >
+                  {/* Scrollable body only */}
+                  <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6">
+                    <input
+                      type="hidden"
+                      {...registerModal("customerid")}
+                      onBlur={(e) =>
+                        setValueModal("customerid", e.target.value.trim())
+                      }
+                    />
+
+                    <input
+                      type="hidden"
+                      {...registerModal("leadid")}
+                      onBlur={(e) =>
+                        setValueModal("leadid", e.target.value.trim())
+                      }
+                    />
+
+                    {/* Basic Information */}
+                    <div className="mb-4">
+                      <p className="mb-2 border-b border-slate-200 pb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[#1B2A4A]">
+                        Basic Information
+                      </p>
+
+                      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                        <div>
+                          <label className="mb-1 block text-[11px] font-semibold text-slate-600">
+                            Customer Name
+                            <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            {...registerModal("customerName", {
+                              required: "Customer Name is required"
+                            })}
+                            onBlur={(e) =>
+                              setValueModal(
+                                "customerName",
+                                e.target.value.trim()
+                              )
+                            }
+                            placeholder="Customer Name"
+                            className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                          />
+                          {errorsModal.customerName && (
+                            <p className="mt-1 text-[11px] text-red-500">
+                              {errorsModal.customerName.message}
+                            </p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-[11px] font-semibold text-slate-600">
+                            Email
+                          </label>
+                          <input
+                            type="email"
+                            {...registerModal("email")}
+                            placeholder="Email"
+                            className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-[11px] font-semibold text-slate-600">
+                            Mobile <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="tel"
+                            {...registerModal("mobile", {
+                              required: "Mobile is Required",
+                              validate: (value) => {
+                                const cleaned = value
+                                  .replace(/^\+?91/, "")
+                                  .replace(/\D/g, "")
+                                if (cleaned.length !== 10) {
+                                  return "Must be 10 digits after country code"
+                                }
+                                return true
+                              }
+                            })}
+                            onBlur={(e) =>
+                              setValueModal("mobile", e.target.value.trim())
+                            }
+                            placeholder="Mobile"
+                            className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                          />
+                          {duplicateWarning && (
+                            <p className="mt-1 text-xs font-medium text-red-500">
+                              {duplicateWarning}
+                            </p>
+                          )}
+                          {errorsModal.mobile && (
+                            <p className="mt-1 text-[11px] text-red-500">
+                              {errorsModal.mobile.message}
+                            </p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-[11px] font-semibold text-slate-600">
+                            Landline
+                          </label>
+                          <input
+                            type="tel"
+                            {...registerModal("landline")}
+                            onBlur={(e) =>
+                              setValueModal("landline", e.target.value.trim())
+                            }
+                            placeholder="Landline"
+                            className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-[11px] font-semibold text-slate-600">
+                            Contact Person{" "}
+                            <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            {...registerModal("contactPerson", {
+                              required: "Contact person is Required"
+                            })}
+                            onBlur={(e) =>
+                              setValueModal(
+                                "contactPerson",
+                                e.target.value.trim()
+                              )
+                            }
+                            placeholder="Contact Person"
+                            className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                          />
+                          {errorsModal.contactPerson && (
+                            <p className="mt-1 text-[11px] text-red-500">
+                              {errorsModal.contactPerson.message}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="md:col-span-2">
+                          <label className="mb-1 block text-[11px] font-semibold text-slate-600">
+                            Address
+                          </label>
+                          <textarea
+                            {...registerModal("address1")}
+                            onBlur={(e) =>
+                              setValueModal("address1", e.target.value.trim())
+                            }
+                            placeholder="Address"
+                            rows={2}
+                            className="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10 resize-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Location */}
+                    <div className="mb-4">
+                      <p className="mb-2 border-b border-slate-200 pb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[#1B2A4A]">
+                        Location
+                      </p>
+
+                      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                        <div>
+                          <label className="mb-1 block text-[11px] font-semibold text-slate-600">
+                            Country
+                          </label>
+                          <Controller
+                            name="country"
+                            control={controlModal}
+                            render={({ field }) => (
+                              <Select
+                                options={countryOptions}
+                                value={
+                                  countryOptions.find(
+                                    (opt) => opt.value === field.value
+                                  ) || null
+                                }
+                                onChange={(option) =>
+                                  field.onChange(option?.value || "")
+                                }
+                                getOptionLabel={(o) => o.label}
+                                getOptionValue={(o) => o.value}
+                              />
+                            )}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-[11px] font-semibold text-slate-600">
+                            State
+                          </label>
+                          <Controller
+                            name="state"
+                            control={controlModal}
+                            render={({ field }) => (
+                              <Select
+                                options={stateOptions}
+                                value={
+                                  stateOptions.find(
+                                    (opt) => opt.value === field.value
+                                  ) || null
+                                }
+                                onChange={(option) => {
+                                  field.onChange(option?.value || "")
+                                  setSelectedState(option)
+                                }}
+                                isDisabled={!selectedCountry}
+                              />
+                            )}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-[11px] font-semibold text-slate-600">
+                            City
+                          </label>
+                          <input
+                            type="text"
+                            {...registerModal("city")}
+                            onBlur={(e) =>
+                              setValueModal("city", e.target.value.trim())
+                            }
+                            placeholder="City"
+                            className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-[11px] font-semibold text-slate-600">
+                            Pincode
+                          </label>
+                          <input
+                            type="text"
+                            {...registerModal("pincode")}
+                            onBlur={(e) =>
+                              setValueModal("pincode", e.target.value.trim())
+                            }
+                            placeholder="Pincode"
+                            className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Business Information */}
+                    <div>
+                      <p className="mb-2 border-b border-slate-200 pb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[#1B2A4A]">
+                        Business Information
+                      </p>
+
+                      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                        <div>
+                          <label className="mb-1 block text-[11px] font-semibold text-slate-600">
+                            Partnership Type
+                          </label>
+                          <select
+                            {...registerModal("partner")}
+                            className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                          >
+                            <option value="">Select Partner</option>
+                            {partner?.map((p, i) => (
+                              <option key={i} value={p._id}>
+                                {p.partner}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-[11px] font-semibold text-slate-600">
+                            Registration Type
+                          </label>
+                          <select
+                            {...registerModal("registrationType")}
+                            className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                          >
+                            <option value="">Select Type</option>
+                            <option value="unregistered">
+                              Unregistered / Consumer
+                            </option>
+                            <option value="regular">Regular</option>
+                          </select>
+                        </div>
+
+                        {registrationType === "regular" && (
+                          <div>
+                            <label className="mb-1 block text-[11px] font-semibold text-slate-600">
+                              GSTIN / UIN{" "}
+                              <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              {...registerModal("gstNo", {
+                                required: "GST is required"
+                              })}
+                              placeholder="e.g. 22AAAAA0000A1Z5"
+                              className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                            />
+                            {errorsModal.gstNo && (
+                              <p className="mt-1 text-[11px] text-red-500">
+                                {errorsModal.gstNo.message}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Fixed footer */}
+                  <div className="flex shrink-0 items-center justify-end gap-3 border-t border-slate-200 bg-white px-5 py-3 sm:px-6">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setModalOpen(false)
+                        clearmodalErros()
+                        resetModal()
+                      }}
+                      className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="rounded-lg bg-[#1B2A4A] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#243660]"
+                    >
+                      Submit
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* {modalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center px-4 z-50">
               <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
                 <div className="bg-[#1B2A4A] px-6 py-4 flex items-center justify-between flex-shrink-0">
@@ -3934,7 +5109,7 @@ const LeadMaster = ({
                 </form>
               </div>
             </div>
-          )}
+          )} */}
         </div>
       </div>
     </div>

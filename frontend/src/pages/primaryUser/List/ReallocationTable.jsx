@@ -586,7 +586,7 @@ console.log(isClosed)
                                       {
                                         state: {
                                           leadId: item._id,
-                                          isReadOnly: true
+                                          isReadOnly: false
                                         }
                                       }
                                     )
@@ -595,7 +595,7 @@ console.log(isClosed)
                                       {
                                         state: {
                                           leadId: item._id,
-                                          isReadOnly: true
+                                          isReadOnly: false
                                         }
                                       }
                                     )

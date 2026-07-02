@@ -44,7 +44,8 @@ import {
   getAlltasktoTarget,
 GetleadById,
 ApprovedforcefullyClosedTarget,
-Leadclosing
+Leadclosing,
+Checkduplicatecustomer
 } from "../../controller/primaryUserController/leadController.js";
 const router = express.Router();
 router.get("/getstaffdailyreports", authMiddleware, Getdailystaffreport)
@@ -88,6 +89,7 @@ router.get("/getrespectedleadTask", authMiddleware, GetrespectedleadTask);
 router.get("/demoleadcount", authMiddleware, GetdemoleadCount);
 router.get("/collectionLeads", authMiddleware, GetcollectionLeads);
 router.post("/taskSubmission", authMiddleware, UpdateLeadTask);
+router.post("/check-customer-duplicate",authMiddleware,Checkduplicatecustomer)
 router.post(
   "/demosubmitbyfollower",
   authMiddleware,

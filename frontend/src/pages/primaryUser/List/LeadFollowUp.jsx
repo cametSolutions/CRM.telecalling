@@ -62,6 +62,7 @@ const LeadFollowUp = () => {
     allocationDate: "",
     demoDescription: ""
   })
+const today = new Date().toISOString().split("T")[0];
   const [selectedUserName, setselecteduserName] = useState(null)
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
@@ -2655,6 +2656,7 @@ console.log(taskList)
         )
       : false
 
+
     return (
       <>
         <tr
@@ -2858,7 +2860,13 @@ console.log(!isAllocatedToeditable)
               <td className="px-3 py-1.5 border border-gray-300 text-gray-700">
                 {item?.allocatedBy?.name || "-"}
               </td>
-              <td className="px-3 py-1.5 border border-gray-300 text-gray-700" />
+              <td className="px-3 py-1.5 border border-gray-300 text-gray-700 text-center" >
+ {item?.activityLog?.filter(
+                  (log) =>
+                    log?.taskBy?.taskName?.toLowerCase() === "followup" &&
+                    log?.nextFollowUpDate
+                ).length || 0}
+</td>
               <td className="px-3 py-1.5 border border-gray-300 text-gray-700">
                 {item.leadDate?.toString().split("T")[0] || "-"}
               </td>
@@ -3453,6 +3461,7 @@ console.log(!isAllocatedToeditable)
                           </label>
                           <input
                             type="date"
+min={today}
                             value={demoData.demoallocatedDate}
                             onChange={handleDataChange}
                             name="allocationDate"
@@ -3564,7 +3573,7 @@ console.log(!isAllocatedToeditable)
                 <button
                   type="button"
                   onClick={handleCloseFollowupModal}
-                  className="px-6 py-1.5 border-2 border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-100 hover:border-gray-400 transition-all"
+                  className="px-6 py-1.5 border-2 border-gray-300 rounded-lg text-white font-semibold hover:bg-gray-500 hover:border-gray-400 transition-all bg-gray-500"
                 >
                   Cancel
                 </button>

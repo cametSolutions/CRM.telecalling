@@ -262,6 +262,7 @@ console.log(filteredselectedCategory)
         console.log(sortedLeads)
         setTableData(normalizeTableData(sortedLeads))
       } else {
+console.log(collectionlead)
         setTableData(normalizeTableData(collectionlead))
       }
 
