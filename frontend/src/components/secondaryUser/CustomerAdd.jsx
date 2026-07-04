@@ -285,6 +285,8 @@ const CustomerAdd = ({
           branchName: sel?.branch_id?.branchName,
           product_id: sel?.product_id?._id,
           productName: sel?.product_id?.productName,
+brandName:sel?.brandName,
+categoryName:sel?.categoryName,
           shortName: sel?.product_id?.shortName,
           licensenumber: sel?.licensenumber,
           softwareTrade: sel?.softwareTrade,
