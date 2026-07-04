@@ -39,7 +39,7 @@ const ProductAdd = ({
   const [editState, seteditState] = useState(true)
   const [showServices, setShowServices] = useState(false)
   const [servicelist, setservicelist] = useState([])
-console.log(servicelist)
+  console.log(servicelist)
   console.log(servicelist)
   const [data, setData] = useState({
     companies: [],
@@ -163,14 +163,14 @@ console.log(servicelist)
     }
     if (product) {
       Object.keys(product).forEach((key) => {
-console.log(product)
+        console.log(product)
         // Check if the key is not in the ignored list
         setValue(key, product[key])
       })
-setValue(
-  "defaultservices",
-  product.defaultservices?.map((item) => item._id) || []
-);
+      setValue(
+        "defaultservices",
+        product.defaultservices?.map((item) => item._id) || []
+      )
     }
   }, [data])
 
@@ -418,14 +418,14 @@ setValue(
   const onSubmit = async (data, event) => {
     event.preventDefault()
     console.log("hhhh")
-console.log(process)
-console.log(data)
-console.log(tableData)
+    console.log(process)
+    console.log(data)
+    console.log(tableData)
     try {
       if (process === "Registration") {
         await handleProductData(data, tableData)
       } else if (process === "edit") {
-console.log("hhhh")
+        console.log("hhhh")
         await handleEditedData(data, tableData)
       }
       // Refetch the product data
@@ -434,7 +434,7 @@ console.log("hhhh")
       toast.error("Failed to add product!")
     }
   }
-console.log(errors)
+  console.log(errors)
   return (
     <div className="justify-center items-center">
       <div className="w-auto bg-white shadow-lg rounded p-3 md:p-8 mx-auto">
@@ -479,7 +479,6 @@ console.log(errors)
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
                 placeholder="Short Name"
               />
-             
             </div>
 
             {/* Product Price */}
@@ -644,13 +643,15 @@ console.log(errors)
 
               <select
                 id="productorservicetype"
-                {...register("productorservicetype", { required: "Product Type is required" })}
+                {...register("productorservicetype", {
+                  required: "Product Type is required"
+                })}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none cursor-pointer"
               >
                 <option value="">select product Type</option>
                 <option value="Primaryproduct"> Product</option>
                 <option value="Additionalservice">Additional Service</option>
-     <option value="Enhancedservice">Enhanced Service</option>
+                <option value="Enhancedservice">Enhanced Service</option>
               </select>
               {errors.productorservicetype && (
                 <span className="mt-2 text-sm text-red-600">
