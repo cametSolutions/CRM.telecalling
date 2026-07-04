@@ -609,7 +609,7 @@ console.log(item?.mobile)
               <td className="border border-gray-200 px-3 py-1 text-center">Follow-Ups</td>
               <td className="border border-gray-200 px-3 py-1">Lead Date</td>
               <td className="border border-gray-200 px-3 py-1">Lead ID</td>
-              <td className="border border-gray-200 px-3 py-1">Phone</td>
+              <td className="border border-gray-200 px-3 py-1">Product Name</td>
             </tr>
 
             <tr className="bg-slate-50 text-xs text-gray-600 border border-gray-200 whitespace-nowrap">
@@ -636,8 +636,8 @@ console.log(item?.mobile)
               <td className="border border-gray-200 px-3 py-1">
                 {item?.leadId || "-"}
               </td>
-              <td className="border border-gray-200 px-3 py-1">
-                {item?.phone || "-"}
+              <td className="border border-gray-200 px-3 py-1 text-blue-600 font-medium text-left">
+                {(item?.leadFor[0]?.productorServiceId?.shortName||item?.leadFor[0]?.productorServiceId?.productName).toUpperCase()}
               </td>
             </tr>
           </>

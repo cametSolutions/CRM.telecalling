@@ -2528,6 +2528,7 @@ const LeadMaster = ({
           return `Net amount is required for  ${row?.productName || row?.productorServiceName}`
         }
         console.log(taggeddata)
+
         if (taggeddata.length > 0) {
           for (let j = 0; j < taggeddata.length; j++) {
             const tag = taggeddata[j]
@@ -2747,6 +2748,7 @@ const LeadMaster = ({
     }))
   }
   console.log(selectedleadlist)
+  console.log(detailsForm)
   const handleDetailsSave = () => {
     const itemType = String(
       detailsItem?.productorservicetype || ""
@@ -2783,6 +2785,7 @@ const LeadMaster = ({
     console.log(totaltaxexclusiveAmount)
     console.log(updatedNetAmount)
     console.log(selectedleadlist)
+    console.log(detailsForm)
     setSelectedLeadList((prev) =>
       prev.map((row, i) => {
         if (i !== detailsIndex) return row
@@ -2797,7 +2800,7 @@ const LeadMaster = ({
               ? row?.productPrice
               : totaltaxexclusiveAmount,
             netAmount: haveprimaryProduct ? row?.netAmount : updatedNetAmount,
-            quantityUsers: detailsForm.quantityUsers,
+            noofusers: detailsForm.quantityUsers,
             amount: detailsForm.amount,
             status: detailsForm.status,
             isActive: detailsForm.status,
@@ -2938,6 +2941,7 @@ const LeadMaster = ({
   console.log(process)
   console.log(warningErrors)
   console.log(detailsForm)
+  console.log(selectedleadlist)
   const handleDetails = (item, index) => {
     console.log(detailsForm)
     console.log(selectedCustomer)
@@ -3023,7 +3027,7 @@ const LeadMaster = ({
             console.log(productAmount)
             return {
               licensenumber: lic?.licenseNumber || "",
-              nextDue: existing?.nextDue ?? existingTag?.nextDue,
+              nextDue: existing?.nextDue ?? "",
               sourceIndex: lic?.sourceIndex,
               productAmount,
               taxexclusiveAmount:
@@ -3036,7 +3040,7 @@ const LeadMaster = ({
                 item?.actualNetAmount ??
                 item?.netAmount ??
                 0,
-              hsn: item?.actualHsn
+              hsn: existing?.hsn ?? existingTag?.hsn ?? item?.actualHsn
             }
           })
         : Array.isArray(item?.taggeddata)
@@ -4537,8 +4541,9 @@ const LeadMaster = ({
                           name="quantityUsers"
                           value={detailsForm.quantityUsers}
                           onChange={handleDetailsChange}
+                          onWheel={(e) => e.currentTarget.blur()}
                           placeholder="Optional"
-                          className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
+                          className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0"
                         />
                       </div>
 

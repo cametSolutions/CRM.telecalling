@@ -1666,11 +1666,11 @@ export const Leadclosing = async (req, res) => {
 
         licensenumber:
           item?.licenseNumber != null &&
-          String(item.licenseNumber).trim() !== ""
+            String(item.licenseNumber).trim() !== ""
             ? Number(item.licenseNumber)
             : null,
 
-        noofusers: item?.quantityUsers,
+        noofusers: Number(item?.noofusers),
         applicationDate: item?.applicationDate,
 
         // same value as leadFor[].netAmount now — no more drift
@@ -1697,12 +1697,12 @@ export const Leadclosing = async (req, res) => {
       // const Product = mappedleadData.find(
       //   (item) => item.productorservicetype === "Primaryproduct"
       // );
-const Product =
-  mappedleadData.length > 1
-    ? mappedleadData.find(
-        (item) => item.productorservicetype === "Primaryproduct"
-      )
-    : mappedleadData[0] || null;
+      const Product =
+        mappedleadData.length > 1
+          ? mappedleadData.find(
+            (item) => item.productorservicetype === "Primaryproduct"
+          )
+          : mappedleadData[0] || null;
       const primaryProductId = Product?.productorServiceId || null;
       const primaryProductModel =
         Product?.productorServicemodel || "Product";
@@ -2512,7 +2512,7 @@ const Product =
 //           version: item?.version,
 //         };
 //       });
-    
+
 
 //       const newTaxableAmount = Number(data?.taxableAmount || 0);
 
@@ -2912,7 +2912,7 @@ export const UpdateLeadRegister = async (req, res) => {
       balanceAmount: newBalanceAmount,
       leadFor: mappedleadData,
       paymentHistory: updatedPaymentHistory,
-excessPaidAmount
+      excessPaidAmount
     };
 
 
@@ -5971,17 +5971,17 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
       selectedbranch,
       allocationtypeId,
     } = req.query;
-console.log("allcatedby",allocatedBy)
-console.log("allcationtpeiddd",allocationtypeId)
+    console.log("allcatedby", allocatedBy)
+    console.log("allcationtpeiddd", allocationtypeId)
     const allocatedbyObjectid = new mongoose.Types.ObjectId(allocatedBy);
     const branchObjectId = new mongoose.Types.ObjectId(selectedbranch);
     const { selectedItem, cleanedData } = req.body;
 
     let allocatedToModel;
     let allocatedByModel;
-console.log("selecteditttttttttttttttt",selectedItem)
-const userId=selectedItem?.allocatedTo?.id
-console.log("useriddddddddd",userId)
+    console.log("selecteditttttttttttttttt", selectedItem)
+    const userId = selectedItem?.allocatedTo?.id
+    console.log("useriddddddddd", userId)
     const isStaffallocatedtomodel = await Staff.findOne({
       _id: userId,
     });
@@ -6008,8 +6008,8 @@ console.log("useriddddddddd",userId)
         allocatedByModel = "Admin";
       }
     }
-console.log("allocatedmodel",allocatedToModel)
-console.log("allcatedbymodel",allocatedByModel)
+    console.log("allocatedmodel", allocatedToModel)
+    console.log("allcatedbymodel", allocatedByModel)
     if (!allocatedToModel || !allocatedByModel) {
       return res
         .status(400)
@@ -6068,7 +6068,7 @@ console.log("allcatedbymodel",allocatedByModel)
           log.reallocatedTo === false &&
           log.taskClosed === false &&
           // log.followupClosed === false &&
-          log.allocatedClosed === false &&log?.allocationChanged===false&&
+          log.allocatedClosed === false && log?.allocationChanged === false &&
           log.taskTo // ensures the field exists
       );
       const task = matchLead.activityLog[matchingIndex]?.taskId;
@@ -9827,6 +9827,17 @@ export const GetownLeadList = async (req, res) => {
             return populatedActivity;
           })
         );
+        let populatedProduct
+console.log("leaforrrrrrrl",lead?.leadFor)
+        const populateleadFor = await Promise.all(
+          (lead.leadFor || []).map(async (item) => {
+            const populatedItem = { ...item }
+            if (item?.productorServiceId) {
+              const model = mongoose.model(item.productorServicemodel)
+              populatedProduct = populatedItem.productorServiceId = await model.findById(item.productorServiceId).select("productName shortName").lean()
+            }
+return populatedItem
+          }))
 
         // ✅ Get last activity
         const lastActivity =
@@ -9835,6 +9846,7 @@ export const GetownLeadList = async (req, res) => {
         return {
           ...lead,
           leadBy: populatedLeadBy,
+          leadFor: populateleadFor,
           activityLog: populatedActivityLog, // include fully populated activity logs
           taskallocatedTo: taskallocatedTo || null,
           taskallocatedBy: taskallocatedBy || null,

@@ -600,6 +600,10 @@ console.log(selectedData)
     const year = date.getFullYear()
     return `${day}-${month}-${year}`
   }
+ const formatDateForInput = (date) => {
+    if (!date) return ""
+    return String(date).split("T")[0]
+  }
   const calculateRemainingDays = (expiryDate) => {
     if (!expiryDate) return "N/A"
     const expiry = parseISO(expiryDate) // Parse the expiry date
@@ -1003,10 +1007,23 @@ setSelectedProducts(filteredlicenseproduct)
       item?.taggedLicenses ||
       []
 
-    const taggedLicenseDueDatesFromData =
+    // const taggedLicenseDueDatesFromData =
+    //   item?.taggeddata?.reduce((acc, entry) => {
+    //     if (entry?.licensenumber) {
+    //       acc[String(entry.licensenumber)] = entry?.nextDue || ""
+    //     }
+    //     return acc
+    //   }, {}) || {}
+ const taggedLicenseDueDatesFromData =
       item?.taggeddata?.reduce((acc, entry) => {
         if (entry?.licensenumber) {
-          acc[String(entry.licensenumber)] = entry?.nextDue || ""
+          acc[String(entry.licensenumber)] = {
+            nextDue: entry?.nextDue || "",
+            productAmount: entry?.productAmount ?? "",
+            taxexclusiveAmount: entry?.taxexclusiveAmount ?? "",
+            taxinclusiveamount: entry?.taxinclusiveamount ?? "",
+            hsn: entry?.hsn ?? ""
+          }
         }
         return acc
       }, {}) || {}
@@ -1138,7 +1155,7 @@ Problem:    \t${selectedText}
       //   branches.length > 0 &&
       //   `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${
       //     user.role
-      //   }&userBranch=${encodeURIComponent(branches)}`
+       // }&userBranch=${encodeURIComponent(branches)}`
       url =
         branches &&
         branches.length > 0 &&
@@ -2137,6 +2154,37 @@ console.log(isSelected)
                                 const isDeactive =
                                   String(item?.isActive).toLowerCase() ===
                                   "deactive"
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+
+const selectedTagged = Array.isArray(item?.taggeddata)
+  ? (() => {
+      const tagged = [...item.taggeddata].sort(
+        (a, b) => new Date(a.nextDue) - new Date(b.nextDue)
+      );
+
+      // 1. Oldest overdue
+      const overdue = tagged.find((x) => {
+        const d = new Date(x.nextDue);
+        d.setHours(0, 0, 0, 0);
+        return d < today;
+      });
+
+      if (overdue) return overdue;
+
+      // 2. Today
+      const todayItem = tagged.find((x) => {
+        const d = new Date(x.nextDue);
+        d.setHours(0, 0, 0, 0);
+        return d.getTime() === today.getTime();
+      });
+
+      if (todayItem) return todayItem;
+
+      // 3. Nearest future
+      return tagged[0] || null;
+    })()
+  : null;
                                 return (
                                   <ProductCircleCard
                                     key={`additional-${actualIndex}`}
@@ -2159,17 +2207,30 @@ console.log(isSelected)
                                             .slice(0, 18)
                                         : item?.licensenumber
                                     }
-                                    line3={
-                                      item?.taggeddata?.length > 0
-                                        ? formatDateToDDMMYYYY(
-                                            item?.taggeddata?.[0]?.nextDue
-                                          )
-                                        : item?.nextDue
-                                          ? formatDateToDDMMYYYY(item?.nextDue)
-                                          : ""
-                                    }
+                                    // line3={
+                                    //   item?.taggeddata?.length > 0
+                                    //     ? formatDateToDDMMYYYY(
+                                    //         item?.taggeddata?.[0]?.nextDue
+                                    //       )
+                                    //     : item?.nextDue
+                                    //       ? formatDateToDDMMYYYY(item?.nextDue)
+                                    //       : ""
+                                    // }
+line3={
+  selectedTagged
+    ? formatDateToDDMMYYYY(selectedTagged.nextDue)
+    : item?.nextDue
+      ? formatDateToDDMMYYYY(item.nextDue)
+      : ""
+}
                                     line4={isDeactive ? "De Active" : "Active"}
-                                    line5={item?.productAmount}
+                                    // line5={item?.productAmount}
+line5={
+  selectedTagged
+    ? selectedTagged.productAmount
+    : item?.productAmount
+}
+onEdit={handleEdit}
                                   />
                                 )
                               })}
@@ -2766,40 +2827,7 @@ disabled={true}
                                       </th>
                                     </tr>
                                   </thead>
-                                  {/* <tbody>
-                              {watchedTaggedLicenses.map((licenseNo) => (
-                                <tr key={licenseNo}>
-                                  <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
-                                    <input
-                                      value={licenseNo}
-                                      readOnly
-                                      className="w-full cursor-not-allowed rounded-[7px] border border-[#dfe5ee] bg-[#f3f6fb] px-2 py-1.5 text-[11px] text-[#1f2a3d] outline-none"
-                                    />
-                                  </td>
-                                  <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
-                                    <input
-                                      type="date"
-                                     
-                                      value={formatDateForInput(
-                                        watchedTaggedLicenseDueDates?.[
-                                          licenseNo
-                                        ]
-                                      )}
-                                      onChange={(e) => {
-                                        console.log(licenseNo)
-                                        const dueMap =
-                                          watch("taggedLicenseDueDates") || {}
-                                        setValue("taggedLicenseDueDates", {
-                                          ...dueMap,
-                                          [licenseNo]: e.target.value
-                                        })
-                                      }}
-                                      className={compactPopupInputClass}
-                                    />
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody> */}
+                                 
                                   <tbody>
                                     {watchedTaggedLicenses.map((licenseNo) => (
                                       <tr key={licenseNo}>
