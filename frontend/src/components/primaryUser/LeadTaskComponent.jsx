@@ -54,7 +54,7 @@ export default function LeadTaskComponent({
     sethistoryModal(false)
     setselectedleadId(null)
   }
-
+console.log(Data)
   const renderTable = (data) => {
     const LeadRow = ({ item, index }) => {
       const [open, setOpen] = useState(false)
@@ -213,8 +213,8 @@ export default function LeadTaskComponent({
                   </td>
                 ) : (
                   <>
-                    <td className="px-3 py-1 border border-gray-200 text-gray-600">
-                      No. of Followups
+                    <td className="px-3 py-1 border border-gray-200 text-gray-600 text-center">
+                      No. of Follow-ups
                     </td>
                     {pending && (
                       <td className="px-3 py-1 border border-gray-200" />
@@ -266,8 +266,13 @@ export default function LeadTaskComponent({
                   </td>
                 ) : (
                   <>
-                    <td className="px-3 py-1.5 border border-gray-200">
-                      {item.activityLog?.length || 0}
+                    <td className="px-3 py-1.5 border border-gray-200 text-center">
+                      {/* {item.activityLog?.length || 0} */}
+ {item?.activityLog?.filter(
+                  (log) =>
+                    log?.taskBy?.taskName?.toLowerCase() === "followup" &&
+                    log?.nextFollowUpDate
+                ).length || 0}
                     </td>
                     {pending && (
                       <td className="px-3 py-1.5 border border-gray-200" />

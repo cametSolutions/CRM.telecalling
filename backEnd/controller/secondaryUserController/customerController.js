@@ -1388,8 +1388,9 @@ const licenseNumbers = tabledata
       state,
       city,
       pincode,
-      createdFrom: createdfrom,
+      createdFrom:createdfrom,
       email,
+
       mobile,
       landline,
       registrationType,
@@ -1715,26 +1716,124 @@ export const GetAllCustomer = async (req, res) => {
       return res.status(400).json({ message: "branch id is missing" })
 
     }
-    const customers = await Customer.aggregate([
+//     const customers = await Customer.aggregate([
 
-      {
-        $project: {
-          _id: 1, // Exclude _id
-          customerName: 1,
-          address1: 1,
-          "selected.licensenumber": 1,
-          "selected.branch_id": 1,
-          "selected.branchName": 1,
-          "selected.productName": 1,
-          "selected.product_id": 1,
-          mobile: 1,
-          landline: 1,
-          email: 1
-        }
-      }
-    ])
-
-
+//       {
+//         $project: {
+//           _id: 1, // Exclude _id
+//           customerName: 1,
+//           address1: 1,
+//           "selected.licensenumber": 1,
+//           "selected.branch_id": 1,
+//           "selected.branchName": 1,
+//           "selected.productName": 1,
+//           "selected.product_id": 1,
+//           mobile: 1,
+//           landline: 1,
+//           email: 1,
+// partner:1
+//         }
+//       }
+//     ])
+// const customers = await Customer.aggregate([
+//   {
+//     $lookup: {
+//       from: "partners",              // collection name
+//       localField: "partner",         // field in Customer
+//       foreignField: "_id",           // field in Partner
+//       as: "partnerDoc"               // joined array field
+//     }
+//   },
+//   {
+//     $unwind: {
+//       path: "$partnerDoc",
+//       preserveNullAndEmptyArrays: true // keep customers without partner
+//     }
+//   },
+//   {
+//     $project: {
+//       _id: 1,
+//       customerName: 1,
+//       address1: 1,
+//       "selected.licensenumber": 1,
+//       "selected.branch_id": 1,
+//       "selected.branchName": 1,
+//       "selected.productName": 1,
+//       "selected.product_id": 1,
+//       mobile: 1,
+//       landline: 1,
+//       email: 1,
+//       partner: 1,                    // original partner id
+//       // specific partner fields
+//       "partnerDoc._id": 1,
+//       "partnerDoc.name": 1,
+//       "partnerDoc.email": 1
+//     }
+//   }
+// ]);
+// const customers = await Customer.aggregate([
+//   {
+//     $lookup: {
+//       from: "partners",          // collection name
+//       localField: "partner",     // field in Customer
+//       foreignField: "_id",       // field in Partner
+//       as: "partnerDoc"           // joined array
+//     }
+//   },
+//   {
+//     $unwind: {
+//       path: "$partnerDoc",
+//       preserveNullAndEmptyArrays: true, // keep customers without partner
+//     }
+//   },
+//   {
+//     $project: {
+//       _id: 1,
+//       customerName: 1,
+//       address1: 1,
+//       mobile: 1,
+//       landline: 1,
+//       email: 1,
+//       selected: 1,
+//       partner: 1,
+//       "partnerDoc._id": 1,
+//       "partnerDoc.name": 1,
+//     }
+//   },
+// ]);
+const customers = await Customer.aggregate([
+  {
+    $lookup: {
+      from: "partners",        // collection name
+      localField: "partner",   // field in Customer
+      foreignField: "_id",     // field in Partner
+      as: "partnerDoc"
+    }
+  },
+  {
+    $unwind: {
+      path: "$partnerDoc",
+      preserveNullAndEmptyArrays: true,
+    }
+  },
+  {
+    $project: {
+      _id: 1,
+      customerName: 1,
+      address1: 1,
+      mobile: 1,
+      landline: 1,
+      email: 1,
+      selected: 1,
+      partner: 1,
+      // pick partner name from the correct field
+      "partnerDoc._id": 1,
+      "partnerDoc.partner": 1,    // NOT partnerDoc.name
+      // or alias it:
+      partnerName: "$partnerDoc.partner",
+    }
+  },
+]);
 
 
     const objectIds = new mongoose.Types.ObjectId(branchSelected)

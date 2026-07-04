@@ -20,6 +20,8 @@ const Layout = () => {
     }
   }, [location.pathname]) // Update height on route change
   const hideHeaderRoutes = [
+"/staff/home",
+"/admin/home",
     "/staff/reports/markettingdashboard",
     "/admin/reports/markettingdashboard",
     "/staff/transaction/lead/ownedLeadlist",

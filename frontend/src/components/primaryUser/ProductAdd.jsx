@@ -648,8 +648,9 @@ console.log(errors)
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none cursor-pointer"
               >
                 <option value="">select product Type</option>
-                <option value="Primaryproduct">Primary Product</option>
+                <option value="Primaryproduct"> Product</option>
                 <option value="Additionalservice">Additional Service</option>
+     <option value="Enhancedservice">Enhanced Service</option>
               </select>
               {errors.productorservicetype && (
                 <span className="mt-2 text-sm text-red-600">
