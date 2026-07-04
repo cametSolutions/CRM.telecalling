@@ -406,6 +406,10 @@ export default function OwnLeadList() {
   }
   const LeadRow = ({ item }) => {
     console.log(item)
+if(item?.leadId==="00037"){
+console.log(item)}
+
+console.log(item?.mobile)
     const open = openRow === item._id
     const lastLog = item.activityLog?.[item.activityLog.length - 1]
 
@@ -465,7 +469,7 @@ export default function OwnLeadList() {
           </td>
 
           <td className="px-3 py-2 border border-gray-200 text-xs">
-            {item?.mobile}
+            {item?.customerName?.mobile}
           </td>
 
           <td className="px-3 py-2 border border-gray-200 max-w-[200px] text-xs">

@@ -2906,6 +2906,7 @@ export const UpdateLeadRegister = async (req, res) => {
       balanceAmount: newBalanceAmount,
       leadFor: mappedleadData,
       paymentHistory: updatedPaymentHistory,
+excessPaidAmount
     };
 
 
@@ -9751,7 +9752,7 @@ export const GetownLeadList = async (req, res) => {
       }
     }
     const matchedLead = await LeadMaster.find(query)
-      .populate({ path: "customerName", select: "customerName" })
+      .populate({ path: "customerName", select: "customerName mobile email" })
       .lean();
     console.log("mathced", matchedLead)
 

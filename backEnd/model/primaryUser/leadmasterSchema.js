@@ -248,6 +248,7 @@ const leadSchema = new mongoose.Schema(
     dueDate: { type: Date },
     paymentVerified: { type: Boolean, default: false },
     source: { type: String, trim: true },
+excessPaidAmount:{type:Number},
 
     leadFor: [
       {
