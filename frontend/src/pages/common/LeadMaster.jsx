@@ -693,6 +693,7 @@ const LeadMaster = ({
   const [takenLicenses, setTakenLicense] = useState([])
   console.log(takenLicenses)
   const [warningErrors, setwarningError] = useState({})
+  const [haveprimaryProduct, sethaveprimaryProduct] = useState(false)
   const [unselectedtaggedlicense, setunselectedtaggedlicense] = useState({})
   console.log(unselectedtaggedlicense)
   console.log(warningErrors)
@@ -846,6 +847,7 @@ const LeadMaster = ({
       selectedBranch &&
       `/customer/getallCustomer?branchSelected=${selectedBranch}`
   )
+  console.log(customerData)
   // Track timers for each row index
   const debounceTimersRef = useRef({})
   console.log(selectedleadlist)
@@ -1082,162 +1084,102 @@ const LeadMaster = ({
         productorservicetype: item?.productorservicetype
       }))
       console.log(leadData)
-      const primary = leadData[0]
+      console.log(process)
+const ihaveprimaryproduct=leadData[0]?.productorservicetype === "Primaryproduct"
+      if (
+        process === "closing" &&
+        leadData[0]?.productorservicetype === "Primaryproduct"
+      ) {
+        sethaveprimaryProduct(true)
+        const primary = leadData[0]
+        console.log("hh")
+        const primaryProductId = getRowId(primary?.productorServiceId)
+        const primaryProduct = getPrimaryProductFromLeadList(primary)
+        console.log(primaryProduct)
+        if (!primaryProduct) {
+          toast.error("Primary product details not found")
+          return
+        }
 
-      const primaryProductId = getRowId(primary?.productorServiceId)
-      const primaryProduct = getPrimaryProductFromLeadList(primary)
-      console.log(primaryProduct)
-      if (!primaryProduct) {
-        toast.error("Primary product details not found")
-        return
+        const defaultServices = Array.isArray(primaryProduct?.defaultservices)
+          ? primaryProduct.defaultservices
+          : []
+
+        // Always initialize with the lead data first
+        setSelectedLeadList((prev) => {
+          const rows = [...leadData]
+
+          // If there are no default services, just return the lead data.
+          if (!defaultServices.length) {
+            return rows
+          }
+
+          const existingIds = getExistingAdditionalServiceIdsForPrimary(
+            rows,
+            0,
+            primaryProductId
+          )
+
+          const servicesToAdd = defaultServices.filter((service) => {
+            const serviceId = getRowId(service)
+            return serviceId && !existingIds.has(serviceId)
+          })
+
+          if (!servicesToAdd.length) {
+            return rows
+          }
+
+          const newRows = servicesToAdd.map((service) => {
+            const serviceId = getRowId(service)
+            const igstRate = getBranchIgstRate(service)
+            const productPrice = Number(service?.productPrice ?? 0)
+            const taxAmount = (productPrice * igstRate) / 100
+            const actualNetAmount = productPrice + taxAmount
+            console.log(service)
+            console.log(igstRate)
+            console.log(productPrice)
+            console.log(taxAmount)
+            return {
+              ...emptyRow,
+              licenseNumber: "",
+              licenseNumbers: [],
+              productorServiceId: serviceId,
+              productorServiceName:
+                service?.productName || service?.serviceName || "",
+              itemType: service?.productName ? "Product" : "Service",
+              productorservicetype:
+                service?.productorservicetype || "Additionalservice",
+              productPrice: 0,
+              hsn: igstRate || 0,
+              netAmount: 0,
+              isDefaultService: true,
+              parentPrimaryProductId: primaryProductId,
+              company_id: service?.selected?.[0]?.company_id,
+              branch_id: service?.selected?.[0]?.branch_id,
+              actualproductPrice: productPrice,
+              actualNetAmount: Number(productPrice + taxAmount)
+            }
+          })
+
+          let insertAt = 1
+
+          while (insertAt < rows.length) {
+            const nextType = String(
+              rows[insertAt]?.productorservicetype || ""
+            ).toLowerCase()
+
+            if (nextType === "primaryproduct") break
+
+            insertAt++
+          }
+
+          rows.splice(insertAt, 0, ...newRows)
+
+          return rows
+        })
+      } else {
+        setSelectedLeadList(leadData)
       }
-
-      // const defaultServices = Array.isArray(primaryProduct?.defaultservices)
-      //   ? primaryProduct.defaultservices
-      //   : []
-      // console.log(defaultServices)
-
-      // if (!defaultServices.length) {
-      //   toast.info("No additional services available for this primary product")
-      //   return
-      // }
-      // console.log(selectedleadlist)
-      // console.log(leadData)
-      // setSelectedLeadList((prev) => {
-      //   const rows = leadData
-
-      //   const existingIds = getExistingAdditionalServiceIdsForPrimary(
-      //     rows,
-      //     0,
-      //     primaryProductId
-      //   )
-      //   console.log(existingIds)
-      //   const servicesToAdd = defaultServices.filter((service) => {
-      //     console.log(service)
-      //     const serviceId = getRowId(service)
-      //     console.log(serviceId)
-      //     return serviceId && !existingIds.has(serviceId)
-      //   })
-      //   if (!servicesToAdd.length) {
-      //     toast.info(
-      //       "Additional services already added for this primary product"
-      //     )
-      //     return prev
-      //   }
-
-      //   const newRows = servicesToAdd.map((service) => {
-      //     const serviceId = getRowId(service)
-      //     const igstRate = getBranchIgstRate(service)
-      //     const productPrice = Number(service?.productPrice ?? 0)
-      //     const taxAmount = (productPrice * igstRate) / 100
-      //     const actualNetAmount = productPrice + taxAmount
-      //     return {
-      //       ...emptyRow,
-      //       licenseNumber: "",
-      //       licenseNumbers: [],
-      //       productorServiceId: serviceId,
-      //       productorServiceName:
-      //         service?.productName || service?.serviceName || "",
-      //       itemType: service?.productName ? "Product" : "Service",
-      //       productorservicetype:
-      //         service?.productorservicetype || "Additionalservice",
-      //       productPrice: 0,
-      //       hsn: igstRate || 0,
-      //       netAmount: 0,
-      //       isDefaultService: true,
-      //       parentPrimaryProductId: primaryProductId,
-      //       company_id: service?.selected[0]?.company_id,
-      //       branch_id: service?.selected[0]?.branch_id,
-      //       actualNetAmount
-      //     }
-      //   })
-
-      //   let insertAt = 0 + 1
-      //   while (insertAt < rows.length) {
-      //     const nextType = String(
-      //       rows[insertAt]?.productorservicetype || ""
-      //     ).toLowerCase()
-      //     if (nextType === "primaryproduct") break
-      //     insertAt++
-      //   }
-      //   console.log(newRows)
-      //   rows.splice(insertAt, 0, ...newRows)
-      //   return rows
-      // })
-const defaultServices = Array.isArray(primaryProduct?.defaultservices)
-  ? primaryProduct.defaultservices
-  : [];
-
-
-
-// Always initialize with the lead data first
-setSelectedLeadList((prev) => {
-  const rows = [...leadData];
-
-  // If there are no default services, just return the lead data.
-  if (!defaultServices.length) {
-    return rows;
-  }
-
-  const existingIds = getExistingAdditionalServiceIdsForPrimary(
-    rows,
-    0,
-    primaryProductId
-  );
-
-  const servicesToAdd = defaultServices.filter((service) => {
-    const serviceId = getRowId(service);
-    return serviceId && !existingIds.has(serviceId);
-  });
-
-  if (!servicesToAdd.length) {
-    return rows;
-  }
-
-  const newRows = servicesToAdd.map((service) => {
-    const serviceId = getRowId(service);
-    const igstRate = getBranchIgstRate(service);
-    const productPrice = Number(service?.productPrice ?? 0);
-    const taxAmount = (productPrice * igstRate) / 100;
-    const actualNetAmount = productPrice + taxAmount;
-
-    return {
-      ...emptyRow,
-      licenseNumber: "",
-      licenseNumbers: [],
-      productorServiceId: serviceId,
-      productorServiceName:
-        service?.productName || service?.serviceName || "",
-      itemType: service?.productName ? "Product" : "Service",
-      productorservicetype:
-        service?.productorservicetype || "Additionalservice",
-      productPrice: 0,
-      hsn: igstRate || 0,
-      netAmount: 0,
-      isDefaultService: true,
-      parentPrimaryProductId: primaryProductId,
-      company_id: service?.selected?.[0]?.company_id,
-      branch_id: service?.selected?.[0]?.branch_id,
-      actualNetAmount
-    };
-  });
-
-  let insertAt = 1;
-
-  while (insertAt < rows.length) {
-    const nextType = String(
-      rows[insertAt]?.productorservicetype || ""
-    ).toLowerCase();
-
-    if (nextType === "primaryproduct") break;
-
-    insertAt++;
-  }
-
-  rows.splice(insertAt, 0, ...newRows);
-
-  return rows;
-});
 
       const productListwithoutlicenseOnEdit = leadList?.map((product) => {
         const match = Data[0].leadFor?.find((lead) => {
@@ -1282,37 +1224,41 @@ setSelectedLeadList((prev) => {
         }
       })
       setProductorServiceSelections(groupedByLicenseNumber)
-      console.log(Data[0])
-      const selectedcustomerlicenseandproduct =
-        Data[0]?.customerName?.selected
-          ?.filter(
-            (sel) =>
-              sel?.licensenumber != null &&
-              String(sel.licensenumber).trim() !== ""
-          )
-          .map((sel) => ({
-            licenseNumber: sel.licensenumber,
-            productName: sel?.product_id?.productName || "Unknown",
-            productorServiceId: sel?.product_id?._id
-          })) || []
+console.log(ihaveprimaryproduct)
+      if (!ihaveprimaryproduct) {
+        console.log(Data[0])
+        const selectedcustomerlicenseandproduct =
+          Data[0]?.customerName?.selected
+            ?.filter(
+              (sel) =>
+                sel?.licensenumber != null &&
+                String(sel.licensenumber).trim() !== ""
+            )
+            .map((sel) => ({
+              licenseNumber: sel.licensenumber,
+              productName: sel?.product_id?.productName || "Unknown",
+              productorServiceId: sel?.product_id?._id
+            })) || []
 
-      console.log("d")
-      setcustomerTableData(selectedcustomerlicenseandproduct)
+        console.log("d")
+        setcustomerTableData(selectedcustomerlicenseandproduct)
+      }
     }
   }, [customerOptions, Data])
- 
+
   useEffect(() => {
     if (customerData && customerData.length > 0) {
       setallcustomer(customerData)
     }
   }, [customerData])
-
+  console.log(customerData)
   useEffect(() => {
     if (customerData && customerData.length && selectedBranch) {
       const options = customerData.map((item) => {
         const matchingSelected = item.selected?.find(
           (sel) => sel.branch_id === selectedBranch
         )
+        console.log(item?.partner)
         return {
           value: item?._id,
           label: item?.customerName,
@@ -1320,7 +1266,8 @@ setSelectedLeadList((prev) => {
           mobile: item?.mobile || "",
           license: matchingSelected?.licensenumber || "",
           email: item?.email,
-          phone: item?.landline
+          phone: item?.landline,
+          partner: item?.partner
         }
       })
       setCustomerOptions(options)
@@ -1330,9 +1277,16 @@ setSelectedLeadList((prev) => {
   useEffect(() => {
     console.log("hhh")
     if (selectedCustomer) {
+      console.log(selectedCustomer)
       setValueMain("mobile", selectedCustomer.mobile)
       setValueMain("phone", selectedCustomer.phone)
       setValueMain("email", selectedCustomer.email)
+      setValueMain(
+        "partner",
+        selectedCustomer?.partner?._id
+          ? selectedCustomer?.partner?._id
+          : selectedCustomer?.partner
+      )
     }
   }, [selectedCustomer])
 
@@ -1354,10 +1308,10 @@ setSelectedLeadList((prev) => {
   useEffect(() => {
     const total = Number(calculateTotalAmount()) || 0
     const discount = Number(discountAmount) || 0
-
+console.log(discount)
     setValueMain("taxAmount", calculatetaxAmount())
     setValueMain("taxableAmount", calculatetaxableAmount())
-
+console.log(selectedleadlist)
     setValueMain("netAmount", Math.max(total - discount, 0).toFixed(2))
   }, [selectedleadlist, discountAmount])
 
@@ -1725,9 +1679,12 @@ setSelectedLeadList((prev) => {
   }
   const getBranchIgstRate = (prod) => {
     const filteredbranch = prod?.selected?.filter(
-      (item) => item?.branchid === selectedBranch
+      (item) => item?.branch_id === selectedBranch
     )
-    return Number(filteredbranch?.[0]?.hsnid?.onValue?.igstRate || 0)
+    console.log(prod.selected)
+    console.log(selectedBranch)
+    console.log(filteredbranch[0])
+    return Number(filteredbranch?.[0]?.hsn_id?.onValue?.igstRate || 0)
   }
 
   // const getRowId = (value) => {
@@ -1972,28 +1929,78 @@ setSelectedLeadList((prev) => {
   const handleToggleDropdown = () => {
     setIsleadForOpen((prev) => !prev)
   }
-  const handleTaggedDueChange = (rowIndex, value, term) => {
-    console.log(term)
-    console.log(value)
+  console.log(detailsForm)
+  // const handleTaggedDueChange = (rowIndex, value, term, hsn) => {
+  //   console.log(term)
+  //   console.log(value)
+  //   console.log(rowIndex)
+  //   console.log(detailsForm)
+  //   if (!haveprimaryProduct) {
+  //     const taxAmount = (Number(hsn) / 100) * Number(value)
+  //     console.log(taxAmount)
+  //     console.log(hsn)
+  //     console.log(value)
+  //     const valueNum = Number(value) // or parseFloat(value)
+  //     const taxAmountNum = Number(taxAmount) // if taxAmount might be a string
+
+  //     const taxinclusiveamount = valueNum + taxAmountNum
+  //   }
+
+  //   console.log(taxinclusiveamount)
+  //   setDetailsForm((prev) => ({
+  //     ...prev,
+  //     taggeddata: prev.taggeddata.map((row, i) =>
+  //       i === rowIndex
+  //         ? { ...row, [term]: value, actualNetAmount: taxinclusiveamount }
+  //         : row
+  //     )
+  //   }))
+  // }
+console.log(detailsForm)
+console.log(selectedleadlist)
+  const handleTaggedDueChange = (rowIndex, value, term, hsn, productType) => {
     console.log(rowIndex)
-    console.log(detailsForm)
+    console.log(value)
+    console.log(term)
+    console.log(hsn)
+    console.log(productType)
+    console.log("Hhhz")
     setDetailsForm((prev) => ({
       ...prev,
-      taggeddata: prev.taggeddata.map((row, i) =>
-        i === rowIndex ? { ...row, [term]: value } : row
-      )
+      taggeddata: prev.taggeddata.map((row, i) => {
+        if (i !== rowIndex) return row
+
+        const updatedRow = {
+          ...row,
+          [term]: value
+        }
+if(term!=="nextDue"){
+  if (productType.toLowerCase() === "additionalservice") {
+          console.log("hhh")
+          const taxAmount = (Number(hsn) / 100) * Number(value)
+          console.log(value)
+          console.log(taxAmount)
+console.log(Number(value) + taxAmount)
+const total = Math.round(Number(value) + taxAmount);
+console.log(total)
+          updatedRow.taxinclusiveamount = total
+          updatedRow.taxexclusiveAmount = value
+updatedRow.productAmount=total
+        }
+
+}
+      
+        return updatedRow
+      })
     }))
+    console.log("hhh")
   }
+  console.log(selectedleadlist)
   console.log(detailsForm)
   const handleSelectedCustomer = (option) => {
     console.log(option)
     console.log(allcustomer)
     const matchedCustomer = allcustomer?.find((item) => {
-      // return (
-      //   String(item?.customerName?.trim()) === String(option?.label?.trim()) &&
-      //   String(item?.address1?.trim()) === String(option?.address?.trim()) &&
-      //   String(item?.mobile?.trim()) === String(option?.mobile?.trim())
-      // )
       return item?._id === option?.value
     })
     console.log(matchedCustomer)
@@ -2696,22 +2703,38 @@ setSelectedLeadList((prev) => {
       [name]: value
     }))
   }
-
+console.log(selectedleadlist)
   const handleDetailsSave = () => {
     const itemType = String(
       detailsItem?.productorservicetype || ""
     ).toLowerCase()
     console.log("hh")
+    console.log(detailsForm.taggeddata)
+    console.log(selectedleadlist)
     const cleanedTaggedData = Array.isArray(detailsForm.taggeddata)
       ? detailsForm.taggeddata
           .map((tag) => ({
             licensenumber: String(tag?.licensenumber || "").trim(),
             nextDue: String(tag?.nextDue || "").trim(),
-            productAmount: tag?.productAmount
+            productAmount: tag?.productAmount,
+taxexclusiveAmount:tag?.taxexclusiveAmount,
+taxinclusiveamount:tag?.taxinclusiveamount,
+hsn:tag?.hsn
           }))
           .filter((tag) => tag.licensenumber !== "")
       : []
-
+    console.log(detailsForm)
+    const totaltaxexclusiveAmount = detailsForm?.taggeddata.reduce((sum, item) => {
+      const amount = Number(item.taxexclusiveAmount) || 0 // safely handle invalid/empty
+      return sum + amount
+    }, 0)
+    const taxamount =
+      (Number(detailsForm?.taggeddata[0]?.hsn) / 100) * totaltaxexclusiveAmount
+    const updatedNetAmount = Math.round(Number(totaltaxexclusiveAmount) + taxamount)
+    console.log(taxamount)
+    console.log(totaltaxexclusiveAmount)
+    console.log(updatedNetAmount)
+console.log(selectedleadlist)
     setSelectedLeadList((prev) =>
       prev.map((row, i) => {
         if (i !== detailsIndex) return row
@@ -2722,7 +2745,10 @@ setSelectedLeadList((prev) => {
           return {
             ...row,
             applicationDate: detailsForm.applicationDate,
-
+            productPrice: haveprimaryProduct
+              ? row?.productPrice
+              : totaltaxexclusiveAmount,
+            netAmount: haveprimaryProduct ? row?.netAmount : updatedNetAmount,
             quantityUsers: detailsForm.quantityUsers,
             amount: detailsForm.amount,
             status: detailsForm.status,
@@ -2865,8 +2891,9 @@ setSelectedLeadList((prev) => {
   console.log(warningErrors)
   console.log(detailsForm)
   const handleDetails = (item, index) => {
+    console.log(selectedCustomer)
     console.log(item)
-
+    console.log(leadList)
     const productId = item.productorServiceId
     if (item?.productorservicetype === "Additionalservice") {
       if (!item?.licenseNumbers?.length) {
@@ -2887,31 +2914,74 @@ setSelectedLeadList((prev) => {
     const isAdditionalService =
       String(item?.productorservicetype || "").toLowerCase() ===
       "additionalservice"
+    console.log(isAdditionalService)
+    console.log(item)
+    console.log(selectedCustomer)
+    console.log(item?.productorServiceId)
+    const filteredproduct = selectedCustomer?.selected.filter(
+      (it) => it.product_id?._id === item?.productorServiceId
+    )
+    console.log(filteredproduct)
+   
     console.log(item)
     const normalizedTaggedData =
       isAdditionalService &&
       Array.isArray(item?.licenseNumbers) &&
       item.licenseNumbers.length > 0
         ? item.licenseNumbers.map((lic) => {
-            const existingTag = Array.isArray(item?.taggeddata)
+            const existing = Array.isArray(item?.taggeddata)
               ? item.taggeddata.find(
                   (tag) =>
                     String(tag?.licensenumber) === String(lic?.licenseNumber)
                 )
               : null
+            // 1. Pick the one WALLET product row (or all, but you showed one)
+            const primaryProduct = Array.isArray(filteredproduct)
+              ? filteredproduct[0] // or a .find if there are many
+              : null
+
+            // 2. Find tag inside that primary product’s taggeddata
+            const existingTag =
+              primaryProduct && Array.isArray(primaryProduct.taggeddata)
+                ? primaryProduct.taggeddata.find(
+                    (tag) =>
+                      String(tag?.licensenumber) === String(lic?.licenseNumber)
+                  )
+                : null
+            console.log(existing?.productAmount)
+            console.log(existingTag?.productAmount)
+            console.log(item?.actualNetAmount)
+            console.log(item?.netAmount)
+            console.log(existing)
+            console.log(existingTag)
+            // 3. Decide productAmount
+            const productAmount =
+              existing?.productAmount ??
+              existingTag?.productAmount ??
+              item?.actualNetAmount ??
+              item?.netAmount ??
+              0
 
             return {
               licensenumber: lic?.licenseNumber || "",
-              nextDue: existingTag?.nextDue || "",
+              nextDue: existing?.nextDue ?? existingTag?.nextDue,
               sourceIndex: lic?.sourceIndex,
-              productAmount: existingTag?.productAmount || item?.actualNetAmount
+              productAmount,
+              taxexclusiveAmount:existing?.taxexclusiveAmount?? existingTag?.taxexclusiveAmount??item?.actualproductPrice,
+              taxinclusiveamount: existing?.taxinclusiveamount??existingTag?.taxinclusiveamount??item?.actualNetAmount ?? item?.netAmount ?? 0,
+              hsn: item?.hsn
             }
           })
         : Array.isArray(item?.taggeddata)
           ? item.taggeddata.map((tag) => ({
               licensenumber: tag?.licensenumber || "",
               nextDue: tag?.nextDue || "",
-              productAmount: item?.actualNetAmount
+              productAmount:
+                tag?.productAmount ??
+                item?.actualNetAmount ??
+                item?.netAmount ??
+                0,
+              actualNetAmount: item?.netAmount
             }))
           : []
     console.log(item)
@@ -2927,9 +2997,88 @@ setSelectedLeadList((prev) => {
       nextDue: item?.nextDue || "",
       quantityUsers: item?.quantityUsers || "",
       productAmount: item?.actualNetAmount || 0,
-      taggeddata: normalizedTaggedData
+      taggeddata: normalizedTaggedData,
+      productType: item?.productorservicetype
     })
     setdetailsopen(true)
+ //     const normalizedTaggedData =
+    //       isAdditionalService &&
+    //       Array.isArray(item?.licenseNumbers) &&
+    //       item.licenseNumbers.length > 0
+    //         ? item.licenseNumbers.map((lic) => {
+    // console.log("hh")
+    //             const existingTag = Array.isArray(item?.taggeddata)
+    //               ? item.taggeddata.find(
+    //                   (tag) =>
+    //                     String(tag?.licensenumber) === String(lic?.licenseNumber)
+    //                 )
+    //               : null
+
+    //             return {
+    //               licensenumber: lic?.licenseNumber || "",
+    //               nextDue: existingTag?.nextDue || "",
+    //               sourceIndex: lic?.sourceIndex,
+    //               productAmount: existingTag?.productAmount || item?.actualNetAmount||item?.netAmount
+    //             }
+    //           })
+    //         : Array.isArray(item?.taggeddata)
+    //           ? item.taggeddata.map((tag) => ({
+    //               licensenumber: tag?.licensenumber || "",
+    //               nextDue: tag?.nextDue || "",
+    //               productAmount: item?.actualNetAmount
+    //             }))
+    //           : []
+    // const normalizedTaggedData =
+    //   isAdditionalService &&
+    //   Array.isArray(item?.licenseNumbers) &&
+    //   item.licenseNumbers.length > 0
+    //     ? item.licenseNumbers.map((lic) => {
+    //         // 1. Match tag in current item.taggeddata
+    //         const existingTag = Array.isArray(item?.taggeddata)
+    //           ? item.taggeddata.find(
+    //               (tag) =>
+    //                 String(tag?.licensenumber) === String(lic?.licenseNumber)
+    //             )
+    //           : null;
+
+    //         // 2. Match primary product in filteredproduct that has this license
+    //         const matchedPrimaryProduct = Array.isArray(filteredproduct)
+    //           ? filteredproduct.find((prod) =>
+    //               Array.isArray(prod.licenseNumbers)
+    //                 ? prod.licenseNumbers.some(
+    //                     (ln) =>
+    //                       String(ln.licenseNumber) === String(lic?.licenseNumber)
+    //                   )
+    //                 : false
+    //             )
+    //           : null;
+    // console.log(matchedPrimaryProduct)
+    //         // 3. Decide productAmount
+    //         const productAmount =
+
+    //           matchedPrimaryProduct?.productAmount ?? existingTag?.productAmount ??
+    //           item?.actualNetAmount ??
+    //           item?.netAmount ??
+    //           0;
+    // console.log(productAmount)
+    //         return {
+    //           licensenumber: lic?.licenseNumber || "",
+    //           nextDue: existingTag?.nextDue || "",
+    //           sourceIndex: lic?.sourceIndex,
+    //           productAmount,
+    //         };
+    //       })
+    //     : Array.isArray(item?.taggeddata)
+    //     ? item.taggeddata.map((tag) => ({
+    //         licensenumber: tag?.licensenumber || "",
+    //         nextDue: tag?.nextDue || "",
+    //         productAmount:
+    //           tag?.productAmount ??
+    //           item?.actualNetAmount ??
+    //           item?.netAmount ??
+    //           0,
+    //       }))
+    //     : [];
   }
   console.log(detailsForm)
   console.log(showdetailsopen)
@@ -3565,11 +3714,12 @@ setSelectedLeadList((prev) => {
                             <td className="border border-gray-300 px-1 py-1">
                               <input
                                 type="number"
-                                readOnly={isAmountLocked}
+                                readOnly={isAmountLocked || !haveprimaryProduct}
                                 value={item.productPrice}
                                 onChange={(e) =>
                                   handlePriceChange(index, e.target.value)
                                 }
+                                onWheel={(e) => e.currentTarget.blur()}
                                 placeholder="0.00"
                                 className={`w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-right ${
                                   isAmountLocked
@@ -3582,11 +3732,12 @@ setSelectedLeadList((prev) => {
                             <td className="border border-gray-300 px-1 py-1">
                               <input
                                 type="number"
-                                readOnly={isTaxLocked}
+                                readOnly={isTaxLocked || !haveprimaryProduct}
                                 value={item.hsn}
                                 onChange={(e) =>
                                   handleHsnChange(index, e.target.value)
                                 }
+                                onWheel={(e) => e.currentTarget.blur()}
                                 placeholder="Tax"
                                 className={`w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-center ${
                                   isTaxLocked
@@ -3634,9 +3785,18 @@ setSelectedLeadList((prev) => {
                                 <button
                                   type="button"
                                   disabled={isReadOnly}
-                                  onClick={() =>
+                                  onClick={() => {
+                                    console.log(item)
+                                    if (
+                                      item?.productorservicetype.toLowerCase() ===
+                                      "primaryproduct"
+                                    )
+                                      return
+console.log(selectedleadlist)
+                                    if (selectedleadlist.length === 1) return
+                                    console.log("jjjjj")
                                     handleDeletetableData(item, index)
-                                  }
+                                  }}
                                   className={`h-6 w-6 rounded-full flex items-center justify-center text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors ${
                                     isReadOnly
                                       ? "cursor-not-allowed opacity-30"
@@ -3767,7 +3927,7 @@ setSelectedLeadList((prev) => {
                         field: "taxAmount",
                         viewonly: true
                       },
-                      ...(process === "closing"
+                      ...(process === "closing"&&haveprimaryProduct
                         ? [
                             {
                               label: "Disc.Amount",
@@ -3789,6 +3949,7 @@ setSelectedLeadList((prev) => {
                         <input
                           type="number"
                           {...registerMain(field)}
+                          onWheel={(e) => e.currentTarget.blur()}
                           readOnly={viewonly}
                           className={`flex-1 min-w-0 border border-gray-300 rounded-r px-3 py-[6px] text-sm text-right bg-white outline-none ${viewonly ? "cursor-not-allowed" : ""} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0`}
                         />
@@ -3811,32 +3972,7 @@ setSelectedLeadList((prev) => {
                         <label className="block text-xs font-semibold text-gray-600 mb-1">
                           Self Allocation / Other
                         </label>
-                        {/* <select
-                          disabled={!isSelfAllocationChangable}
-                          {...registerMain("selfAllocation", {
-                            setValueAs: (v) => v === "true",
-                            validate: (v) =>
-                              v === true || v === false
-                                ? true
-                                : "This field is required",
-                            onChange: (e) =>
-                              setselfAllocation(e.target.value === "true")
-                          })}
-                          className={`w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8] ${
-                            !isSelfAllocationChangable
-                              ? "cursor-not-allowed opacity-70"
-                              : "cursor-pointer"
-                          }`}
-                        >
-                          <option value="">Select</option>
-                          {(loggeduser?.department?._id ===
-                            "670c866552847bbebbd35748" ||
-                            loggeduser?.department?._id ===
-                              "670c867352847bbebbd35750") && (
-                            <option value="true">Self Allocate</option>
-                          )}
-                          <option value="false">Allocate To Other</option>
-                        </select> */}
+
                         <select
                           disabled={!isSelfAllocationChangable}
                           {...registerMain("selfAllocation", {
@@ -4165,6 +4301,11 @@ setSelectedLeadList((prev) => {
                                     <th className="border-b border-[#e7ebf4] px-2.5 py-1.5  text-[11px] font-semibold text-[#43506a]">
                                       Next Due
                                     </th>
+
+                                    <th className="border-b border-[#e7ebf4] px-2.5 py-1.5  text-[11px] font-semibold text-[#43506a]">
+                                      Product price
+                                    </th>
+
                                     <th className="border-b border-[#e7ebf4] px-2.5 py-1.5  text-[11px] font-semibold text-[#43506a]">
                                       Amount(tax.incls)
                                     </th>
@@ -4186,43 +4327,7 @@ setSelectedLeadList((prev) => {
                                             className="w-full cursor-not-allowed rounded-[7px] border border-[#dfe5ee] bg-[#f3f6fb] px-2 py-1.5 text-[11px] text-[#1f2a3d] outline-none"
                                           />
                                         </td>
-                                        {/* <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
-                                          <input
-                                            type="date"
-min={today}
-                                            value={tag?.nextDue || ""}
-                                            onChange={(e) =>{
-const selectedDate=e.target.value
 
- if (selectedDate && selectedDate < today) {
-    setwarningError((prev) => ({
-      ...prev,
-      nextduewarning: {
-        ...(prev.nextduewarning || {}),
-        [rowIndex]: "Due date must be today or a future date.",
-      },
-    }));
-    return;
-  }
-
-  setwarningError((prev) => ({
-    ...prev,
-    nextduewarning: {
-      ...(prev.nextduewarning || {}),
-      [rowIndex]: "",
-    },
-  }));
- handleTaggedDueChange(
-                                                rowIndex,
-                                                e.target.value,
-                                                "nextDue"
-                                              )
-}
-                                             
-                                            }
-                                            className="w-full rounded-[7px] border border-[#dfe5ee] bg-white px-2 py-1.5 text-[11px] text-[#1f2a3d] outline-none focus:border-[#1B2A4A]"
-                                          />
-                                        </td> */}
                                         <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
                                           <input
                                             type="date"
@@ -4284,18 +4389,53 @@ const selectedDate=e.target.value
                                             </p>
                                           )}
                                         </td>
+
                                         <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
                                           <input
                                             type="number"
-                                            value={tag?.productAmount}
-                                            onChange={(e) =>
+                                            value={tag?.taxexclusiveAmount}
+                                            onChange={(e) => {
+                                              console.log(tag)
+
                                               handleTaggedDueChange(
                                                 rowIndex,
                                                 e.target.value,
-                                                "productAmount"
+                                                "taxexclusiveAmount",
+                                                tag?.hsn,
+                                                detailsForm?.productType
                                               )
+                                            }}
+                                            onWheel={(e) =>
+                                              e.currentTarget.blur()
                                             }
-                                            className="w-full  rounded-[7px] border border-[#dfe5ee] bg-white px-2 py-1.5 text-[11px] text-[#1f2a3d] outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0"
+                                            className="w-full rounded-[7px] border text-right border-[#dfe5ee] bg-white px-2 py-1.5 text-[11px] text-[#1f2a3d] outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0"
+                                          />
+                                        </td>
+
+                                        <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
+                                          <input
+                                            type="number"
+                                            readOnly
+                                            value={tag?.taxinclusiveamount}
+                                            onChange={(e) => {
+                                              let productvalue
+                                              if (haveprimaryProduct) {
+                                                productvalue = "productAmount"
+                                              } else {
+                                                productvalue = "Net Amount"
+                                              }
+                                              console.log(haveprimaryProduct)
+                                              console.log(productvalue)
+                                              handleTaggedDueChange(
+                                                rowIndex,
+                                                e.target.value,
+                                                productvalue
+                                              )
+                                            }}
+                                            onWheel={(e) =>
+                                              e.currentTarget.blur()
+                                            }
+                                            className="w-full rounded-[7px] pr-3 border text-right border-[#dfe5ee] bg-gray-100 px-2 py-1.5 text-[11px] text-[#1f2a3d] outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0"
                                           />
                                         </td>
                                       </tr>
@@ -4335,19 +4475,6 @@ const selectedDate=e.target.value
                         />
                       </div>
 
-                      {/* <div className="md:col-span-2">
-              <label className="block text-xs font-semibold text-gray-600 mb-1">
-                Amount (Incl. of Tax)
-              </label>
-              <input
-                type="number"
-                name="amount"
-                value={detailsForm.amount}
-                onChange={handleDetailsChange}
-                placeholder="Amount"
-                className="w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 py-2 text-sm outline-none focus:border-[#1B2A4A]"
-              />
-            </div> */}
                       <div className="">
                         <label className="block text-xs font-semibold text-gray-600 mb-1">
                           Status

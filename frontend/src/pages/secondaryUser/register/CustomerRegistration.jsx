@@ -114,10 +114,13 @@ console.log(tabledata)
 
     try {
       const createdFrom = "customermaster"
-
+const updatedTableData = tabledata.map(item => ({
+  ...item,
+  createdFrom: "Master"
+}));
       const response = await api.post(
         `/customer/customerRegistration?createdfrom=${createdFrom}`,
-        { customerData, tabledata },
+        { customerData, tabledata:updatedTableData },
         { withCredentials: true }
       )
 

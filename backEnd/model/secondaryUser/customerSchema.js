@@ -113,6 +113,17 @@ const SelectedItemSchema = new mongoose.Schema(
       default: ""
     },
 createdFrom:{type:String},
+productAddedDate:{type:Date},
+
+//  productAddedby: {
+//         type: mongoose.Schema.Types.ObjectId,
+//         refPath: "userModel",
+//         required: true
+//     },
+//     productAddedmodel: {
+//         type: String,
+//         required: true, enum: ["Staff", "Admin"]
+//     },
 
     branch_id: {
       type: mongoose.Schema.Types.ObjectId,
@@ -208,7 +219,11 @@ createdFrom:{type:String},
         {
           licensenumber: Number,
           nextDue: Date,
-          productAmount: Number,
+          productAmount: Number,//taxinclusive ,
+taxinclusiveamount:Number,
+taxexclusiveAmount:Number,//taxexclusive amount
+discountAmount:Number,
+hsn:Number//taxrate
         },
       ],
       default: [],

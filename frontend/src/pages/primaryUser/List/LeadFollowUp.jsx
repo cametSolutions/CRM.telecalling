@@ -87,6 +87,7 @@ const LeadFollowUp = () => {
   const [collectionupdateModal, setcollectionUpdateModal] = useState(false)
   const [partner, setPartner] = useState([])
   const [isdemofollownotClosed, setisdemofollowedNotClosed] = useState(false)
+const [ischangeallocationfortask,setischangeallocationfortask]=useState(true)
   const [ishavePayment, setishavePayment] = useState(false)
   const [collectionupdatedata, setcollectionupdateData] = useState({})
   const [showfollowupModal, setshowFollowupModal] = useState(false)
@@ -2387,6 +2388,7 @@ const LeadFollowUp = () => {
   }
 
   const handlefollowupdate = (Id, docId) => {
+console.log('hhh')
     setfollowupDateModal(true)
     setSelectedLeadId(Id)
     setselectedDocid(docId)
@@ -2430,14 +2432,16 @@ const LeadFollowUp = () => {
   }
   console.log(collectionData)
   const handleDemoSubmit = async () => {
-    if (isdemofollownotClosed) {
-      setDemoError((prev) => ({
-        ...prev,
-        submiterror: "Cant submit, demo is not closed",
-        demoDescription: ""
-      }))
-      return
-    }
+console.log("hhh")
+console.log(isdemofollownotClosed)
+    // if (isdemofollownotClosed) {
+    //   setDemoError((prev) => ({
+    //     ...prev,
+    //     submiterror: "Cant submit, demo is not closed",
+    //     demoDescription: ""
+    //   }))
+    //   return
+    // }
 
     const newError = {}
     if (!demoData.demoallocatedDate) {
@@ -2598,6 +2602,8 @@ const LeadFollowUp = () => {
         demoassignedDate: formatDate(ishaveAllocation.submissionDate),
         demoDescription: ishaveAllocation?.remarks
       })
+setisdemofollowedNotClosed(true)
+
       setIsEditable(true)
       setIsAllocated(true)
     }
@@ -3339,7 +3345,7 @@ const LeadFollowUp = () => {
                       <label className="flex items-start cursor-pointer group">
                         <input
                           type="checkbox"
-                          disabled={isdemofollownotClosed}
+                          disabled={ischangeallocationfortask}
                           checked={isAllocated}
                           onChange={() => {
                             if (
@@ -3586,7 +3592,7 @@ const LeadFollowUp = () => {
                       <FaSpinner className="animate-spin h-5 w-5 text-white ml-2" />
                     </div>
                   ) : (
-                    <div>{isHaveEditchoice ? "UPDATE" : "SUBMIT"}</div>
+                    <div>{isHaveEditchoice ? "UPDATEss" : "SUBMIT"}</div>
                   )}
                 </button>
               </div>

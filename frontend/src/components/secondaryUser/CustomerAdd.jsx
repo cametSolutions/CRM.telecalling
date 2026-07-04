@@ -82,6 +82,7 @@ const CustomerAdd = ({
   const loggeduserBranch = useSelector(
     (state) => state.companyBranch.loggeduserbranches
   )
+  const [detailsData, setdetailsData] = useState({})
   const [duplicatelicense, setduplicatelicense] = useState(null)
   const debounceTimersRef = useRef({})
   const [submissionloader, setsubmissionloader] = useState(false)
@@ -169,7 +170,7 @@ const CustomerAdd = ({
       setPartner(partners)
     }
   }, [partners])
-console.log(partner)
+  console.log(partner)
 
   useEffect(() => {
     if (productData) {
@@ -242,7 +243,7 @@ console.log(partner)
     const year = date.getFullYear()
     return `${day}-${month}-${year}`
   }
-  
+
   useEffect(() => {
     if (customer) {
       reset({
@@ -275,6 +276,7 @@ console.log(partner)
         taggedLicenseDueDates: {}
       })
       console.log(customer.selected)
+
       const selectedData =
         customer?.selected?.map((sel) => ({
           company_id: sel?.company_id?._id,
@@ -283,9 +285,23 @@ console.log(partner)
           branchName: sel?.branch_id?.branchName,
           product_id: sel?.product_id?._id,
           productName: sel?.product_id?.productName,
+brandName:sel?.brandName,
+categoryName:sel?.categoryName,
           shortName: sel?.product_id?.shortName,
           licensenumber: sel?.licensenumber,
           softwareTrade: sel?.softwareTrade,
+          version: sel?.version,
+          customerAddDate: sel?.customerAddDate,
+          amcstartDate: sel?.amcstartDate,
+          amcendDate: sel?.amcendDate,
+          amcAmount: sel?.amcAmount,
+          amcDescription: sel?.amcDescription,
+          licenseExpiryDate: sel?.licenseExpiryDate,
+          productamountDescription: sel?.productamountDescription,
+          tvuexpiryDate: sel?.tvuexpiryDate,
+          tvuAmount: sel?.tvuAmount,
+          tvuamountDescription: sel?.tvuamountDescription,
+          reasonofStatus: sel?.reasonofStatus,
           applicationDate: sel?.customerAddDate
             ? sel?.customerAddDate
             : sel?.applicationDate,
@@ -305,7 +321,7 @@ console.log(partner)
       console.log(selectedData)
       setTableData(selectedData)
     }
-  }, [customer, reset,partner])
+  }, [customer, reset, partner])
 
   useEffect(() => {
     if (!debouncedLicenseNo || !String(debouncedLicenseNo).trim()) return
@@ -427,6 +443,7 @@ console.log(partner)
     setEditIndex(null)
     clearErrors()
     setduplicatelicense(null)
+setdetailsData([])
   }
   console.log(tableData)
   console.log(licenseloading)
@@ -475,6 +492,7 @@ console.log(partner)
 
   const handleEdit = (item, index) => {
     console.log(item)
+    setdetailsData(item)
     console.log(index)
     setPopupType(item?.productorservicetype)
     setEditIndex(index)
@@ -499,19 +517,16 @@ console.log(partner)
       item?.taggedLicenses ||
       []
     console.log(item)
-    // const taggedLicenseDueDatesFromData =
-    //   item?.taggeddata?.reduce((acc, entry) => {
-    //     if (entry?.licensenumber) {
-    //       acc[String(entry.licensenumber)] = entry?.nextDue || ""
-    //     }
-    //     return acc
-    //   }, {}) || {}
+
     const taggedLicenseDueDatesFromData =
       item?.taggeddata?.reduce((acc, entry) => {
         if (entry?.licensenumber) {
           acc[String(entry.licensenumber)] = {
             nextDue: entry?.nextDue || "",
-            productAmount: entry?.productAmount ?? ""
+            productAmount: entry?.productAmount ?? "",
+            taxexclusiveAmount: entry?.taxexclusiveAmount ?? "",
+            taxinclusiveamount: entry?.taxinclusiveamount ?? "",
+            hsn: entry?.hsn ?? ""
           }
         }
         return acc
@@ -708,7 +723,7 @@ console.log(partner)
         if (!(productPrice > 0)) {
           console.log("hhh")
           console.log(row)
-          return `Product price must be greater than 0 for  ${row?.productName}`
+          return `Product price must be greater than 0 for  ${row?.productName} ${row.licensenumber}`
         }
 
         // if (!(netAmount > 0)) {
@@ -829,7 +844,7 @@ console.log(partner)
       return
     }
     const values = getValues()
-
+    console.log(values)
     if (!values?.productName?.value) {
       toast.error("Please select product/service")
       return
@@ -896,11 +911,26 @@ console.log(partner)
         ? selectedTaggedLicenses.map((licenseNo) => ({
             licensenumber: Number(licenseNo),
             nextDue: dueMap[String(licenseNo)]?.nextDue || "",
-            productAmount: Number(dueMap[String(licenseNo)]?.productAmount || 0)
+            productAmount: Number(
+              dueMap[String(licenseNo)]?.productAmount || 0
+            ),
+            taxexclusiveAmount: Number(
+              dueMap[String(licenseNo)]?.taxexclusiveAmount || 0
+            ),
+            taxinclusiveamount: Number(
+              dueMap[String(licenseNo)]?.taxinclusiveamount || 0
+            )
           }))
         : []
     console.log(values)
+console.log(tableData)
+console.log(values)
+const baseRow =
+  editIndex !== null
+    ? tableData[editIndex] // preserve all old fields while editing
+    : {}; // or your default schema object
     const row = {
+...baseRow,
       company_id: values?.productName?.company_id,
       companyName: values?.productName?.companyName,
       branch_id: values?.productName?.branch_id,
@@ -929,10 +959,12 @@ console.log(partner)
       taggeddata,
       taggedLicenses: selectedTaggedLicenses
     }
+console.log(row)
     console.log(productOptions)
     const selectedProductObj = productOptions?.find(
       (p) => p.value === values?.productName?.value
     )
+console.log(selectedProductObj.defaultservices)
     console.log(selectedProductObj)
     const defaultServiceRows =
       popupType === "Primaryproduct" &&
@@ -1004,7 +1036,7 @@ console.log(partner)
 
     closePopup()
   }
-
+console.log(tableData)
   // const filteredOptionsByType = useMemo(() => {
   //   return productOptions.filter(
   //     (item) =>
@@ -1054,6 +1086,7 @@ console.log(partner)
         String(item?.productorservicetype).toLowerCase() === "additionalservice"
     )
   }, [tableData])
+  console.log(additionalServices)
   const formatDateForInput = (date) => {
     if (!date) return ""
     return String(date).split("T")[0]
@@ -1081,6 +1114,7 @@ console.log(partner)
         reset()
         setTableData([])
       } else if (process === "edit") {
+console.log(tableData)
         await handleEditedData(data, tableData, customer?.index)
       }
     } catch (error) {
@@ -1520,7 +1554,16 @@ console.log(partner)
                                 : ""
                           }
                           line4={isDeactive ? "De Active" : "Active"}
-                          line5={item?.productAmount}
+                          c={
+                            item?.taggeddata?.length > 0
+                              ? item?.taggeddata[0]?.productAmount
+                              : item?.productAmount
+                          }
+                          line5={
+                            item?.taggedata
+                              ? item?.taggeddata[0]?.productAmount
+                              : item?.productAmount
+                          }
                           onEdit={handleEdit}
                           onDelete={handleDelete}
                         />
@@ -1912,6 +1955,59 @@ console.log(partner)
                                           [String(licenseNo)]:
                                             dueMap[String(licenseNo)] || ""
                                         })
+                                        console.log(licenseNo)
+                                        console.log(detailsData)
+                                        const currentValues = getValues()
+                                        console.log(currentValues)
+                                        const matched =
+                                          detailsData?.taggeddata?.find(
+                                            (item) =>
+                                              String(item.licensenumber) ===
+                                              String(licenseNo)
+                                          )
+                                        console.log(matched)
+                                        if (matched) {
+                                          const currentValues = getValues()
+
+                                          reset({
+                                            ...currentValues,
+                                            taggedLicenseDueDates: {
+                                              ...currentValues.taggedLicenseDueDates,
+                                              [licenseNo]: {
+                                                nextDue: matched.nextDue || "",
+                                                productAmount:
+                                                  matched.productAmount ?? "",
+                                                taxexclusiveAmount:
+                                                  matched.taxexclusiveAmount ??
+                                                  "",
+                                                taxinclusiveamount:
+                                                  matched.taxinclusiveamount ??
+                                                  "",
+                                                hsn: matched.hsn ?? ""
+                                              }
+                                            }
+                                          })
+                                        }
+
+                                        //   const taggedLicenseDueDatesFromData =
+                                        //       item?.taggeddata?.reduce((acc, entry) => {
+                                        //         if (entry?.licensenumber) {
+                                        //           acc[String(entry.licensenumber)] = {
+                                        //             nextDue: entry?.nextDue || "",
+                                        //             productAmount: entry?.productAmount ?? "",
+                                        //             taxexclusiveAmount: entry?.taxexclusiveAmount ?? "",
+                                        //             taxinclusiveamount: entry?.taxinclusiveamount ?? "",
+                                        //             hsn: entry?.hsn ?? ""
+                                        //           }
+                                        //         }
+                                        //         return acc
+                                        //       }, {}) || {}
+                                        //     console.log(taggedLicenseDueDatesFromData)
+                                        //  reset({
+                                        //       ...getValues(),
+
+                                        //       taggedLicenseDueDates: taggedLicenseDueDatesFromData
+                                        //     })
                                       } else {
                                         const updatedLicenses = prev.filter(
                                           (item) =>
@@ -1919,6 +2015,7 @@ console.log(partner)
                                         )
 
                                         const updatedDueMap = { ...dueMap }
+                                        // console.log(dueMap)
                                         delete updatedDueMap[String(licenseNo)]
 
                                         setValue(
@@ -1967,8 +2064,12 @@ console.log(partner)
                                 <th className="border-b border-[#e7ebf4] px-2.5 py-1.5 text-left text-[11px] font-semibold text-[#43506a]">
                                   Next Due
                                 </th>
+
                                 <th className="border-b border-[#e7ebf4] px-2.5 py-1.5 text-left text-[11px] font-semibold text-[#43506a]">
-                                  Product Amount
+                                  Product Price
+                                </th>
+                                <th className="border-b border-[#e7ebf4] px-2.5 py-1.5 text-left text-[11px] font-semibold text-[#43506a]">
+                                  Amount(tax.inclusive)
                                 </th>
                               </tr>
                             </thead>
@@ -2047,7 +2148,45 @@ console.log(partner)
                                       value={
                                         watchedTaggedLicenseDueDates?.[
                                           licenseNo
-                                        ]?.productAmount ?? ""
+                                        ]?.taxexclusiveAmount ?? ""
+                                      }
+                                      onChange={(e) => {
+                                        const inputValue = e.target.value
+                                        const dueMap =
+                                          watch("taggedLicenseDueDates") || {}
+                                        console.log(dueMap)
+                                        console.log(dueMap[licenseNo])
+                                        const matchedData = dueMap[licenseNo]
+                                        const taxAmount =
+                                          (Number(matchedData?.hsn) / 100) *
+                                          Number(inputValue)
+                                        const total = Math.round(
+                                          Number(inputValue) + taxAmount
+                                        )
+                                        console.log(taxAmount)
+                                        console.log(total)
+                                        setValue("taggedLicenseDueDates", {
+                                          ...dueMap,
+                                          [licenseNo]: {
+                                            ...dueMap[licenseNo],
+                                            taxexclusiveAmount: inputValue,
+                                            taxinclusiveamount: total,
+                                            productAmount: total
+                                          }
+                                        })
+                                      }}
+                                      onWheel={(e) => e.currentTarget.blur()}
+                                      className={`${compactPopupInputClass} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0`}
+                                    />
+                                  </td>
+                                  <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
+                                    <input
+                                      type="number"
+                                      readOnly
+                                      value={
+                                        watchedTaggedLicenseDueDates?.[
+                                          licenseNo
+                                        ]?.taxinclusiveamount ?? ""
                                       }
                                       onChange={(e) => {
                                         const dueMap =
@@ -2057,11 +2196,13 @@ console.log(partner)
                                           ...dueMap,
                                           [licenseNo]: {
                                             ...dueMap[licenseNo],
-                                            productAmount: e.target.value
+                                            productAmount: e.target.value,
+                                            taxinclusiveamount: e.target.value
                                           }
                                         })
                                       }}
-                                      className={`${compactPopupInputClass} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0`}
+                                      onWheel={(e) => e.currentTarget.blur()}
+                                      className={`${compactPopupInputClass} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0 bg-gray-100`}
                                     />
                                   </td>
                                 </tr>
@@ -2088,7 +2229,7 @@ console.log(partner)
                   onClick={savePopupData}
                   className="rounded-md bg-[#2f80ed] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#246cd0]"
                 >
-                  {editIndex !== null ? "Update" : "Save"}
+                  {editIndex !== null ? "Save Details" : "Save Details"}
                 </button>
               </div>
             </div>
@@ -2145,8 +2286,11 @@ const ProductCircleCard = ({
   line4,
   line5,
   onEdit,
-  onDelete
+  onDelete,
+  c
 }) => {
+  console.log(line5)
+  console.log(c)
   const variantClass =
     variant === "danger"
       ? "bg-[#ffdedd] border-[#f4c6c2]"
@@ -2174,8 +2318,7 @@ const ProductCircleCard = ({
 
           {line3 ? (
             <p className="mt-1 w-full whitespace-nowrap text-center text-[10px] font-semibold leading-[10px] text-[#d35c5c]">
-              {productType === "Primaryproduct" ? "Date" : "Due"} :{" "}
-              {line3}
+              {productType === "Primaryproduct" ? "Date" : "Due"} : {line3}
             </p>
           ) : null}
 
@@ -2221,6 +2364,6 @@ const tileInputClass =
   "w-full border-0 bg-transparent p-0 text-[12px] font-medium text-[#1f2a3d] outline-none placeholder:text-[#c0c8d8]"
 
 const compactPopupInputClass =
-  "w-full rounded-[8px] border border-[#dfe5ee] bg-white px-2.5 py-1.5 text-[12px] text-[#1f2a3d] outline-none focus:border-[#7ba7ff] "
+  "w-full rounded-[8px] border border-[#dfe5ee]  px-2.5 py-1.5 text-[12px] text-[#1f2a3d] outline-none focus:border-[#7ba7ff] "
 
 export default CustomerAdd

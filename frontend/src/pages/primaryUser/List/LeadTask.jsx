@@ -36,6 +36,7 @@ const LeadTask = () => {
   console.log(dates)
   const [type, settype] = useState("leadTask")
   const [filteredData, setFilteredData] = useState([])
+console.log(filteredData)
   const [netTotalAmount, setnetTotalAmount] = useState(0)
   const [pending, setPending] = useState(true)
   const [ownTask, setownTask] = useState(true)
@@ -155,44 +156,86 @@ console.log(ownTask)
   }
   useEffect(() => {
     if (data && pending && loggedUser && dates && dates.endDate) {
-      const finalOutput = []
-      data.forEach((entry) => {
-        const activitylog = entry.activityLog
+      // const finalOutput = []
+      // data.forEach((entry) => {
+      //   const activitylog = entry.activityLog
 
-        activitylog.forEach((log) => {
-          if (
-            log.taskClosed === false &&
-            log?.taskallocatedTo &&
-            log.taskTo &&
-            log.taskTo !== "followup"
-          ) {
-            console.log(log.taskallocatedTo)
-            finalOutput.push({
-              leadId: entry.leadId,
-              leadDocId: entry._id,
-              allocatedTo: log?.taskallocatedTo?._id,
-              leadDate: entry.leadDate,
-              customerName:
-                entry?.customerName?.customerName || entry?.customerName,
-              leadBy: entry?.leadBy,
-              dueDate: entry?.dueDate,
-              leadFor: entry?.leadFor,
-              netAmount: entry?.netAmount,
-              mobile: entry?.mobile,
-              email: entry?.email,
-              taskTo: log?.taskTo,
-              taskBy: log?.taskBy,
-              remarks: log.remarks,
-              closedDate: log?.submissionDate,
-              matchedlog: log,
-              activityLog: activitylog,
-              taskallocatedTo: entry.taskallocatedTo,
-              taskallocatedBy: entry.taskallocatedBy,
-              sameUser: loggedUser?._id === entry.taskallocatedTo?._id
-            })
-          }
-        })
+      //   activitylog.forEach((log) => {
+      //     if (
+      //       log.taskClosed === false &&
+      //       log?.taskallocatedTo &&
+      //       log.taskTo &&
+      //       log.taskTo !== "followup"
+      //     ) {
+      //       console.log(log.taskallocatedTo)
+      //       finalOutput.push({
+      //         leadId: entry.leadId,
+      //         leadDocId: entry._id,
+      //         allocatedTo: log?.taskallocatedTo?._id,
+      //         leadDate: entry.leadDate,
+      //         customerName:
+      //           entry?.customerName?.customerName || entry?.customerName,
+      //         leadBy: entry?.leadBy,
+      //         dueDate: entry?.dueDate,
+      //         leadFor: entry?.leadFor,
+      //         netAmount: entry?.netAmount,
+      //         mobile: entry?.mobile,
+      //         email: entry?.email,
+      //         taskTo: log?.taskTo,
+      //         taskBy: log?.taskBy,
+      //         remarks: log.remarks,
+      //         closedDate: log?.submissionDate,
+      //         matchedlog: log,
+      //         activityLog: activitylog,
+      //         taskallocatedTo: entry.taskallocatedTo,
+      //         taskallocatedBy: entry.taskallocatedBy,
+      //         sameUser: loggedUser?._id === entry.taskallocatedTo?._id
+      //       })
+      //     }
+      //   })
+      // })
+const finalOutput = []
+data.forEach((entry) => {
+  const activitylog = entry.activityLog
+
+  activitylog.forEach((log) => {
+    if (
+      log.taskClosed === false &&
+      log?.taskallocatedTo &&
+      log.taskTo &&
+      log.taskTo !== "followup" &&
+      log.allocationChanged !== true   // <-- skip superseded allocations
+    ) {
+      finalOutput.push({
+        leadId: entry.leadId,
+        leadDocId: entry._id,
+        allocatedTo: log?.taskallocatedTo?._id,
+        leadDate: entry.leadDate,
+        customerName:
+          entry?.customerName?.customerName || entry?.customerName,
+        leadBy: entry?.leadBy,
+        dueDate: entry?.dueDate,
+        leadFor: entry?.leadFor,
+        netAmount: entry?.netAmount,
+        mobile: entry?.mobile,
+        email: entry?.email,
+        taskTo: log?.taskTo,
+        taskBy: log?.taskBy,
+        remarks: log.remarks,
+        closedDate: log?.submissionDate,
+        matchedlog: log,
+        activityLog: activitylog,
+        taskallocatedTo: entry.taskallocatedTo,
+        taskallocatedBy: entry.taskallocatedBy,
+        sameUser: loggedUser?._id === entry.taskallocatedTo?._id
       })
+    }
+  })
+})
+console.log(data)
+console.log(data.length)
+console.log(finalOutput)
+console.log('H')
       const totalNetAmount = finalOutput
         .reduce((total, lead) => {
           const leadTotal =
@@ -224,6 +267,7 @@ console.log(ownTask)
 
       setFilteredData(Data)
     } else if (data && !pending) {
+console.log("hh")
       const finalOutput = []
 
       data.forEach((entry) => {

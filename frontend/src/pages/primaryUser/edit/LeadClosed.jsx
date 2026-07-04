@@ -248,6 +248,7 @@ function LeadClosed() {
     console.log(objectId)
 console.log(userId)
 console.log(role)
+
     try {
       setclosedLoader(true)
       const response = await api.put(`/lead/closingleads?docID=${objectId}`, {

@@ -5964,20 +5964,25 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
       selectedbranch,
       allocationtypeId,
     } = req.query;
+console.log("allcatedby",allocatedBy)
+console.log("allcationtpeiddd",allocationtypeId)
     const allocatedbyObjectid = new mongoose.Types.ObjectId(allocatedBy);
     const branchObjectId = new mongoose.Types.ObjectId(selectedbranch);
     const { selectedItem, cleanedData } = req.body;
 
     let allocatedToModel;
     let allocatedByModel;
+console.log("selecteditttttttttttttttt",selectedItem)
+const userId=selectedItem?.allocatedTo?.id
+console.log("useriddddddddd",userId)
     const isStaffallocatedtomodel = await Staff.findOne({
-      _id: selectedItem.allocatedTo,
+      _id: userId,
     });
     if (isStaffallocatedtomodel) {
       allocatedToModel = "Staff";
     } else {
       const isAdminallocatedtomodel = await Admin.findOne({
-        _id: selectedItem.allocatedTo,
+        _id: userId,
       });
       if (isAdminallocatedtomodel) {
         allocatedToModel = "Admin";
@@ -5996,6 +6001,8 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
         allocatedByModel = "Admin";
       }
     }
+console.log("allocatedmodel",allocatedToModel)
+console.log("allcatedbymodel",allocatedByModel)
     if (!allocatedToModel || !allocatedByModel) {
       return res
         .status(400)
@@ -6015,7 +6022,7 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
         submissiondoneByModel: allocatedByModel,
         taskallocatedBy: allocatedBy,
         taskallocatedByModel: allocatedByModel,
-        taskallocatedTo: selectedItem.allocatedTo,
+        taskallocatedTo: selectedItem.allocatedTo?.id,
         taskallocatedToModel: allocatedToModel,
         remarks: cleanedData.allocationDescription,
         taskBy: allocationTask?._id,
@@ -6054,7 +6061,7 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
           log.reallocatedTo === false &&
           log.taskClosed === false &&
           // log.followupClosed === false &&
-          log.allocatedClosed === false &&
+          log.allocatedClosed === false &&log?.allocationChanged===false&&
           log.taskTo // ensures the field exists
       );
       const task = matchLead.activityLog[matchingIndex]?.taskId;
@@ -6080,7 +6087,7 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
         submissiondoneByModel: allocatedByModel,
         taskallocatedBy: allocatedBy,
         taskallocatedByModel: allocatedByModel,
-        taskallocatedTo: selectedItem.allocatedTo,
+        taskallocatedTo: selectedItem.allocatedTo?.id,
         taskallocatedToModel: allocatedToModel,
         remarks: cleanedData.allocationDescription,
         taskBy: allocationTask?._id,

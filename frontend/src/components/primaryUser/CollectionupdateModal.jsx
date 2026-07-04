@@ -1264,6 +1264,7 @@ import { useState, useEffect, useRef } from "react"
 import { X, IndianRupee, ClipboardCheck, Lock } from "lucide-react"
 import { BarLoader } from "../../components/loader/BarLoader"
 import PopUp from "../common/PopUp"
+import {toast}from "react-toastify"
 /* ─── helpers ─── */
 const safeNumber = (v) => {
   const n = parseFloat(v)
@@ -1575,6 +1576,7 @@ export function CollectionupdateModal({
   editData
 }) {
   const [error, setError] = useState({})
+const [ishaveprimaryProduct,setIsHavePrimaryProduct]=useState(false)
   const [popupOpen, setpopupOpen] = useState(false)
   console.log(popupOpen)
   const [submitLoader, setsubmitLoader] = useState(false)
@@ -1664,13 +1666,14 @@ export function CollectionupdateModal({
           const net = safeNumber(p.netAmount)
           const received = safeNumber(p.receivedAmount)
           const balance = safeNumber(p.balanceAmount)
-
+console.log(p)
           return {
             id: crypto.randomUUID(),
             label: p.label ?? "Product",
             productorServiceId: p.productorServiceId,
             productorServicemodel: p.productorServicemodel,
             netAmount: String(net),
+productorservicetype:p?.productorservicetype,
             receivedAmount: String(received),
             _balance: balance,
             _baseBalance: balance,
@@ -1681,12 +1684,13 @@ export function CollectionupdateModal({
         })
       )
     } else if (hasPaymentEntries) {
+
       setPaymentRows(
         lastPayment.paymentEntries.map((p) => {
           const net = safeNumber(p.netAmount)
           const currentBalance = safeNumber(p.balanceAmount)
           const paid = net - currentBalance
-
+console.log(p)
           return {
             id: crypto.randomUUID(),
             label: p.productorServiceId?.productName ?? "Product",
@@ -1694,6 +1698,7 @@ export function CollectionupdateModal({
             productorServicemodel: p.productorServicemodel ?? "Product",
             netAmount: String(net),
             receivedAmount: "",
+productorservicetype:p?.productorservicetype,
             _balance: currentBalance,
             _baseBalance: currentBalance,
             _netAmt: net,
@@ -1703,10 +1708,17 @@ export function CollectionupdateModal({
         })
       )
     } else if (Array.isArray(data.leadFor) && data.leadFor.length > 0) {
+console.log(data.leadFor)
+const hasPrimaryProduct = data?.leadFor?.some(
+  (item) => item.productorservicetype === "Primaryproduct"
+);
+console.log(hasPrimaryProduct)
+
+setIsHavePrimaryProduct(hasPrimaryProduct);
       setPaymentRows(
         data.leadFor.map((p) => {
           const net = safeNumber(p.netAmount ?? p.productPrice)
-
+console.log(p)
           return {
             id: crypto.randomUUID(),
             label: p.productorServiceId?.productName ?? "Product",
@@ -1714,6 +1726,7 @@ export function CollectionupdateModal({
               p.productorServiceId?._id ?? p.productorServiceId,
             productorServicemodel: p.productorServicemodel,
             netAmount: String(net),
+productorservicetype:p?.productorservicetype,
             receivedAmount: "",
             _balance: net,
             _baseBalance: net,
@@ -1736,6 +1749,7 @@ export function CollectionupdateModal({
           productorServicemodel: null,
           netAmount: String(net),
           receivedAmount: "",
+productorservicetype:p?.productorservicetype,
           _balance: balance,
           _baseBalance: balance,
           _netAmt: net,
@@ -1747,12 +1761,26 @@ export function CollectionupdateModal({
   }, [data, hasCollectionData, editData, loggedUser])
 
   const updateRow = (id, field, value) =>
+
     setPaymentRows((prev) =>
       prev.map((r) => {
         if (r.id !== id) return r
         const updated = { ...r, [field]: value }
+console.log(value)
+console.log(field)
+console.log(r._isEditRow)
+  // Validation
+      if (field === "receivedAmount") {
+        const received = safeNumber(value);
+        const net = safeNumber(r.netAmount);
 
+        if (received > net) {
+          toast.warning("Received amount cannot be greater than Net Amount");
+          return r; // Don't update
+        }
+      }
         if (field === "netAmount") {
+console.log(value)
           const net = safeNumber(value)
           updated._netAmt = net
 
@@ -1765,6 +1793,7 @@ export function CollectionupdateModal({
         }
 
         if (field === "receivedAmount" && r._isEditRow) {
+console.log(value)
           const net = safeNumber(updated.netAmount)
           const received = safeNumber(value)
           updated._balance = net - received
@@ -1850,6 +1879,7 @@ export function CollectionupdateModal({
       totalReceivedAmount: totalReceived,
       updatedBy: loggedUser?._id
     }
+console.log(payload)
 
     const res = await handleCollectionUpdate(
       payload,
@@ -2324,6 +2354,8 @@ export function CollectionupdateModal({
               }}
             >
               {paymentRows.map((row, idx) => {
+console.log(row)
+if(row?.productorservicetype==="Additionalservice"&&ishaveprimaryProduct)return
                 const locked = isRowLocked(row)
                 const bal = rowBalance(row)
                 const bc = bal > 0 ? "#b45309" : bal < 0 ? "#be123c" : "#166534"

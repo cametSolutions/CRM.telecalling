@@ -1498,6 +1498,7 @@ const CallregistrationList = () => {
   const [loggedUserBranches, setLoggeduserBranches] = useState([])
   const [today, setToday] = useState(null)
   const [userBranch, setUserBranch] = useState(null)
+console.log(userBranch)
   const [searchTerm, setSearchTerm] = useState("")
   const [users, setUser] = useState(null)
   const [expandedRows, setExpandedRows] = useState({})
