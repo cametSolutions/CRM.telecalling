@@ -1694,12 +1694,18 @@ export const Leadclosing = async (req, res) => {
       const excessPaidAmount =
         rawBalanceAmount < 0 ? Math.abs(rawBalanceAmount) : 0;
 
-      const primaryProduct = mappedleadData.find(
+      // const Product = mappedleadData.find(
+      //   (item) => item.productorservicetype === "Primaryproduct"
+      // );
+const Product =
+  mappedleadData.length > 1
+    ? mappedleadData.find(
         (item) => item.productorservicetype === "Primaryproduct"
-      );
-      const primaryProductId = primaryProduct?.productorServiceId || null;
+      )
+    : mappedleadData[0] || null;
+      const primaryProductId = Product?.productorServiceId || null;
       const primaryProductModel =
-        primaryProduct?.productorServicemodel || "Product";
+        Product?.productorServicemodel || "Product";
 
       const existingPaymentHistory = Array.isArray(matchedDoc.paymentHistory)
         ? matchedDoc.paymentHistory

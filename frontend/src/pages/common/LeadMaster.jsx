@@ -469,6 +469,7 @@ function ProductDropdown({
       console.log(value)
       return String(value?._id || value?.id || value || "")
     }
+
     const base = selectedleadlist?.length
       ? [...selectedleadlist]
       : [{ ...emptyRow }]
@@ -485,7 +486,7 @@ function ProductDropdown({
     )
     console.log(filteredbranch)
     const igstRate = filteredbranch?.[0]?.hsn_id?.onValue?.igstRate
-
+    console.log(prod)
     if (!prod) {
       updated[index] = {
         ...updated[index],
@@ -518,9 +519,13 @@ function ProductDropdown({
       hsn: igstRate || 0,
       netAmount,
       company_id: branchdata[0].company_id,
-      branch_id: branchdata[0].branch_id
+      branch_id: branchdata[0].branch_id,
+      actualHsn: igstRate,
+      actualproductPrice: prod?.productPrice,
+      actualNetAmount: netAmount
     }
     console.log(prod)
+    console.log(selectedBranch)
     // Add default services immediately after selected product
     if (prod?.defaultservices?.length > 0 && process === "closing") {
       console.log("Hhh")
@@ -528,8 +533,20 @@ function ProductDropdown({
       const primaryId = getRowId(prod)
       console.log(primaryId)
       console.log("hhh")
-      const defaultServiceRows = (prod?.defaultservices || []).map(
-        (service) => ({
+      console.log(prod?.defaultservices)
+      const defaultServiceRows = prod.defaultservices.map((service) => {
+        const matchbranchrate = service.selected.find(
+          (b) => b.branch_id === selectedBranch
+        )
+        const rawRate = matchbranchrate.hsn_id?.onValue?.igstRate ?? 0 // can be '18', 0, null, undefined
+        const hsn = Number(rawRate) || 0 // treat null/undefined/NaN as 0
+
+        const price = Number(service.productPrice) || 0 // base price
+
+        const actualNetAmount =
+          hsn > 0 ? Number((price * (1 + hsn / 100)).toFixed(2)) : price
+
+        return {
           ...emptyRow,
           licenseNumber: "",
           licenseNumbers: [],
@@ -543,9 +560,34 @@ function ProductDropdown({
             service?.productorservicetype || "Additionalservice",
           netAmount: 0,
           isDefaultService: true,
-          parentPrimaryProductId: primaryId
-        })
-      )
+          parentPrimaryProductId: primaryId,
+          actualHsn: hsn,
+          actualproductPrice: service?.productPrice,
+          actualNetAmount,
+          company_id: branchdata[0].company_id,
+          branch_id: branchdata[0].branch_id
+        }
+      })
+      // const defaultServiceRows = (prod?.defaultservices || []).map(
+      //   (service) => ({
+      //     ...emptyRow,
+      //     licenseNumber: "",
+      //     licenseNumbers: [],
+      //     productorServiceId: getRowId(service),
+      //     productorServiceName:
+      //       service?.productName || service?.serviceName || "",
+      //     itemType: service?.productName ? "Product" : "Service",
+      //     productPrice: 0,
+      //     hsn: 0,
+      //     productorservicetype:
+      //       service?.productorservicetype || "Additionalservice",
+      //     netAmount: 0,
+      //     isDefaultService: true,
+      //     parentPrimaryProductId: primaryId,
+      //     actualproductPrice: service?.productPrice
+      //     // actualNetAmount:netAmount
+      //   })
+      // )
 
       updated.splice(index + 1, 0, ...defaultServiceRows)
     }
@@ -1085,7 +1127,8 @@ const LeadMaster = ({
       }))
       console.log(leadData)
       console.log(process)
-const ihaveprimaryproduct=leadData[0]?.productorservicetype === "Primaryproduct"
+      const ihaveprimaryproduct =
+        leadData[0]?.productorservicetype === "Primaryproduct"
       if (
         process === "closing" &&
         leadData[0]?.productorservicetype === "Primaryproduct"
@@ -1224,7 +1267,7 @@ const ihaveprimaryproduct=leadData[0]?.productorservicetype === "Primaryproduct"
         }
       })
       setProductorServiceSelections(groupedByLicenseNumber)
-console.log(ihaveprimaryproduct)
+      console.log(ihaveprimaryproduct)
       if (!ihaveprimaryproduct) {
         console.log(Data[0])
         const selectedcustomerlicenseandproduct =
@@ -1308,10 +1351,10 @@ console.log(ihaveprimaryproduct)
   useEffect(() => {
     const total = Number(calculateTotalAmount()) || 0
     const discount = Number(discountAmount) || 0
-console.log(discount)
+    console.log(discount)
     setValueMain("taxAmount", calculatetaxAmount())
     setValueMain("taxableAmount", calculatetaxableAmount())
-console.log(selectedleadlist)
+    console.log(selectedleadlist)
     setValueMain("netAmount", Math.max(total - discount, 0).toFixed(2))
   }, [selectedleadlist, discountAmount])
 
@@ -1508,6 +1551,7 @@ console.log(selectedleadlist)
   //     setlicenseloading(false)
   //   }
   // }
+  console.log(detailsForm)
   const processLicenseChange = async (index, licenseValue, item) => {
     console.log("hh")
     const isValid = await handleLicenseBlur(index, licenseValue)
@@ -1528,7 +1572,7 @@ console.log(selectedleadlist)
         existingIndex !== -1
           ? tagged.map((x) => (x?.sourceIndex === index ? newEntry : x))
           : [...tagged, newEntry]
-
+      console.log(updatedTagged)
       return {
         ...prev,
         taggeddata: updatedTagged
@@ -1956,8 +2000,8 @@ console.log(selectedleadlist)
   //     )
   //   }))
   // }
-console.log(detailsForm)
-console.log(selectedleadlist)
+  console.log(detailsForm)
+  console.log(selectedleadlist)
   const handleTaggedDueChange = (rowIndex, value, term, hsn, productType) => {
     console.log(rowIndex)
     console.log(value)
@@ -1974,22 +2018,21 @@ console.log(selectedleadlist)
           ...row,
           [term]: value
         }
-if(term!=="nextDue"){
-  if (productType.toLowerCase() === "additionalservice") {
-          console.log("hhh")
-          const taxAmount = (Number(hsn) / 100) * Number(value)
-          console.log(value)
-          console.log(taxAmount)
-console.log(Number(value) + taxAmount)
-const total = Math.round(Number(value) + taxAmount);
-console.log(total)
-          updatedRow.taxinclusiveamount = total
-          updatedRow.taxexclusiveAmount = value
-updatedRow.productAmount=total
+        if (term !== "nextDue") {
+          if (productType.toLowerCase() === "additionalservice") {
+            console.log("hhh")
+            const taxAmount = (Number(hsn) / 100) * Number(value)
+            console.log(value)
+            console.log(taxAmount)
+            console.log(Number(value) + taxAmount)
+            const total = Math.round(Number(value) + taxAmount)
+            console.log(total)
+            updatedRow.taxinclusiveamount = total
+            updatedRow.taxexclusiveAmount = value
+            updatedRow.productAmount = total
+          }
         }
 
-}
-      
         return updatedRow
       })
     }))
@@ -2703,7 +2746,7 @@ updatedRow.productAmount=total
       [name]: value
     }))
   }
-console.log(selectedleadlist)
+  console.log(selectedleadlist)
   const handleDetailsSave = () => {
     const itemType = String(
       detailsItem?.productorservicetype || ""
@@ -2717,24 +2760,29 @@ console.log(selectedleadlist)
             licensenumber: String(tag?.licensenumber || "").trim(),
             nextDue: String(tag?.nextDue || "").trim(),
             productAmount: tag?.productAmount,
-taxexclusiveAmount:tag?.taxexclusiveAmount,
-taxinclusiveamount:tag?.taxinclusiveamount,
-hsn:tag?.hsn
+            taxexclusiveAmount: tag?.taxexclusiveAmount,
+            taxinclusiveamount: tag?.taxinclusiveamount,
+            hsn: tag?.hsn
           }))
           .filter((tag) => tag.licensenumber !== "")
       : []
     console.log(detailsForm)
-    const totaltaxexclusiveAmount = detailsForm?.taggeddata.reduce((sum, item) => {
-      const amount = Number(item.taxexclusiveAmount) || 0 // safely handle invalid/empty
-      return sum + amount
-    }, 0)
+    const totaltaxexclusiveAmount = detailsForm?.taggeddata.reduce(
+      (sum, item) => {
+        const amount = Number(item.taxexclusiveAmount) || 0 // safely handle invalid/empty
+        return sum + amount
+      },
+      0
+    )
     const taxamount =
       (Number(detailsForm?.taggeddata[0]?.hsn) / 100) * totaltaxexclusiveAmount
-    const updatedNetAmount = Math.round(Number(totaltaxexclusiveAmount) + taxamount)
+    const updatedNetAmount = Math.round(
+      Number(totaltaxexclusiveAmount) + taxamount
+    )
     console.log(taxamount)
     console.log(totaltaxexclusiveAmount)
     console.log(updatedNetAmount)
-console.log(selectedleadlist)
+    console.log(selectedleadlist)
     setSelectedLeadList((prev) =>
       prev.map((row, i) => {
         if (i !== detailsIndex) return row
@@ -2891,6 +2939,7 @@ console.log(selectedleadlist)
   console.log(warningErrors)
   console.log(detailsForm)
   const handleDetails = (item, index) => {
+    console.log(detailsForm)
     console.log(selectedCustomer)
     console.log(item)
     console.log(leadList)
@@ -2922,7 +2971,16 @@ console.log(selectedleadlist)
       (it) => it.product_id?._id === item?.productorServiceId
     )
     console.log(filteredproduct)
-   
+    console.log(item?.productorServiceId)
+    const a = leadList.map((item) => item.productName)
+    console.log(a)
+    const newproduct = leadList.filter(
+      (it) => it._id === item.productorServiceId
+    )
+    console.log(newproduct)
+
+    console.log(filteredproduct)
+    console.log(leadList)
     console.log(item)
     const normalizedTaggedData =
       isAdditionalService &&
@@ -2939,6 +2997,7 @@ console.log(selectedleadlist)
             const primaryProduct = Array.isArray(filteredproduct)
               ? filteredproduct[0] // or a .find if there are many
               : null
+            console.log(filteredproduct[0])
 
             // 2. Find tag inside that primary product’s taggeddata
             const existingTag =
@@ -2961,15 +3020,23 @@ console.log(selectedleadlist)
               item?.actualNetAmount ??
               item?.netAmount ??
               0
-
+            console.log(productAmount)
             return {
               licensenumber: lic?.licenseNumber || "",
               nextDue: existing?.nextDue ?? existingTag?.nextDue,
               sourceIndex: lic?.sourceIndex,
               productAmount,
-              taxexclusiveAmount:existing?.taxexclusiveAmount?? existingTag?.taxexclusiveAmount??item?.actualproductPrice,
-              taxinclusiveamount: existing?.taxinclusiveamount??existingTag?.taxinclusiveamount??item?.actualNetAmount ?? item?.netAmount ?? 0,
-              hsn: item?.hsn
+              taxexclusiveAmount:
+                existing?.taxexclusiveAmount ??
+                existingTag?.taxexclusiveAmount ??
+                item?.actualproductPrice,
+              taxinclusiveamount:
+                existing?.taxinclusiveamount ??
+                existingTag?.taxinclusiveamount ??
+                item?.actualNetAmount ??
+                item?.netAmount ??
+                0,
+              hsn: item?.actualHsn
             }
           })
         : Array.isArray(item?.taggeddata)
@@ -3001,7 +3068,7 @@ console.log(selectedleadlist)
       productType: item?.productorservicetype
     })
     setdetailsopen(true)
- //     const normalizedTaggedData =
+    //     const normalizedTaggedData =
     //       isAdditionalService &&
     //       Array.isArray(item?.licenseNumbers) &&
     //       item.licenseNumbers.length > 0
@@ -3792,7 +3859,7 @@ console.log(selectedleadlist)
                                       "primaryproduct"
                                     )
                                       return
-console.log(selectedleadlist)
+                                    console.log(selectedleadlist)
                                     if (selectedleadlist.length === 1) return
                                     console.log("jjjjj")
                                     handleDeletetableData(item, index)
@@ -3927,7 +3994,7 @@ console.log(selectedleadlist)
                         field: "taxAmount",
                         viewonly: true
                       },
-                      ...(process === "closing"&&haveprimaryProduct
+                      ...(process === "closing" && haveprimaryProduct
                         ? [
                             {
                               label: "Disc.Amount",
