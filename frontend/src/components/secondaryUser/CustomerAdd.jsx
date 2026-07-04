@@ -276,6 +276,7 @@ const CustomerAdd = ({
         taggedLicenseDueDates: {}
       })
       console.log(customer.selected)
+
       const selectedData =
         customer?.selected?.map((sel) => ({
           company_id: sel?.company_id?._id,
@@ -287,6 +288,18 @@ const CustomerAdd = ({
           shortName: sel?.product_id?.shortName,
           licensenumber: sel?.licensenumber,
           softwareTrade: sel?.softwareTrade,
+          version: sel?.verison,
+          customerAddDate: sel?.customerAddDate,
+          amcstartDate: sel?.amcstartDate,
+          amcendDate: sel?.amcendDate,
+          amcAmount: sel?.amcAmount,
+          amcDescription: sel?.amcDescription,
+          licenseExpiryDate: sel?.licenseExpiryDate,
+          productamountDescription: sel?.productamountDescription,
+          tvuexpiryDate: sel?.tvuexpiryDate,
+          tvuAmount: sel?.tvuAmount,
+          tvuamountDescription: sel?.tvuamountDescription,
+          reasonofStatus: sel?.reasonofStatus,
           applicationDate: sel?.customerAddDate
             ? sel?.customerAddDate
             : sel?.applicationDate,
@@ -1929,31 +1942,39 @@ const CustomerAdd = ({
                                           [String(licenseNo)]:
                                             dueMap[String(licenseNo)] || ""
                                         })
-console.log(licenseNo)
+                                        console.log(licenseNo)
                                         console.log(detailsData)
-const currentValues = getValues();
-console.log(currentValues)
-const matched = detailsData?.taggeddata?.find(
-  item => String(item.licensenumber) === String(licenseNo)
-);
-console.log(matched)
-if (matched) {
-  const currentValues = getValues();
+                                        const currentValues = getValues()
+                                        console.log(currentValues)
+                                        const matched =
+                                          detailsData?.taggeddata?.find(
+                                            (item) =>
+                                              String(item.licensenumber) ===
+                                              String(licenseNo)
+                                          )
+                                        console.log(matched)
+                                        if (matched) {
+                                          const currentValues = getValues()
 
-  reset({
-    ...currentValues,
-    taggedLicenseDueDates: {
-      ...currentValues.taggedLicenseDueDates,
-      [licenseNo]: {
-        nextDue: matched.nextDue || "",
-        productAmount: matched.productAmount ?? "",
-        taxexclusiveAmount: matched.taxexclusiveAmount ?? "",
-        taxinclusiveamount: matched.taxinclusiveamount ?? "",
-        hsn: matched.hsn ?? "",
-      },
-    },
-  });
-}
+                                          reset({
+                                            ...currentValues,
+                                            taggedLicenseDueDates: {
+                                              ...currentValues.taggedLicenseDueDates,
+                                              [licenseNo]: {
+                                                nextDue: matched.nextDue || "",
+                                                productAmount:
+                                                  matched.productAmount ?? "",
+                                                taxexclusiveAmount:
+                                                  matched.taxexclusiveAmount ??
+                                                  "",
+                                                taxinclusiveamount:
+                                                  matched.taxinclusiveamount ??
+                                                  "",
+                                                hsn: matched.hsn ?? ""
+                                              }
+                                            }
+                                          })
+                                        }
 
                                         //   const taggedLicenseDueDatesFromData =
                                         //       item?.taggeddata?.reduce((acc, entry) => {
@@ -1975,8 +1996,6 @@ if (matched) {
                                         //       taggedLicenseDueDates: taggedLicenseDueDatesFromData
                                         //     })
                                       } else {
-                                       
-
                                         const updatedLicenses = prev.filter(
                                           (item) =>
                                             String(item) !== String(licenseNo)
