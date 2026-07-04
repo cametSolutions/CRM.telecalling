@@ -60,6 +60,7 @@ console.log(editedCustomer)
     try {
 console.log(tableData)
 console.log(customerData)
+
       const response = await api.post(
         `/customer/customerEdit?customerid=${customerId}&index=${index}`,
         { customerData, tableData },

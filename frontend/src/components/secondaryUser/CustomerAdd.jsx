@@ -290,7 +290,7 @@ categoryName:sel?.categoryName,
           shortName: sel?.product_id?.shortName,
           licensenumber: sel?.licensenumber,
           softwareTrade: sel?.softwareTrade,
-          version: sel?.verison,
+          version: sel?.version,
           customerAddDate: sel?.customerAddDate,
           amcstartDate: sel?.amcstartDate,
           amcendDate: sel?.amcendDate,
@@ -443,6 +443,7 @@ categoryName:sel?.categoryName,
     setEditIndex(null)
     clearErrors()
     setduplicatelicense(null)
+setdetailsData([])
   }
   console.log(tableData)
   console.log(licenseloading)
@@ -922,7 +923,14 @@ categoryName:sel?.categoryName,
           }))
         : []
     console.log(values)
+console.log(tableData)
+console.log(values)
+const baseRow =
+  editIndex !== null
+    ? tableData[editIndex] // preserve all old fields while editing
+    : {}; // or your default schema object
     const row = {
+...baseRow,
       company_id: values?.productName?.company_id,
       companyName: values?.productName?.companyName,
       branch_id: values?.productName?.branch_id,
@@ -951,10 +959,12 @@ categoryName:sel?.categoryName,
       taggeddata,
       taggedLicenses: selectedTaggedLicenses
     }
+console.log(row)
     console.log(productOptions)
     const selectedProductObj = productOptions?.find(
       (p) => p.value === values?.productName?.value
     )
+console.log(selectedProductObj.defaultservices)
     console.log(selectedProductObj)
     const defaultServiceRows =
       popupType === "Primaryproduct" &&
@@ -1026,7 +1036,7 @@ categoryName:sel?.categoryName,
 
     closePopup()
   }
-
+console.log(tableData)
   // const filteredOptionsByType = useMemo(() => {
   //   return productOptions.filter(
   //     (item) =>
@@ -1104,6 +1114,7 @@ categoryName:sel?.categoryName,
         reset()
         setTableData([])
       } else if (process === "edit") {
+console.log(tableData)
         await handleEditedData(data, tableData, customer?.index)
       }
     } catch (error) {
