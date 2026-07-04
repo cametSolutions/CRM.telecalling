@@ -285,8 +285,8 @@ const CustomerAdd = ({
           branchName: sel?.branch_id?.branchName,
           product_id: sel?.product_id?._id,
           productName: sel?.product_id?.productName,
-brandName:sel?.brandName,
-categoryName:sel?.categoryName,
+          brandName: sel?.brandName,
+          categoryName: sel?.categoryName,
           shortName: sel?.product_id?.shortName,
           licensenumber: sel?.licensenumber,
           softwareTrade: sel?.softwareTrade,
@@ -366,21 +366,44 @@ categoryName:sel?.categoryName,
         value: branch.branch_id
       }))
   }
+console.log(tableData)
+  // const primaryLicenseOptions = useMemo(() => {
+  //   return [
+  //     ...new Set(
+  //       tableData
+  //         .filter(
+  //           (item) =>
+  //             String(item?.productorservicetype).toLowerCase() ===
+  //             "primaryproduct"
+  //         )
+  //         .map((item) => String(item?.licensenumber).trim())
+  //         .filter(Boolean)
+  //     )
+  //   ]
+  // }, [tableData])
 
-  const primaryLicenseOptions = useMemo(() => {
-    return [
-      ...new Set(
-        tableData
-          .filter(
-            (item) =>
-              String(item?.productorservicetype).toLowerCase() ===
-              "primaryproduct"
-          )
-          .map((item) => String(item?.licensenumber).trim())
-          .filter(Boolean)
-      )
-    ]
-  }, [tableData])
+const primaryLicenseOptions = useMemo(() => {
+  const uniqueMap = new Map();
+
+  tableData
+    .filter(
+      (item) =>
+        String(item?.productorservicetype).toLowerCase() === "primaryproduct"
+    )
+    .forEach((item) => {
+      const licenseNo = String(item?.licensenumber || "").trim();
+
+      if (licenseNo && !uniqueMap.has(licenseNo)) {
+        uniqueMap.set(licenseNo, {
+          licenseNo,
+          productName: item?.productName || "",
+        });
+      }
+    });
+
+  return Array.from(uniqueMap.values());
+}, [tableData]);
+console.log(primaryLicenseOptions)
   console.log(productData)
   const handleProductChange = (selectedOption) => {
     console.log(selectedOption)
@@ -443,7 +466,7 @@ categoryName:sel?.categoryName,
     setEditIndex(null)
     clearErrors()
     setduplicatelicense(null)
-setdetailsData([])
+    setdetailsData([])
   }
   console.log(tableData)
   console.log(licenseloading)
@@ -923,14 +946,14 @@ setdetailsData([])
           }))
         : []
     console.log(values)
-console.log(tableData)
-console.log(values)
-const baseRow =
-  editIndex !== null
-    ? tableData[editIndex] // preserve all old fields while editing
-    : {}; // or your default schema object
+    console.log(tableData)
+    console.log(values)
+    const baseRow =
+      editIndex !== null
+        ? tableData[editIndex] // preserve all old fields while editing
+        : {} // or your default schema object
     const row = {
-...baseRow,
+      ...baseRow,
       company_id: values?.productName?.company_id,
       companyName: values?.productName?.companyName,
       branch_id: values?.productName?.branch_id,
@@ -959,12 +982,12 @@ const baseRow =
       taggeddata,
       taggedLicenses: selectedTaggedLicenses
     }
-console.log(row)
+    console.log(row)
     console.log(productOptions)
     const selectedProductObj = productOptions?.find(
       (p) => p.value === values?.productName?.value
     )
-console.log(selectedProductObj.defaultservices)
+    console.log(selectedProductObj.defaultservices)
     console.log(selectedProductObj)
     const defaultServiceRows =
       popupType === "Primaryproduct" &&
@@ -1036,7 +1059,7 @@ console.log(selectedProductObj.defaultservices)
 
     closePopup()
   }
-console.log(tableData)
+  console.log(tableData)
   // const filteredOptionsByType = useMemo(() => {
   //   return productOptions.filter(
   //     (item) =>
@@ -1114,7 +1137,7 @@ console.log(tableData)
         reset()
         setTableData([])
       } else if (process === "edit") {
-console.log(tableData)
+        console.log(tableData)
         await handleEditedData(data, tableData, customer?.index)
       }
     } catch (error) {
@@ -1522,6 +1545,52 @@ console.log(tableData)
                       const actualIndex = tableData.findIndex((x) => x === item)
                       const isDeactive =
                         String(item?.isActive).toLowerCase() === "deactive"
+                      const today = new Date()
+                      today.setHours(0, 0, 0, 0)
+
+                      const selectedTagged = Array.isArray(item?.taggeddata)
+                        ? (() => {
+                            const tagged = [...item.taggeddata].sort(
+                              (a, b) =>
+                                new Date(a.nextDue) - new Date(b.nextDue)
+                            )
+
+                            // 1. Oldest overdue
+                            const overdue = tagged.find((x) => {
+                              const d = new Date(x.nextDue)
+                              d.setHours(0, 0, 0, 0)
+                              return d < today
+                            })
+
+                            if (overdue) return overdue
+
+                            // 2. Today
+                            const todayItem = tagged.find((x) => {
+                              const d = new Date(x.nextDue)
+                              d.setHours(0, 0, 0, 0)
+                              return d.getTime() === today.getTime()
+                            })
+
+                            if (todayItem) return todayItem
+
+                            // 3. Nearest future
+                            return tagged[0] || null
+                          })()
+                        : null
+                      const dueDate = selectedTagged?.nextDue || item?.nextDue
+
+                      const isCurrentMonthExpiry = (() => {
+                        if (!dueDate) return false
+
+                        const date = new Date(dueDate)
+                        const today = new Date()
+
+                        return (
+                          date.getFullYear() === today.getFullYear() &&
+                          date.getMonth() === today.getMonth()
+                        )
+                      })()
+
                       return (
                         <ProductCircleCard
                           key={`additional-${actualIndex}`}
@@ -1544,26 +1613,35 @@ console.log(tableData)
                                   .slice(0, 18)
                               : item?.licensenumber
                           }
+                          // line3={
+                          //   item?.taggeddata?.length > 0
+                          //     ? formatDateToDDMMYYYY(
+                          //         item?.taggeddata?.[0]?.nextDue
+                          //       )
+                          //     : item?.nextDue
+                          //       ? formatDateToDDMMYYYY(item?.nextDue)
+                          //       : ""
+                          // }
                           line3={
-                            item?.taggeddata?.length > 0
-                              ? formatDateToDDMMYYYY(
-                                  item?.taggeddata?.[0]?.nextDue
-                                )
+                            selectedTagged
+                              ? formatDateToDDMMYYYY(selectedTagged.nextDue)
                               : item?.nextDue
-                                ? formatDateToDDMMYYYY(item?.nextDue)
+                                ? formatDateToDDMMYYYY(item.nextDue)
                                 : ""
                           }
                           line4={isDeactive ? "De Active" : "Active"}
-                          c={
-                            item?.taggeddata?.length > 0
-                              ? item?.taggeddata[0]?.productAmount
-                              : item?.productAmount
-                          }
+                          c={item?.taggeddata}
                           line5={
-                            item?.taggedata
-                              ? item?.taggeddata[0]?.productAmount
+                            selectedTagged
+                              ? selectedTagged.productAmount
                               : item?.productAmount
                           }
+                          isCurrentMonthExpiry={isCurrentMonthExpiry}
+                          // line5={
+                          //   item?.taggedata
+                          //     ? item?.taggeddata[0]?.productAmount
+                          //     : item?.productAmount
+                          // }
                           onEdit={handleEdit}
                           onDelete={handleDelete}
                         />
@@ -1921,129 +1999,166 @@ console.log(tableData)
                         Tagged License Numbers
                       </label>
 
-                      <div className="max-h-28 overflow-y-auto rounded-[8px] border border-[#e7ebf4] bg-[#fafcff] p-2">
-                        {primaryLicenseOptions.length > 0 ? (
-                          <div className="grid grid-cols-1 gap-1.5 md:grid-cols-2">
-                            {primaryLicenseOptions.map((licenseNo) => {
-                              const selectedTaggedLicenses =
-                                watch("taggedLicenses") || []
-                              const checked = selectedTaggedLicenses.includes(
-                                String(licenseNo)
-                              )
+                      {/* <div className="max-h-28 overflow-y-auto rounded-[8px] border border-[#e7ebf4] bg-[#fafcff] p-2">
+                        {
+primaryLicenseOptions.map((option) => {
+  const selectedTaggedLicenses = watch("taggedLicenses") || [];
+  const checked = selectedTaggedLicenses.includes(String(option.licenseNo));
 
-                              return (
-                                <label
-                                  key={licenseNo}
-                                  className="flex items-center gap-2 rounded-md border border-[#edf1f7] bg-white px-2 py-1.5 text-[11px] text-[#4f5d78]"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={(e) => {
-                                      const prev = watch("taggedLicenses") || []
-                                      const dueMap =
-                                        watch("taggedLicenseDueDates") || {}
+  return (
+    <label
+      key={option.licenseNo}
+      className="flex items-center gap-2 rounded-md border border-[#edf1f7] bg-white px-2 py-1.5 text-[11px] text-[#4f5d78]"
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => {
+          const licenseNo = String(option.licenseNo);
+          const prev = watch("taggedLicenses") || [];
+          const dueMap = watch("taggedLicenseDueDates") || {};
 
-                                      if (e.target.checked) {
-                                        setValue("taggedLicenses", [
-                                          ...prev,
-                                          String(licenseNo)
-                                        ])
-                                        setValue("licensenumber", "")
-                                        setValue("taggedLicenseDueDates", {
-                                          ...dueMap,
-                                          [String(licenseNo)]:
-                                            dueMap[String(licenseNo)] || ""
-                                        })
-                                        console.log(licenseNo)
-                                        console.log(detailsData)
-                                        const currentValues = getValues()
-                                        console.log(currentValues)
-                                        const matched =
-                                          detailsData?.taggeddata?.find(
-                                            (item) =>
-                                              String(item.licensenumber) ===
-                                              String(licenseNo)
-                                          )
-                                        console.log(matched)
-                                        if (matched) {
-                                          const currentValues = getValues()
+          if (e.target.checked) {
+            setValue("taggedLicenses", [...prev, licenseNo]);
+            setValue("licensenumber", "");
+            setValue("taggedLicenseDueDates", {
+              ...dueMap,
+              [licenseNo]: dueMap[licenseNo] || "",
+            });
 
-                                          reset({
-                                            ...currentValues,
-                                            taggedLicenseDueDates: {
-                                              ...currentValues.taggedLicenseDueDates,
-                                              [licenseNo]: {
-                                                nextDue: matched.nextDue || "",
-                                                productAmount:
-                                                  matched.productAmount ?? "",
-                                                taxexclusiveAmount:
-                                                  matched.taxexclusiveAmount ??
-                                                  "",
-                                                taxinclusiveamount:
-                                                  matched.taxinclusiveamount ??
-                                                  "",
-                                                hsn: matched.hsn ?? ""
-                                              }
-                                            }
-                                          })
-                                        }
+            const matched = detailsData?.taggeddata?.find(
+              (item) => String(item.licensenumber) === licenseNo
+            );
 
-                                        //   const taggedLicenseDueDatesFromData =
-                                        //       item?.taggeddata?.reduce((acc, entry) => {
-                                        //         if (entry?.licensenumber) {
-                                        //           acc[String(entry.licensenumber)] = {
-                                        //             nextDue: entry?.nextDue || "",
-                                        //             productAmount: entry?.productAmount ?? "",
-                                        //             taxexclusiveAmount: entry?.taxexclusiveAmount ?? "",
-                                        //             taxinclusiveamount: entry?.taxinclusiveamount ?? "",
-                                        //             hsn: entry?.hsn ?? ""
-                                        //           }
-                                        //         }
-                                        //         return acc
-                                        //       }, {}) || {}
-                                        //     console.log(taggedLicenseDueDatesFromData)
-                                        //  reset({
-                                        //       ...getValues(),
+            if (matched) {
+              const currentValues = getValues();
 
-                                        //       taggedLicenseDueDates: taggedLicenseDueDatesFromData
-                                        //     })
-                                      } else {
-                                        const updatedLicenses = prev.filter(
-                                          (item) =>
-                                            String(item) !== String(licenseNo)
-                                        )
+              reset({
+                ...currentValues,
+                taggedLicenseDueDates: {
+                  ...currentValues.taggedLicenseDueDates,
+                  [licenseNo]: {
+                    nextDue: matched.nextDue || "",
+                    productAmount: matched.productAmount ?? "",
+                    taxexclusiveAmount: matched.taxexclusiveAmount ?? "",
+                    taxinclusiveamount: matched.taxinclusiveamount ?? "",
+                    hsn: matched.hsn ?? "",
+                  },
+                },
+              });
+            }
+          } else {
+            const updatedLicenses = prev.filter(
+              (item) => String(item) !== licenseNo
+            );
 
-                                        const updatedDueMap = { ...dueMap }
-                                        // console.log(dueMap)
-                                        delete updatedDueMap[String(licenseNo)]
+            const updatedDueMap = { ...dueMap };
+            delete updatedDueMap[licenseNo];
 
-                                        setValue(
-                                          "taggedLicenses",
-                                          updatedLicenses
-                                        )
-                                        setValue(
-                                          "taggedLicenseDueDates",
-                                          updatedDueMap
-                                        )
+            setValue("taggedLicenses", updatedLicenses);
+            setValue("taggedLicenseDueDates", updatedDueMap);
 
-                                        if (updatedLicenses.length === 0) {
-                                          setValue("licensenumber", "")
-                                        }
-                                      }
-                                    }}
-                                  />
-                                  <span>{licenseNo}</span>
-                                </label>
-                              )
-                            })}
-                          </div>
+            if (updatedLicenses.length === 0) {
+              setValue("licensenumber", "");
+            }
+          }
+        }}
+      />
+
+      <span>{option.licenseNo}</span>
+      <span className="text-[#7b879c]">- {option.productName}</span>
+    </label>
+  );
+})
+
+
                         ) : (
                           <p className="text-[11px] italic text-[#96a0b5]">
                             No primary product license numbers available.
                           </p>
                         )}
-                      </div>
+                      </div> */}
+<div className="max-h-28 overflow-y-auto rounded-[8px] border border-[#e7ebf4] bg-[#fafcff] p-2">
+  {primaryLicenseOptions.length > 0 ? (
+    <div className="grid grid-cols-1 gap-1.5 md:grid-cols-2">
+      {primaryLicenseOptions.map((option) => {
+        const selectedTaggedLicenses = watch("taggedLicenses") || [];
+        const checked = selectedTaggedLicenses.includes(
+          String(option.licenseNo)
+        );
+
+        return (
+          <label
+            key={option.licenseNo}
+            className="flex items-center gap-2 rounded-md border border-[#edf1f7] bg-white px-2 py-1.5 text-[11px] text-[#4f5d78]"
+          >
+            <input
+              type="checkbox"
+              checked={checked}
+              onChange={(e) => {
+                const licenseNo = String(option.licenseNo);
+                const prev = watch("taggedLicenses") || [];
+                const dueMap = watch("taggedLicenseDueDates") || {};
+
+                if (e.target.checked) {
+                  setValue("taggedLicenses", [...prev, licenseNo]);
+                  setValue("licensenumber", "");
+                  setValue("taggedLicenseDueDates", {
+                    ...dueMap,
+                    [licenseNo]: dueMap[licenseNo] || "",
+                  });
+
+                  const matched = detailsData?.taggeddata?.find(
+                    (item) => String(item.licensenumber) === licenseNo
+                  );
+
+                  if (matched) {
+                    const currentValues = getValues();
+
+                    reset({
+                      ...currentValues,
+                      taggedLicenseDueDates: {
+                        ...currentValues.taggedLicenseDueDates,
+                        [licenseNo]: {
+                          nextDue: matched.nextDue || "",
+                          productAmount: matched.productAmount ?? "",
+                          taxexclusiveAmount: matched.taxexclusiveAmount ?? "",
+                          taxinclusiveamount: matched.taxinclusiveamount ?? "",
+                          hsn: matched.hsn ?? "",
+                        },
+                      },
+                    });
+                  }
+                } else {
+                  const updatedLicenses = prev.filter(
+                    (item) => String(item) !== licenseNo
+                  );
+
+                  const updatedDueMap = { ...dueMap };
+                  delete updatedDueMap[licenseNo];
+
+                  setValue("taggedLicenses", updatedLicenses);
+                  setValue("taggedLicenseDueDates", updatedDueMap);
+
+                  if (updatedLicenses.length === 0) {
+                    setValue("licensenumber", "");
+                  }
+                }
+              }}
+            />
+
+            <span>{option.licenseNo}</span>
+            <span className="text-[#7b879c]">- {option.productName}</span>
+          </label>
+        );
+      })}
+    </div>
+  ) : (
+    <p className="text-[11px] italic text-[#96a0b5]">
+      No primary product license numbers available.
+    </p>
+  )}
+</div>
                     </div>
                   )}
 
@@ -2287,7 +2402,8 @@ const ProductCircleCard = ({
   line5,
   onEdit,
   onDelete,
-  c
+  c,
+isCurrentMonthExpiry
 }) => {
   console.log(line5)
   console.log(c)
@@ -2303,7 +2419,11 @@ const ProductCircleCard = ({
       <button
         type="button"
         onClick={() => onEdit(item, actualIndex)}
-        className={`relative flex h-[120px] w-[120px]  flex-col items-center justify-center overflow-hidden rounded-full border text-center shadow-sm transition hover:scale-[1.02] ${variantClass}`}
+        className={`relative flex h-[120px] w-[120px]  flex-col items-center justify-center overflow-hidden rounded-full border text-center shadow-sm transition hover:scale-[1.02] ${variantClass}  ${
+      isCurrentMonthExpiry
+        ? "ring-4 ring-red-500 ring-offset-2 animate-pulse"
+        : ""
+    }`}
       >
         <div className="flex w-[90px] flex-col items-center justify-center mr-1">
           <p className="w-full overflow-hidden text-center text-[10px] font-medium leading-[12px] text-[#1e293b] break-words line-clamp-2">
