@@ -18,6 +18,7 @@ export default function TasksubmissionModal({
     taskassignedDate: task?.matchedlog?.allocationDate,
     taskDescriptionByassigner: task?.matchedlog?.remarks,
     taskName: task?.matchedlog?.taskId?._id,
+task:task?.matchedlog?.taskId?.taskName,
     submissionDate: new Date(),
     leadDocId: task?.leadDocId,
     allocatedTo: task?.allocatedTo,
@@ -25,6 +26,7 @@ export default function TasksubmissionModal({
     taskfromFollowup: task?.matchedlog?.taskfromFollowup,
     taskDescription: task?.matchedlog?.taskDescription
   })
+console.log(taskDetails)
   const [error, setError] = useState({
     descriptionerror: ""
   })
@@ -37,7 +39,7 @@ export default function TasksubmissionModal({
     }
     try {
       console.log(taskDetails)
-
+if(submitloading)return
       setsubmitLoading(true)
       const response = await api.post("/lead/taskSubmission", taskDetails)
       toast.success(response.data.message)
@@ -101,6 +103,17 @@ export default function TasksubmissionModal({
               <input
                 type="text"
                 value={taskDetails?.taskassignedBy?.toUpperCase() || ""}
+                className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm bg-gray-50 text-gray-600 cursor-not-allowed focus:outline-none"
+                readOnly
+              />
+            </div>
+  <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Task Name
+              </label>
+              <input
+                type="text"
+                value={taskDetails?.task?.toUpperCase() || ""}
                 className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm bg-gray-50 text-gray-600 cursor-not-allowed focus:outline-none"
                 readOnly
               />

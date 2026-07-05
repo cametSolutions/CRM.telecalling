@@ -41,6 +41,7 @@ const ReallocationTable = () => {
 
   const [toggleLoading, setToggleLoading] = useState(false)
   const [isClosed, setIsclosed] = useState(false)
+console.log(isClosed)
   const [selectedLeadId, setselectedLeadId] = useState(null)
   const [selectedType, setselectedType] = useState(null)
   const [selectedData, setselectedData] = useState({})
@@ -585,7 +586,7 @@ const ReallocationTable = () => {
                                       {
                                         state: {
                                           leadId: item._id,
-                                          isReadOnly: true
+                                          isReadOnly: false
                                         }
                                       }
                                     )
@@ -594,7 +595,7 @@ const ReallocationTable = () => {
                                       {
                                         state: {
                                           leadId: item._id,
-                                          isReadOnly: true
+                                          isReadOnly: false
                                         }
                                       }
                                     )
@@ -618,12 +619,22 @@ const ReallocationTable = () => {
                           <td className=" px-4 ">Assignedby</td>
                           <td className="px-4 ">No. of Followups</td>
                           <td className="px-4 min-w-[120px]">Lead Date</td>
-                          {/* <td className="px-4 min-w-[120px] border border-t-0 border-b-0 border-gray-400 whitespace-nowrap">
-                            {
-                              item?.activityLog[item.activityLog.length - 1]
-                                .remarks
-                            }
-                          </td> */}
+                          <td className="px-4 min-w-[120px] border border-t-0 border-b-0 border-gray-400 whitespace-nowrap">
+                          c
+<span className="mx-2 relative group inline-block max-w-[220px] align-middle">
+  <span className="block truncate text-[12px] text-slate-700">
+    {item?.activityLog?.[item.activityLog.length - 1]?.remarks || "-"}
+  </span>
+
+  {item?.activityLog?.[item.activityLog.length - 1]?.remarks && (
+    <div className="pointer-events-none absolute left-0 top-full z-50 mt-1 hidden w-80 rounded-md border border-slate-200 bg-slate-700 px-3 py-2 shadow-lg group-hover:block">
+      <p className="text-[11px] leading-4 text-white whitespace-normal break-words">
+        {item?.activityLog?.[item.activityLog.length - 1]?.remarks}
+      </p>
+    </div>
+  )}
+</span>
+                          </td>
                           <td className=" border border-t-0 border-b-0 border-gray-400 px-1 bg-white ">
                             <select
                               value={selectedAllocationType?.item_id?.value}
@@ -788,13 +799,48 @@ const ReallocationTable = () => {
                           <td className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5 "></td>
                           <td
                             className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5 text-red-400 hover:text-red-500 hover:cursor-pointer font-semibold"
-                            onClick={() => {
-                              setIsclosed(true)
+                            // onClick={() => {
+                            //   setIsclosed(true)
 
-                              setselectedData(item)
-                            }}
+                            //   setselectedData(item)
+                            // }}
                           >
-                            Closed
+                            <button
+                              onClick={() => {
+console.log("hhh")
+                                const breadcrumb = [
+                                  { label: "Lead", path: "", state: "" },
+                                  {
+                                    label: "Re Allocation List",
+                                    path:
+                                      loggedUser?.role === "Admin"
+                                        ? "/admin/transaction/lead/ownedLeadlist"
+                                        : "/staff/transaction/lead/ownedLeadlist",
+                                    // state: {
+                                    //   dates,
+                                    //   ownLead,
+                                    //   selecteduserBranch
+                                    // }
+                                  },
+                                  { label: "Lead Closed", path: "" }
+                                ]
+                                loggedUser.role === "Admin"
+                                  ? navigate(
+                                      "/admin/transaction/lead/leadClosed",
+                                      {
+                                        state: { leadId: item._id, breadcrumb }
+                                      }
+                                    )
+                                  : navigate(
+                                      "/staff/transaction/lead/leadClosed",
+                                      {
+                                        state: { leadId: item._id, breadcrumb }
+                                      }
+                                    )
+                              }}
+                            >
+                              Closed
+                            </button>
                           </td>
                           <td className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5"></td>
                         </tr>
@@ -812,12 +858,25 @@ const ReallocationTable = () => {
                               <span className="mx-2">
                                 {item?.lasttask?.taskName}-
                               </span>
-                              <span>
+                              {/* <span>
                                 {
                                   item?.activityLog[item.activityLog.length - 1]
                                     ?.remarks
                                 }
-                              </span>
+                              </span> */}
+<span className="mx-2 relative group inline-block max-w-[220px] align-middle">
+  <span className="block truncate text-[12px] text-slate-700">
+    {item?.activityLog?.[item.activityLog.length - 1]?.remarks || "-"}
+  </span>
+
+  {item?.activityLog?.[item.activityLog.length - 1]?.remarks && (
+    <div className="pointer-events-none absolute left-0 top-full z-50 mt-1 hidden w-80 rounded-md border border-slate-200 bg-slate-700 px-3 py-2 shadow-lg group-hover:block">
+      <p className="text-[11px] leading-4 text-white whitespace-normal break-words">
+        {item?.activityLog?.[item.activityLog.length - 1]?.remarks}
+      </p>
+    </div>
+  )}
+</span>
                             </div>
                           </td>
                           {/* <td className="border border-t-0 border-gray-400 "></td> */}

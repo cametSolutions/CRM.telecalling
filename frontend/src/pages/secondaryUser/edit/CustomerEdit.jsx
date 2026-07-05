@@ -18,7 +18,7 @@ function CustomerEdit() {
   const { data: editedCustomer } = UseFetch(
     `/customer/geteditedCustomer?customerid=${customerId}`
   )
-
+console.log(editedCustomer)
   function formatDateString(dateString) {
     const dateObject = new Date(dateString)
     const year = dateObject.getUTCFullYear()
@@ -58,6 +58,9 @@ function CustomerEdit() {
   // }, [editedCustomer, index])
   const handleSubmit = async (customerData, tableData, index) => {
     try {
+console.log(tableData)
+console.log(customerData)
+
       const response = await api.post(
         `/customer/customerEdit?customerid=${customerId}&index=${index}`,
         { customerData, tableData },

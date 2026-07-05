@@ -13,6 +13,7 @@ import {
   Eye,
   Phone,
   Mail,
+  Package,
   Settings,
   MessageSquareText,
   User,
@@ -49,7 +50,9 @@ const LeadFollowUp = () => {
     { label: "Lead", path: "" },
     { label: "Lead follow-up", path: "" }
   ]
-  const Breadcrumblist = location?.state?.breadcrumb ? location?.state?.breadcrumb : nav
+  const Breadcrumblist = location?.state?.breadcrumb
+    ? location?.state?.breadcrumb
+    : nav
 
   console.log(Breadcrumblist)
   const checkedownfollowup = safeState?.ownfollowp //its from
@@ -62,6 +65,7 @@ const LeadFollowUp = () => {
     allocationDate: "",
     demoDescription: ""
   })
+  const today = new Date().toISOString().split("T")[0]
   const [selectedUserName, setselecteduserName] = useState(null)
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
@@ -84,6 +88,7 @@ const LeadFollowUp = () => {
   const [collectionupdateModal, setcollectionUpdateModal] = useState(false)
   const [partner, setPartner] = useState([])
   const [isdemofollownotClosed, setisdemofollowedNotClosed] = useState(false)
+const [ischangeallocationfortask,setischangeallocationfortask]=useState(true)
   const [ishavePayment, setishavePayment] = useState(false)
   const [collectionupdatedata, setcollectionupdateData] = useState({})
   const [showfollowupModal, setshowFollowupModal] = useState(false)
@@ -116,25 +121,24 @@ const LeadFollowUp = () => {
   const [selectedDocId, setselectedDocid] = useState(null)
   const [selectedTab, setselectedTab] = useState("")
   const [hasOwnLeads, setHasownLeads] = useState(false)
-// const result =
-//   safeState?.ownlead
-//     ? true
-//     : safeState?.staffId
-//       ? false
-//       : !!safeState?.ownfollowup ?? true;
-const result =
-  safeState?.ownlead
+  // const result =
+  //   safeState?.ownlead
+  //     ? true
+  //     : safeState?.staffId
+  //       ? false
+  //       : !!safeState?.ownfollowup ?? true;
+  const result = safeState?.ownlead
     ? true
     : safeState?.staffId
       ? false
-      : (safeState?.ownfollowup ?? true);
-console.log(safeState)
-console.log(result)
+      : (safeState?.ownfollowup ?? true)
+  console.log(safeState)
+  console.log(result)
   const [ownFollowUp, setOwnFollowUp] = useState(result)
 
-console.log(safeState?.ownlead)
-console.log(safeState?.ownfollowup)
-console.log(safeState?.staffId)
+  console.log(safeState?.ownlead)
+  console.log(safeState?.ownfollowup)
+  console.log(safeState?.staffId)
   console.log(safeState)
   console.log(ownFollowUp)
   console.log(safeState)
@@ -159,7 +163,7 @@ console.log(safeState?.staffId)
   const [showFullEmail, setShowFullEmail] = useState(false)
   const [selectedLead, setselectedLead] = useState([])
   const dropdownRef = useRef(null)
-const [taskList,settaskList]=useState([])
+  const [taskList, settaskList] = useState([])
   const [tableData, setTableData] = useState([])
   const [activeUserId, setActiveUserId] = useState(null)
   // NEW: Track if payment was updated in current session
@@ -172,9 +176,9 @@ const [taskList,settaskList]=useState([])
     followupType: "infollowup",
     Remarks: ""
   })
-console.log(ownFollowUp)
-console.log(pending)
-console.log(checkedownfollowup)
+  console.log(ownFollowUp)
+  console.log(pending)
+  console.log(checkedownfollowup)
 
   const [demoData, setDemodata] = useState({
     demoallocatedTo: "",
@@ -184,7 +188,7 @@ console.log(checkedownfollowup)
     selectedTypeName: "",
     demoassignedDate: ""
   })
-console.log(demoData)
+  console.log(demoData)
   const { data: tasks } = UseFetch(`/lead/getallTask?removefollowup=true`)
   console.log(tasks)
   const { data: partners } = UseFetch("/customer/getallpartners")
@@ -228,17 +232,17 @@ console.log(demoData)
     }
   })
   console.log(dates)
-console.log(tasks)
-useEffect(()=>{
-if(tasks){
-
-const updatedTasks = tasks.map(task => ({
-  ...task,
-  taskName: task.taskName.toUpperCase()
-}));
-console.log(updatedTasks)
-settaskList(updatedTasks)
-}},[tasks])
+  console.log(tasks)
+  useEffect(() => {
+    if (tasks) {
+      const updatedTasks = tasks.map((task) => ({
+        ...task,
+        taskName: task.taskName.toUpperCase()
+      }))
+      console.log(updatedTasks)
+      settaskList(updatedTasks)
+    }
+  }, [tasks])
   useEffect(() => {
     if (!productwiseResponse?.followupLeads) return
 
@@ -652,272 +656,269 @@ settaskList(updatedTasks)
   //   console.log("HHH")
   //   const selectedbranch = safeState?.branchId
 
-//     const fulldatecurrent =
-//       formatdate(currentDate) === endDateLocal
-//         ? formatdate(currentDate)
-//         : endDateLocal;
+  //     const fulldatecurrent =
+  //       formatdate(currentDate) === endDateLocal
+  //         ? formatdate(currentDate)
+  //         : endDateLocal;
 
-//     const neverfollowupedLeads = ownFollow.filter(
-//       (lead) =>
-//         lead.neverfollowuped &&
-//         lead.allocatedfollowup === false
-//     );
+  //     const neverfollowupedLeads = ownFollow.filter(
+  //       (lead) =>
+  //         lead.neverfollowuped &&
+  //         lead.allocatedfollowup === false
+  //     );
 
-//     const havenextFollowup = ownFollow.filter(
-//       (lead) => lead.Nextfollowup
-//     );
+  //     const havenextFollowup = ownFollow.filter(
+  //       (lead) => lead.Nextfollowup
+  //     );
 
-//     const filteredcurrentdatefollowupLeads =
-//       havenextFollowup.filter(
-//         (lead) =>
-//           formatdate(lead.nextFollowUpDate) ===
-//           fulldatecurrent
-//       );
+  //     const filteredcurrentdatefollowupLeads =
+  //       havenextFollowup.filter(
+  //         (lead) =>
+  //           formatdate(lead.nextFollowUpDate) ===
+  //           fulldatecurrent
+  //       );
 
-//     const iscurrent =
-//       fulldatecurrent === endDateLocal
-//         ? fulldatecurrent
-//         : endDateLocal;
+  //     const iscurrent =
+  //       fulldatecurrent === endDateLocal
+  //         ? fulldatecurrent
+  //         : endDateLocal;
 
-//     const overdueFollowups = havenextFollowup.filter(
-//       (lead) =>
-//         formatdate(lead.nextFollowUpDate) < iscurrent
-//     );
+  //     const overdueFollowups = havenextFollowup.filter(
+  //       (lead) =>
+  //         formatdate(lead.nextFollowUpDate) < iscurrent
+  //     );
 
-//     const postdatefollowup = havenextFollowup.filter(
-//       (lead) =>
-//         formatdate(lead.nextFollowUpDate) > iscurrent
-//     );
+  //     const postdatefollowup = havenextFollowup.filter(
+  //       (lead) =>
+  //         formatdate(lead.nextFollowUpDate) > iscurrent
+  //     );
 
-//     const uniqueoverdueAndcurrentdate = [
-//       ...new Set([
-//         ...overdueFollowups,
-//         ...filteredcurrentdatefollowupLeads,
-//       ]),
-//     ];
+  //     const uniqueoverdueAndcurrentdate = [
+  //       ...new Set([
+  //         ...overdueFollowups,
+  //         ...filteredcurrentdatefollowupLeads,
+  //       ]),
+  //     ];
 
-//     const taskSubmittedLeads = ownFollow.filter(
-//       (lead) =>
-//         lead.allocatedfollowup &&
-//         lead.allocatedTaskClosed
-//     );
+  //     const taskSubmittedLeads = ownFollow.filter(
+  //       (lead) =>
+  //         lead.allocatedfollowup &&
+  //         lead.allocatedTaskClosed
+  //     );
 
-//     const nonsubmittedtakleads = ownFollow.filter(
-//       (lead) =>
-//         lead.allocatedfollowup &&
-//         lead.allocatedTaskClosed === false
-//     );
+  //     const nonsubmittedtakleads = ownFollow.filter(
+  //       (lead) =>
+  //         lead.allocatedfollowup &&
+  //         lead.allocatedTaskClosed === false
+  //     );
 
-//     setAllocatedLeads(
-//       normalizeTableData(nonsubmittedtakleads)
-//     );
+  //     setAllocatedLeads(
+  //       normalizeTableData(nonsubmittedtakleads)
+  //     );
 
-//     const mergedall = [
-//       ...neverfollowupedLeads,
-//       ...uniqueoverdueAndcurrentdate,
-//       ...postdatefollowup,
-//       ...(safeState?.viewMode ? [] : taskSubmittedLeads),
-//     ];
+  //     const mergedall = [
+  //       ...neverfollowupedLeads,
+  //       ...uniqueoverdueAndcurrentdate,
+  //       ...postdatefollowup,
+  //       ...(safeState?.viewMode ? [] : taskSubmittedLeads),
+  //     ];
 
-//     setnetTotalAmount(TotalAmount(mergedall));
-//     setTableData(normalizeTableData(mergedall));
+  //     setnetTotalAmount(TotalAmount(mergedall));
+  //     setTableData(normalizeTableData(mergedall));
 
-//     return;
-//   }
+  //     return;
+  //   }
 
-//   // ==========================================
-//   // PENDING + COLLEAGUE FOLLOWUP
-//   // ==========================================
+  //   // ==========================================
+  //   // PENDING + COLLEAGUE FOLLOWUP
+  //   // ==========================================
 
-//   if (pending && !ownFollowUp) {
-//     const currentDate = new Date();
-//     const endDateLocal = getLocalDate(new Date(dates.endDate));
+  //   if (pending && !ownFollowUp) {
+  //     const currentDate = new Date();
+  //     const endDateLocal = getLocalDate(new Date(dates.endDate));
 
-//     const fulldatecurrent =
-//       formatdate(currentDate) === endDateLocal
-//         ? formatdate(currentDate)
-//         : endDateLocal;
+  //     const fulldatecurrent =
+  //       formatdate(currentDate) === endDateLocal
+  //         ? formatdate(currentDate)
+  //         : endDateLocal;
 
-//     const neverfollowupedLeads = filteredLeads.filter(
-//       (lead) => lead.neverfollowuped
-//     );
+  //     const neverfollowupedLeads = filteredLeads.filter(
+  //       (lead) => lead.neverfollowuped
+  //     );
 
-//     const havenextFollowup = filteredLeads.filter(
-//       (lead) => lead.Nextfollowup
-//     );
+  //     const havenextFollowup = filteredLeads.filter(
+  //       (lead) => lead.Nextfollowup
+  //     );
 
-//     const filteredcurrentdatefollowupLeads =
-//       havenextFollowup.filter(
-//         (lead) =>
-//           formatdate(lead.nextFollowUpDate) ===
-//           fulldatecurrent
-//       );
+  //     const filteredcurrentdatefollowupLeads =
+  //       havenextFollowup.filter(
+  //         (lead) =>
+  //           formatdate(lead.nextFollowUpDate) ===
+  //           fulldatecurrent
+  //       );
 
-//     const iscurrent =
-//       fulldatecurrent === endDateLocal
-//         ? fulldatecurrent
-//         : endDateLocal;
+  //     const iscurrent =
+  //       fulldatecurrent === endDateLocal
+  //         ? fulldatecurrent
+  //         : endDateLocal;
 
-//     const overdueFollowups = havenextFollowup.filter(
-//       (lead) =>
-//         formatdate(lead.nextFollowUpDate) < iscurrent
-//     );
+  //     const overdueFollowups = havenextFollowup.filter(
+  //       (lead) =>
+  //         formatdate(lead.nextFollowUpDate) < iscurrent
+  //     );
 
-//     const postdatefollowup = havenextFollowup.filter(
-//       (lead) =>
-//         formatdate(lead.nextFollowUpDate) > iscurrent
-//     );
+  //     const postdatefollowup = havenextFollowup.filter(
+  //       (lead) =>
+  //         formatdate(lead.nextFollowUpDate) > iscurrent
+  //     );
 
-//     const uniqueoverdueAndcurrentdate = [
-//       ...new Set([
-//         ...overdueFollowups,
-//         ...filteredcurrentdatefollowupLeads,
-//       ]),
-//     ];
+  //     const uniqueoverdueAndcurrentdate = [
+  //       ...new Set([
+  //         ...overdueFollowups,
+  //         ...filteredcurrentdatefollowupLeads,
+  //       ]),
+  //     ];
 
-//     const taskSubmittedLeads = filteredLeads.filter(
-//       (lead) =>
-//         lead.allocatedfollowup &&
-//         lead.allocatedTaskClosed
-//     );
+  //     const taskSubmittedLeads = filteredLeads.filter(
+  //       (lead) =>
+  //         lead.allocatedfollowup &&
+  //         lead.allocatedTaskClosed
+  //     );
 
-//     const nonsubmittedtakleads = filteredLeads.filter(
-//       (lead) =>
-//         lead.allocatedfollowup &&
-//         lead.allocatedTaskClosed === false
-//     );
+  //     const nonsubmittedtakleads = filteredLeads.filter(
+  //       (lead) =>
+  //         lead.allocatedfollowup &&
+  //         lead.allocatedTaskClosed === false
+  //     );
 
-//     setAllocatedLeads(nonsubmittedtakleads);
+  //     setAllocatedLeads(nonsubmittedtakleads);
 
-//     const mergedall = [
-//       ...neverfollowupedLeads,
-//       ...uniqueoverdueAndcurrentdate,
-//       ...postdatefollowup,
-//       ...(safeState?.viewMode ? [] : taskSubmittedLeads),
-//     ];
+  //     const mergedall = [
+  //       ...neverfollowupedLeads,
+  //       ...uniqueoverdueAndcurrentdate,
+  //       ...postdatefollowup,
+  //       ...(safeState?.viewMode ? [] : taskSubmittedLeads),
+  //     ];
 
-//     const groupedLeads = {};
+  //     const groupedLeads = {};
 
-//     mergedall.forEach((lead) => {
-//       const assignedTo =
-//         lead?.allocatedTo?.name || "Unassigned";
+  //     mergedall.forEach((lead) => {
+  //       const assignedTo =
+  //         lead?.allocatedTo?.name || "Unassigned";
 
-//       if (!groupedLeads[assignedTo]) {
-//         groupedLeads[assignedTo] = [];
-//       }
+  //       if (!groupedLeads[assignedTo]) {
+  //         groupedLeads[assignedTo] = [];
+  //       }
 
-//       groupedLeads[assignedTo].push(lead);
-//     });
+  //       groupedLeads[assignedTo].push(lead);
+  //     });
 
-//     setnetTotalAmount(TotalAmount(mergedall));
-//     setTableData(normalizeTableData(groupedLeads));
+  //     setnetTotalAmount(TotalAmount(mergedall));
+  //     setTableData(normalizeTableData(groupedLeads));
 
-//     return;
-//   }
+  //     return;
+  //   }
 
-//   // ==========================================
-//   // CLEARED OWN FOLLOWUP
-//   // ==========================================
+  //   // ==========================================
+  //   // CLEARED OWN FOLLOWUP
+  //   // ==========================================
 
-//   if (!pending && ownFollowUp) {
-//     const ownFollow = filteredLeads.filter((lead) =>
-//       lead.activityLog?.some(
-//         (log) =>
-//           log.taskTo === "followup" &&
-//           log.taskallocatedTo?._id === loggedUser._id &&
-//           log.followupClosed === true
-//       )
-//     );
+  //   if (!pending && ownFollowUp) {
+  //     const ownFollow = filteredLeads.filter((lead) =>
+  //       lead.activityLog?.some(
+  //         (log) =>
+  //           log.taskTo === "followup" &&
+  //           log.taskallocatedTo?._id === loggedUser._id &&
+  //           log.followupClosed === true
+  //       )
+  //     );
 
-//     const clearedLeads = ownFollow.filter(
-//       (lead) =>
-//         Array.isArray(lead.activityLog) &&
-//         lead.activityLog.some(
-//           (entry) =>
-//             entry.taskTo === "followup" &&
-//             entry.followupClosed === true
-//         )
-//     );
+  //     const clearedLeads = ownFollow.filter(
+  //       (lead) =>
+  //         Array.isArray(lead.activityLog) &&
+  //         lead.activityLog.some(
+  //           (entry) =>
+  //             entry.taskTo === "followup" &&
+  //             entry.followupClosed === true
+  //         )
+  //     );
 
-//     setnetTotalAmount(TotalAmount(clearedLeads));
-//     setTableData(normalizeTableData(clearedLeads));
+  //     setnetTotalAmount(TotalAmount(clearedLeads));
+  //     setTableData(normalizeTableData(clearedLeads));
 
-//     return;
-//   }
+  //     return;
+  //   }
 
-//   // ==========================================
-//   // CLEARED COLLEAGUE FOLLOWUP
-//   // ==========================================
+  //   // ==========================================
+  //   // CLEARED COLLEAGUE FOLLOWUP
+  //   // ==========================================
 
-//   if (!pending && !ownFollowUp) {
-//     const isFollowupActivity = (log) =>
-//       log?.taskId?.taskName === "Followup" &&
-//       log?.followupClosed === true &&
-//       log?.submissionDate;
+  //   if (!pending && !ownFollowUp) {
+  //     const isFollowupActivity = (log) =>
+  //       log?.taskId?.taskName === "Followup" &&
+  //       log?.followupClosed === true &&
+  //       log?.submissionDate;
 
-//     const getLatestSubmissionDate = (lead) => {
-//       const datesArr = (lead.activityLog || [])
-//         .filter(isFollowupActivity)
-//         .map((log) =>
-//           new Date(log.submissionDate).getTime()
-//         );
+  //     const getLatestSubmissionDate = (lead) => {
+  //       const datesArr = (lead.activityLog || [])
+  //         .filter(isFollowupActivity)
+  //         .map((log) =>
+  //           new Date(log.submissionDate).getTime()
+  //         );
 
-//       return datesArr.length
-//         ? Math.max(...datesArr)
-//         : null;
-//     };
+  //       return datesArr.length
+  //         ? Math.max(...datesArr)
+  //         : null;
+  //     };
 
-//     const clearedLeads = [];
+  //     const clearedLeads = [];
 
-//     filteredLeads.forEach((lead) => {
-//       const latest = getLatestSubmissionDate(lead);
+  //     filteredLeads.forEach((lead) => {
+  //       const latest = getLatestSubmissionDate(lead);
 
-//       if (latest) {
-//         clearedLeads.push({
-//           ...lead,
-//           latestSubmissionTime: latest,
-//         });
-//       }
-//     });
+  //       if (latest) {
+  //         clearedLeads.push({
+  //           ...lead,
+  //           latestSubmissionTime: latest,
+  //         });
+  //       }
+  //     });
 
-//     clearedLeads.sort(
-//       (a, b) =>
-//         b.latestSubmissionTime -
-//         a.latestSubmissionTime
-//     );
+  //     clearedLeads.sort(
+  //       (a, b) =>
+  //         b.latestSubmissionTime -
+  //         a.latestSubmissionTime
+  //     );
 
-//     const groupedLeads = {};
+  //     const groupedLeads = {};
 
-//     clearedLeads.forEach((lead) => {
-//       const assignedTo =
-//         lead?.allocatedTo?.name || "Unassigned";
+  //     clearedLeads.forEach((lead) => {
+  //       const assignedTo =
+  //         lead?.allocatedTo?.name || "Unassigned";
 
-//       if (!groupedLeads[assignedTo]) {
-//         groupedLeads[assignedTo] = [];
-//       }
+  //       if (!groupedLeads[assignedTo]) {
+  //         groupedLeads[assignedTo] = [];
+  //       }
 
-//       groupedLeads[assignedTo].push(lead);
-//     });
+  //       groupedLeads[assignedTo].push(lead);
+  //     });
 
-//     setnetTotalAmount(TotalAmount(clearedLeads));
-//     setTableData(normalizeTableData(groupedLeads));
-//   }
+  //     setnetTotalAmount(TotalAmount(clearedLeads));
+  //     setTableData(normalizeTableData(groupedLeads));
+  //   }
 
-//   setHasownLeads(
-//     productwiseResponse?.ischekCollegueLeads
-//   );
+  //   setHasownLeads(
+  //     productwiseResponse?.ischekCollegueLeads
+  //   );
 
-// }, [
-//   productwiseResponse,
-//   pending,
-//   ownFollowUp,
-//   loggedUser,
-//   dates.endDate,
-//   safeState,
-// ]);
-
-
-
+  // }, [
+  //   productwiseResponse,
+  //   pending,
+  //   ownFollowUp,
+  //   loggedUser,
+  //   dates.endDate,
+  //   safeState,
+  // ]);
 
   useEffect(() => {
     // run only when location.state or selectedCompanyBranch / loggedUser change
@@ -1250,15 +1251,8 @@ settaskList(updatedTasks)
     fetchFollowups()
   }, [safeState?.state, selectedCompanyBranch, loggedUser])
 
-
-
   console.log(pending)
   console.log(ownFollowUp)
-
-
-
- 
-
 
   const handletoogle = (status) => {
     if (!safeState.branchId) return
@@ -1356,7 +1350,7 @@ settaskList(updatedTasks)
   console.log(safeState?.staffId)
 
   const finalPending = pending !== undefined ? pending : safeState?.pending
-  
+
   // const followupUrl =
   //   shouldFetch
   //     ? `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}` +
@@ -1387,7 +1381,6 @@ settaskList(updatedTasks)
     error,
     refetch: refreshHook
   } = useQuery({
-   
     queryKey: [
       "followups",
       selectedCompanyBranch,
@@ -1513,9 +1506,16 @@ settaskList(updatedTasks)
     if (data && selectedCompanyBranch && partners && partners.length > 0) {
       setPartner(partners)
       const { allusers = [], allAdmins = [] } = data
-      const filteredSelectedBranchStaffs = allusers.filter((user) =>
-        user.selected?.some((sel) => sel.branch_id === selectedCompanyBranch)
+      // const filteredSelectedBranchStaffs = allusers.filter((user) =>
+
+      //   user.selected?.some((sel) => sel.branch_id === selectedCompanyBranch)
+      // )
+      const filteredSelectedBranchStaffs = allusers.filter(
+        (staff) =>
+          staff.isVerified === true &&
+          staff.selected.some((s) => selectedCompanyBranch === s.branch_id)
       )
+      console.log(filteredSelectedBranchStaffs)
       const filtereduserandadmin = [
         ...filteredSelectedBranchStaffs,
         ...allAdmins
@@ -2049,7 +2049,7 @@ settaskList(updatedTasks)
               const neverfollowupedLeads = leads.filter(
                 (lead) => lead.neverfollowuped
               )
-console.log(neverfollowupedLeads)
+              console.log(neverfollowupedLeads)
               const havenextFollowup =
                 loggedusersallocatedleads.followupLeads.filter(
                   (lead) => lead.Nextfollowup
@@ -2141,6 +2141,9 @@ console.log(neverfollowupedLeads)
             }
           } else if (!pending && ownFollowUp) {
             console.log("h")
+console.log(leads)
+const a=leads.map((item)=>item.leadId)
+console.log(a)
             const ownFollow = leads.filter((lead) =>
               lead.activityLog?.some(
                 (log) =>
@@ -2149,6 +2152,9 @@ console.log(neverfollowupedLeads)
                   log.followupClosed === true
               )
             )
+console.log(ownFollow)
+const b=ownFollow.map((item)=>item.leadId)
+console.log(b)
             // console.log(ownFollow)
             const clearedLeads = ownFollow.filter(
               (lead) =>
@@ -2158,11 +2164,20 @@ console.log(neverfollowupedLeads)
                     entry.taskTo === "followup" && entry.followupClosed === true
                 )
             )
+console.log(clearedLeads)
+const c=clearedLeads.map((it)=>it.leadId)
+console.log(c)
             // console.log(clearedLeads)
 
             // then store it in state
             setnetTotalAmount(TotalAmount(clearedLeads))
             const Data = normalizeTableData(clearedLeads)
+console.log(Data)
+console.log(Data.length)
+const t=Data[0].leads
+console.log(t)
+const e=Data.map((item)=>item.leadId)
+console.log(e)
             setTableData(Data)
           } else if (!pending && !ownFollowUp) {
             console.log("H")
@@ -2389,6 +2404,7 @@ console.log(neverfollowupedLeads)
   }
 
   const handlefollowupdate = (Id, docId) => {
+console.log('hhh')
     setfollowupDateModal(true)
     setSelectedLeadId(Id)
     setselectedDocid(docId)
@@ -2432,14 +2448,16 @@ console.log(neverfollowupedLeads)
   }
   console.log(collectionData)
   const handleDemoSubmit = async () => {
-    if (isdemofollownotClosed) {
-      setDemoError((prev) => ({
-        ...prev,
-        submiterror: "Cant submit, demo is not closed",
-        demoDescription: ""
-      }))
-      return
-    }
+console.log("hhh")
+console.log(isdemofollownotClosed)
+    // if (isdemofollownotClosed) {
+    //   setDemoError((prev) => ({
+    //     ...prev,
+    //     submiterror: "Cant submit, demo is not closed",
+    //     demoDescription: ""
+    //   }))
+    //   return
+    // }
 
     const newError = {}
     if (!demoData.demoallocatedDate) {
@@ -2499,7 +2517,7 @@ console.log(neverfollowupedLeads)
       setLoader(false)
     }
   }
-console.log(formData)
+  console.log(formData)
   const handleFollowUpDateSubmit = async () => {
     console.log(formData)
     console.log(collectionupdatedata)
@@ -2587,8 +2605,8 @@ console.log(formData)
         null
       : null
     if (ishaveAllocation) {
-console.log(ishaveAllocation)
-console.log(taskList)
+      console.log(ishaveAllocation)
+      console.log(taskList)
       setdemoEditIndex(Item.activityLog.length - 1)
       setDemodata({
         selectedType: ishaveAllocation?.taskId?._id,
@@ -2600,6 +2618,8 @@ console.log(taskList)
         demoassignedDate: formatDate(ishaveAllocation.submissionDate),
         demoDescription: ishaveAllocation?.remarks
       })
+setisdemofollowedNotClosed(true)
+
       setIsEditable(true)
       setIsAllocated(true)
     }
@@ -2632,6 +2652,7 @@ console.log(taskList)
   // ... (LeadRow component and renderTable function remain the same)
 
   const LeadRow = ({ item, index }) => {
+console.log(item)
     const [open, setOpen] = useState(false)
 
     const lastLog =
@@ -2654,6 +2675,10 @@ console.log(taskList)
             it?.taskClosed === false
         )
       : false
+const customerName = item?.customerName?.customerName.toUpperCase();
+const shouldShowTooltipCustomer = customerName.length > 20;
+const shouldShowTooltipEmail = item?.email.length >5;
+
 
     return (
       <>
@@ -2668,9 +2693,27 @@ console.log(taskList)
               <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
             )}
           </td>
-          <td className="px-3 py-2 font-semibold text-gray-900 text-sm border border-gray-300 whitespace-nowrap">
+          {/* <td className="px-3 py-2 font-semibold text-gray-900 text-sm border border-gray-300 whitespace-nowrap">
             {item.customerName.customerName.toUpperCase()}
-          </td>
+          </td> */}
+<td className="px-3 py-2 font-semibold text-gray-900 text-sm border border-gray-300 whitespace-nowrap">
+  <div className="relative group w-[180px]">
+    <span
+      tabIndex={0}
+      className="block truncate cursor-pointer"
+      aria-label={customerName}
+    >
+      {customerName}
+    </span>
+
+    {shouldShowTooltipCustomer && (
+      <div className="pointer-events-none absolute left-0 top-full z-50 mt-2 w-max max-w-xs rounded-xl bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-xl ring-1 ring-white/10 transition-all duration-200 translate-y-1 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
+        {customerName}
+        <div className="absolute -top-1 left-4 h-2 w-2 rotate-45 bg-gray-900"></div>
+      </div>
+    )}
+  </div>
+</td>
           <td className="px-3 py-2 text-gray-700 text-sm border border-gray-300 whitespace-nowrap">
             {item?.mobile}
           </td>
@@ -2734,6 +2777,7 @@ console.log(taskList)
                   { label: "New Lead", path: "" }
                 ]
                 console.log("Hh")
+                console.log(!isAllocatedToeditable)
                 originalloggeduser?.role === "Admin"
                   ? navigate("/admin/transaction/lead/leadEdit", {
                       state: {
@@ -2845,6 +2889,12 @@ console.log(taskList)
                   <span>Email</span>
                 </div>
               </td>
+  <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
+                <div className="flex items-center gap-1">
+                  <Package className="w-3.5 h-3.5" />
+                  <span>Product Name</span>
+                </div>
+              </td>
             </tr>
             <tr className="bg-white text-xs border border-b-2 border-gray-300 border-b-gray-400">
               <td className="border border-gray-300" />
@@ -2857,7 +2907,13 @@ console.log(taskList)
               <td className="px-3 py-1.5 border border-gray-300 text-gray-700">
                 {item?.allocatedBy?.name || "-"}
               </td>
-              <td className="px-3 py-1.5 border border-gray-300 text-gray-700" />
+              <td className="px-3 py-1.5 border border-gray-300 text-gray-700 text-center">
+                {item?.activityLog?.filter(
+                  (log) =>
+                    log?.taskBy?.taskName?.toLowerCase() === "followup" &&
+                    log?.nextFollowUpDate
+                ).length || 0}
+              </td>
               <td className="px-3 py-1.5 border border-gray-300 text-gray-700">
                 {item.leadDate?.toString().split("T")[0] || "-"}
               </td>
@@ -2870,9 +2926,31 @@ console.log(taskList)
                 </td>
               )}
 
-              <td className="px-3 py-1.5 border border-gray-300 text-gray-600">
-                {item?.email || "-"}
+            
+<td className="px-3 py-2 font-semibold text-gray-900 text-sm border border-gray-300 whitespace-nowrap">
+  <div className="relative group w-[100px]">
+    <span
+      tabIndex={0}
+      className="block truncate cursor-pointer"
+      aria-label={item?.email}
+    >
+      {item?.email}
+    </span>
+
+    {shouldShowTooltipEmail && (
+      <div className="pointer-events-none absolute left-0 top-full z-50 mt-2 w-max max-w-xs rounded-xl bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-xl ring-1 ring-white/10 transition-all duration-200 translate-y-1 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
+        {item?.email}
+        <div className="absolute -top-1 left-4 h-2 w-2 rotate-45 bg-gray-900"></div>
+      </div>
+    )}
+  </div>
+</td>
+
+
+              <td className="px-3 py-1.5 border border-gray-300 text-blue-500 font-medium whitespace-nowrap">
+                {item?.leadFor[0]?.productorServiceId?.shortName?.toUpperCase() || item?.leadFor[0]?.productorServiceId?.productName?.toUpperCase()||"-"}
               </td>
+
             </tr>
           </>
         )}
@@ -2965,7 +3043,7 @@ console.log(taskList)
     </table>
   )
   const currentData = statusAllocated ? allocatedLeads : tableData
- 
+
   return (
     <div className="h-full  bg-[#ADD8E6] overflow-hidden">
       <div className="flex h-full  flex-row">
@@ -3334,7 +3412,7 @@ console.log(taskList)
                       <label className="flex items-start cursor-pointer group">
                         <input
                           type="checkbox"
-                          disabled={isdemofollownotClosed}
+                          disabled={ischangeallocationfortask}
                           checked={isAllocated}
                           onChange={() => {
                             if (
@@ -3452,6 +3530,7 @@ console.log(taskList)
                           </label>
                           <input
                             type="date"
+                            min={today}
                             value={demoData.demoallocatedDate}
                             onChange={handleDataChange}
                             name="allocationDate"
@@ -3563,7 +3642,7 @@ console.log(taskList)
                 <button
                   type="button"
                   onClick={handleCloseFollowupModal}
-                  className="px-6 py-1.5 border-2 border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-100 hover:border-gray-400 transition-all"
+                  className="px-6 py-1.5 border-2 border-gray-300 rounded-lg text-white font-semibold hover:bg-gray-500 hover:border-gray-400 transition-all bg-gray-500"
                 >
                   Cancel
                 </button>
@@ -3580,7 +3659,7 @@ console.log(taskList)
                       <FaSpinner className="animate-spin h-5 w-5 text-white ml-2" />
                     </div>
                   ) : (
-                    <div>{isHaveEditchoice ? "UPDATE" : "SUBMIT"}</div>
+                    <div>{isHaveEditchoice ? "UPDATEss" : "SUBMIT"}</div>
                   )}
                 </button>
               </div>

@@ -13,8 +13,10 @@ import TaskAnalysisTable from "../../../pages/primaryUser/List/TaskAnalysisTable
 import ReallocationTable from "../../../pages/primaryUser/List/ReallocationTable"
 import LostLeads from "../../../pages/common/LostLeads"
 import CollectionUpdate from "../../../pages/primaryUser/List/CollectionUpdate"
+import LeadClosed from "../../../pages/primaryUser/edit/LeadClosed"
 const transactionsRoutes = [
   { path: "/admin/transaction/lead", component: LeadRegister },
+  {path:"/admin/transaction/lead/leadClosed",component:LeadClosed},
   { path: "/admin/transaction/lead/leadEdit", component: LeadEdit },
 
   { path: "/admin/transaction/call-registration", component: CallRegistration },

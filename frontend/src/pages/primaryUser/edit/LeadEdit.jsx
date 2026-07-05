@@ -37,8 +37,9 @@ function LeadEdit() {
   const navigate = useNavigate()
 
   const location = useLocation()
-  const { leadId, isReadOnly, refreshKey } = location.state || {}
-console.log(isReadOnly)
+  const { leadId, isReadOnly, refreshKey, from } = location.state || {}
+console.log(location?.state)
+  console.log(isReadOnly)
   console.log(location?.state)
   const nav = [
     { label: "Lead", path: "" },
@@ -245,7 +246,13 @@ console.log(isReadOnly)
   const handleSubmit = async (data, leadData, objectId) => {
     console.log(data)
     console.log(leadData)
-console.log(objectId)
+const newnetamount = leadData.reduce(
+  (sum, item) => sum + Number(item.netAmount || 0),
+  0
+);
+console.log(newnetamount)
+
+    console.log(objectId)
 
     try {
       setLoader(true)
@@ -267,7 +274,7 @@ console.log(objectId)
       console.error("error:", error)
     }
   }
-console.log("hhhh")
+  console.log("hhhh")
   return (
     <div className="h-full bg-[#ADD8E6 overflow-hidden">
       <div className="flex h-full flex-row overflow-hidden">
@@ -319,13 +326,13 @@ console.log("hhhh")
           </header>
 
           <div className="flex flex-1 flex-col min-h-0 min-w-0 overflow-hidden  w-full justify-center  bg-[#ADD8E6]">
-            {loader && (
+            {/* {loader && (
               <BarLoader
                 cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
                 color="#4A90E2" // Change color as needed
               />
-            )}
-            <Breadcrumb items={Breadcrumblist} />
+            )} */}
+            {/* <Breadcrumb items={Breadcrumblist} /> */}
             <LeadMaster
               process="edit"
               handleEditData={handleSubmit}
@@ -333,6 +340,8 @@ console.log("hhhh")
               seteditLoadingState={setLoader}
               Data={fetcheddata}
               isReadOnly={isReadOnly}
+              Breadcrumblist={Breadcrumblist}
+              from={from}
               selectedcompanyBranch={selectedleadbranch}
             />
           </div>
