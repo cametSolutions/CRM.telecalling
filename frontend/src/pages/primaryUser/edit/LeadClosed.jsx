@@ -242,19 +242,20 @@ function LeadClosed() {
   }
   console.log(leadId)
 
-  const handleSubmit = async (data, leadData, objectId,userId,role) => {
+  const handleSubmit = async (data, leadData, objectId, userId, role) => {
     console.log(data)
     console.log(leadData)
     console.log(objectId)
-console.log(userId)
-console.log(role)
-
+    console.log(userId)
+    console.log(role)
+    
     try {
       setclosedLoader(true)
       const response = await api.put(`/lead/closingleads?docID=${objectId}`, {
         data,
         leadData,
-userId,role
+        userId,
+        role
       })
       if (response.status === 200) {
         toast.success(response.data.message)

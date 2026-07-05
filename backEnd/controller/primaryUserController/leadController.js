@@ -1689,10 +1689,14 @@ export const Leadclosing = async (req, res) => {
       const newTaxAmount = Number(data?.taxAmount || 0);
 
       const totalPaidAmount = Number(matchedDoc.totalPaidAmount || 0);
+console.log("totalpaidamount",totalPaidAmount)
       const rawBalanceAmount = newNetAmount - totalPaidAmount;
+console.log("rawBalanceAmount",rawBalanceAmount)
       const newBalanceAmount = rawBalanceAmount < 0 ? 0 : rawBalanceAmount;
+console.log("newbalanceamount",newBalanceAmount)
       const excessPaidAmount =
         rawBalanceAmount < 0 ? Math.abs(rawBalanceAmount) : 0;
+console.log("excesspaidamount",excessPaidAmount)
 
       // const Product = mappedleadData.find(
       //   (item) => item.productorservicetype === "Primaryproduct"
@@ -3706,10 +3710,11 @@ export const GetallfollowupList = async (req, res) => {
     console.log("endatae", endDate)
 
     const isNewMode = isViewMode || hasValidHeader || hasValidDates;
-    console.log("hasvalidhaeader", hasValidHeader)
-    console.log("hasvaliddate", hasValidDates)
-    console.log("isnewmodeeee", isNewMode)
-    console.log("isviewmode", isViewMode)
+    // console.log("hasvalidhaeader", hasValidHeader)
+    // console.log("hasvaliddate", hasValidDates)
+    // console.log("isnewmodeeee", isNewMode)
+    // console.log("isviewmode", isViewMode)
+console.log("pendingfoloopup",pendingfollowup)
     let query;
 
     // ✅ VIEW MODE
@@ -3774,6 +3779,7 @@ export const GetallfollowupList = async (req, res) => {
           };
         }
       } else if (pendingfollowup === "false") {
+console.log("adddddddminnnnnnnn")
         if (role === "Admin") {
           query = {
             activityLog: {
@@ -7961,6 +7967,7 @@ export const GetcollectionLeads = async (req, res) => {
           })
         );
 
+
         const latestFollowupActivity = [...(lead.activityLog || [])]
           .filter((activity) => activity?.taskTo === "followup")
           .at(-1);
@@ -9783,16 +9790,16 @@ export const GetownLeadList = async (req, res) => {
             const populatedActivity = { ...activity };
 
             // Populate taskallocatedTo
-            if (activity.submissiondoneByModel && activity.submittedUser && activity?.taskallocatedTo) {
-              const model = mongoose.model(activity.submissiondoneByModel);
-              taskallocatedTo = populatedActivity.submittedUser = await model
-                .findById(activity.submittedUser)
+            if (activity.submissiondoneByModel && activity.submittedUser && activity?.taskallocatedTo&&activity?.allocationChanged===false) {
+              const model = mongoose.model(activity.taskallocatedToModel);
+              taskallocatedTo = populatedActivity.taskallocatedTo = await model
+                .findById(activity.taskallocatedTo)
                 .select("name")
                 .lean();
             }
 
             // // Populate taskallocatedBy
-            if (activity.taskallocatedByModel && activity.taskallocatedBy) {
+            if (activity.taskallocatedByModel && activity.taskallocatedBy&&activity?.allocationChanged===false) {
               const model = mongoose.model(activity.taskallocatedByModel);
               taskallocatedBy = populatedActivity.taskallocatedBy = await model
                 .findById(activity.taskallocatedBy)

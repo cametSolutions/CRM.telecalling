@@ -13,6 +13,7 @@ import {
   Eye,
   Phone,
   Mail,
+  Package,
   Settings,
   MessageSquareText,
   User,
@@ -2140,6 +2141,9 @@ const [ischangeallocationfortask,setischangeallocationfortask]=useState(true)
             }
           } else if (!pending && ownFollowUp) {
             console.log("h")
+console.log(leads)
+const a=leads.map((item)=>item.leadId)
+console.log(a)
             const ownFollow = leads.filter((lead) =>
               lead.activityLog?.some(
                 (log) =>
@@ -2148,6 +2152,9 @@ const [ischangeallocationfortask,setischangeallocationfortask]=useState(true)
                   log.followupClosed === true
               )
             )
+console.log(ownFollow)
+const b=ownFollow.map((item)=>item.leadId)
+console.log(b)
             // console.log(ownFollow)
             const clearedLeads = ownFollow.filter(
               (lead) =>
@@ -2157,11 +2164,20 @@ const [ischangeallocationfortask,setischangeallocationfortask]=useState(true)
                     entry.taskTo === "followup" && entry.followupClosed === true
                 )
             )
+console.log(clearedLeads)
+const c=clearedLeads.map((it)=>it.leadId)
+console.log(c)
             // console.log(clearedLeads)
 
             // then store it in state
             setnetTotalAmount(TotalAmount(clearedLeads))
             const Data = normalizeTableData(clearedLeads)
+console.log(Data)
+console.log(Data.length)
+const t=Data[0].leads
+console.log(t)
+const e=Data.map((item)=>item.leadId)
+console.log(e)
             setTableData(Data)
           } else if (!pending && !ownFollowUp) {
             console.log("H")
@@ -2636,6 +2652,7 @@ setisdemofollowedNotClosed(true)
   // ... (LeadRow component and renderTable function remain the same)
 
   const LeadRow = ({ item, index }) => {
+console.log(item)
     const [open, setOpen] = useState(false)
 
     const lastLog =
@@ -2658,6 +2675,10 @@ setisdemofollowedNotClosed(true)
             it?.taskClosed === false
         )
       : false
+const customerName = item?.customerName?.customerName.toUpperCase();
+const shouldShowTooltipCustomer = customerName.length > 20;
+const shouldShowTooltipEmail = item?.email.length >5;
+
 
     return (
       <>
@@ -2672,9 +2693,27 @@ setisdemofollowedNotClosed(true)
               <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
             )}
           </td>
-          <td className="px-3 py-2 font-semibold text-gray-900 text-sm border border-gray-300 whitespace-nowrap">
+          {/* <td className="px-3 py-2 font-semibold text-gray-900 text-sm border border-gray-300 whitespace-nowrap">
             {item.customerName.customerName.toUpperCase()}
-          </td>
+          </td> */}
+<td className="px-3 py-2 font-semibold text-gray-900 text-sm border border-gray-300 whitespace-nowrap">
+  <div className="relative group w-[180px]">
+    <span
+      tabIndex={0}
+      className="block truncate cursor-pointer"
+      aria-label={customerName}
+    >
+      {customerName}
+    </span>
+
+    {shouldShowTooltipCustomer && (
+      <div className="pointer-events-none absolute left-0 top-full z-50 mt-2 w-max max-w-xs rounded-xl bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-xl ring-1 ring-white/10 transition-all duration-200 translate-y-1 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
+        {customerName}
+        <div className="absolute -top-1 left-4 h-2 w-2 rotate-45 bg-gray-900"></div>
+      </div>
+    )}
+  </div>
+</td>
           <td className="px-3 py-2 text-gray-700 text-sm border border-gray-300 whitespace-nowrap">
             {item?.mobile}
           </td>
@@ -2850,6 +2889,12 @@ setisdemofollowedNotClosed(true)
                   <span>Email</span>
                 </div>
               </td>
+  <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
+                <div className="flex items-center gap-1">
+                  <Package className="w-3.5 h-3.5" />
+                  <span>Product Name</span>
+                </div>
+              </td>
             </tr>
             <tr className="bg-white text-xs border border-b-2 border-gray-300 border-b-gray-400">
               <td className="border border-gray-300" />
@@ -2881,9 +2926,31 @@ setisdemofollowedNotClosed(true)
                 </td>
               )}
 
-              <td className="px-3 py-1.5 border border-gray-300 text-gray-600">
-                {item?.email || "-"}
+            
+<td className="px-3 py-2 font-semibold text-gray-900 text-sm border border-gray-300 whitespace-nowrap">
+  <div className="relative group w-[100px]">
+    <span
+      tabIndex={0}
+      className="block truncate cursor-pointer"
+      aria-label={item?.email}
+    >
+      {item?.email}
+    </span>
+
+    {shouldShowTooltipEmail && (
+      <div className="pointer-events-none absolute left-0 top-full z-50 mt-2 w-max max-w-xs rounded-xl bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-xl ring-1 ring-white/10 transition-all duration-200 translate-y-1 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
+        {item?.email}
+        <div className="absolute -top-1 left-4 h-2 w-2 rotate-45 bg-gray-900"></div>
+      </div>
+    )}
+  </div>
+</td>
+
+
+              <td className="px-3 py-1.5 border border-gray-300 text-blue-500 font-medium whitespace-nowrap">
+                {item?.leadFor[0]?.productorServiceId?.shortName?.toUpperCase() || item?.leadFor[0]?.productorServiceId?.productName?.toUpperCase()||"-"}
               </td>
+
             </tr>
           </>
         )}

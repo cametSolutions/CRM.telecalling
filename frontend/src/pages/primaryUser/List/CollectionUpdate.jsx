@@ -465,6 +465,7 @@ console.log(collectionlead)
   console.log(forcefullyclosedLeads)
   const renderTable = (data) => {
     const LeadRow = ({ item, index }) => {
+console.log(item)
       const [open, setOpen] = useState(false)
 
       const lastLog = item.activityLog[item.activityLog.length - 1]
@@ -474,7 +475,9 @@ console.log(collectionlead)
             .split("/")
             .join("-")
         : "-"
-
+const customerName = item?.customerName?.customerName.toUpperCase();
+const shouldShowTooltipCustomer = customerName.length > 20;
+const shouldShowTooltipEmail = item?.email.length >5;
       return (
         <>
           {/* ── Main row ── */}
@@ -492,11 +495,29 @@ console.log(collectionlead)
             {/* <td className="px-3 py-2 font-semibold text-gray-900 text-sm border border-gray-300 whitespace-nowrap uppercase truncate">
               {item?.customerName?.customerName}
             </td> */}
-            <td className="px-3 py-2 border border-gray-300">
+            {/* <td className="px-3 py-2 border border-gray-300">
               <div className="font-semibold text-gray-900 text-sm uppercase max-w-[200px] truncate">
                 {item?.customerName?.customerName}
               </div>
-            </td>
+            </td> */}
+<td className="px-3 py-2 font-semibold text-gray-900 text-sm border border-gray-300 whitespace-nowrap">
+  <div className="relative group w-[180px]">
+    <span
+      tabIndex={0}
+      className="block truncate cursor-pointer"
+      aria-label={customerName}
+    >
+      {customerName}
+    </span>
+
+    {shouldShowTooltipCustomer && (
+      <div className="pointer-events-none absolute left-0 top-full z-50 mt-2 w-max max-w-xs rounded-xl bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-xl ring-1 ring-white/10 transition-all duration-200 translate-y-1 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
+        {customerName}
+        <div className="absolute -top-1 left-4 h-2 w-2 rotate-45 bg-gray-900"></div>
+      </div>
+    )}
+  </div>
+</td>
             <td className="px-3 py-2 text-gray-700 text-sm border border-gray-300 whitespace-nowrap">
               {item?.mobile}
             </td>
@@ -611,18 +632,19 @@ console.log(collectionlead)
                 <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
                   <span>Lead ID</span>
                 </td>
-                <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
-                  <div className="flex items-center gap-1">
-                    <Phone className="w-3.5 h-3.5" />
-                    <span>Phone</span>
-                  </div>
-                </td>
-                <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
+<td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
                   <div className="flex items-center gap-1">
                     <Mail className="w-3.5 h-3.5" />
                     <span>Email</span>
                   </div>
                 </td>
+                <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
+                  <div className="flex items-center gap-1">
+                    <Phone className="w-3.5 h-3.5" />
+                    <span>ProductName</span>
+                  </div>
+                </td>
+                
               </tr>
 
               {/* Sub-data row */}
@@ -648,12 +670,32 @@ console.log(collectionlead)
                 <td className="px-3 py-1.5 border border-gray-300  text-gray-700">
                   {item?.leadId}
                 </td>
-                <td className="px-3 py-1.5 border border-gray-300 text-gray-700">
+<td className="px-3 py-2  text-gray-700 text-sm border border-gray-300 whitespace-nowrap">
+  <div className="relative group w-[100px]">
+    <span
+      tabIndex={0}
+      className="block truncate cursor-pointer"
+      aria-label={item?.email}
+    >
+      {item?.email}
+    </span>
+
+    {shouldShowTooltipEmail && (
+      <div className="pointer-events-none absolute left-0 top-full z-50 mt-2 w-max max-w-xs rounded-xl bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-xl ring-1 ring-white/10 transition-all duration-200 translate-y-1 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
+        {item?.email}
+        <div className="absolute -top-1 left-4 h-2 w-2 rotate-45 bg-gray-900"></div>
+      </div>
+    )}
+  </div>
+</td>
+ <td className="px-3 py-1.5 border border-gray-300 text-blue-500 font-medium">
+                  {item?.leadFor[0]?.prodproductorServiceId?.shortName ||item?.leadFor[0]?.productorServiceId?.productName|| "-"}
+                </td>
+                {/* <td className="px-3 py-1.5 border border-gray-300 text-gray-700">
                   {item?.phone || "-"}
-                </td>
-                <td className="px-3 py-1.5 border border-gray-300 text-gray-600">
-                  {item?.email || "-"}
-                </td>
+                </td> */}
+
+               
               </tr>
             </>
           )}
