@@ -1815,7 +1815,7 @@ Problem:    \t${selectedText}
 <tbody className="divide-y divide-gray-200">
   {customerData?.map((customer, index) =>
     customer?.selected
-      ?.filter((item) => item?.productorservicetype === "Primaryproduct")
+      ?.filter((item) => item?.product_id?.productorservicetype === "Primaryproduct")
       .map((item, subIndex) => (
         <tr
           key={`${index}-${subIndex}`}
