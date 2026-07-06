@@ -22,6 +22,7 @@ export const StaticSidebar = ({
   parentyear,
   parentperiodmode
 }) => {
+console.log("hhhh")
   console.log(parentperiodmode)
   console.log(parentyear)
   console.log(selectedCompanyBranch)

@@ -52,21 +52,12 @@ const CustomerListform = () => {
     const res = await api.get(
       `/customer/getcust?limit=100&page=${pageParam}&search=${search}&loggeduserBranches=${branch}&customerType=${status}`
     )
-console.log(res.data.data)
-const d=res.data.data.customers
-console.log(d)
-const t=d.filter((item)=>item.customerName==="SHAFASIL TRADERS AND CONTRACTORS PRIVATE LIMITED")
-console.log(t)
+    
     return res.data.data
   }
-const{data:dupi}=UseFetch("/customer/duplicate")
-console.log(dupi)
-const {data:unwanted}=UseFetch("/customer/getunwanted")
-console.log(unwanted)
-const a=unwanted?.unwanted?.filter((item)=>!item.selected.length)
-const b=unwanted?.un.filter((item)=>!item.selected.length)
-console.log(b)
-console.log(a)
+  const { data: dupi } = UseFetch("/customer/duplicate")
+  const { data: unwanted } = UseFetch("/customer/getunwanted")
+  
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isFetching } =
     useInfiniteQuery({
       queryKey: [
@@ -82,7 +73,6 @@ console.log(a)
         lastPage.customers.length === 100 ? allPages.length + 1 : undefined,
       enabled: !!selectedBranch
     })
-console.log(data)
   //intialize user
   useEffect(() => {
     const userData = getLocalStorageItem("user")
@@ -115,11 +105,21 @@ console.log(data)
   }, [])
 
   useEffect(() => {
-    if (data?.pages?.length) {
+    if(data?.pages?.length) {
       // all pages combined
       const allCustomers = data.pages.flatMap((page) => page.customers)
 
-      setAfterSearchData(allCustomers)
+const filteredCustomers = allCustomers.map((customer) => ({
+  ...customer,
+  selected: (customer.selected || []).filter(
+    (item) =>
+      !item.productorservicetype ||
+      item.productorservicetype === "Primaryproduct"
+  ),
+}));
+console.log(filteredCustomers)
+setAfterSearchData(filteredCustomers);
+      setAfterSearchData(filteredCustomers)
       setcustomerCount(data.pages[0].selectedbranchCustomercount || 0)
     }
   }, [data])
@@ -196,7 +196,7 @@ console.log(data)
       ? `${address?.slice(0, maxLength)}...`
       : address
   }
- 
+
   const handleDownload = async () => {
     const response = await api.get(
       `/customer/downloadcustomerlistexcel?customerType=${selectedstatus}&branchselected=${selectedBranch}&searchTerm=${apiSearchTerm}`
@@ -364,12 +364,12 @@ console.log(data)
               {selectedstatus === "ProductinfoMissing"
                 ? " Product Details Missing Customer List"
                 : selectedstatus === "ProductMissing"
-                ? "Product Missing Customer List"
-                : selectedstatus === "Deactive"
-                ? "Deactive Customer List"
-                : selectedstatus === "Running"
-                ? "Active Customer List"
-                : "Customer List"}
+                  ? "Product Missing Customer List"
+                  : selectedstatus === "Deactive"
+                    ? "Deactive Customer List"
+                    : selectedstatus === "Running"
+                      ? "Active Customer List"
+                      : "Customer List"}
             </h3>
 
             {/* Search Bar */}
@@ -512,7 +512,7 @@ console.log(data)
                           <td className="px-4 py-3 text-sm text-gray-900 font-medium uppercase">
                             {customer?.customerName}
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-900 text-red-600">
+                          <td className="px-4 py-3 text-sm text-red-600">
                             Missing Product
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-900 font-mono">
@@ -617,7 +617,7 @@ console.log(data)
                           {itemIndex === 0 ? index + 1 : ""}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900">
-                          {item?.branchName}
+                          {item?.branch_id?.branchName}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900 font-medium uppercase">
                           {customer?.customerName}

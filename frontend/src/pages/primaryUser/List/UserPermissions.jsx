@@ -48,7 +48,7 @@ const UserPermissions = () => {
   }
 
   return (
-    <div className="h-full  p-2 sm:p-3 md:p-4 bg-gray-50">
+    <div className="h-full  p-2 sm:p-3 md:p-4 bg-[#ADD8E6]">
       <div className="w-full h-full mx-auto ">
         <div className="bg-white h-full shadow-lg rounded-xl overflow-hidden flex flex-col">
           {/* Header */}

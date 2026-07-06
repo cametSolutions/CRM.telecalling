@@ -39,7 +39,8 @@ import {
   existsameCallnote,
 CustomereditonLead,
 getunwnanted,
-duplicate
+duplicate,
+ChecklicenseForlead
 } from "../../controller/secondaryUserController/customerController.js"
 
 const router = express.Router()
@@ -56,6 +57,7 @@ router.put("/callnotesEdit", authMiddleware, UpdateCallnotes)
 router.post("/customerEdit", authMiddleware, CustomerEdit)
 router.post("/customereditonlead",authMiddleware,CustomereditonLead)
 router.get("/getLicensenumber", authMiddleware, GetLicense)
+router.get("/checkLicense",authMiddleware,ChecklicenseForlead)
 router.get("/getCustomer", authMiddleware, GetCustomer)
 router.get("/duplicate",authMiddleware,duplicate)
 router.get("/getselectedcustomerforCall/:id", authMiddleware, GetselectedCustomerForCall)
