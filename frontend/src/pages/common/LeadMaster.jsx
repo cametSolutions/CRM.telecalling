@@ -95,7 +95,13 @@ function LicenseDropdown({
   const wrapperRef = useRef(null)
   const inputRef = useRef(null)
   const dropdownId = `license-dropdown-${index}`
+const selectedLicenses = isMulti ? item?.licenseNumbers || [] : [];
 
+const multiDisplayValue = selectedLicenses.length
+  ? selectedLicenses.length === 1
+    ? String(selectedLicenses[0]?.licenseNumber ?? "")
+    : `${selectedLicenses[0]?.licenseNumber}`
+  : "";
   useEffect(() => {
     if (isMulti) {
       setSearch("")
@@ -131,7 +137,7 @@ function LicenseDropdown({
     }
   }, [dropdownId])
 
-  const selectedLicenses = isMulti ? item?.licenseNumbers || [] : []
+  // const selectedLicenses = isMulti ? item?.licenseNumbers || [] : []
   console.log(customerTableData)
   const filtered = (customerTableData || []).filter((lic) => {
     const q = String(search || "").toLowerCase()
@@ -236,7 +242,8 @@ function LicenseDropdown({
         ref={inputRef}
         type="text"
         disabled={isReadOnly}
-        value={search}
+        // value={search}
+  value={isMulti ? (open ? search : multiDisplayValue) : search}
         onChange={handleInputChange}
         onClick={() => {
           if (!isReadOnly) setOpen(true)
@@ -731,6 +738,7 @@ const LeadMaster = ({
   const [productOrserviceSelections, setProductorServiceSelections] = useState(
     {}
   )
+const mobileRegister = registerMain("mobile");
   const today = new Date().toISOString().split("T")[0]
   const [takenLicenses, setTakenLicense] = useState([])
   console.log(takenLicenses)
@@ -812,11 +820,16 @@ const LeadMaster = ({
   const navigate = useNavigate()
   const location = useLocation()
   const mobileValue = watchModal("mobile")
+  const mobileMainValue = watchMain("mobile")
   const customerNameValue = watchModal("customerName")
+  const customerMainValue = watchMain("customerName")
   const customerIdValue = watchModal("customerid")
+  const customerMainIdValule = watchMain("customerid")
   const [isTradeOpen, setIsTradeOpen] = useState(false)
   const discountAmount = watchMain("discamnt")
   const tradeDropdownRef = useRef(null)
+const isFirstRender = useRef(true);
+const isMobileTypedByUser = useRef(false);
   console.log(mobileValue)
   console.log(customerNameValue)
   console.log(customerIdValue)
@@ -857,27 +870,107 @@ const LeadMaster = ({
     document.addEventListener("mousedown", handleClickOutside)
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
-  const softwareTrades = [
-    "Agriculture",
-    "Business Services",
-    "Computer Hardware Software",
-    "Electronics Electrical Supplies",
-    "FMCG-Fast Moving Consumable Goods",
-    "Garment,Fashion Apparel",
-    "Health Beauty",
-    "Industrial Supplies",
-    "Jewelry Gemstones",
-    "Mobile Accessories",
-    "Pharmaceutical Chemicals",
-    "Textiles Chemicals",
-    "Textiles Fabrics",
-    "Others",
-    "Restaurant, Food And Beverage",
-    "Accounts Chartered Account",
-    "Stationery, Printing Publishing",
-    "Hotel",
-    "Pipes, Tubes Fittings"
-  ]
+  // const softwareTrades = [
+  //   "Agriculture",
+  //   "Business Services",
+  //   "Computer Hardware Software",
+  //   "Electronics Electrical Supplies",
+  //   "FMCG-Fast Moving Consumable Goods",
+  //   "Garment,Fashion Apparel",
+  //   "Health Beauty",
+  //   "Industrial Supplies",
+  //   "Jewelry Gemstones",
+  //   "Mobile Accessories",
+  //   "Pharmaceutical Chemicals",
+  //   "Textiles Chemicals",
+  //   "Textiles Fabrics",
+  //   "Others",
+  //   "Restaurant, Food And Beverage",
+  //   "Accounts Chartered Account",
+  //   "Stationery, Printing Publishing",
+  //   "Hotel",
+  //   "Pipes, Tubes Fittings"
+  // ]
+const softwareTrades = [
+  "Agriculture",
+  "Business Services",
+  "Computer Hardware Software",
+  "Electronics Electrical Supplies",
+  "FMCG-Fast Moving Consumable Goods",
+  "Garment,Fashion Apparel",
+  "Health Beauty",
+  "Industrial Supplies",
+  "Jewelry Gemstones",
+  "Mobile Accessories",
+  "Pharmaceutical Chemicals",
+  "Textiles Chemicals",
+  "Textiles Fabrics",
+  "Others",
+  "Restaurant, Food And Beverage",
+  "Accounts Chartered Account",
+  "Stationery, Printing Publishing",
+  "Hotel",
+  "Pipes, Tubes Fittings",
+
+  "Wholesale Trading",
+  "Retail Trading",
+  "Import & Export",
+  "Distribution / Dealers",
+  "E-commerce / Online Trading",
+  "IT Services",
+  "Web Design & Development",
+  "Cyber Security Services",
+  "Hardware & Networking",
+  "Construction Companies",
+  "Spare Parts Dealers",
+  "Banks",
+  "Printing & Publishing",
+
+  "Pharmaceutical Manufacturing",
+  "Food Manufacturing",
+  "Textile / Garment Manufacturing",
+  "Chemical Manufacturing",
+  "Plastic Manufacturing",
+  "Steel / Metal Manufacturing",
+  "Furniture Manufacturing",
+  "Building Contractors",
+  "Real Estate Developers",
+  "Property Management",
+  "Transport & Logistics",
+  "Finance Companies",
+
+  "Electrical Equipment Manufacturing",
+  "Electronics Manufacturing",
+  "Automobile Manufacturing",
+  "Hospitals",
+  "Clinics",
+  "Medical Laboratories",
+  "Medical Equipment Suppliers",
+  "Pharmacies / Medical Stores",
+  "Interior Design",
+  "Vehicle Dealers",
+  "Automobile Service Centres",
+  "Insurance Companies",
+  "Chartered Accountants / Audit Firms",
+  "Tax Consultants",
+  "Hotels & Resorts",
+
+  "Schools",
+  "Colleges",
+  "Training Institutes",
+  "Coaching Centers",
+  "Educational Consultants",
+  "Software Development",
+  "Restaurants / Cafes",
+  "Travel Agencies",
+  "Tourism Operators",
+  "Advertising & Marketing Agencies",
+  "Event Management",
+  "Security Services",
+  "Cleaning / Facility Management",
+  "NGOs / Non-Profit Organizations",
+  "Government Organizations"
+];
 
   const { data: alluser, loading: usersLoading } = UseFetch("/auth/getallUsers")
   const {
@@ -958,6 +1051,59 @@ const LeadMaster = ({
 
     return () => clearTimeout(timer)
   }, [mobileValue, customerNameValue, customerIdValue])
+  console.log(duplicateWarning)
+  console.log(mobileValue)
+  console.log(customerNameValue)
+  console.log(customerIdValue)
+  useEffect(() => {
+  if (isFirstRender.current) {
+console.log(isFirstRender)
+    isFirstRender.current = false;
+    return;
+  }
+console.log(isMobileTypedByUser)
+  if (!isMobileTypedByUser.current) return;
+    const cleanedMobile = String(mobileMainValue || "")
+      .replace(/^\+?91/, "")
+      .replace(/\D/g, "")
+    const selectedCustomerOption =
+      customerOptions.find((o) => o.value === customerMainValue) || null
+
+    const customerName = selectedCustomerOption?.label || ""
+    console.log(cleanedMobile)
+    const cleanedName = String(customerName || "").trim()
+    console.log(cleanedName)
+
+    if (cleanedMobile.length !== 10 || !cleanedName) {
+      setDuplicateWarning("")
+      return
+    }
+    console.log("hh")
+    const timer = setTimeout(async () => {
+      try {
+        setCheckingDuplicate(true)
+
+        const res = await api.post("/lead/check-customer-duplicate", {
+          mobile: cleanedMobile,
+          customerName: cleanedName,
+          customerId: customerMainIdValule || ""
+        })
+        console.log(res)
+        if (res?.data?.exists) {
+          setDuplicateWarning(res.data.message)
+        } else {
+          setDuplicateWarning("")
+        }
+      } catch (error) {
+        setDuplicateWarning("")
+      } finally {
+        setCheckingDuplicate(false)
+      }
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [mobileMainValue])
+  console.log(duplicateWarning)
   useEffect(() => {
     if (!selectedleadlist || selectedleadlist.length === 0) {
       console.log("hh")
@@ -1188,18 +1334,19 @@ const LeadMaster = ({
               licenseNumbers: [],
               productorServiceId: serviceId,
               productorServiceName:
-                service?.productName || service?.serviceName || "",
+                service?.shortName || service?.productName || "",
               itemType: service?.productName ? "Product" : "Service",
               productorservicetype:
                 service?.productorservicetype || "Additionalservice",
               productPrice: 0,
-              hsn: igstRate || 0,
+              hsn: 0,
               netAmount: 0,
               isDefaultService: true,
               parentPrimaryProductId: primaryProductId,
               company_id: service?.selected?.[0]?.company_id,
               branch_id: service?.selected?.[0]?.branch_id,
               actualproductPrice: productPrice,
+actualHsn:igstRate,
               actualNetAmount: Number(productPrice + taxAmount)
             }
           })
@@ -2278,6 +2425,7 @@ const LeadMaster = ({
     //     message: `${result.data.message},You can't make leads`
     //   }
     // } else
+console.log(result.data.message)
     if (
       result.data.message ===
       "This customer already has a lead with the same product."
@@ -2615,10 +2763,11 @@ const LeadMaster = ({
   }
   const onSubmit = async (data) => {
     console.log(data)
-
+console.log(duplicateWarning)
+if(duplicateWarning)return
     if (submitLoading) return
     setsubmitLoading(true)
-    if (submitLoading) return
+    if (duplicateWarning) return
     const submitData = { ...data }
 
     if (!selfAllocation) {
@@ -2854,8 +3003,12 @@ const LeadMaster = ({
     existingCustomers,
     customerid = null
   ) => {
+    console.log(customerid)
+    console.log(existingCustomers)
+    console.log(inputMobile)
     const normalizedInput = normalizeMobile(inputMobile)
     if (customerid) {
+      console.log("h")
       return existingCustomers.some((customer) => {
         const normalizedStored = normalizeMobile(customer.mobile)
         return (
@@ -2870,6 +3023,7 @@ const LeadMaster = ({
   }
   console.log(duplicateWarning)
   const onmodalsubmit = async (data) => {
+    console.log(data)
     console.log("hhhh")
     console.log(duplicateWarning)
     if (duplicateWarning) return
@@ -2877,19 +3031,19 @@ const LeadMaster = ({
 
     if (modalloader) return
     try {
-      const checkexistingNumber = isMobileExists(
-        data?.mobile,
-        allcustomer,
-        data?.customerid
-      )
+      // const checkexistingNumber = isMobileExists(
+      //   data?.mobile,
+      //   allcustomer,
+      //   data?.customerid
+      // )
 
-      if (checkexistingNumber) {
-        setError("mobile", {
-          type: "manual",
-          message: "This mobile number is already used"
-        })
-        return
-      }
+      // if (checkexistingNumber) {
+      //   setError("mobile", {
+      //     type: "manual",
+      //     message: "This mobile number is already used"
+      //   })
+      //   return
+      // }
       setModalLoader(true)
       let response
       if (data?.customerid) {
@@ -3300,6 +3454,7 @@ const LeadMaster = ({
                       value={selectedBranch}
                       disabled={isReadOnly}
                       onChange={(e) => {
+setDuplicateWarning("")
                         setSelectedBranch(e.target.value)
                         setValueMain("customerName", "")
                         setSelectedCustomer(null)
@@ -3370,13 +3525,22 @@ const LeadMaster = ({
                       Mobile Number
                     </label>
                     <input
-                      {...registerMain("mobile")}
+                      {...mobileRegister}
                       readOnly={isReadOnly}
                       placeholder="Mobile..."
+onChange={(e) => {
+    isMobileTypedByUser.current = true;
+    mobileRegister.onChange(e);
+  }}
                       className={`w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8] ${
                         isReadOnly ? "cursor-not-allowed opacity-70" : ""
                       }`}
                     />
+                    {duplicateWarning && (
+                      <p className="mt-1 text-xs font-medium text-red-500">
+                        {duplicateWarning}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">
@@ -3942,15 +4106,15 @@ const LeadMaster = ({
                       >
                         {/* Product Name */}
                         <div className="flex">
-                          <div className=" flex items-center gap-3 w-[180px]">
+                          <div className=" flex items-center gap-3 w-auto">
                             <div className="h-3 w-1 rounded-full bg-blue-600"></div>
 
-                            <h2 className="text-xs font-bold uppercase tracking-wider text-gray-800">
+                            <h2 className="text-xs font-bold uppercase tracking-wider text-gray-800 ">
                               {productName}
                             </h2>
                           </div>
 
-                          <div className="flex flex-wrap gap-3">
+                          <div className="flex flex-wrap gap-3 ml-2">
                             {licenses.map((license) => (
                               <button
                                 key={license}
@@ -4152,7 +4316,7 @@ const LeadMaster = ({
             </div>
           </form>
 
-          {popupOpen && (
+          {/* {popupOpen && (
             <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40">
               <div className="bg-white p-4 rounded shadow-md text-center">
                 <p className="text-orange-500">{popupMessage}</p>
@@ -4164,7 +4328,60 @@ const LeadMaster = ({
                 </button>
               </div>
             </div>
-          )}
+          )} */}
+{popupOpen && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm px-4">
+    <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="p-6">
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 text-orange-600 shadow-sm">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 9v4m0 4h.01M10.29 3.86l-7.5 13A1 1 0 003.66 18h16.68a1 1 0 00.87-1.5l-7.5-13a1 1 0 00-1.74 0z"
+              />
+            </svg>
+          </div>
+
+          <div className="flex-1">
+            <h2 className="text-lg font-semibold text-slate-800">
+              Confirmation
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              {popupMessage}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => setPopupOpen(false)}
+            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            onClick={handlePopupOk}
+            className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700"
+          >
+            Continue
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
           {showdetailsopen && (
             <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4">
               <div className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl border border-gray-200 overflow-hidden">

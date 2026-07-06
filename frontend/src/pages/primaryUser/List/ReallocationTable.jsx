@@ -539,9 +539,9 @@ console.log(isClosed)
                     <th className="border  border-l-0 border-t-0 border-gray-400 px-4  min-w-[100px]">
                       Lead Id
                     </th>
-                    <th className="border  border-l-0 border-t-0 border-gray-400 px-4  min-w-[100px]">
+                    {/* <th className="border  border-l-0 border-t-0 border-gray-400 px-4  min-w-[100px]">
                       Description
-                    </th>
+                    </th> */}
                     <th className="border border-t-0   border-blue-500 px-4 ">
                       Allocation Type
                     </th>
@@ -574,7 +574,7 @@ console.log(isClosed)
                           <td className="px-4 ">{item?.landline}</td>
                           <td className="px-4 ">{item?.email}</td>
                           <td className=" px-4 ">{item?.leadId}</td>
-                          <td className=" px-4 border border-b-0 border-gray-400 "></td>
+                          {/* <td className=" px-4 border border-b-0 border-gray-400 "></td> */}
                           <td className="border border-b-0 border-gray-400 px-4 "></td>
 
                           <td className="border border-b-0 border-gray-400 px-1  text-blue-400 min-w-[50px] hover:text-blue-500 hover:cursor-pointer font-semibold">
@@ -619,11 +619,8 @@ console.log(isClosed)
                           <td className=" px-4 ">Assignedby</td>
                           <td className="px-4 ">No. of Followups</td>
                           <td className="px-4 min-w-[120px]">Lead Date</td>
-                          <td className="px-4 min-w-[120px] border border-t-0 border-b-0 border-gray-400 whitespace-nowrap">
-                            {/* {
-                              item?.activityLog[item.activityLog.length - 1]
-                                .remarks
-                            } */}
+                          {/* <td className="px-4 min-w-[120px] border border-t-0 border-b-0 border-gray-400 whitespace-nowrap">
+                          
 <span className="mx-2 relative group inline-block max-w-[220px] align-middle">
   <span className="block truncate text-[12px] text-slate-700">
     {item?.activityLog?.[item.activityLog.length - 1]?.remarks || "-"}
@@ -637,7 +634,7 @@ console.log(isClosed)
     </div>
   )}
 </span>
-                          </td>
+                          </td> */}
                           <td className=" border border-t-0 border-b-0 border-gray-400 px-1 bg-white ">
                             <select
                               value={selectedAllocationType?.item_id?.value}
@@ -798,7 +795,7 @@ console.log(isClosed)
                           <td className="border  border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 ">
                             {new Date(item?.leadDate).toLocaleDateString()}
                           </td>
-                          <td className="border  border-t-0 border-r-0 border-b-0 border-gray-400 px-4 py-0.5 "></td>
+                          {/* <td className="border  border-t-0 border-r-0 border-b-0 border-gray-400 px-4 py-0.5 "></td> */}
                           <td className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5 "></td>
                           <td
                             className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5 text-red-400 hover:text-red-500 hover:cursor-pointer font-semibold"
@@ -882,7 +879,7 @@ console.log("hhh")
 </span>
                             </div>
                           </td>
-                          <td className="border border-t-0 border-gray-400 "></td>
+                          {/* <td className="border border-t-0 border-gray-400 "></td> */}
                           <td className="border border-t-0 border-gray-400 "></td>
                           <td className="border border-t-0 border-gray-400"></td>
                           <td className="border border-t-0 border-gray-400 "></td>

@@ -372,7 +372,7 @@ console.log(stateOptions)
   }
   return (
     <div
-      className="flex flex-col justify-center items-center min-h-screen p-8 bg-gray-100"
+      className="flex flex-col justify-center items-center min-h-screen p-8 bg-[#ADD8E6]"
       // style={{ backgroundImage: "url('/userbackground.jpg')" }}
     >
       <div className="w-full p-8 border rounded-lg shadow-lg  bg-white ">

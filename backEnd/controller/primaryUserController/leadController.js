@@ -1689,10 +1689,14 @@ export const Leadclosing = async (req, res) => {
       const newTaxAmount = Number(data?.taxAmount || 0);
 
       const totalPaidAmount = Number(matchedDoc.totalPaidAmount || 0);
+console.log("totalpaidamount",totalPaidAmount)
       const rawBalanceAmount = newNetAmount - totalPaidAmount;
+console.log("rawBalanceAmount",rawBalanceAmount)
       const newBalanceAmount = rawBalanceAmount < 0 ? 0 : rawBalanceAmount;
+console.log("newbalanceamount",newBalanceAmount)
       const excessPaidAmount =
         rawBalanceAmount < 0 ? Math.abs(rawBalanceAmount) : 0;
+console.log("excesspaidamount",excessPaidAmount)
 
       // const Product = mappedleadData.find(
       //   (item) => item.productorservicetype === "Primaryproduct"
@@ -3006,7 +3010,7 @@ export const UpdateLeadRegister = async (req, res) => {
 // };
 export const GetAllservices = async (req, res) => {
   try {
-    const allservices = await Service.find({});
+    const allservices = await Service.find({}).populate("company").populate("branch")
     return res
       .status(200)
       .json({ message: "Services found", data: allservices });
@@ -3706,10 +3710,11 @@ export const GetallfollowupList = async (req, res) => {
     console.log("endatae", endDate)
 
     const isNewMode = isViewMode || hasValidHeader || hasValidDates;
-    console.log("hasvalidhaeader", hasValidHeader)
-    console.log("hasvaliddate", hasValidDates)
-    console.log("isnewmodeeee", isNewMode)
-    console.log("isviewmode", isViewMode)
+    // console.log("hasvalidhaeader", hasValidHeader)
+    // console.log("hasvaliddate", hasValidDates)
+    // console.log("isnewmodeeee", isNewMode)
+    // console.log("isviewmode", isViewMode)
+console.log("pendingfoloopup",pendingfollowup)
     let query;
 
     // ✅ VIEW MODE
@@ -3774,6 +3779,7 @@ export const GetallfollowupList = async (req, res) => {
           };
         }
       } else if (pendingfollowup === "false") {
+console.log("adddddddminnnnnnnn")
         if (role === "Admin") {
           query = {
             activityLog: {
@@ -5027,7 +5033,7 @@ export const GetallLead = async (req, res) => {
     if (!Status && !role) {
       return res.status(400).json({ message: "Status or role is missing " });
     }
-
+    console.log("status", Status)
     if (Status === "Pending") {
       //for getting pending leads means leads not to be allocated to someone
       const query = { leadBranch: branchObjectId, activityLog: { $size: 1 } };
@@ -5059,6 +5065,7 @@ export const GetallLead = async (req, res) => {
         });
       }
     } else if (Status === "Approved") {
+      console.log("apppoved", Status)
       const query = {
         leadBranch: branchObjectId,
         reallocatedTo: false,
@@ -5074,7 +5081,7 @@ export const GetallLead = async (req, res) => {
         approvedAllocatedLeads.map(async (lead) => {
           const lastMatchingActivity = [...(lead.activityLog || [])]
             .reverse()
-            .find((log) => log.taskallocatedTo && log.taskallocatedBy);
+            .find((log) => log.taskallocatedTo && log.taskallocatedBy && !log?.taskfromFollowup);
 
           if (
             !lead.leadByModel ||
@@ -5683,7 +5690,7 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
       );
 
     return res.status(200).json({
-      message: "Followup updated successfully",
+      message:formData.followupType === "lost"? "Lead losted":formData.followupType === "closed"?"Followup Closed":"Next follow up updated",
       data: updatedLead
     });
   } catch (error) {
@@ -5979,17 +5986,20 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
 
     let allocatedToModel;
     let allocatedByModel;
-    console.log("selecteditttttttttttttttt", selectedItem)
-    const userId = selectedItem?.allocatedTo?.id
-    console.log("useriddddddddd", userId)
+const allocatedToId =
+  typeof selectedItem?.allocatedTo === "object"
+    ? selectedItem?.allocatedTo?._id||selectedItem?.allocatedTo?.id
+    : selectedItem?.allocatedTo
+    console.log("allocatedToId", allocatedToId)
+    
     const isStaffallocatedtomodel = await Staff.findOne({
-      _id: userId,
+      _id: allocatedToId,
     });
     if (isStaffallocatedtomodel) {
       allocatedToModel = "Staff";
     } else {
       const isAdminallocatedtomodel = await Admin.findOne({
-        _id: userId,
+        _id: allocatedToId,
       });
       if (isAdminallocatedtomodel) {
         allocatedToModel = "Admin";
@@ -6071,6 +6081,7 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
           log.allocatedClosed === false && log?.allocationChanged === false &&
           log.taskTo // ensures the field exists
       );
+
       const task = matchLead.activityLog[matchingIndex]?.taskId;
       console.log("taskkk", task)
       console.log("alocationtupeid", allocationtypeId)
@@ -6094,7 +6105,7 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
         submissiondoneByModel: allocatedByModel,
         taskallocatedBy: allocatedBy,
         taskallocatedByModel: allocatedByModel,
-        taskallocatedTo: selectedItem.allocatedTo?.id,
+        taskallocatedTo: allocatedToId,
         taskallocatedToModel: allocatedToModel,
         remarks: cleanedData.allocationDescription,
         taskBy: allocationTask?._id,
@@ -6110,6 +6121,9 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
         activityLogEntry.allocationDate = cleanedData.allocationDate;
         // activityLogEntry.taskfromFollowup = false
       }
+      if (cleanedData?.reason) {
+        activityLogEntry.changeReason = cleanedData.reason
+      }
       matchLead.dueDate = cleanedData.allocationDate;
 
       // Push new log
@@ -6119,6 +6133,8 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
     }
 
     if (allocationpending === "true") {
+console.log(
+"oooooooooooooooooo")
       const pendingLeads = await LeadMaster.find({
         leadBranch: branchObjectId,
         activityLog: { $size: 1 },
@@ -6146,12 +6162,13 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
         .status(201)
         .json({ message: "Allocate successfully", data: populatedLeads });
     } else if (allocationpending === "false") {
+console.log("ddddddddddddd")
       const allocatedLeads = await LeadMaster.find({
         allocatedTo: { $ne: null },
       })
         .populate({ path: "customerName", select: "customerName" })
         .lean();
-
+console.log("allocatedleadsss",allocatedLeads)
       const populatedLeads = await Promise.all(
         allocatedLeads.map(async (lead) => {
           if (!lead.leadByModel || !mongoose.models[lead.leadByModel]) {
@@ -6271,7 +6288,7 @@ export const GetrespectedleadTask = async (req, res) => {
     const selectedfollowup = await LeadMaster.find(query)
       .populate({ path: "customerName", select: "customerName" })
       .lean();
-    console.log("leaddddddddddd", selectedfollowup)
+    // console.log("leaddddddddddd", selectedfollowup)
 
     const taskLeads = [];
     if (ownTask === "false") {
@@ -6333,6 +6350,36 @@ export const GetrespectedleadTask = async (req, res) => {
               submittedUser: populatedSubmittedUser || item.submittedUser,
               taskallocatedTo:
                 populatedTaskAllocatedTo || item.taskallocatedTo,
+            };
+          })
+        );
+lead.leadFor = await Promise.all(
+          lead.leadFor.map(async (item) => {
+            
+
+
+            let populatedProductorservice = null;
+            
+
+            if (
+              item.productorServiceId &&
+              item.productorServicemodel &&
+              mongoose.models[item.productorServicemodel]
+            ) {
+              const model = mongoose.model(item.productorServicemodel);
+              populatedProductorservice = await model
+                .findById(item.productorServiceId)
+                .select("productName")
+                .lean();
+            }
+
+           
+
+            return {
+              ...item,
+            
+              productorServiceId: populatedProductorservice || item.productorServiceId,
+              
             };
           })
         );
@@ -6465,12 +6512,24 @@ export const GetrespectedleadTask = async (req, res) => {
               };
             })
           );
+const populatedLeadFor = await Promise.all(
+        lead.leadFor.map(async (item) => {
+          const model = mongoose.model(item.productorServicemodel);
+          const populated = await model
+            .findById(item.productorServiceId)
+            .lean()
+            .catch(() => null);
+
+          return { ...item, productorServiceId: populated };
+        })
+      );
           taskLeads.push({
             ...lead,
             leadBy: populatedLeadBy || lead.leadBy,
             taskallocatedTo: populatedAllocatedTo,
             taskallocatedBy: populatedAllocatedBy,
             activityLog: populatedActivityLog,
+leadFor:populatedLeadFor
           });
         }
       }
@@ -6484,7 +6543,7 @@ export const GetrespectedleadTask = async (req, res) => {
       return res.status(201).json({ messge: "Task found", data: taskLeads });
     }
   } catch (error) {
-    console.log("error", error.message);
+    console.log("error", error)
     return res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -7960,6 +8019,7 @@ export const GetcollectionLeads = async (req, res) => {
             return populatedActivity;
           })
         );
+
 
         const latestFollowupActivity = [...(lead.activityLog || [])]
           .filter((activity) => activity?.taskTo === "followup")
@@ -9783,16 +9843,16 @@ export const GetownLeadList = async (req, res) => {
             const populatedActivity = { ...activity };
 
             // Populate taskallocatedTo
-            if (activity.submissiondoneByModel && activity.submittedUser && activity?.taskallocatedTo) {
-              const model = mongoose.model(activity.submissiondoneByModel);
-              taskallocatedTo = populatedActivity.submittedUser = await model
-                .findById(activity.submittedUser)
+            if (activity.submissiondoneByModel && activity.submittedUser && activity?.taskallocatedTo&&activity?.allocationChanged===false) {
+              const model = mongoose.model(activity.taskallocatedToModel);
+              taskallocatedTo = populatedActivity.taskallocatedTo = await model
+                .findById(activity.taskallocatedTo)
                 .select("name")
                 .lean();
             }
 
             // // Populate taskallocatedBy
-            if (activity.taskallocatedByModel && activity.taskallocatedBy) {
+            if (activity.taskallocatedByModel && activity.taskallocatedBy&&activity?.allocationChanged===false) {
               const model = mongoose.model(activity.taskallocatedByModel);
               taskallocatedBy = populatedActivity.taskallocatedBy = await model
                 .findById(activity.taskallocatedBy)

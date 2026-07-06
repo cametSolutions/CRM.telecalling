@@ -935,7 +935,7 @@ export default function StaffHeader({ hide = false }) {
   const permissions = user?.permissions?.[0] || {}
 
  
-
+console.log(permissions)
   const masters = useMemo(
     () => [
       {

@@ -11,6 +11,7 @@ import { PerformanceModal } from "./PerformanceModal"
 import api from "../../api/api"
 import SkeletonTable from "../loader/SkeletonTable"
 import Sidebar from "./Sidebar"
+import { toast } from "react-toastify"
 import { useFetcher } from "react-router-dom"
 export const StaticSidebar = ({
   selectedCompanyBranch,
@@ -146,17 +147,30 @@ console.log("hhhh")
           label: branch.branchName
         }))
       ])
-//  setbranchOptions((prev) => [
-//         ...prev,
-//         ...storedUser.selected.map((branch) => ({
-//           id: branch.branch_id,
-//           label: branch.branchName
-//         }))
-//       ])
 
+      //  setbranchOptions((prev) => [
+      //         ...prev,
+      //         ...storedUser.selected.map((branch) => ({
+      //           id: branch.branch_id,
+      //           label: branch.branchName
+      //         }))
+      //       ])
     }
   }, [branchlist])
-console.log(branchOptions)
+  const handlepasswordChange = async (payload) => {
+    console.log(payload)
+
+    const updatepassword = await api.put("/auth/updatepassword", payload)
+    console.log(updatepassword)
+    if (updatepassword.status === 200) {
+      console.log("hh")
+      toast.success(updatepassword.data.message)
+    } else {
+      toast.error("Something went wrong")
+      console.log("noee")
+    }
+  }
+  console.log(branchOptions)
   console.log("b")
   const toggleSidebar = () => setSidebarOpen((prev) => !prev)
   return (
@@ -176,6 +190,7 @@ console.log(branchOptions)
         BranchSelect={BranchSelect}
         SkeletonTable={SkeletonTable}
         setAvatarOpen={setAvatarOpen}
+        onPasswordChange={handlepasswordChange}
       />
     </div>
   )

@@ -1479,6 +1479,7 @@
 // export default LeadAllocationTable ////bugs page
 
 import { useState, useEffect } from "react"
+import PopUp from "../../../components/common/PopUp"
 import {
   X,
   Calendar,
@@ -1516,7 +1517,9 @@ import SkeletonTable from "../../../components/loader/SkeletonTable"
 import { StaticSidebar } from "../../../components/primaryUser/StaticSidebar"
 const LeadAllocationTable = () => {
   const [status, setStatus] = useState("Pending")
+  const [popupOpen, setpopupOpen] = useState(false)
   const [submiterror, setsubmitError] = useState("")
+  const [warningMessage, setWarningMessage] = useState(null)
   const [toggleLoading, setToggleLoading] = useState(false)
   const [selectedLeadId, setselectedLeadId] = useState(null)
   const [showModal, setShowmodal] = useState(false)
@@ -1704,11 +1707,6 @@ console.log(leadPendinglist)
       )
     }
   }, [alluserdata, selectedCompanyBranch])
-  useEffect(() => {
-    if (leadPendinglist) {
-      getgroupingData(leadPendinglist)
-    }
-  }, [leadPendinglist])
   const getgroupingData = (data) => {
     const groupedLeads = {}
     let grandTotal = 0
@@ -1722,9 +1720,15 @@ console.log(leadPendinglist)
 
       groupedLeads[leadBy].push(lead)
     })
-
+groupedLeads
     setTableData(groupedLeads)
   }
+  useEffect(() => {
+    if (leadPendinglist) {
+      getgroupingData(leadPendinglist)
+    }
+  }, [leadPendinglist])
+
   console.log(selectedAllocationType)
   const toggleStatus = async () => {
     setTableData([])
@@ -1741,6 +1745,7 @@ console.log(leadPendinglist)
         const data = response.data.data //gets only allocated leads with reallocatedto field false which means reallocatedto true are in the reallocation page not need to display here
         console.log(data)
         getgroupingData(data)
+        console.log(data)
         // setTableData(data)
         data.forEach((item) => {
           setselectedAllocationType((prev) => ({
@@ -1751,6 +1756,9 @@ console.log(leadPendinglist)
         setapprovedToggleStatus(!approvedToggleStatus)
         setToggleLoading(false)
         const initialSelected = {}
+        console.log(data)
+        const a = data.filter((item) => item.leadId === "00147")
+        console.log(a)
         data.forEach((item) => {
           if (item.allocatedTo?._id) {
             const match = allocationOptions.find(
@@ -1762,7 +1770,7 @@ console.log(leadPendinglist)
             }
           }
         })
-
+        console.log(initialSelected)
         setSelectedAllocates(initialSelected)
       }
     } else {
@@ -1779,6 +1787,9 @@ console.log(leadPendinglist)
         setToggleLoading(false)
       }
     }
+  }
+  const onClose = () => {
+    setpopupOpen(false)
   }
   const handleMoreClick = (id, name) => {
     const Datas = targetData?.userWiseResults
@@ -2029,6 +2040,33 @@ console.log(allocationOptions)
 console.log(filteredtasklist)
 // console.log(allocationType)
   const handleSubmit = async () => {
+    const matchingIndex = selectedItem.activityLog.findIndex(
+      (log) =>
+        log.reallocatedTo === false &&
+        log.taskClosed === false &&
+        // log.followupClosed === false &&
+        log.allocatedClosed === false &&
+        log.allocationChanged === false &&
+        log.taskTo // ensures the field exists
+    )
+    console.log(matchingIndex)
+    console.log(selectedItem)
+    console.log(selectedItem.allocatedTo._id||selectedItem.allocatedTo)
+    console.log(selectedItem?.activityLog[matchingIndex]?.taskallocatedTo)
+    console.log(
+      selectedItem?.activityLog[matchingIndex]?.taskallocatedTo ===(selectedItem?.allocatedTo?._id||selectedItem?.allocatedTo)
+    )
+    console.log("Hhh")
+    if (
+      selectedItem?.activityLog[matchingIndex]?.taskallocatedTo ===(selectedItem?.allocatedTo?._id||selectedItem?.allocatedTo)
+    ) {
+      console.log("hhhhh")
+      setWarningMessage("The selected staff member is the same. Please change the staff member")
+      setpopupOpen(true)
+      return
+    }
+    // if(selectedItem.allocatedTo===selectedItem)
+
     if (submitLoading) {
       return
     }
@@ -2065,8 +2103,8 @@ console.log(filteredtasklist)
       }))
       return
     }
+    console.log(selectedAllocationType)
 
-    // return
     try {
       if (selectedAllocationType) {
         const selected = selectedAllocationType[selectedItem._id]
@@ -2091,6 +2129,8 @@ console.log(taskName)
             )}&allocationtypeId=${taskId}&allocatedBy=${loggedUser._id}`,
             { selectedItem, cleanedData }
           )
+console.log(response)
+console.log(response.status)
           if (response.status >= 200 && response.status < 300) {
 console.log("hhhh")
             getgroupingData(response.data.data)
@@ -2304,7 +2344,6 @@ const itemid=item?.allocatedTo?.id??item?.allocatedTo?._id
       }))
       return
     }
-
     setselectedLeadId(item.leadId)
     setShowmodal(true)
     setSelectedItem(item)
@@ -2313,6 +2352,7 @@ const itemid=item?.allocatedTo?.id??item?.allocatedTo?._id
       allocationDate: today
     }))
   }
+  console.log(formData)
   console.log(tasks)
   console.log(selectedCompanyBranch)
   return (
@@ -3228,6 +3268,9 @@ const itemid=item?.allocatedTo?.id??item?.allocatedTo?._id
             </table>
           </div>
         </div>
+      )}
+      {popupOpen && (
+        <PopUp isOpen={popupOpen} onClose={onClose} message={warningMessage} />
       )}
       <PerformanceModal
         modalOpen={openModal}

@@ -136,6 +136,7 @@ export default function CallRegistration() {
   const [showIncomingNumberToast, setshowinComingnumberToast] = useState(false)
   const [callreport, setcallReport] = useState({})
   const [customerData, setCustomerData] = useState([])
+console.log(customerData)
   const [submitLoading, setSubmitLoading] = useState(false)
   const [loading, setloading] = useState(false)
   const [message, setMessage] = useState("")
@@ -1155,7 +1156,7 @@ Problem:    \t${selectedText}
       //   branches.length > 0 &&
       //   `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${
       //     user.role
-       // }&userBranch=${encodeURIComponent(branches)}`
+      //  }&userBranch=${encodeURIComponent(branches)}`
       url =
         branches &&
         branches.length > 0 &&
@@ -1788,7 +1789,7 @@ Problem:    \t${selectedText}
                           </tr>
                         </thead>
 
-                        <tbody className="divide-y divide-gray-200">
+                        {/* <tbody className="divide-y divide-gray-200">
                           {customerData?.map((customer, index) =>
                             customer?.selected?.map((item, subIndex) => (
                               <tr
@@ -1810,7 +1811,32 @@ Problem:    \t${selectedText}
                               </tr>
                             ))
                           )}
-                        </tbody>
+                        </tbody> */}
+<tbody className="divide-y divide-gray-200">
+  {customerData?.map((customer, index) =>
+    customer?.selected
+      ?.filter((item) => item?.productorservicetype === "Primaryproduct")
+      .map((item, subIndex) => (
+        <tr
+          key={`${index}-${subIndex}`}
+          onClick={() =>
+            handleRowClick(customer, item?.licensenumber)
+          }
+          className="cursor-pointer transition-colors hover:bg-gray-50"
+        >
+          <td className="px-3 py-2 text-center text-sm text-gray-700">
+            {customer?.customerName}
+          </td>
+          <td className="px-3 py-2 text-center text-sm text-gray-700">
+            {item?.licensenumber}
+          </td>
+          <td className="px-3 py-2 text-center text-sm text-gray-700">
+            {customer?.mobile}
+          </td>
+        </tr>
+      ))
+  )}
+</tbody>
                       </table>
                     </div>
                   </div>
@@ -2034,7 +2060,7 @@ Problem:    \t${selectedText}
                             </InfoInputCard>
                           )}
 
-                          {showCustomerDetails && (
+                          {/* {showCustomerDetails && (
                             <InfoInputCard
                               icon={<FaStar size={12} />}
                               iconBg="bg-[#eef4ff]"
@@ -2047,7 +2073,7 @@ Problem:    \t${selectedText}
                                 className={tileInputClass}
                               />
                             </InfoInputCard>
-                          )}
+                          )} */}
 
                           {showCustomerDetails && (
                             <InfoInputCard

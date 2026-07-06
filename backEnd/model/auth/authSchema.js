@@ -20,6 +20,7 @@ const staffSchema = new Schema(
 
       match: /^[0-9]{10}$/ // Example for a 10-digit Indian number
     },
+passwordExpiryAt:{type:Date},
 
     password: {
       type: String,
@@ -191,6 +192,7 @@ const adminSchema = new Schema(
       type: String,
       required: [true, "Password is required"]
     },
+passwordExpiryAt:{type:Date},
     role: {
       type: String,
       required: [true, "Role is required"],

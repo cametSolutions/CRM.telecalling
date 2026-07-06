@@ -22,15 +22,15 @@ const Login = () => {
     formState: { errors }
   } = useForm()
   const navigate = useNavigate()
-console.log("hhhhh")
+  console.log("hhhhh")
   const onSubmit = async (data) => {
-console.log("hhh")
-if(loading)return
+    console.log("hhh")
+    if (loading) return
     try {
       setLoading(true)
       const response = await api.post(`/auth/login`, data)
       const datas = await response.data
-      const { token, User } = datas
+      const { token, User, passwordExpiryWarning } = datas
       if (response.status === 200) {
         const res = await api.get("/branch/getBranch")
         if (res.status === 200) {
@@ -41,7 +41,7 @@ if(loading)return
           setLocalStorageItem("companybranches", allcompanybranches)
           dispatch(loggeduserBranches(loggeduserbranches))
           dispatch(setBranches(allcompanybranches))
-console.log("hh")
+          console.log("hh")
           toast.success(response.data.message, {
             icon: "🚀",
             style: {
@@ -54,6 +54,9 @@ console.log("hh")
               fontWeight: "bold" // Bold text for prominence
             }
           })
+          if (passwordExpiryWarning) {
+            toast.warn(passwordExpiryWarning)
+          }
           localStorage.setItem("authToken", token)
           localStorage.setItem("user", JSON.stringify(User))
           setTimeout(() => {
@@ -69,6 +72,22 @@ console.log("hh")
       }
     } catch (error) {
       console.log(error)
+      const expired = error?.response?.data?.passwordExpired
+      const message = error?.response?.data?.message || "Something went wrong"
+
+      if (expired) {
+        toast.error(message)
+
+        // Option 1: redirect to a dedicated reset/change password page
+        navigate("/change-password", {
+          state: {
+            userId: error?.response?.data?.userId,
+            expired: true
+          }
+        })
+
+        return
+      }
       setLoading(false)
       toast.error("something went wrong")
       console.error(

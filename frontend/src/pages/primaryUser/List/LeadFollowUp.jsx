@@ -13,6 +13,7 @@ import {
   Eye,
   Phone,
   Mail,
+  Package,
   Settings,
   MessageSquareText,
   User,
@@ -87,8 +88,12 @@ const LeadFollowUp = () => {
   const [collectionupdateModal, setcollectionUpdateModal] = useState(false)
   const [partner, setPartner] = useState([])
   const [isdemofollownotClosed, setisdemofollowedNotClosed] = useState(false)
-const [ischangeallocationfortask,setischangeallocationfortask]=useState(true)
+  console.log(isdemofollownotClosed)
+  const [ischangeallocationfortask, setischangeallocationfortask] =
+    useState(false)
+  console.log(ischangeallocationfortask)
   const [ishavePayment, setishavePayment] = useState(false)
+console.log(ishavePayment)
   const [collectionupdatedata, setcollectionupdateData] = useState({})
   const [showfollowupModal, setshowFollowupModal] = useState(false)
   const [isdropdownOpen, setIsdropdownOpen] = useState(false)
@@ -2140,6 +2145,9 @@ const [ischangeallocationfortask,setischangeallocationfortask]=useState(true)
             }
           } else if (!pending && ownFollowUp) {
             console.log("h")
+            console.log(leads)
+            const a = leads.map((item) => item.leadId)
+            console.log(a)
             const ownFollow = leads.filter((lead) =>
               lead.activityLog?.some(
                 (log) =>
@@ -2148,6 +2156,9 @@ const [ischangeallocationfortask,setischangeallocationfortask]=useState(true)
                   log.followupClosed === true
               )
             )
+            console.log(ownFollow)
+            const b = ownFollow.map((item) => item.leadId)
+            console.log(b)
             // console.log(ownFollow)
             const clearedLeads = ownFollow.filter(
               (lead) =>
@@ -2157,11 +2168,20 @@ const [ischangeallocationfortask,setischangeallocationfortask]=useState(true)
                     entry.taskTo === "followup" && entry.followupClosed === true
                 )
             )
+            console.log(clearedLeads)
+            const c = clearedLeads.map((it) => it.leadId)
+            console.log(c)
             // console.log(clearedLeads)
 
             // then store it in state
             setnetTotalAmount(TotalAmount(clearedLeads))
             const Data = normalizeTableData(clearedLeads)
+            console.log(Data)
+            console.log(Data.length)
+            const t = Data[0].leads
+            console.log(t)
+            const e = Data.map((item) => item.leadId)
+            console.log(e)
             setTableData(Data)
           } else if (!pending && !ownFollowUp) {
             console.log("H")
@@ -2388,7 +2408,7 @@ const [ischangeallocationfortask,setischangeallocationfortask]=useState(true)
   }
 
   const handlefollowupdate = (Id, docId) => {
-console.log('hhh')
+    console.log("hhh")
     setfollowupDateModal(true)
     setSelectedLeadId(Id)
     setselectedDocid(docId)
@@ -2432,8 +2452,8 @@ console.log('hhh')
   }
   console.log(collectionData)
   const handleDemoSubmit = async () => {
-console.log("hhh")
-console.log(isdemofollownotClosed)
+    console.log("hhh")
+    console.log(isdemofollownotClosed)
     // if (isdemofollownotClosed) {
     //   setDemoError((prev) => ({
     //     ...prev,
@@ -2505,6 +2525,7 @@ console.log(isdemofollownotClosed)
   const handleFollowUpDateSubmit = async () => {
     console.log(formData)
     console.log(collectionupdatedata)
+    
 
     if (followupDateLoader) return
     try {
@@ -2532,7 +2553,7 @@ console.log(isdemofollownotClosed)
       )
 
       if (response.status === 200) {
-        toast.success("Followup updated successfully")
+        toast.success(response?.data?.message)
 
         setIsEditable(false)
         setselectedDocid(null)
@@ -2602,7 +2623,7 @@ console.log(isdemofollownotClosed)
         demoassignedDate: formatDate(ishaveAllocation.submissionDate),
         demoDescription: ishaveAllocation?.remarks
       })
-setisdemofollowedNotClosed(true)
+      setisdemofollowedNotClosed(true)
 
       setIsEditable(true)
       setIsAllocated(true)
@@ -2611,6 +2632,7 @@ setisdemofollowedNotClosed(true)
     setselectedDocid(Item._id)
     setSelectedLeadId(Item.leadId)
   }
+
   console.log(!!safeState.staffId || !!safeState?.viewdate)
   const handleeditcollection = () => {
     console.log("dd")
@@ -2630,12 +2652,14 @@ setisdemofollowedNotClosed(true)
     setPaymentUpdatedInSession(false)
     setishavePayment(false)
     setcollectionUpdateModal(false)
+    setisdemofollowedNotClosed(false)
   }
 
   // [Keep all your existing component code - LeadRow, renderTable, etc.]
   // ... (LeadRow component and renderTable function remain the same)
 
   const LeadRow = ({ item, index }) => {
+    console.log(item)
     const [open, setOpen] = useState(false)
 
     const lastLog =
@@ -2658,6 +2682,9 @@ setisdemofollowedNotClosed(true)
             it?.taskClosed === false
         )
       : false
+    const customerName = item?.customerName?.customerName.toUpperCase()
+    const shouldShowTooltipCustomer = customerName.length > 20
+    const shouldShowTooltipEmail = item?.email.length > 5
 
     return (
       <>
@@ -2672,8 +2699,26 @@ setisdemofollowedNotClosed(true)
               <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
             )}
           </td>
-          <td className="px-3 py-2 font-semibold text-gray-900 text-sm border border-gray-300 whitespace-nowrap">
+          {/* <td className="px-3 py-2 font-semibold text-gray-900 text-sm border border-gray-300 whitespace-nowrap">
             {item.customerName.customerName.toUpperCase()}
+          </td> */}
+          <td className="px-3 py-2 font-semibold text-gray-900 text-sm border border-gray-300 whitespace-nowrap">
+            <div className="relative group w-[180px]">
+              <span
+                tabIndex={0}
+                className="block truncate cursor-pointer"
+                aria-label={customerName}
+              >
+                {customerName}
+              </span>
+
+              {shouldShowTooltipCustomer && (
+                <div className="pointer-events-none absolute left-0 top-full z-50 mt-2 w-max max-w-xs rounded-xl bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-xl ring-1 ring-white/10 transition-all duration-200 translate-y-1 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                  {customerName}
+                  <div className="absolute -top-1 left-4 h-2 w-2 rotate-45 bg-gray-900"></div>
+                </div>
+              )}
+            </div>
           </td>
           <td className="px-3 py-2 text-gray-700 text-sm border border-gray-300 whitespace-nowrap">
             {item?.mobile}
@@ -2762,20 +2807,6 @@ setisdemofollowedNotClosed(true)
             </button>
           </td>
 
-          {/* {(ownFollowUp && pending) || (checkedownfollowup &&pending) &&(
-            <td
-              className="px-2 py-2 border border-gray-300"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                type="button"
-                onClick={() => handleFollowUp(item)}
-                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-white bg-amber-500 rounded hover:bg-amber-600 transition-colors w-full justify-center"
-              >
-                <History className="w-3.5 h-3.5" />
-              </button>
-            </td>
-          )} */}
           {((ownFollowUp && pending) || (checkedownfollowup && pending)) && (
             <td
               className="px-2 py-2 border border-gray-300"
@@ -2823,7 +2854,7 @@ setisdemofollowedNotClosed(true)
               <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
                 <div className="flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5 text-orange-600" />
-                  <span>No. of Followups</span>
+                  <span>No. of Calls</span>
                 </div>
               </td>
               <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
@@ -2848,6 +2879,12 @@ setisdemofollowedNotClosed(true)
                 <div className="flex items-center gap-1">
                   <Mail className="w-3.5 h-3.5" />
                   <span>Email</span>
+                </div>
+              </td>
+              <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
+                <div className="flex items-center gap-1">
+                  <Package className="w-3.5 h-3.5" />
+                  <span>Product Name</span>
                 </div>
               </td>
             </tr>
@@ -2881,8 +2918,29 @@ setisdemofollowedNotClosed(true)
                 </td>
               )}
 
-              <td className="px-3 py-1.5 border border-gray-300 text-gray-600">
-                {item?.email || "-"}
+              <td className="px-3 py-2 font-semibold text-gray-900 text-sm border border-gray-300 whitespace-nowrap">
+                <div className="relative group w-[100px]">
+                  <span
+                    tabIndex={0}
+                    className="block truncate cursor-pointer"
+                    aria-label={item?.email}
+                  >
+                    {item?.email}
+                  </span>
+
+                  {shouldShowTooltipEmail && (
+                    <div className="pointer-events-none absolute left-0 top-full z-50 mt-2 w-max max-w-xs rounded-xl bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-xl ring-1 ring-white/10 transition-all duration-200 translate-y-1 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                      {item?.email}
+                      <div className="absolute -top-1 left-4 h-2 w-2 rotate-45 bg-gray-900"></div>
+                    </div>
+                  )}
+                </div>
+              </td>
+
+              <td className="px-3 py-1.5 border border-gray-300 text-blue-500 font-medium whitespace-nowrap">
+                {item?.leadFor[0]?.productorServiceId?.shortName?.toUpperCase() ||
+                  item?.leadFor[0]?.productorServiceId?.productName?.toUpperCase() ||
+                  "-"}
               </td>
             </tr>
           </>
@@ -3345,7 +3403,7 @@ setisdemofollowedNotClosed(true)
                       <label className="flex items-start cursor-pointer group">
                         <input
                           type="checkbox"
-                          disabled={ischangeallocationfortask}
+                          disabled={isdemofollownotClosed}
                           checked={isAllocated}
                           onChange={() => {
                             if (
@@ -3511,6 +3569,12 @@ setisdemofollowedNotClosed(true)
                           onChange={() => {
                             setcollectionUpdateModal(true)
                             setishavePayment(!ishavePayment)
+                            if (ishavePayment) {
+                              console.log("Hhh")
+setcollectionupdateData({})
+                            } else {
+                              console.log("hhh")
+                            }
                           }}
                           className="mt-0.5 w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-2 focus:ring-green-500"
                         />
@@ -3533,6 +3597,7 @@ setisdemofollowedNotClosed(true)
                             data={selectedData}
                             from="followup"
                             closemodal={setcollectionUpdateModal}
+setishavePayment={setishavePayment}
                             partnerlist={partner}
                             loggedUser={loggedUser}
                             setishavePayment={setishavePayment}

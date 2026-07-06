@@ -606,7 +606,7 @@ console.log(item?.mobile)
               <td className="border border-gray-200 px-3 py-1">Lead By</td>
               <td className="border border-gray-200 px-3 py-1">Assigned To</td>
               <td className="border border-gray-200 px-3 py-1">Assigned By</td>
-              <td className="border border-gray-200 px-3 py-1 text-center">Follow-Ups</td>
+              <td className="border border-gray-200 px-3 py-1 text-center">No.of Calls</td>
               <td className="border border-gray-200 px-3 py-1">Lead Date</td>
               <td className="border border-gray-200 px-3 py-1">Lead ID</td>
               <td className="border border-gray-200 px-3 py-1">Product Name</td>
