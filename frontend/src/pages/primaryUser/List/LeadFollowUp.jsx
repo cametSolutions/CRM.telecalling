@@ -89,6 +89,7 @@ const LeadFollowUp = () => {
   const [partner, setPartner] = useState([])
   const [isdemofollownotClosed, setisdemofollowedNotClosed] = useState(false)
 const [ischangeallocationfortask,setischangeallocationfortask]=useState(true)
+console.log(ischangeallocationfortask)
   const [ishavePayment, setishavePayment] = useState(false)
   const [collectionupdatedata, setcollectionupdateData] = useState({})
   const [showfollowupModal, setshowFollowupModal] = useState(false)
