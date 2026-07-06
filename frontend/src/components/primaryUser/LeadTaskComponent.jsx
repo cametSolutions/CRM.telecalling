@@ -216,7 +216,7 @@ console.log(Data)
                 ) : (
                   <>
                     <td className="px-3 py-1 border border-gray-200 text-gray-600 text-center">
-                      No. of Follow-ups
+                      No. of Calls
                     </td>
                     {pending &&ownTask&& (
                       <td className="px-3 py-1 border border-gray-200" />

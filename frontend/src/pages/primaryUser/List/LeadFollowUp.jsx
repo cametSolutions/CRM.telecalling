@@ -2854,7 +2854,7 @@ console.log(ishavePayment)
               <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
                 <div className="flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5 text-orange-600" />
-                  <span>No. of Followups</span>
+                  <span>No. of Calls</span>
                 </div>
               </td>
               <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">

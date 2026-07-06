@@ -129,27 +129,107 @@ const CustomerAdd = ({
 
   const debouncedLicenseNo = useDebounce(watchedLicense, 1000)
 
-  const softwareTrades = [
-    "Agriculture",
-    "Business Services",
-    "Computer Hardware Software",
-    "Electronics Electrical Supplies",
-    "FMCG-Fast Moving Consumable Goods",
-    "Garment,Fashion Apparel",
-    "Health Beauty",
-    "Industrial Supplies",
-    "Jewelry Gemstones",
-    "Mobile Accessories",
-    "Pharmaceutical Chemicals",
-    "Textiles Chemicals",
-    "Textiles Fabrics",
-    "Others",
-    "Restaurant, Food And Beverage",
-    "Accounts Chartered Account",
-    "Stationery, Printing Publishing",
-    "Hotel",
-    "Pipes, Tubes Fittings"
-  ]
+  // const softwareTrades = [
+  //   "Agriculture",
+  //   "Business Services",
+  //   "Computer Hardware Software",
+  //   "Electronics Electrical Supplies",
+  //   "FMCG-Fast Moving Consumable Goods",
+  //   "Garment,Fashion Apparel",
+  //   "Health Beauty",
+  //   "Industrial Supplies",
+  //   "Jewelry Gemstones",
+  //   "Mobile Accessories",
+  //   "Pharmaceutical Chemicals",
+  //   "Textiles Chemicals",
+  //   "Textiles Fabrics",
+  //   "Others",
+  //   "Restaurant, Food And Beverage",
+  //   "Accounts Chartered Account",
+  //   "Stationery, Printing Publishing",
+  //   "Hotel",
+  //   "Pipes, Tubes Fittings"
+  // ]
+const softwareTrades = [
+  "Agriculture",
+  "Business Services",
+  "Computer Hardware Software",
+  "Electronics Electrical Supplies",
+  "FMCG-Fast Moving Consumable Goods",
+  "Garment,Fashion Apparel",
+  "Health Beauty",
+  "Industrial Supplies",
+  "Jewelry Gemstones",
+  "Mobile Accessories",
+  "Pharmaceutical Chemicals",
+  "Textiles Chemicals",
+  "Textiles Fabrics",
+  "Others",
+  "Restaurant, Food And Beverage",
+  "Accounts Chartered Account",
+  "Stationery, Printing Publishing",
+  "Hotel",
+  "Pipes, Tubes Fittings",
+
+  "Wholesale Trading",
+  "Retail Trading",
+  "Import & Export",
+  "Distribution / Dealers",
+  "E-commerce / Online Trading",
+  "IT Services",
+  "Web Design & Development",
+  "Cyber Security Services",
+  "Hardware & Networking",
+  "Construction Companies",
+  "Spare Parts Dealers",
+  "Banks",
+  "Printing & Publishing",
+
+  "Pharmaceutical Manufacturing",
+  "Food Manufacturing",
+  "Textile / Garment Manufacturing",
+  "Chemical Manufacturing",
+  "Plastic Manufacturing",
+  "Steel / Metal Manufacturing",
+  "Furniture Manufacturing",
+  "Building Contractors",
+  "Real Estate Developers",
+  "Property Management",
+  "Transport & Logistics",
+  "Finance Companies",
+
+  "Electrical Equipment Manufacturing",
+  "Electronics Manufacturing",
+  "Automobile Manufacturing",
+  "Hospitals",
+  "Clinics",
+  "Medical Laboratories",
+  "Medical Equipment Suppliers",
+  "Pharmacies / Medical Stores",
+  "Interior Design",
+  "Vehicle Dealers",
+  "Automobile Service Centres",
+  "Insurance Companies",
+  "Chartered Accountants / Audit Firms",
+  "Tax Consultants",
+  "Hotels & Resorts",
+
+  "Schools",
+  "Colleges",
+  "Training Institutes",
+  "Coaching Centers",
+  "Educational Consultants",
+  "Software Development",
+  "Restaurants / Cafes",
+  "Travel Agencies",
+  "Tourism Operators",
+  "Advertising & Marketing Agencies",
+  "Event Management",
+  "Security Services",
+  "Cleaning / Facility Management",
+  "NGOs / Non-Profit Organizations",
+  "Government Organizations"
+];
 
   const industries = [
     "Whole sailor/Distributors",
@@ -1401,7 +1481,7 @@ console.log(primaryLicenseOptions)
                 />
               </InfoInputCard>
 
-              <InfoInputCard
+              {/* <InfoInputCard
                 icon={<FaStar size={12} />}
                 iconBg="bg-[#eef4ff]"
                 iconColor="text-[#6d86ff]"
@@ -1415,7 +1495,7 @@ console.log(primaryLicenseOptions)
                     </option>
                   ))}
                 </select>
-              </InfoInputCard>
+              </InfoInputCard> */}
 
               <InfoInputCard
                 icon={<FaHashtag size={12} />}

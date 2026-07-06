@@ -6288,7 +6288,7 @@ export const GetrespectedleadTask = async (req, res) => {
     const selectedfollowup = await LeadMaster.find(query)
       .populate({ path: "customerName", select: "customerName" })
       .lean();
-    console.log("leaddddddddddd", selectedfollowup)
+    // console.log("leaddddddddddd", selectedfollowup)
 
     const taskLeads = [];
     if (ownTask === "false") {
@@ -6366,7 +6366,7 @@ lead.leadFor = await Promise.all(
               item.productorServicemodel &&
               mongoose.models[item.productorServicemodel]
             ) {
-              const model = mongoose.model(item.submissiondoneByModel);
+              const model = mongoose.model(item.productorServicemodel);
               populatedProductorservice = await model
                 .findById(item.productorServiceId)
                 .select("productName")
@@ -6543,7 +6543,7 @@ leadFor:populatedLeadFor
       return res.status(201).json({ messge: "Task found", data: taskLeads });
     }
   } catch (error) {
-    console.log("error", error.message);
+    console.log("error", error)
     return res.status(500).json({ message: "Internal server error" });
   }
 };

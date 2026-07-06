@@ -117,6 +117,7 @@ const filteredCustomers = allCustomers.map((customer) => ({
       item.productorservicetype === "Primaryproduct"
   ),
 }));
+console.log(filteredCustomers)
 setAfterSearchData(filteredCustomers);
       setAfterSearchData(filteredCustomers)
       setcustomerCount(data.pages[0].selectedbranchCustomercount || 0)
@@ -616,7 +617,7 @@ setAfterSearchData(filteredCustomers);
                           {itemIndex === 0 ? index + 1 : ""}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900">
-                          {item?.branchName}
+                          {item?.branch_id?.branchName}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900 font-medium uppercase">
                           {customer?.customerName}

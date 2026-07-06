@@ -136,6 +136,7 @@ export default function CallRegistration() {
   const [showIncomingNumberToast, setshowinComingnumberToast] = useState(false)
   const [callreport, setcallReport] = useState({})
   const [customerData, setCustomerData] = useState([])
+console.log(customerData)
   const [submitLoading, setSubmitLoading] = useState(false)
   const [loading, setloading] = useState(false)
   const [message, setMessage] = useState("")
@@ -539,20 +540,20 @@ console.log(selectedData)
 
   const fetchCallDetails = async (callId) => {
     setLoader(true)
-    // const response = await fetch(
-    //   `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
-    //   {
-    //     method: "GET",
-    //     credentials: "include" // This allows cookies to be sent with the request
-    //   }
-    // )
     const response = await fetch(
-      `http://localhost:9000/api/customer/getcallregister/${callId}`,
+      `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
       {
         method: "GET",
         credentials: "include" // This allows cookies to be sent with the request
       }
     )
+    // const response = await fetch(
+    //   `http://localhost:9000/api/customer/getcallregister/${callId}`,
+    //   {
+    //     method: "GET",
+    //     credentials: "include" // This allows cookies to be sent with the request
+    //   }
+    // )
     const data = await response.json()
 
     return data
@@ -1145,23 +1146,23 @@ Problem:    \t${selectedText}
   const fetchCustomerData = async (query) => {
     let url
     if (user.role === "Admin") {
-      url = `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${user.role}`
-      // url = `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${user.role}`
+      // url = `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${user.role}`
+      url = `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${user.role}`
     } else {
       const branches = JSON.stringify(branch)
 
-      url =
-        branches &&
-        branches.length > 0 &&
-        `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${
-          user.role
-       }&userBranch=${encodeURIComponent(branches)}`
       // url =
       //   branches &&
       //   branches.length > 0 &&
-      //   `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${
+      //   `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${
       //     user.role
-      //   }&userBranch=${encodeURIComponent(branches)}`
+      //  }&userBranch=${encodeURIComponent(branches)}`
+      url =
+        branches &&
+        branches.length > 0 &&
+        `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${
+          user.role
+        }&userBranch=${encodeURIComponent(branches)}`
     }
 
     try {
@@ -1788,7 +1789,7 @@ Problem:    \t${selectedText}
                           </tr>
                         </thead>
 
-                        <tbody className="divide-y divide-gray-200">
+                        {/* <tbody className="divide-y divide-gray-200">
                           {customerData?.map((customer, index) =>
                             customer?.selected?.map((item, subIndex) => (
                               <tr
@@ -1810,7 +1811,32 @@ Problem:    \t${selectedText}
                               </tr>
                             ))
                           )}
-                        </tbody>
+                        </tbody> */}
+<tbody className="divide-y divide-gray-200">
+  {customerData?.map((customer, index) =>
+    customer?.selected
+      ?.filter((item) => item?.productorservicetype === "Primaryproduct")
+      .map((item, subIndex) => (
+        <tr
+          key={`${index}-${subIndex}`}
+          onClick={() =>
+            handleRowClick(customer, item?.licensenumber)
+          }
+          className="cursor-pointer transition-colors hover:bg-gray-50"
+        >
+          <td className="px-3 py-2 text-center text-sm text-gray-700">
+            {customer?.customerName}
+          </td>
+          <td className="px-3 py-2 text-center text-sm text-gray-700">
+            {item?.licensenumber}
+          </td>
+          <td className="px-3 py-2 text-center text-sm text-gray-700">
+            {customer?.mobile}
+          </td>
+        </tr>
+      ))
+  )}
+</tbody>
                       </table>
                     </div>
                   </div>
@@ -2034,7 +2060,7 @@ Problem:    \t${selectedText}
                             </InfoInputCard>
                           )}
 
-                          {showCustomerDetails && (
+                          {/* {showCustomerDetails && (
                             <InfoInputCard
                               icon={<FaStar size={12} />}
                               iconBg="bg-[#eef4ff]"
@@ -2047,7 +2073,7 @@ Problem:    \t${selectedText}
                                 className={tileInputClass}
                               />
                             </InfoInputCard>
-                          )}
+                          )} */}
 
                           {showCustomerDetails && (
                             <InfoInputCard
