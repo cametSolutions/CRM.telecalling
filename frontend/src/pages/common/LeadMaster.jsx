@@ -95,7 +95,13 @@ function LicenseDropdown({
   const wrapperRef = useRef(null)
   const inputRef = useRef(null)
   const dropdownId = `license-dropdown-${index}`
+const selectedLicenses = isMulti ? item?.licenseNumbers || [] : [];
 
+const multiDisplayValue = selectedLicenses.length
+  ? selectedLicenses.length === 1
+    ? String(selectedLicenses[0]?.licenseNumber ?? "")
+    : `${selectedLicenses[0]?.licenseNumber}`
+  : "";
   useEffect(() => {
     if (isMulti) {
       setSearch("")
@@ -131,7 +137,7 @@ function LicenseDropdown({
     }
   }, [dropdownId])
 
-  const selectedLicenses = isMulti ? item?.licenseNumbers || [] : []
+  // const selectedLicenses = isMulti ? item?.licenseNumbers || [] : []
   console.log(customerTableData)
   const filtered = (customerTableData || []).filter((lic) => {
     const q = String(search || "").toLowerCase()
@@ -236,7 +242,8 @@ function LicenseDropdown({
         ref={inputRef}
         type="text"
         disabled={isReadOnly}
-        value={search}
+        // value={search}
+  value={isMulti ? (open ? search : multiDisplayValue) : search}
         onChange={handleInputChange}
         onClick={() => {
           if (!isReadOnly) setOpen(true)
@@ -1252,13 +1259,14 @@ console.log(isMobileTypedByUser)
               productorservicetype:
                 service?.productorservicetype || "Additionalservice",
               productPrice: 0,
-              hsn: igstRate || 0,
+              hsn: 0,
               netAmount: 0,
               isDefaultService: true,
               parentPrimaryProductId: primaryProductId,
               company_id: service?.selected?.[0]?.company_id,
               branch_id: service?.selected?.[0]?.branch_id,
               actualproductPrice: productPrice,
+actualHsn:igstRate,
               actualNetAmount: Number(productPrice + taxAmount)
             }
           })
@@ -2337,6 +2345,7 @@ console.log(isMobileTypedByUser)
     //     message: `${result.data.message},You can't make leads`
     //   }
     // } else
+console.log(result.data.message)
     if (
       result.data.message ===
       "This customer already has a lead with the same product."
@@ -4227,7 +4236,7 @@ onChange={(e) => {
             </div>
           </form>
 
-          {popupOpen && (
+          {/* {popupOpen && (
             <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40">
               <div className="bg-white p-4 rounded shadow-md text-center">
                 <p className="text-orange-500">{popupMessage}</p>
@@ -4239,7 +4248,60 @@ onChange={(e) => {
                 </button>
               </div>
             </div>
-          )}
+          )} */}
+{popupOpen && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm px-4">
+    <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="p-6">
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 text-orange-600 shadow-sm">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 9v4m0 4h.01M10.29 3.86l-7.5 13A1 1 0 003.66 18h16.68a1 1 0 00.87-1.5l-7.5-13a1 1 0 00-1.74 0z"
+              />
+            </svg>
+          </div>
+
+          <div className="flex-1">
+            <h2 className="text-lg font-semibold text-slate-800">
+              Confirmation
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              {popupMessage}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => setPopupOpen(false)}
+            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            onClick={handlePopupOk}
+            className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700"
+          >
+            Continue
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
           {showdetailsopen && (
             <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4">
               <div className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl border border-gray-200 overflow-hidden">
