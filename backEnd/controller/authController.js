@@ -6488,79 +6488,105 @@ const markCoverage = (target, period) => {
   }
 };
 
+// const getAttendanceCoverageByPunch = ({
+//   punchIn,
+//   punchOut,
+//   morningLimit,
+//   lateLimit,
+//   noonLimit,
+//   minOutTime,
+//   earlyLeaveLimit
+// }) => {
+//   const coverage = { morning: false, afternoon: false };
+
+//   if (punchIn == null || punchOut == null) return coverage;
+
+//   if (punchIn <= morningLimit && punchOut >= earlyLeaveLimit) {
+//     coverage.morning = true;
+//     coverage.afternoon = true;
+//     return coverage;
+//   }
+
+//   if (punchIn > morningLimit && punchIn <= lateLimit && punchOut >= earlyLeaveLimit) {
+//     coverage.morning = true;
+//     coverage.afternoon = true;
+//     return coverage;
+//   }
+
+//   if (punchIn <= morningLimit && punchOut >= minOutTime && punchOut < earlyLeaveLimit) {
+//     coverage.morning = true;
+//     coverage.afternoon = true;
+//     return coverage;
+//   }
+
+//   if (punchIn > lateLimit && punchIn < noonLimit && punchOut > minOutTime) {
+//     coverage.afternoon = true;
+//     return coverage;
+//   }
+
+//   if (
+//     punchIn > morningLimit &&
+//     punchIn <= lateLimit &&
+//     punchOut >= minOutTime &&
+//     punchOut < earlyLeaveLimit
+//   ) {
+//     coverage.morning = true;
+//     coverage.afternoon = true;
+//     return coverage;
+//   }
+
+//   if (
+//     (punchIn < noonLimit && punchOut < noonLimit) ||
+//     (punchIn > noonLimit && punchOut > noonLimit)
+//   ) {
+//     if (punchIn < noonLimit && punchOut < noonLimit) {
+//       coverage.morning = true;
+//     } else if (punchIn > noonLimit && punchOut > noonLimit) {
+//       coverage.afternoon = true;
+//     }
+//     return coverage;
+//   }
+
+//   if (
+//     (punchIn === lateLimit && punchOut >= noonLimit && punchOut < minOutTime) ||
+//     (punchIn <= noonLimit && punchOut === minOutTime && punchIn > lateLimit) ||
+//     (punchIn < lateLimit && punchOut >= noonLimit && punchOut < minOutTime) ||
+//     (punchIn <= noonLimit && punchOut > minOutTime && punchIn > lateLimit)
+//   ) {
+//     if (punchIn <= noonLimit) coverage.morning = true;
+//     if (punchOut >= minOutTime) coverage.afternoon = true;
+//     return coverage;
+//   }
+
+//   return coverage;
+// };
 const getAttendanceCoverageByPunch = ({
   punchIn,
   punchOut,
-  morningLimit,
-  lateLimit,
-  noonLimit,
-  minOutTime,
-  earlyLeaveLimit
+  noonLimit
 }) => {
   const coverage = { morning: false, afternoon: false };
 
   if (punchIn == null || punchOut == null) return coverage;
 
-  if (punchIn <= morningLimit && punchOut >= earlyLeaveLimit) {
+  if (punchOut <= noonLimit) {
+    coverage.morning = true;
+    return coverage;
+  }
+
+  if (punchIn >= noonLimit) {
+    coverage.afternoon = true;
+    return coverage;
+  }
+
+  if (punchIn < noonLimit && punchOut > noonLimit) {
     coverage.morning = true;
     coverage.afternoon = true;
-    return coverage;
-  }
-
-  if (punchIn > morningLimit && punchIn <= lateLimit && punchOut >= earlyLeaveLimit) {
-    coverage.morning = true;
-    coverage.afternoon = true;
-    return coverage;
-  }
-
-  if (punchIn <= morningLimit && punchOut >= minOutTime && punchOut < earlyLeaveLimit) {
-    coverage.morning = true;
-    coverage.afternoon = true;
-    return coverage;
-  }
-
-  if (punchIn > lateLimit && punchIn < noonLimit && punchOut > minOutTime) {
-    coverage.afternoon = true;
-    return coverage;
-  }
-
-  if (
-    punchIn > morningLimit &&
-    punchIn <= lateLimit &&
-    punchOut >= minOutTime &&
-    punchOut < earlyLeaveLimit
-  ) {
-    coverage.morning = true;
-    coverage.afternoon = true;
-    return coverage;
-  }
-
-  if (
-    (punchIn < noonLimit && punchOut < noonLimit) ||
-    (punchIn > noonLimit && punchOut > noonLimit)
-  ) {
-    if (punchIn < noonLimit && punchOut < noonLimit) {
-      coverage.morning = true;
-    } else if (punchIn > noonLimit && punchOut > noonLimit) {
-      coverage.afternoon = true;
-    }
-    return coverage;
-  }
-
-  if (
-    (punchIn === lateLimit && punchOut >= noonLimit && punchOut < minOutTime) ||
-    (punchIn <= noonLimit && punchOut === minOutTime && punchIn > lateLimit) ||
-    (punchIn < lateLimit && punchOut >= noonLimit && punchOut < minOutTime) ||
-    (punchIn <= noonLimit && punchOut > minOutTime && punchIn > lateLimit)
-  ) {
-    if (punchIn <= noonLimit) coverage.morning = true;
-    if (punchOut >= minOutTime) coverage.afternoon = true;
     return coverage;
   }
 
   return coverage;
 };
-
 const recomputeDayFromCoverage = (day) => {
   const workedMorning =
     day.coverage.attendance.morning || day.coverage.onsite.morning;
@@ -6589,6 +6615,34 @@ const recomputeDayFromCoverage = (day) => {
   }
 };
 
+// const applyLeaveToDay = (day, leaveDoc) => {
+//   if (!day || !leaveDoc || leaveDoc.onsite === true || !APPROVED(leaveDoc)) return;
+
+//   const bucket = normalizeLeaveCategory(leaveDoc.leaveCategory);
+//   const amount = leaveDoc.leaveType === "Half Day" ? 0.5 : 1;
+
+//   day[bucket] = (day[bucket] || 0) + amount;
+//   day.reason = leaveDoc.reason || day.reason || "";
+//   day.halfDayperiod =
+//     leaveDoc.leaveType === "Half Day" ? leaveDoc.halfDayPeriod || "" : "";
+
+//   day.leaveDetails[leaveDoc._id] = {
+//     _id: leaveDoc._id,
+//     leaveDate: leaveDoc.leaveDate,
+//     leaveType: leaveDoc.leaveType,
+//     halfDayPeriod: leaveDoc.halfDayPeriod || null,
+//     leaveCategory: leaveDoc.leaveCategory || null,
+//     reason: leaveDoc.reason || null
+//   };
+
+//   if (leaveDoc.leaveType === "Full Day") {
+//     markCoverage(day.coverage.leave, "Full Day");
+//   } else {
+//     markCoverage(day.coverage.leave, leaveDoc.halfDayPeriod || "Afternoon");
+//   }
+
+//   recomputeDayFromCoverage(day);
+// };
 const applyLeaveToDay = (day, leaveDoc) => {
   if (!day || !leaveDoc || leaveDoc.onsite === true || !APPROVED(leaveDoc)) return;
 
@@ -6611,8 +6665,22 @@ const applyLeaveToDay = (day, leaveDoc) => {
 
   if (leaveDoc.leaveType === "Full Day") {
     markCoverage(day.coverage.leave, "Full Day");
+
+    day.coverage.attendance.morning = false;
+    day.coverage.attendance.afternoon = false;
+    day.coverage.onsite.morning = false;
+    day.coverage.onsite.afternoon = false;
   } else {
-    markCoverage(day.coverage.leave, leaveDoc.halfDayPeriod || "Afternoon");
+    const leavePeriod = leaveDoc.halfDayPeriod || "Afternoon";
+    markCoverage(day.coverage.leave, leavePeriod);
+
+    if (leavePeriod === "Morning") {
+      day.coverage.attendance.morning = false;
+      day.coverage.onsite.morning = false;
+    } else if (leavePeriod === "Afternoon") {
+      day.coverage.attendance.afternoon = false;
+      day.coverage.onsite.afternoon = false;
+    }
   }
 
   recomputeDayFromCoverage(day);
@@ -7086,6 +7154,8 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
         stats.present = Math.max(0, stats.present - stats.latecutting);
 
       }
+// if(stats?.name==="Fathima Nazrin CM"){
+// console.log(stats)}
 
       staffAttendanceStats.push(stats);
     }

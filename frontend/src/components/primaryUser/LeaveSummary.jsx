@@ -165,7 +165,7 @@ console.log(filteredselectedCategory)
       const { staffAttendanceStats, listofHolidays, sundayFulldate } = data
       console.log(staffAttendanceStats)
       const a = staffAttendanceStats.filter(
-        (item) => item.name === "Sreeraj Vijay"
+        (item) => item.name === "Fathima Nazrin CM"
       )
       console.log(a)
       setnewattendee(staffAttendanceStats)
