@@ -731,6 +731,7 @@ const LeadMaster = ({
   const [productOrserviceSelections, setProductorServiceSelections] = useState(
     {}
   )
+const mobileRegister = registerMain("mobile");
   const today = new Date().toISOString().split("T")[0]
   const [takenLicenses, setTakenLicense] = useState([])
   console.log(takenLicenses)
@@ -812,11 +813,16 @@ const LeadMaster = ({
   const navigate = useNavigate()
   const location = useLocation()
   const mobileValue = watchModal("mobile")
+  const mobileMainValue = watchMain("mobile")
   const customerNameValue = watchModal("customerName")
+  const customerMainValue = watchMain("customerName")
   const customerIdValue = watchModal("customerid")
+  const customerMainIdValule = watchMain("customerid")
   const [isTradeOpen, setIsTradeOpen] = useState(false)
   const discountAmount = watchMain("discamnt")
   const tradeDropdownRef = useRef(null)
+const isFirstRender = useRef(true);
+const isMobileTypedByUser = useRef(false);
   console.log(mobileValue)
   console.log(customerNameValue)
   console.log(customerIdValue)
@@ -958,6 +964,59 @@ const LeadMaster = ({
 
     return () => clearTimeout(timer)
   }, [mobileValue, customerNameValue, customerIdValue])
+  console.log(duplicateWarning)
+  console.log(mobileValue)
+  console.log(customerNameValue)
+  console.log(customerIdValue)
+  useEffect(() => {
+  if (isFirstRender.current) {
+console.log(isFirstRender)
+    isFirstRender.current = false;
+    return;
+  }
+console.log(isMobileTypedByUser)
+  if (!isMobileTypedByUser.current) return;
+    const cleanedMobile = String(mobileMainValue || "")
+      .replace(/^\+?91/, "")
+      .replace(/\D/g, "")
+    const selectedCustomerOption =
+      customerOptions.find((o) => o.value === customerMainValue) || null
+
+    const customerName = selectedCustomerOption?.label || ""
+    console.log(cleanedMobile)
+    const cleanedName = String(customerName || "").trim()
+    console.log(cleanedName)
+
+    if (cleanedMobile.length !== 10 || !cleanedName) {
+      setDuplicateWarning("")
+      return
+    }
+    console.log("hh")
+    const timer = setTimeout(async () => {
+      try {
+        setCheckingDuplicate(true)
+
+        const res = await api.post("/lead/check-customer-duplicate", {
+          mobile: cleanedMobile,
+          customerName: cleanedName,
+          customerId: customerMainIdValule || ""
+        })
+        console.log(res)
+        if (res?.data?.exists) {
+          setDuplicateWarning(res.data.message)
+        } else {
+          setDuplicateWarning("")
+        }
+      } catch (error) {
+        setDuplicateWarning("")
+      } finally {
+        setCheckingDuplicate(false)
+      }
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [mobileMainValue])
+  console.log(duplicateWarning)
   useEffect(() => {
     if (!selectedleadlist || selectedleadlist.length === 0) {
       console.log("hh")
@@ -1188,7 +1247,7 @@ const LeadMaster = ({
               licenseNumbers: [],
               productorServiceId: serviceId,
               productorServiceName:
-                service?.productName || service?.serviceName || "",
+                service?.shortName || service?.productName || "",
               itemType: service?.productName ? "Product" : "Service",
               productorservicetype:
                 service?.productorservicetype || "Additionalservice",
@@ -2615,10 +2674,11 @@ const LeadMaster = ({
   }
   const onSubmit = async (data) => {
     console.log(data)
-
+console.log(duplicateWarning)
+if(duplicateWarning)return
     if (submitLoading) return
     setsubmitLoading(true)
-    if (submitLoading) return
+    if (duplicateWarning) return
     const submitData = { ...data }
 
     if (!selfAllocation) {
@@ -2854,8 +2914,12 @@ const LeadMaster = ({
     existingCustomers,
     customerid = null
   ) => {
+    console.log(customerid)
+    console.log(existingCustomers)
+    console.log(inputMobile)
     const normalizedInput = normalizeMobile(inputMobile)
     if (customerid) {
+      console.log("h")
       return existingCustomers.some((customer) => {
         const normalizedStored = normalizeMobile(customer.mobile)
         return (
@@ -2870,6 +2934,7 @@ const LeadMaster = ({
   }
   console.log(duplicateWarning)
   const onmodalsubmit = async (data) => {
+    console.log(data)
     console.log("hhhh")
     console.log(duplicateWarning)
     if (duplicateWarning) return
@@ -2877,19 +2942,19 @@ const LeadMaster = ({
 
     if (modalloader) return
     try {
-      const checkexistingNumber = isMobileExists(
-        data?.mobile,
-        allcustomer,
-        data?.customerid
-      )
+      // const checkexistingNumber = isMobileExists(
+      //   data?.mobile,
+      //   allcustomer,
+      //   data?.customerid
+      // )
 
-      if (checkexistingNumber) {
-        setError("mobile", {
-          type: "manual",
-          message: "This mobile number is already used"
-        })
-        return
-      }
+      // if (checkexistingNumber) {
+      //   setError("mobile", {
+      //     type: "manual",
+      //     message: "This mobile number is already used"
+      //   })
+      //   return
+      // }
       setModalLoader(true)
       let response
       if (data?.customerid) {
@@ -3300,6 +3365,7 @@ const LeadMaster = ({
                       value={selectedBranch}
                       disabled={isReadOnly}
                       onChange={(e) => {
+setDuplicateWarning("")
                         setSelectedBranch(e.target.value)
                         setValueMain("customerName", "")
                         setSelectedCustomer(null)
@@ -3370,13 +3436,22 @@ const LeadMaster = ({
                       Mobile Number
                     </label>
                     <input
-                      {...registerMain("mobile")}
+                      {...mobileRegister}
                       readOnly={isReadOnly}
                       placeholder="Mobile..."
+onChange={(e) => {
+    isMobileTypedByUser.current = true;
+    mobileRegister.onChange(e);
+  }}
                       className={`w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8] ${
                         isReadOnly ? "cursor-not-allowed opacity-70" : ""
                       }`}
                     />
+                    {duplicateWarning && (
+                      <p className="mt-1 text-xs font-medium text-red-500">
+                        {duplicateWarning}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">
@@ -3942,15 +4017,15 @@ const LeadMaster = ({
                       >
                         {/* Product Name */}
                         <div className="flex">
-                          <div className=" flex items-center gap-3 w-[180px]">
+                          <div className=" flex items-center gap-3 w-auto">
                             <div className="h-3 w-1 rounded-full bg-blue-600"></div>
 
-                            <h2 className="text-xs font-bold uppercase tracking-wider text-gray-800">
+                            <h2 className="text-xs font-bold uppercase tracking-wider text-gray-800 ">
                               {productName}
                             </h2>
                           </div>
 
-                          <div className="flex flex-wrap gap-3">
+                          <div className="flex flex-wrap gap-3 ml-2">
                             {licenses.map((license) => (
                               <button
                                 key={license}

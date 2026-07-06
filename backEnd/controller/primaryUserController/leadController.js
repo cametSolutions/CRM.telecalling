@@ -6353,6 +6353,36 @@ export const GetrespectedleadTask = async (req, res) => {
             };
           })
         );
+lead.leadFor = await Promise.all(
+          lead.leadFor.map(async (item) => {
+            
+
+
+            let populatedProductorservice = null;
+            
+
+            if (
+              item.productorServiceId &&
+              item.productorServicemodel &&
+              mongoose.models[item.productorServicemodel]
+            ) {
+              const model = mongoose.model(item.submissiondoneByModel);
+              populatedProductorservice = await model
+                .findById(item.productorServiceId)
+                .select("productName")
+                .lean();
+            }
+
+           
+
+            return {
+              ...item,
+            
+              productorServiceId: populatedProductorservice || item.productorServiceId,
+              
+            };
+          })
+        );
 
         // ✅ Populate top-level allocatedTo / allocatedBy (even if followup)
         if (lastAllocatedItem) {
@@ -6482,12 +6512,24 @@ export const GetrespectedleadTask = async (req, res) => {
               };
             })
           );
+const populatedLeadFor = await Promise.all(
+        lead.leadFor.map(async (item) => {
+          const model = mongoose.model(item.productorServicemodel);
+          const populated = await model
+            .findById(item.productorServiceId)
+            .lean()
+            .catch(() => null);
+
+          return { ...item, productorServiceId: populated };
+        })
+      );
           taskLeads.push({
             ...lead,
             leadBy: populatedLeadBy || lead.leadBy,
             taskallocatedTo: populatedAllocatedTo,
             taskallocatedBy: populatedAllocatedBy,
             activityLog: populatedActivityLog,
+leadFor:populatedLeadFor
           });
         }
       }

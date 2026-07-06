@@ -1568,6 +1568,7 @@ function SummaryChip({ label, value, color, bg, border, suffix = "" }) {
 export function CollectionupdateModal({
   data,
   closemodal,
+setishavePayment,
   partnerlist,
   loggedUser,
   handleCollectionUpdate,
@@ -1659,10 +1660,10 @@ export function CollectionupdateModal({
       lastPayment &&
       Array.isArray(lastPayment.paymentEntries) &&
       lastPayment.paymentEntries.length > 0
-console.log(hasCollectionData)
+    console.log(hasCollectionData)
     console.log(hasCollectionData && editData?.paymentEntries)
     console.log(hasPaymentEntries)
-console.log(data?.leadFor)
+    console.log(data?.leadFor)
 
     if (hasCollectionData && editData?.paymentEntries?.length > 0) {
       setPaymentRows(
@@ -1688,7 +1689,7 @@ console.log(data?.leadFor)
         })
       )
     } else if (hasPaymentEntries) {
-console.log("hhh")
+      console.log("hhh")
       setPaymentRows(
         lastPayment.paymentEntries.map((p) => {
           const net = safeNumber(p.netAmount)
@@ -1912,11 +1913,6 @@ console.log("hhh")
       }}
     >
       <div
-        style={{ position: "absolute", inset: 0, zIndex: 0 }}
-        onClick={() => closemodal(false)}
-      />
-
-      <div
         style={{
           position: "relative",
           zIndex: 1,
@@ -1998,7 +1994,10 @@ console.log("hhh")
             </div>
             <button
               type="button"
-              onClick={() => closemodal(false)}
+              onClick={() => {
+                setishavePayment(false)
+                closemodal(false)
+              }}
               style={{
                 width: 28,
                 height: 28,
@@ -2514,7 +2513,11 @@ console.log("hhh")
         >
           <button
             type="button"
-            onClick={() => closemodal(false)}
+            onClick={() => {
+              closemodal(false)
+
+              setishavePayment(false)
+            }}
             style={{
               padding: "7px 18px",
               borderRadius: 9,

@@ -23,6 +23,7 @@ export default function LeadTaskComponent({
   pending,
 ownTask
 }) {
+console.log(Data)
   const [selectedData, setselectedData] = useState({})
   const [historyList, setHistoryList] = useState([])
   const [showComponent, setShowComponent] = useState(false)
@@ -241,7 +242,7 @@ console.log(Data)
                       Phone
                     </td>
                     <td className="px-3 py-1 border border-gray-200 text-gray-600">
-                      Email
+                      Product Name
                     </td>
                   </>
                 )}
@@ -298,8 +299,8 @@ console.log(Data)
                     <td className="px-3 py-1.5 border border-gray-200">
                       {item?.phone || "-"}
                     </td>
-                    <td className="px-3 py-1.5 border border-gray-200">
-                      {item?.email || "-"}
+                    <td className="px-3 py-1.5 border border-gray-200 text-blue-500 font-medium">
+                      {item?.leadFor[0]?.productorServiceId?.shortName || item?.leadFor[0]?.productorServiceId?.productName||"-"}
                     </td>
                   </>
                 )}
@@ -322,7 +323,7 @@ console.log(Data)
         <thead className="whitespace-nowrap bg-gradient-to-r from-blue-600 to-blue-700 text-white sticky top-0 z-30 text-xs">
           <tr>
             <th className="border border-blue-500 w-5" />
-            <th className="border border-blue-500 px-3 py-2 text-left">Name</th>
+            <th className="border border-blue-500 px-3 py-2 text-left">Customer Name</th>
             <th className="border border-blue-500 px-3 py-2 text-left">Mobile</th>
 
             {pending && (
