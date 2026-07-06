@@ -136,7 +136,8 @@ export default function CallRegistration() {
   const [showIncomingNumberToast, setshowinComingnumberToast] = useState(false)
   const [callreport, setcallReport] = useState({})
   const [customerData, setCustomerData] = useState([])
-console.log(customerData)
+  console.log(customerData)
+console.log("hhh")
   const [submitLoading, setSubmitLoading] = useState(false)
   const [loading, setloading] = useState(false)
   const [message, setMessage] = useState("")
@@ -521,7 +522,7 @@ console.log(customerData)
               taggeddata: sel?.taggeddata || [],
               selected: sel?.licensenumber === license
             })) || []
-console.log(selectedData)
+          console.log(selectedData)
           setcallupdate(true)
           console.log(selectedData)
           setTableData(selectedData)
@@ -601,7 +602,7 @@ console.log(selectedData)
     const year = date.getFullYear()
     return `${day}-${month}-${year}`
   }
- const formatDateForInput = (date) => {
+  const formatDateForInput = (date) => {
     if (!date) return ""
     return String(date).split("T")[0]
   }
@@ -748,7 +749,7 @@ console.log(selectedData)
 
     return `${date} ${time}` // Example: "03/02/2025 02:48:57 PM"
   }
-console.log(selectedLicenseNumber)
+  console.log(selectedLicenseNumber)
   const stopTimer = async (time, product) => {
     if (!product) {
       toast.error("No product selected.")
@@ -971,14 +972,14 @@ console.log(selectedLicenseNumber)
   }
 
   const handleSelectCard = (item, index) => {
-console.log(item)
-const checkedlicense=item?.licensenumber
-setselectedlicense(checkedlicense)
- const filteredlicenseproduct = productDetails.filter(
-          (item) => item.licensenumber === checkedlicense
-        )
-console.log(productDetails)
-setSelectedProducts(filteredlicenseproduct)
+    console.log(item)
+    const checkedlicense = item?.licensenumber
+    setselectedlicense(checkedlicense)
+    const filteredlicenseproduct = productDetails.filter(
+      (item) => item.licensenumber === checkedlicense
+    )
+    console.log(productDetails)
+    setSelectedProducts(filteredlicenseproduct)
     // setSelectedCard((prev) => (prev === index ? null : index))
   }
 
@@ -1015,7 +1016,7 @@ setSelectedProducts(filteredlicenseproduct)
     //     }
     //     return acc
     //   }, {}) || {}
- const taggedLicenseDueDatesFromData =
+    const taggedLicenseDueDatesFromData =
       item?.taggeddata?.reduce((acc, entry) => {
         if (entry?.licensenumber) {
           acc[String(entry.licensenumber)] = {
@@ -1032,11 +1033,11 @@ setSelectedProducts(filteredlicenseproduct)
     setCompanyOptions(getCompaniesForProduct(item?.productid))
     setBranchOptions(getBranchesForCompany(item?.productid, item?.companyid))
     console.log(item)
-const a=formatDateToDDMMYYYY(item?.applicationDate)
-console.log(a)
-const inputDateFormat = item?.applicationDate 
-    ? new Date(item.applicationDate).toISOString().split('T')[0] 
-    : "";
+    const a = formatDateToDDMMYYYY(item?.applicationDate)
+    console.log(a)
+    const inputDateFormat = item?.applicationDate
+      ? new Date(item.applicationDate).toISOString().split("T")[0]
+      : ""
     reset({
       ...getValues(),
       productName: productOption,
@@ -1046,7 +1047,7 @@ const inputDateFormat = item?.applicationDate
       softwareTrade: item?.softwareTrade || "",
       applicationDate: inputDateFormat,
       nextDue: item?.nextDue || "",
-shortName:item?.shortName,
+      shortName: item?.shortName,
       noofusers: item?.noofusers || "",
       productAmount: item?.productAmount || "",
       isActive: item?.isActive || "Running",
@@ -1812,31 +1813,38 @@ Problem:    \t${selectedText}
                             ))
                           )}
                         </tbody> */}
-<tbody className="divide-y divide-gray-200">
-  {customerData?.map((customer, index) =>
-    customer?.selected
-      ?.filter((item) => item?.productorservicetype === "Primaryproduct")
-      .map((item, subIndex) => (
-        <tr
-          key={`${index}-${subIndex}`}
-          onClick={() =>
-            handleRowClick(customer, item?.licensenumber)
-          }
-          className="cursor-pointer transition-colors hover:bg-gray-50"
-        >
-          <td className="px-3 py-2 text-center text-sm text-gray-700">
-            {customer?.customerName}
-          </td>
-          <td className="px-3 py-2 text-center text-sm text-gray-700">
-            {item?.licensenumber}
-          </td>
-          <td className="px-3 py-2 text-center text-sm text-gray-700">
-            {customer?.mobile}
-          </td>
-        </tr>
-      ))
-  )}
-</tbody>
+                        <tbody className="divide-y divide-gray-200">
+                          {customerData?.map((customer, index) =>
+                            customer?.selected
+                              ?.filter(
+                                (item) =>
+                                  item?.product_id?.productorservicetype ===
+                                  "Primaryproduct"
+                              )
+                              .map((item, subIndex) => (
+                                <tr
+                                  key={`${index}-${subIndex}`}
+                                  onClick={() =>
+                                    handleRowClick(
+                                      customer,
+                                      item?.licensenumber
+                                    )
+                                  }
+                                  className="cursor-pointer transition-colors hover:bg-gray-50"
+                                >
+                                  <td className="px-3 py-2 text-center text-sm text-gray-700">
+                                    {customer?.customerName}
+                                  </td>
+                                  <td className="px-3 py-2 text-center text-sm text-gray-700">
+                                    {item?.licensenumber}
+                                  </td>
+                                  <td className="px-3 py-2 text-center text-sm text-gray-700">
+                                    {customer?.mobile}
+                                  </td>
+                                </tr>
+                              ))
+                          )}
+                        </tbody>
                       </table>
                     </div>
                   </div>
@@ -2120,13 +2128,13 @@ Problem:    \t${selectedText}
                                 const isDeactive =
                                   String(item?.isActive).toLowerCase() ===
                                   "deactive"
-console.log(item)
-console.log(item?.licensenumber)
-console.log(selectedLicenseNumber)
+                                console.log(item)
+                                console.log(item?.licensenumber)
+                                console.log(selectedLicenseNumber)
                                 const isSelected =
                                   String(item?.licensenumber ?? "") ===
                                   String(selectedLicenseNumber ?? "")
-console.log(isSelected)
+                                console.log(isSelected)
                                 return (
                                   <ProductCircleCard
                                     key={`primary-${actualIndex}`}
@@ -2149,9 +2157,7 @@ console.log(isSelected)
                                         : ""
                                     }
                                     line4={isDeactive ? "De Active" : "Active"}
-                                    isSelected={
-                                      isSelected
-                                    }
+                                    isSelected={isSelected}
                                     isreadonly={true}
                                     onEdit={handleEdit}
                                     onSelect={handleSelectCard}
@@ -2180,37 +2186,41 @@ console.log(isSelected)
                                 const isDeactive =
                                   String(item?.isActive).toLowerCase() ===
                                   "deactive"
-const today = new Date();
-today.setHours(0, 0, 0, 0);
+                                const today = new Date()
+                                today.setHours(0, 0, 0, 0)
 
-const selectedTagged = Array.isArray(item?.taggeddata)
-  ? (() => {
-      const tagged = [...item.taggeddata].sort(
-        (a, b) => new Date(a.nextDue) - new Date(b.nextDue)
-      );
+                                const selectedTagged = Array.isArray(
+                                  item?.taggeddata
+                                )
+                                  ? (() => {
+                                      const tagged = [...item.taggeddata].sort(
+                                        (a, b) =>
+                                          new Date(a.nextDue) -
+                                          new Date(b.nextDue)
+                                      )
 
-      // 1. Oldest overdue
-      const overdue = tagged.find((x) => {
-        const d = new Date(x.nextDue);
-        d.setHours(0, 0, 0, 0);
-        return d < today;
-      });
+                                      // 1. Oldest overdue
+                                      const overdue = tagged.find((x) => {
+                                        const d = new Date(x.nextDue)
+                                        d.setHours(0, 0, 0, 0)
+                                        return d < today
+                                      })
 
-      if (overdue) return overdue;
+                                      if (overdue) return overdue
 
-      // 2. Today
-      const todayItem = tagged.find((x) => {
-        const d = new Date(x.nextDue);
-        d.setHours(0, 0, 0, 0);
-        return d.getTime() === today.getTime();
-      });
+                                      // 2. Today
+                                      const todayItem = tagged.find((x) => {
+                                        const d = new Date(x.nextDue)
+                                        d.setHours(0, 0, 0, 0)
+                                        return d.getTime() === today.getTime()
+                                      })
 
-      if (todayItem) return todayItem;
+                                      if (todayItem) return todayItem
 
-      // 3. Nearest future
-      return tagged[0] || null;
-    })()
-  : null;
+                                      // 3. Nearest future
+                                      return tagged[0] || null
+                                    })()
+                                  : null
                                 return (
                                   <ProductCircleCard
                                     key={`additional-${actualIndex}`}
@@ -2242,21 +2252,23 @@ const selectedTagged = Array.isArray(item?.taggeddata)
                                     //       ? formatDateToDDMMYYYY(item?.nextDue)
                                     //       : ""
                                     // }
-line3={
-  selectedTagged
-    ? formatDateToDDMMYYYY(selectedTagged.nextDue)
-    : item?.nextDue
-      ? formatDateToDDMMYYYY(item.nextDue)
-      : ""
-}
+                                    line3={
+                                      selectedTagged
+                                        ? formatDateToDDMMYYYY(
+                                            selectedTagged.nextDue
+                                          )
+                                        : item?.nextDue
+                                          ? formatDateToDDMMYYYY(item.nextDue)
+                                          : ""
+                                    }
                                     line4={isDeactive ? "De Active" : "Active"}
                                     // line5={item?.productAmount}
-line5={
-  selectedTagged
-    ? selectedTagged.productAmount
-    : item?.productAmount
-}
-onEdit={handleEdit}
+                                    line5={
+                                      selectedTagged
+                                        ? selectedTagged.productAmount
+                                        : item?.productAmount
+                                    }
+                                    onEdit={handleEdit}
                                   />
                                 )
                               })}
@@ -2576,51 +2588,45 @@ onEdit={handleEdit}
                           )}
                         />
                       </div> */}
-<div>
-  <label className="mb-1 block text-[11px] font-medium text-[#5d6983]">
-    Product / Service
-  </label>
-  <Controller
-    name="productName"
-    control={control}
-    render={({ field }) => (
-      <Select
-        {...field}
-        isDisabled={true} // 🌟 Changed from disabled={true}
-        options={filteredOptionsByType}
-        value={field.value}
-        onChange={(option) => {
-          field.onChange(option)
-          handleProductChange(option)
-        }}
-        placeholder="Select name"
-        styles={compactSelectStyles}
-      />
-    )}
-  />
-</div>
-                      <PopupField
-                        label="Short Name"
-                      >
+                      <div>
+                        <label className="mb-1 block text-[11px] font-medium text-[#5d6983]">
+                          Product / Service
+                        </label>
+                        <Controller
+                          name="productName"
+                          control={control}
+                          render={({ field }) => (
+                            <Select
+                              {...field}
+                              isDisabled={true} // 🌟 Changed from disabled={true}
+                              options={filteredOptionsByType}
+                              value={field.value}
+                              onChange={(option) => {
+                                field.onChange(option)
+                                handleProductChange(option)
+                              }}
+                              placeholder="Select name"
+                              styles={compactSelectStyles}
+                            />
+                          )}
+                        />
+                      </div>
+                      <PopupField label="Short Name">
                         <input
                           readOnly
-{...register("shortName")}
+                          {...register("shortName")}
                           className="w-full rounded-[8px] border border-[#dfe5ee] bg-[#f3f6fb] px-2.5 py-1.5 text-[12px] text-[#1f2a3d] outline-none"
                           placeholder="Enter Short Name"
                         />
                       </PopupField>
 
                       {popupType === "Primaryproduct" && (
-                        <PopupField
-                          label="License Number"
-                         
-                        >
+                        <PopupField label="License Number">
                           <input
                             type="text"
                             inputMode="numeric"
-{...register("licensenumber")}
+                            {...register("licensenumber")}
                             pattern="[0-9]*"
-
                             readOnly={true}
                             className={`${compactPopupInputClass} ${
                               hasTaggedLicenses
@@ -2693,8 +2699,8 @@ onEdit={handleEdit}
                       {popupType === "Primaryproduct" && (
                         <PopupField label="Software Trade">
                           <select
-  {...register("softwareTrade")}
-disabled={true}
+                            {...register("softwareTrade")}
+                            disabled={true}
                             className={compactPopupInputClass}
                           >
                             <option value="">Select Software Trade</option>
@@ -2717,7 +2723,6 @@ disabled={true}
                         </PopupField>
                       )}
 
-                    
                       {popupType === "Additionalservice" && (
                         <PopupField label="No of Quantity / Users">
                           <input
@@ -2853,7 +2858,7 @@ disabled={true}
                                       </th>
                                     </tr>
                                   </thead>
-                                 
+
                                   <tbody>
                                     {watchedTaggedLicenses.map((licenseNo) => (
                                       <tr key={licenseNo}>
