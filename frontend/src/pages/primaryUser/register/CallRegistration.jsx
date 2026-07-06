@@ -136,7 +136,7 @@ export default function CallRegistration() {
   const [showIncomingNumberToast, setshowinComingnumberToast] = useState(false)
   const [callreport, setcallReport] = useState({})
   const [customerData, setCustomerData] = useState([])
-console.log(customerData)
+  console.log(customerData)
   const [submitLoading, setSubmitLoading] = useState(false)
   const [loading, setloading] = useState(false)
   const [message, setMessage] = useState("")
@@ -492,6 +492,7 @@ console.log(customerData)
             callData?.callDetails?.customerid.selected?.map((sel) => ({
               company_id: sel?.company_id,
               companyName: sel?.companyName,
+              amcEndDate: sel?.amcEndDate,
               branch_id: sel?.branch_id,
               branchName: sel?.branchName,
               product_id: sel?.product_id,
@@ -521,7 +522,7 @@ console.log(customerData)
               taggeddata: sel?.taggeddata || [],
               selected: sel?.licensenumber === license
             })) || []
-console.log(selectedData)
+          console.log(selectedData)
           setcallupdate(true)
           console.log(selectedData)
           setTableData(selectedData)
@@ -601,7 +602,7 @@ console.log(selectedData)
     const year = date.getFullYear()
     return `${day}-${month}-${year}`
   }
- const formatDateForInput = (date) => {
+  const formatDateForInput = (date) => {
     if (!date) return ""
     return String(date).split("T")[0]
   }
@@ -748,7 +749,7 @@ console.log(selectedData)
 
     return `${date} ${time}` // Example: "03/02/2025 02:48:57 PM"
   }
-console.log(selectedLicenseNumber)
+  console.log(selectedLicenseNumber)
   const stopTimer = async (time, product) => {
     if (!product) {
       toast.error("No product selected.")
@@ -971,14 +972,14 @@ console.log(selectedLicenseNumber)
   }
 
   const handleSelectCard = (item, index) => {
-console.log(item)
-const checkedlicense=item?.licensenumber
-setselectedlicense(checkedlicense)
- const filteredlicenseproduct = productDetails.filter(
-          (item) => item.licensenumber === checkedlicense
-        )
-console.log(productDetails)
-setSelectedProducts(filteredlicenseproduct)
+    console.log(item)
+    const checkedlicense = item?.licensenumber
+    setselectedlicense(checkedlicense)
+    const filteredlicenseproduct = productDetails.filter(
+      (item) => item.licensenumber === checkedlicense
+    )
+    console.log(productDetails)
+    setSelectedProducts(filteredlicenseproduct)
     // setSelectedCard((prev) => (prev === index ? null : index))
   }
 
@@ -1015,7 +1016,7 @@ setSelectedProducts(filteredlicenseproduct)
     //     }
     //     return acc
     //   }, {}) || {}
- const taggedLicenseDueDatesFromData =
+    const taggedLicenseDueDatesFromData =
       item?.taggeddata?.reduce((acc, entry) => {
         if (entry?.licensenumber) {
           acc[String(entry.licensenumber)] = {
@@ -1032,11 +1033,11 @@ setSelectedProducts(filteredlicenseproduct)
     setCompanyOptions(getCompaniesForProduct(item?.productid))
     setBranchOptions(getBranchesForCompany(item?.productid, item?.companyid))
     console.log(item)
-const a=formatDateToDDMMYYYY(item?.applicationDate)
-console.log(a)
-const inputDateFormat = item?.applicationDate 
-    ? new Date(item.applicationDate).toISOString().split('T')[0] 
-    : "";
+    const a = formatDateToDDMMYYYY(item?.applicationDate)
+    console.log(a)
+    const inputDateFormat = item?.applicationDate
+      ? new Date(item.applicationDate).toISOString().split("T")[0]
+      : ""
     reset({
       ...getValues(),
       productName: productOption,
@@ -1046,7 +1047,7 @@ const inputDateFormat = item?.applicationDate
       softwareTrade: item?.softwareTrade || "",
       applicationDate: inputDateFormat,
       nextDue: item?.nextDue || "",
-shortName:item?.shortName,
+      shortName: item?.shortName,
       noofusers: item?.noofusers || "",
       productAmount: item?.productAmount || "",
       isActive: item?.isActive || "Running",
@@ -1156,7 +1157,7 @@ Problem:    \t${selectedText}
       //   branches.length > 0 &&
       //   `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${
       //     user.role
-      //  }&userBranch=${encodeURIComponent(branches)}`
+      //   }&userBranch=${encodeURIComponent(branches)}`
       url =
         branches &&
         branches.length > 0 &&
@@ -1313,6 +1314,7 @@ Problem:    \t${selectedText}
           data[0].selected?.map((sel) => ({
             company_id: sel?.company_id?._id,
             companyName: sel?.company_id?.companyName,
+            amcendDate: sel?.amcendDate,
             branch_id: sel?.branch_id?._id,
             branchName: sel?.branch_id?.branchName,
             product_id: sel?.product_id?._id,
@@ -1699,9 +1701,9 @@ Problem:    \t${selectedText}
             />
           )}
 
-          <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
+          <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden ">
             <div className="flex min-h-0 min-w-0 flex-1 justify-center overflow-y-auto p-2 sm:p-3 lg:p-4">
-              <div className="flex h-fit min-h-full w-full max-w-7xl flex-col rounded-xl bg-white p-3 shadow-lg sm:p-4 lg:p-5">
+              <div className="flex h-fit min-h-full w-full max-w-7xl flex-col rounded-xl bg-[#ADD8E6] p-3  sm:p-4 lg:p-5">
                 <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <h2 className="text-lg font-semibold sm:text-xl">
                     Call Registration
@@ -1719,7 +1721,7 @@ Problem:    \t${selectedText}
                   </div>
                 </div>
 
-                <hr className="mb-3 border-t-2 border-gray-300" />
+                <hr className="mb-3 border-t-2 border-black" />
 
                 {/* -------------------- SEARCH INPUT -------------------- */}
                 <div className="w-full md:max-w-xl">
@@ -1789,54 +1791,39 @@ Problem:    \t${selectedText}
                           </tr>
                         </thead>
 
-                        {/* <tbody className="divide-y divide-gray-200">
+                      
+                        <tbody className="divide-y divide-gray-200">
                           {customerData?.map((customer, index) =>
-                            customer?.selected?.map((item, subIndex) => (
-                              <tr
-                                key={`${index}-${subIndex}`}
-                                onClick={() =>
-                                  handleRowClick(customer, item?.licensenumber)
-                                }
-                                className="cursor-pointer transition-colors hover:bg-gray-50"
-                              >
-                                <td className="px-3 py-2 text-center text-sm text-gray-700">
-                                  {customer?.customerName}
-                                </td>
-                                <td className="px-3 py-2 text-center text-sm text-gray-700">
-                                  {item?.licensenumber}
-                                </td>
-                                <td className="px-3 py-2 text-center text-sm text-gray-700">
-                                  {customer?.mobile}
-                                </td>
-                              </tr>
-                            ))
+                            customer?.selected
+                              ?.filter(
+                                (item) =>
+                                  item?.product_id?.productorservicetype ===
+                                  "Primaryproduct"
+                              )
+                              .map((item, subIndex) => (
+                                <tr
+                                  key={`${index}-${subIndex}`}
+                                  onClick={() =>
+                                    handleRowClick(
+                                      customer,
+                                      item?.licensenumber
+                                    )
+                                  }
+                                  className="cursor-pointer transition-colors hover:bg-gray-50"
+                                >
+                                  <td className="px-3 py-2 text-center text-sm text-gray-700">
+                                    {customer?.customerName}
+                                  </td>
+                                  <td className="px-3 py-2 text-center text-sm text-gray-700">
+                                    {item?.licensenumber}
+                                  </td>
+                                  <td className="px-3 py-2 text-center text-sm text-gray-700">
+                                    {customer?.mobile}
+                                  </td>
+                                </tr>
+                              ))
                           )}
-                        </tbody> */}
-<tbody className="divide-y divide-gray-200">
-  {customerData?.map((customer, index) =>
-    customer?.selected
-      ?.filter((item) => item?.product_id?.productorservicetype === "Primaryproduct")
-      .map((item, subIndex) => (
-        <tr
-          key={`${index}-${subIndex}`}
-          onClick={() =>
-            handleRowClick(customer, item?.licensenumber)
-          }
-          className="cursor-pointer transition-colors hover:bg-gray-50"
-        >
-          <td className="px-3 py-2 text-center text-sm text-gray-700">
-            {customer?.customerName}
-          </td>
-          <td className="px-3 py-2 text-center text-sm text-gray-700">
-            {item?.licensenumber}
-          </td>
-          <td className="px-3 py-2 text-center text-sm text-gray-700">
-            {customer?.mobile}
-          </td>
-        </tr>
-      ))
-  )}
-</tbody>
+                        </tbody>
                       </table>
                     </div>
                   </div>
@@ -2095,7 +2082,7 @@ Problem:    \t${selectedText}
                     </div>
 
                     {/* ==================== PRODUCT DETAILS CARD ==================== */}
-                    <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50/60 p-3 shadow-sm">
+                    <div className="mt-3 rounded-lg border border-slate-200 bg-gray-50 p-3 shadow-sm">
                       <div className="mb-2.5 border-b border-slate-200 pb-2">
                         <h3 className="text-sm font-semibold text-slate-800">
                           Product Details
@@ -2111,7 +2098,7 @@ Problem:    \t${selectedText}
                           <h2 className="mb-3 text-sm font-medium">
                             Primary Products
                           </h2>
-                          {primaryProducts.length > 0 ? (
+                          {/* {primaryProducts.length > 0 ? (
                             <div className="grid grid-cols-[repeat(auto-fill,minmax(100px,120px))] justify-center gap-x-6 gap-y-6 sm:justify-start">
                               {primaryProducts.map((item, index) => {
                                 const actualIndex = primaryProducts.findIndex(
@@ -2120,42 +2107,52 @@ Problem:    \t${selectedText}
                                 const isDeactive =
                                   String(item?.isActive).toLowerCase() ===
                                   "deactive"
-console.log(item)
-console.log(item?.licensenumber)
-console.log(selectedLicenseNumber)
+                                console.log(item)
+                                console.log(item?.licensenumber)
+                                console.log(selectedLicenseNumber)
                                 const isSelected =
                                   String(item?.licensenumber ?? "") ===
                                   String(selectedLicenseNumber ?? "")
-console.log(isSelected)
+                                console.log(isSelected)
+                                // const matchedamc=item?.selected.find((item)=>item?.product_id?.branch_id)
                                 return (
-                                  <ProductCircleCard
-                                    key={`primary-${actualIndex}`}
-                                    item={item}
-                                    actualIndex={actualIndex}
-                                    productType="Primaryproduct"
-                                    variant={isDeactive ? "danger" : "success"}
-                                    topBadgeIcon={<FaBuilding size={10} />}
-                                    line1={
-                                      item?.shortName
-                                        ? item?.shortName
-                                        : item?.productName
-                                    }
-                                    line2={item?.licensenumber}
-                                    line3={
-                                      item?.applicationDate
-                                        ? formatDateToDDMMYYYY(
-                                            item?.applicationDate
-                                          )
-                                        : ""
-                                    }
-                                    line4={isDeactive ? "De Active" : "Active"}
-                                    isSelected={
-                                      isSelected
-                                    }
-                                    isreadonly={true}
-                                    onEdit={handleEdit}
-                                    onSelect={handleSelectCard}
-                                  />
+                                  <>
+                                    <ProductCircleCard
+                                      key={`primary-${actualIndex}`}
+                                      item={item}
+                                      actualIndex={actualIndex}
+                                      productType="Primaryproduct"
+                                      variant={
+                                        isDeactive ? "danger" : "success"
+                                      }
+                                      topBadgeIcon={<FaBuilding size={10} />}
+                                      line1={
+                                        item?.shortName
+                                          ? item?.shortName
+                                          : item?.productName
+                                      }
+                                      line2={item?.licensenumber}
+                                      line3={
+                                        item?.applicationDate
+                                          ? formatDateToDDMMYYYY(
+                                              item?.applicationDate
+                                            )
+                                          : ""
+                                      }
+                                      line4={
+                                        isDeactive ? "De Active" : "Active"
+                                      }
+                                      isSelected={isSelected}
+                                      isreadonly={true}
+                                      onEdit={handleEdit}
+                                      onSelect={handleSelectCard}
+                                    />
+                                    <div>
+                                      <span>amcendDate:</span>
+
+                                      <span>{item?.amcendDate}</span>
+                                    </div>
+                                  </>
                                 )
                               })}
                             </div>
@@ -2163,7 +2160,64 @@ console.log(isSelected)
                             <div className="flex h-[110px] items-center justify-center rounded-[12px] border border-dashed border-[#e7ebf4] bg-[#fbfcff] text-[12px] text-[#8a95ab]">
                               No primary products added.
                             </div>
-                          )}
+                          )} */}
+<div className="grid grid-cols-[repeat(auto-fill,minmax(100px,120px))] justify-center gap-x-6 gap-y-6 sm:justify-start">
+  {primaryProducts.map((item) => {
+    const actualIndex = primaryProducts.findIndex((x) => x === item);
+
+    const isDeactive =
+      String(item?.isActive).toLowerCase() === "deactive";
+
+    const isSelected =
+      String(item?.licensenumber ?? "") ===
+      String(selectedLicenseNumber ?? "");
+
+    return (
+      <div
+        key={`primary-${actualIndex}`}
+        className="flex flex-col items-center"
+      >
+        <ProductCircleCard
+          item={item}
+          actualIndex={actualIndex}
+          productType="Primaryproduct"
+          variant={isDeactive ? "danger" : "success"}
+          topBadgeIcon={<FaBuilding size={10} />}
+          line1={item?.shortName || item?.productName}
+          line2={item?.licensenumber}
+          line3={
+            item?.applicationDate
+              ? formatDateToDDMMYYYY(item?.applicationDate)
+              : ""
+          }
+          line4={isDeactive ? "De Active" : "Active"}
+          isSelected={isSelected}
+          isreadonly={true}
+          onEdit={handleEdit}
+          onSelect={handleSelectCard}
+        />
+
+        {/* AMC End Date */}
+        <div className="mt-3 w-full rounded-lg bg-gray-100 px-2 py-1 text-center shadow-sm">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">
+            AMC End
+          </p>
+          <p
+            className={`text-xs font-bold ${
+              item?.amcendDate
+                ? "text-red-600"
+                : "text-gray-400"
+            }`}
+          >
+            {item?.amcendDate
+              ? formatDateToDDMMYYYY(item.amcendDate)
+              : "--"}
+          </p>
+        </div>
+      </div>
+    );
+  })}
+</div>
                         </div>
 
                         <div className="min-h-[140px] w-full rounded-lg border border-slate-100 bg-white px-3 py-4 xl:w-1/2">
@@ -2180,37 +2234,41 @@ console.log(isSelected)
                                 const isDeactive =
                                   String(item?.isActive).toLowerCase() ===
                                   "deactive"
-const today = new Date();
-today.setHours(0, 0, 0, 0);
+                                const today = new Date()
+                                today.setHours(0, 0, 0, 0)
 
-const selectedTagged = Array.isArray(item?.taggeddata)
-  ? (() => {
-      const tagged = [...item.taggeddata].sort(
-        (a, b) => new Date(a.nextDue) - new Date(b.nextDue)
-      );
+                                const selectedTagged = Array.isArray(
+                                  item?.taggeddata
+                                )
+                                  ? (() => {
+                                      const tagged = [...item.taggeddata].sort(
+                                        (a, b) =>
+                                          new Date(a.nextDue) -
+                                          new Date(b.nextDue)
+                                      )
 
-      // 1. Oldest overdue
-      const overdue = tagged.find((x) => {
-        const d = new Date(x.nextDue);
-        d.setHours(0, 0, 0, 0);
-        return d < today;
-      });
+                                      // 1. Oldest overdue
+                                      const overdue = tagged.find((x) => {
+                                        const d = new Date(x.nextDue)
+                                        d.setHours(0, 0, 0, 0)
+                                        return d < today
+                                      })
 
-      if (overdue) return overdue;
+                                      if (overdue) return overdue
 
-      // 2. Today
-      const todayItem = tagged.find((x) => {
-        const d = new Date(x.nextDue);
-        d.setHours(0, 0, 0, 0);
-        return d.getTime() === today.getTime();
-      });
+                                      // 2. Today
+                                      const todayItem = tagged.find((x) => {
+                                        const d = new Date(x.nextDue)
+                                        d.setHours(0, 0, 0, 0)
+                                        return d.getTime() === today.getTime()
+                                      })
 
-      if (todayItem) return todayItem;
+                                      if (todayItem) return todayItem
 
-      // 3. Nearest future
-      return tagged[0] || null;
-    })()
-  : null;
+                                      // 3. Nearest future
+                                      return tagged[0] || null
+                                    })()
+                                  : null
                                 return (
                                   <ProductCircleCard
                                     key={`additional-${actualIndex}`}
@@ -2242,21 +2300,23 @@ const selectedTagged = Array.isArray(item?.taggeddata)
                                     //       ? formatDateToDDMMYYYY(item?.nextDue)
                                     //       : ""
                                     // }
-line3={
-  selectedTagged
-    ? formatDateToDDMMYYYY(selectedTagged.nextDue)
-    : item?.nextDue
-      ? formatDateToDDMMYYYY(item.nextDue)
-      : ""
-}
+                                    line3={
+                                      selectedTagged
+                                        ? formatDateToDDMMYYYY(
+                                            selectedTagged.nextDue
+                                          )
+                                        : item?.nextDue
+                                          ? formatDateToDDMMYYYY(item.nextDue)
+                                          : ""
+                                    }
                                     line4={isDeactive ? "De Active" : "Active"}
                                     // line5={item?.productAmount}
-line5={
-  selectedTagged
-    ? selectedTagged.productAmount
-    : item?.productAmount
-}
-onEdit={handleEdit}
+                                    line5={
+                                      selectedTagged
+                                        ? selectedTagged.productAmount
+                                        : item?.productAmount
+                                    }
+                                    onEdit={handleEdit}
                                   />
                                 )
                               })}
@@ -2279,7 +2339,7 @@ onEdit={handleEdit}
                     </div>
 
                     {/* ==================== CALL INPUT CARD ==================== */}
-                    <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50/60 p-3 shadow-sm">
+                    <div className="mt-3 rounded-lg border border-slate-200 bg-gray-50 p-3 shadow-sm">
                       <div className="mb-3 flex flex-col items-center justify-center gap-3 border-b border-slate-200 pb-3">
                         <Timer
                           isRunning={isRunning}
@@ -2511,7 +2571,7 @@ onEdit={handleEdit}
 
                     {/* ==================== CALL HISTORY TABLE CARD ==================== */}
                     {callData?.length > 0 && (
-                      <div className="mt-3 overflow-hidden rounded-lg border border-slate-200 bg-slate-50/60 p-3 shadow-sm">
+                      <div className="mt-3 overflow-hidden rounded-lg border border-slate-200 bg-gray-50 p-3 shadow-sm">
                         <div className="mb-2 border-b border-slate-200 pb-2">
                           <h3 className="text-sm font-semibold text-slate-800">
                             Call History
@@ -2576,51 +2636,45 @@ onEdit={handleEdit}
                           )}
                         />
                       </div> */}
-<div>
-  <label className="mb-1 block text-[11px] font-medium text-[#5d6983]">
-    Product / Service
-  </label>
-  <Controller
-    name="productName"
-    control={control}
-    render={({ field }) => (
-      <Select
-        {...field}
-        isDisabled={true} // 🌟 Changed from disabled={true}
-        options={filteredOptionsByType}
-        value={field.value}
-        onChange={(option) => {
-          field.onChange(option)
-          handleProductChange(option)
-        }}
-        placeholder="Select name"
-        styles={compactSelectStyles}
-      />
-    )}
-  />
-</div>
-                      <PopupField
-                        label="Short Name"
-                      >
+                      <div>
+                        <label className="mb-1 block text-[11px] font-medium text-[#5d6983]">
+                          Product / Service
+                        </label>
+                        <Controller
+                          name="productName"
+                          control={control}
+                          render={({ field }) => (
+                            <Select
+                              {...field}
+                              isDisabled={true} // 🌟 Changed from disabled={true}
+                              options={filteredOptionsByType}
+                              value={field.value}
+                              onChange={(option) => {
+                                field.onChange(option)
+                                handleProductChange(option)
+                              }}
+                              placeholder="Select name"
+                              styles={compactSelectStyles}
+                            />
+                          )}
+                        />
+                      </div>
+                      <PopupField label="Short Name">
                         <input
                           readOnly
-{...register("shortName")}
+                          {...register("shortName")}
                           className="w-full rounded-[8px] border border-[#dfe5ee] bg-[#f3f6fb] px-2.5 py-1.5 text-[12px] text-[#1f2a3d] outline-none"
                           placeholder="Enter Short Name"
                         />
                       </PopupField>
 
                       {popupType === "Primaryproduct" && (
-                        <PopupField
-                          label="License Number"
-                         
-                        >
+                        <PopupField label="License Number">
                           <input
                             type="text"
                             inputMode="numeric"
-{...register("licensenumber")}
+                            {...register("licensenumber")}
                             pattern="[0-9]*"
-
                             readOnly={true}
                             className={`${compactPopupInputClass} ${
                               hasTaggedLicenses
@@ -2693,8 +2747,8 @@ onEdit={handleEdit}
                       {popupType === "Primaryproduct" && (
                         <PopupField label="Software Trade">
                           <select
-  {...register("softwareTrade")}
-disabled={true}
+                            {...register("softwareTrade")}
+                            disabled={true}
                             className={compactPopupInputClass}
                           >
                             <option value="">Select Software Trade</option>
@@ -2717,7 +2771,6 @@ disabled={true}
                         </PopupField>
                       )}
 
-                    
                       {popupType === "Additionalservice" && (
                         <PopupField label="No of Quantity / Users">
                           <input
@@ -2853,7 +2906,7 @@ disabled={true}
                                       </th>
                                     </tr>
                                   </thead>
-                                 
+
                                   <tbody>
                                     {watchedTaggedLicenses.map((licenseNo) => (
                                       <tr key={licenseNo}>
