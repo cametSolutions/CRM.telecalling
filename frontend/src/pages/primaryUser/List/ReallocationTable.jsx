@@ -619,8 +619,8 @@ console.log(isClosed)
                           <td className=" px-4 ">Assignedby</td>
                           <td className="px-4 ">No. of Followups</td>
                           <td className="px-4 min-w-[120px]">Lead Date</td>
-                          <td className="px-4 min-w-[120px] border border-t-0 border-b-0 border-gray-400 whitespace-nowrap">
-                          c
+                          {/* <td className="px-4 min-w-[120px] border border-t-0 border-b-0 border-gray-400 whitespace-nowrap">
+                          
 <span className="mx-2 relative group inline-block max-w-[220px] align-middle">
   <span className="block truncate text-[12px] text-slate-700">
     {item?.activityLog?.[item.activityLog.length - 1]?.remarks || "-"}
@@ -634,7 +634,7 @@ console.log(isClosed)
     </div>
   )}
 </span>
-                          </td>
+                          </td> */}
                           <td className=" border border-t-0 border-b-0 border-gray-400 px-1 bg-white ">
                             <select
                               value={selectedAllocationType?.item_id?.value}
