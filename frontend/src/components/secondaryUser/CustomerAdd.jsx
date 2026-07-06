@@ -1763,8 +1763,8 @@ console.log(primaryLicenseOptions)
               {isSubmitting
                 ? "Submitting..."
                 : process === "Registration"
-                  ? "Save"
-                  : "Update"}
+                  ? "Save Customer"
+                  : "Update Customer"}
             </button>
           </div>
         </form>
