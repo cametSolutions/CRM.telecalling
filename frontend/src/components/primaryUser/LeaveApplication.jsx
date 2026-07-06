@@ -1087,7 +1087,7 @@ console.log(filteredcurrentmonthlyOnsites)
           //   }
           // )
           const response = await fetch(
-            `https://www.crm.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+            `https://www.crmtest.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
             {
               method: "POST",
               headers: {
@@ -1218,7 +1218,7 @@ console.log(filteredcurrentmonthlyOnsites)
         //   { formData, tableRows }
         // )
         const response = await api.post(
-          `https://www.crm.camet.in/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
+          `https://www.crmtest.camet.in/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
           { formData, tableRows }
         )
 
@@ -1292,7 +1292,7 @@ console.log(filteredcurrentmonthlyOnsites)
         //   misspunchPayload
         // )
         const response = await api.post(
-          "https://www.crm.camet.in/api/auth/misspunchRegister",
+          "https://www.crmtest.camet.in/api/auth/misspunchRegister",
           misspunchPayload
         )
 
