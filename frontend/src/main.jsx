@@ -8,12 +8,16 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
 import "./tailwind.css"
 import Layout from "./layouts/Layout"
+// import { UnsavedChangesProvider } from "./context/UnsavedChangesContext"
+import { UnsavedChangesProvider } from "./context/UnsavedChangesContext"
 const queryClient = new QueryClient()
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
-        <Layout />
+  <UnsavedChangesProvider> <Layout /></UnsavedChangesProvider>
+       
       </QueryClientProvider>
     </Provider>
     <ToastContainer

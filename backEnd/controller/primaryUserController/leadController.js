@@ -354,7 +354,20 @@ export const LeadRegister = async (req, res) => {
     await session.abortTransaction()
     await session.endSession()
     console.log("error:", error)
-    return res.status(500).json({ message: "Internal server error" })
+    // return res.status(500).json({ message: "Internal server error",data:error })
+
+ return res.status(500).json({
+    success: false,
+    message: "Internal server error",
+    error:
+      process.env.NODE_ENV === "development"
+        ? {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+          }
+        : error.message, // or omit this entirely
+  });
   }
 }
 export const Checkexistinglead = async (req, res) => {
@@ -8678,10 +8691,12 @@ export const GetlostLeads = async (req, res) => {
 
 export const GetallproductwiseReport = async (req, res) => {
   try {
+console.log("calledddddddddddddddddddddddd")
     const { startDate, endDate } = req.query;
 
     const start = new Date(startDate);
     const end = new Date(endDate);
+console.log("called")
     console.log("startdate", start)
     console.log('enddataee', end)
     ///for productwise report
@@ -9773,11 +9788,14 @@ export const GetallproductwiseReport = async (req, res) => {
       totalPendingAmount: item.totalPendingAmount,
       lostNetAmount: item.lostNetAmount
     }))
-
+console.log("mappedata",mappeddata)
+console.log("reeeeeeeee",re)
 
     if (result && result.length > 0) {
       return res.status(200).json({ message: "lead found", data: { mappeddata, re } })
-    }
+    }else{
+      return res.status(200).json({ message: "lead found", data: { mappeddata, re } })
+}
   } catch (error) {
     console.log("error", error.message);
     return res.status(500).json({ message: "Internal server error" });
