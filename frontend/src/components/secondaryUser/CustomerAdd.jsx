@@ -2151,7 +2151,6 @@
 //   );
 // })
 
-
 //                         ) : (
 //                           <p className="text-[11px] italic text-[#96a0b5]">
 //                             No primary product license numbers available.
@@ -2281,7 +2280,7 @@
 //                                   <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
 //                                     <input
 //                                       type="date"
-                                     
+
 //                                       value={formatDateForInput(
 //                                         watchedTaggedLicenseDueDates?.[
 //                                           licenseNo
@@ -2567,6 +2566,7 @@
 //   "w-full rounded-[8px] border border-[#dfe5ee]  px-2.5 py-1.5 text-[12px] text-[#1f2a3d] outline-none focus:border-[#7ba7ff] "
 
 // export default CustomerAdd
+
 import React, { useEffect, useMemo, useState, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import Select from "react-select"
@@ -2605,10 +2605,7 @@ const CustomerAdd = ({
   customer
 }) => {
   const navigate = useNavigate()
-const {
-  setHasUnsavedChanges,
-  requestNavigation
-} = useUnsavedChanges()
+  const { setHasUnsavedChanges, requestNavigation } = useUnsavedChanges()
   const {
     register,
     handleSubmit,
@@ -2672,14 +2669,14 @@ const {
   const [showProductPopup, setShowProductPopup] = useState(false)
   const [popupType, setPopupType] = useState("")
   const [editIndex, setEditIndex] = useState(null)
-const [showUnsavedModal, setShowUnsavedModal] = useState(false)
-const [pendingAction, setPendingAction] = useState(null)
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false)
+  const [pendingAction, setPendingAction] = useState(null)
   const selectedProduct = watch("productName")
   const registrationType = watch("registrationType")
   const watchedLicense = watch("licensenumber")
   const watchedTaggedLicenses = watch("taggedLicenses") || []
   const watchedTaggedLicenseDueDates = watch("taggedLicenseDueDates") || {}
-
+  console.log(watchedTaggedLicenseDueDates)
   const hasTaggedLicenses =
     popupType === "Additionalservice" && watchedTaggedLicenses.length > 0
 
@@ -2693,12 +2690,12 @@ const [pendingAction, setPendingAction] = useState(null)
   )
 
   const debouncedLicenseNo = useDebounce(watchedLicense, 1000)
- const isTableDirty =
+  const isTableDirty =
     JSON.stringify(tableData) !== JSON.stringify(initialTableData)
-console.log(initialTableData)
-console.log(tableData)
+  console.log(initialTableData)
+  console.log(tableData)
   const hasUnsavedChanges = isDirty || isTableDirty
-console.log(hasUnsavedChanges)
+  console.log(hasUnsavedChanges)
   const softwareTrades = [
     "Agriculture",
     "Business Services",
@@ -2828,13 +2825,13 @@ console.log(hasUnsavedChanges)
     }
   }, [productData])
 
-useEffect(() => {
-  setHasUnsavedChanges(hasUnsavedChanges)
+  useEffect(() => {
+    setHasUnsavedChanges(hasUnsavedChanges)
 
-  return () => {
-    setHasUnsavedChanges(false)
-  }
-}, [hasUnsavedChanges, setHasUnsavedChanges])
+    return () => {
+      setHasUnsavedChanges(false)
+    }
+  }, [hasUnsavedChanges, setHasUnsavedChanges])
   useEffect(() => {
     if (licensenumber) {
       setLicense(licensenumber)
@@ -3008,7 +3005,9 @@ useEffect(() => {
   const handleProductChange = (selectedOption) => {
     setValue("productName", selectedOption, { shouldDirty: true })
     setValue("shortName", selectedOption?.shortName, { shouldDirty: true })
-    setValue("productAmount", selectedOption?.productprice, { shouldDirty: true })
+    setValue("productAmount", selectedOption?.productprice, {
+      shouldDirty: true
+    })
     setValue("companyName", null, { shouldDirty: true })
     setValue("branchName", null, { shouldDirty: true })
     setValue("licensenumber", "", { shouldDirty: true })
@@ -3067,38 +3066,38 @@ useEffect(() => {
     setduplicatelicense(null)
     setdetailsData([])
   }
-// const handleCancelNavigation = () => {
-//   if (hasUnsavedChanges) {
-//     const confirmLeave = window.confirm(
-//       "You have unsaved customer details. Leaving this page without saving will discard the data. Do you want to continue?"
-//     )
-//     if (!confirmLeave) return
-//   }
+  // const handleCancelNavigation = () => {
+  //   if (hasUnsavedChanges) {
+  //     const confirmLeave = window.confirm(
+  //       "You have unsaved customer details. Leaving this page without saving will discard the data. Do you want to continue?"
+  //     )
+  //     if (!confirmLeave) return
+  //   }
 
-//   if (navigatebackto) {
-//     navigate(navigatebackto)
-//   } else {
-//     navigate(-1)
-//   }
-// }
-// const handleCancelNavigation = () => {
-//   openUnsavedWarning(() => {
-//     if (navigatebackto) {
-//       navigate(navigatebackto)
-//     } else {
-//       navigate(-1)
-//     }
-//   })
-// }
-const handleCancelNavigation = () => {
-  requestNavigation(() => {
-    if (navigatebackto) {
-      navigate(navigatebackto)
-    } else {
-      navigate(-1)
-    }
-  })
-}
+  //   if (navigatebackto) {
+  //     navigate(navigatebackto)
+  //   } else {
+  //     navigate(-1)
+  //   }
+  // }
+  // const handleCancelNavigation = () => {
+  //   openUnsavedWarning(() => {
+  //     if (navigatebackto) {
+  //       navigate(navigatebackto)
+  //     } else {
+  //       navigate(-1)
+  //     }
+  //   })
+  // }
+  const handleCancelNavigation = () => {
+    requestNavigation(() => {
+      if (navigatebackto) {
+        navigate(navigatebackto)
+      } else {
+        navigate(-1)
+      }
+    })
+  }
   const handleLicenseBlur = async (licenseNumber) => {
     if (!String(licenseNumber).trim()) return
 
@@ -3134,6 +3133,8 @@ const handleCancelNavigation = () => {
   }
 
   const handleEdit = (item, index) => {
+    console.log(item)
+
     setdetailsData(item)
     setPopupType(item?.productorservicetype)
     setEditIndex(index)
@@ -3164,9 +3165,9 @@ const handleCancelNavigation = () => {
           acc[String(entry.licensenumber)] = {
             nextDue: entry?.nextDue || "",
             productAmount: entry?.productAmount ?? "",
-            taxexclusiveAmount: entry?.taxexclusiveAmount ?? "",
-            taxinclusiveamount: entry?.taxinclusiveamount ?? "",
-            hsn: entry?.hsn ?? ""
+            taxexclusiveAmount: entry?.taxexclusiveAmount ?? 0,
+            taxinclusiveamount: entry?.taxinclusiveamount ?? 0,
+            hsn: entry?.hsn ?? 0
           }
         }
         return acc
@@ -3221,7 +3222,11 @@ const handleCancelNavigation = () => {
       const row = selectedleadlist[i]
       const type = String(row?.productorservicetype || "").toLowerCase()
 
-      const hasCompany = !!(row?.company_id || row?.companyid || row?.companyName)
+      const hasCompany = !!(
+        row?.company_id ||
+        row?.companyid ||
+        row?.companyName
+      )
       const hasBranch = !!(row?.branch_id || row?.branchid || row?.branchName)
 
       if (!hasCompany) {
@@ -3378,6 +3383,10 @@ const handleCancelNavigation = () => {
             taxexclusiveAmount: Number(
               dueMap[String(licenseNo)]?.taxexclusiveAmount || 0
             ),
+hsn: Number(
+              dueMap[String(licenseNo)]?.hsn || 0
+            ),
+
             taxinclusiveamount: Number(
               dueMap[String(licenseNo)]?.taxinclusiveamount || 0
             )
@@ -3436,7 +3445,7 @@ const handleCancelNavigation = () => {
             softwareTrade: "",
             applicationDate: "",
             nextDue: "",
-            noofusers: 0,
+            noofusers: service?.noofusers,
             productAmount: service?.productPrice
               ? Number(service.productPrice)
               : 0,
@@ -3523,46 +3532,45 @@ const handleCancelNavigation = () => {
     return String(date).split("T")[0]
   }
 
- 
   // useUnsavedChangesPrompt(
   //   hasUnsavedChanges,
   //   "You have unsaved customer details. Leaving this page without saving will discard the data. Do you want to continue?"
   // )
-useUnsavedChangesPrompt({
-  when: hasUnsavedChanges,
-  onBlock: ({ proceed, stay }) => {
+  useUnsavedChangesPrompt({
+    when: hasUnsavedChanges,
+    onBlock: ({ proceed, stay }) => {
+      setPendingAction(() => ({
+        proceed,
+        stay
+      }))
+      setShowUnsavedModal(true)
+    }
+  })
+  const openUnsavedWarning = (action) => {
+    if (!hasUnsavedChanges) {
+      action()
+      return
+    }
+
     setPendingAction(() => ({
-      proceed,
-      stay
+      proceed: action,
+      stay: () => {}
     }))
     setShowUnsavedModal(true)
   }
-})
-const openUnsavedWarning = (action) => {
-  if (!hasUnsavedChanges) {
-    action()
-    return
+
+  const handleStayOnPage = () => {
+    pendingAction?.stay?.()
+    setShowUnsavedModal(false)
+    setPendingAction(null)
   }
 
-  setPendingAction(() => ({
-    proceed: action,
-    stay: () => {}
-  }))
-  setShowUnsavedModal(true)
-}
-
-const handleStayOnPage = () => {
-  pendingAction?.stay?.()
-  setShowUnsavedModal(false)
-  setPendingAction(null)
-}
-
-const handleLeavePage = () => {
-  setShowUnsavedModal(false)
-  const action = pendingAction?.proceed
-  setPendingAction(null)
-  action?.()
-}
+  const handleLeavePage = () => {
+    setShowUnsavedModal(false)
+    const action = pendingAction?.proceed
+    setPendingAction(null)
+    action?.()
+  }
   const onSubmit = async (data) => {
     const validationMessage = validateSelectedLeadList(tableData)
 
@@ -3643,8 +3651,8 @@ const handleLeavePage = () => {
                 // onClick={() =>
                 //   navigatebackto ? navigate(navigatebackto) : navigate(-1)
                 // }
-// onClick={() => navigatebackto ? navigate(navigatebackto) : navigate(-1)}
-  onClick={handleCancelNavigation}
+                // onClick={() => navigatebackto ? navigate(navigatebackto) : navigate(-1)}
+                onClick={handleCancelNavigation}
                 className="rounded-md border border-[#e6ebf3] bg-white px-3 py-2 text-[12px] font-medium text-[#6d7890] hover:bg-[#f8fafc]"
               >
                 Cancel
@@ -3688,7 +3696,7 @@ const handleLeavePage = () => {
                       shouldDirty: true
                     })
                   }
- onWheel={(e) => e.currentTarget.blur()}
+                  onWheel={(e) => e.currentTarget.blur()}
                   className={`${tileInputClass} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0`}
                   placeholder="Pincode"
                 />
@@ -3968,7 +3976,9 @@ const handleLeavePage = () => {
                           variant={isDeactive ? "danger" : "success"}
                           topBadgeIcon={<FaBuilding size={10} />}
                           line1={
-                            item?.shortName ? item?.shortName : item?.productName
+                            item?.shortName
+                              ? item?.shortName
+                              : item?.productName
                           }
                           line2={item?.licensenumber}
                           line3={
@@ -4046,7 +4056,7 @@ const handleLeavePage = () => {
                             return tagged[0] || null
                           })()
                         : null
-
+                      console.log(selectedTagged)
                       const dueDate = selectedTagged?.nextDue || item?.nextDue
 
                       const isCurrentMonthExpiry = (() => {
@@ -4069,7 +4079,9 @@ const handleLeavePage = () => {
                           variant="service"
                           topBadgeIcon={<FaBuilding size={10} />}
                           line1={
-                            item?.shortName ? item?.shortName : item?.productName
+                            item?.shortName
+                              ? item?.shortName
+                              : item?.productName
                           }
                           line2={
                             Array.isArray(item?.taggeddata) &&
@@ -4124,7 +4136,7 @@ const handleLeavePage = () => {
               // onClick={() =>
               //   navigatebackto ? navigate(navigatebackto) : navigate(-1)
               // }
-onClick={handleCancelNavigation}
+              onClick={handleCancelNavigation}
               className="rounded-lg border border-[#f1c7cc] bg-white px-5 py-2.5 text-[13px] font-semibold text-[#d65b68] hover:bg-[#fff6f7]"
             >
               Cancel
@@ -4145,13 +4157,13 @@ onClick={handleCancelNavigation}
       </div>
 
       {licenseloading && <FullScreenLoader text="Checking..." />}
-<UnsavedChangesModal
-  open={showUnsavedModal}
-  onClose={handleStayOnPage}
-  onConfirm={handleLeavePage}
-  title="Leave without saving?"
-  description="You have unsaved customer details. If you continue, the entered data will be lost."
-/>
+      <UnsavedChangesModal
+        open={showUnsavedModal}
+        onClose={handleStayOnPage}
+        onConfirm={handleLeavePage}
+        title="Leave without saving?"
+        description="You have unsaved customer details. If you continue, the entered data will be lost."
+      />
       {showProductPopup && (
         <div className="fixed inset-0 z-50 bg-black/30 p-2 sm:p-3">
           <div className="flex min-h-full items-center justify-center">
@@ -4317,7 +4329,7 @@ onClick={handleCancelNavigation}
                       <input
                         type="number"
                         {...register("noofusers")}
- onWheel={(e) => e.currentTarget.blur()}
+                        onWheel={(e) => e.currentTarget.blur()}
                         className={`${compactPopupInputClass} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0`}
                       />
                     </PopupField>
@@ -4369,8 +4381,7 @@ onClick={handleCancelNavigation}
                                     checked={checked}
                                     onChange={(e) => {
                                       const licenseNo = String(option.licenseNo)
-                                      const prev =
-                                        watch("taggedLicenses") || []
+                                      const prev = watch("taggedLicenses") || []
                                       const dueMap =
                                         watch("taggedLicenseDueDates") || {}
 
@@ -4391,7 +4402,7 @@ onClick={handleCancelNavigation}
                                           },
                                           { shouldDirty: true }
                                         )
-
+                                        console.log(detailsData)
                                         const matched =
                                           detailsData?.taggeddata?.find(
                                             (item) =>
@@ -4417,6 +4428,37 @@ onClick={handleCancelNavigation}
                                                   matched.taxinclusiveamount ??
                                                   "",
                                                 hsn: matched.hsn ?? ""
+                                              }
+                                            }
+                                          })
+                                        } else {
+                                          const currentValues = getValues()
+                                          console.log(productOptions)
+                                          const filteredproduct =
+                                            productOptions.filter(
+                                              (item) =>
+                                                item.value ===
+                                                currentValues?.productName
+                                                  ?.value
+                                            )
+                                          console.log(filteredproduct)
+                                          console.log(
+                                            filteredproduct[0]?.basePrice
+                                          )
+                                          console.log(currentValues)
+console.log(licenseNo)
+                                          reset({
+                                            ...currentValues,
+                                            taggedLicenseDueDates: {
+                                              ...currentValues.taggedLicenseDueDates,
+                                              [licenseNo]: {
+                                                nextDue: "",
+                                                productAmount: "",
+                                                taxexclusiveAmount:
+                                                  filteredproduct[0]?.basePrice||0,
+                                                taxinclusiveamount:
+                                                  filteredproduct[0]?.productprice||0,
+                                                hsn: filteredproduct[0]?.igstRate||0
                                               }
                                             }
                                           })
@@ -4542,6 +4584,8 @@ onClick={handleCancelNavigation}
                                         const dueMap =
                                           watch("taggedLicenseDueDates") || {}
                                         const matchedData = dueMap[licenseNo]
+console.log(dueMap)
+console.log(matchedData)
                                         const taxAmount =
                                           (Number(matchedData?.hsn) / 100) *
                                           Number(inputValue)

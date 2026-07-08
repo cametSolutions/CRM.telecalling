@@ -354,7 +354,20 @@ export const LeadRegister = async (req, res) => {
     await session.abortTransaction()
     await session.endSession()
     console.log("error:", error)
-    return res.status(500).json({ message: "Internal server error" })
+    // return res.status(500).json({ message: "Internal server error",data:error })
+
+ return res.status(500).json({
+    success: false,
+    message: "Internal server error",
+    error:
+      process.env.NODE_ENV === "development"
+        ? {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+          }
+        : error.message, // or omit this entirely
+  });
   }
 }
 export const Checkexistinglead = async (req, res) => {
