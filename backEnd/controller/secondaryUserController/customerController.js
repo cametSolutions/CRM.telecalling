@@ -5630,8 +5630,10 @@ export const GetCallRegister = async (req, res) => {
     const { customerid } = req.query
 
     const { callId } = req.params
-
+// console.log("callidddddddddddddddddddddddd",callId)
+// console.log("customerid",customerid)
     if (customerid !== "null" && customerid) {
+console.log("Hhhhhhhhhhhhhhhhhhhhhhhhhhhh")
       const customerId = new mongoose.Types.ObjectId(customerid)
       const registeredCall = await CallRegistration.findOne({
         customerid: customerId
@@ -5790,15 +5792,29 @@ export const GetCallRegister = async (req, res) => {
         return res.status(404).json({ message: "No registered Calls" })
       }
     } else if (callId) {
+console.log("callid",callId)
       const callDetails = await CallRegistration.findById(callId)
-        .populate({
-          path: "customerid",
-          populate: {
-            path: "partner",
-            model: "Partner" // optional if ref is defined in schema
-          }
-        })
-        .populate({
+.populate({
+    path: "customerid",
+    populate: [
+      {
+        path: "partner",
+        model: "Partner" // optional if ref is defined in schema
+      },
+      {
+        path: "selected.company_id",
+        model: "Company"
+      },
+      {
+        path: "selected.branch_id",
+        model: "Branch"
+      },
+      {
+        path: "selected.product_id",
+        model: "Product"
+      }
+    ]
+  }).populate({
           path: "callregistration.product", // Populate the product field inside callregistration array
           model: "Product"
         })
