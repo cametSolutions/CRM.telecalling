@@ -452,6 +452,7 @@ export default function CallRegistration() {
           setSelectedCustomer(callData?.callDetails?.customerid)
           console.log("hhh")
           console.log(matchingProducts)
+console.log(matchingRegistration)
           if (matchingProducts.length === 0 && productId) {
             console.log("hhh")
             setProductDetails([
@@ -464,6 +465,8 @@ export default function CallRegistration() {
               }
             ])
           } else if (productId === undefined) {
+console.log(
+"hh")
             const matchedLicenseofthecustomer = matchingRegistration.license
 
             const matchingproducts =
@@ -472,6 +475,7 @@ export default function CallRegistration() {
               )
             setProductDetails(matchingproducts)
           } else {
+console.log(matchingProducts)
             setProductDetails(matchingProducts)
           }
           console.log("hhh")
@@ -540,6 +544,7 @@ export default function CallRegistration() {
   }, [calldetails])
 
   const fetchCallDetails = async (callId) => {
+console.log(callId)
     setLoader(true)
     const response = await fetch(
       `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
@@ -581,6 +586,7 @@ export default function CallRegistration() {
   useEffect(() => {
     // Set the default product if there's only one
     if (productDetails?.length === 1) {
+console.log(productDetails)
       setSelectedProducts([productDetails[0]])
     }
   }, [productDetails])
@@ -866,7 +872,10 @@ export default function CallRegistration() {
         toast.error(response.data.message)
       }
     } else {
-      const branchName = product?.branch_id?.branchName
+console.log(product)
+console.log(selectedProducts)
+
+      const branchName = product?.branchName
       console.log(branchName)
       const timeData = {
         startTime: startTime.toISOString(),
