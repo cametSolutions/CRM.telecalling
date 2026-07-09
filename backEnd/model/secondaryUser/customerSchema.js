@@ -98,365 +98,518 @@
 // CustomerSchema.index({ "selected.tvuexpiryDate": 1 })
 
 // export default mongoose.model("Customer", CustomerSchema)
-import mongoose from "mongoose"
+
+//second schema
+// 
+
+//third schema
+import mongoose from "mongoose";
+
+const toNullableNumber = (v) => {
+  if (v === "" || v === null || v === undefined) return null;
+  if (typeof v === "string" && v.trim() === "") return null;
+
+  const num = Number(v);
+  return Number.isNaN(num) ? null : num;
+};
+
+const toZeroNumber = (v) => {
+  if (v === "" || v === null || v === undefined) return 0;
+  const num = Number(v);
+  return Number.isNaN(num) ? 0 : num;
+};
+
+const LicenseNumberItemSchema = new mongoose.Schema(
+  {
+    licenseNumber: {
+      type: Number,
+      default: null,
+      set: toNullableNumber,
+    },
+    productorServiceId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product",
+      default: null,
+    },
+    productorServiceName: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    sourceIndex: {
+      type: Number,
+      default: undefined,
+    },
+  },
+  { _id: false }
+);
+
+const TaggedDataSchema = new mongoose.Schema(
+  {
+    licensenumber: {
+      type: Number,
+      default: null,
+      set: toNullableNumber,
+    },
+    nextDue: {
+      type: Date,
+      default: null,
+    },
+
+    productAmount: {
+      type: Number,
+      default: 0,
+      set: toZeroNumber,
+    },
+
+    taxinclusiveamount: {
+      type: Number,
+      default: 0,
+      set: toZeroNumber,
+    },
+
+    taxexclusiveAmount: {
+      type: Number,
+      default: 0,
+      set: toZeroNumber,
+    },
+
+    discountAmount: {
+      type: Number,
+      default: 0,
+      set: toZeroNumber,
+    },
+
+    hsn: {
+      type: Number,
+      default: 0,
+      set: toZeroNumber,
+    },
+
+    noofusers: {
+      type: Number,
+      default: 0,
+      set: toZeroNumber,
+    },
+
+    serialNumber: {
+      type: Number,
+      default: null,
+      set: toNullableNumber,
+    },
+
+    nextDueAmount: {
+      type: Number,
+      default: 0,
+      set: toZeroNumber,
+    },
+
+    originalHsn: {
+      type: Number,
+      default: 0,
+      set: toZeroNumber,
+    },
+
+    leadAmount: {
+      type: Number,
+      default: 0,
+      set: toZeroNumber,
+    },
+
+    totalleadAmount: {
+      type: Number,
+      default: 0,
+      set: toZeroNumber,
+    },
+
+    totalnextDueAmount: {
+      type: Number,
+      default: 0,
+      set: toZeroNumber,
+    },
+
+    leadTax: {
+      type: Number,
+      default: 0,
+      set: toZeroNumber,
+    },
+
+    nextDueTax: {
+      type: Number,
+      default: 0,
+      set: toZeroNumber,
+    },
+  },
+  { _id: false }
+);
 
 const SelectedItemSchema = new mongoose.Schema(
   {
     company_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Company",
-      default: null
+      default: null,
     },
+
     companyName: {
       type: String,
       trim: true,
-      default: ""
+      default: "",
     },
-createdFrom:{type:String},
-productAddedDate:{type:Date},
 
-//  productAddedby: {
-//         type: mongoose.Schema.Types.ObjectId,
-//         refPath: "userModel",
-//         required: true
-//     },
-//     productAddedmodel: {
-//         type: String,
-//         required: true, enum: ["Staff", "Admin"]
-//     },
+    createdFrom: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    productAddedDate: {
+      type: Date,
+      default: null,
+    },
 
     branch_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Branch",
-      default: null
+      default: null,
     },
+
     branchName: {
       type: String,
       trim: true,
-      default: ""
+      default: "",
     },
 
     product_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Product",
-      default: null
+      default: null,
     },
+
     productName: {
       type: String,
       trim: true,
-      default: ""
+      default: "",
     },
 
     brandName: {
       type: String,
       trim: true,
-      default: ""
+      default: "",
     },
+
     categoryName: {
       type: String,
       trim: true,
-      default: ""
+      default: "",
     },
 
     licensenumber: {
       type: Number,
       default: null,
-      set: (v) => {
-        if (v === "" || v === null || v === undefined) return null
-        if (typeof v === "string" && v.trim() === "") return null
-
-        const num = Number(v)
-        return Number.isNaN(num) ? null : num
-      }
+      set: toNullableNumber,
     },
 
     noofusers: {
       type: Number,
       default: 0,
-      set: (v) => {
-        if (v === "" || v === null || v === undefined) return 0
-        const num = Number(v)
-        return Number.isNaN(num) ? 0 : num
-      }
+      set: toZeroNumber,
     },
 
     version: {
       type: mongoose.Schema.Types.Mixed,
-      default: null
+      default: null,
     },
 
     customerAddDate: {
       type: Date,
-      default: null
+      default: null,
     },
+
     applicationDate: {
       type: Date,
-      default: null
+      default: null,
     },
+
     nextDue: {
       type: Date,
-      default: null
+      default: null,
     },
+
     licenseNumbers: {
-      type: [
-        {
-          licenseNumber: Number,
-          productorServiceId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Product",
-          },
-          productorServiceName: String,
-          sourceIndex: {
-            type: Number,
-            default: undefined,
-          },
-        },
-      ],
+      type: [LicenseNumberItemSchema],
       default: [],
     },
+
     taggeddata: {
-      type: [
-        {
-          licensenumber: Number,
-          nextDue: Date,
-          productAmount: Number,//taxinclusive ,
-taxinclusiveamount:Number,
-taxexclusiveAmount:Number,//taxexclusive amount
-discountAmount:Number,
-hsn:Number//taxrate
-        },
-      ],
+      type: [TaggedDataSchema],
       default: [],
     },
 
     amcstartDate: {
       type: Date,
-      default: null
+      default: null,
     },
+
     amcendDate: {
       type: Date,
-      default: null
+      default: null,
     },
+
     amcAmount: {
       type: Number,
-      default: null
+      default: null,
+      set: toNullableNumber,
     },
+
     amcDescription: {
       type: String,
       trim: true,
-      default: ""
+      default: "",
     },
 
     licenseExpiryDate: {
       type: Date,
-      default: null
+      default: null,
     },
+
     productAmount: {
       type: Number,
-      default: null
+      default: null,
+      set: toNullableNumber,
     },
+
+    productPrice: {
+      type: Number,
+      default: null,
+      set: toNullableNumber,
+    },
+
+    taxAmount: {
+      type: Number,
+      default: null,
+      set: toNullableNumber,
+    },
+
+    hsn: {
+      type: Number,
+      default: null,
+      set: toNullableNumber,
+    },
+
     productamountDescription: {
       type: String,
       trim: true,
-      default: ""
+      default: "",
     },
 
     tvuexpiryDate: {
       type: Date,
-      default: null
+      default: null,
     },
+
     tvuAmount: {
       type: Number,
-      default: null
+      default: null,
+      set: toNullableNumber,
     },
+
     tvuamountDescription: {
       type: String,
       trim: true,
-      default: ""
+      default: "",
     },
 
     isActive: {
       type: String,
       trim: true,
       enum: ["Running", "Deactive"],
-      default: "Running"
+      default: "Running",
     },
 
     reasonofStatus: {
       type: String,
       trim: true,
-      default: ""
+      default: "",
     },
 
     softwareTrade: {
       type: String,
       trim: true,
-      default: ""
+      default: "",
     },
 
     taggedLicenses: {
       type: [
         {
           type: String,
-          trim: true
-        }
+          trim: true,
+        },
       ],
-      default: []
+      default: [],
     },
 
     taggedLicenseDueDates: {
       type: Map,
       of: Date,
-      default: {}
+      default: {},
     },
 
     productorservicetype: {
       type: String,
       trim: true,
-      default: ""
-    }
+      default: "",
+    },
+
+    parentPrimaryProductId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product",
+      default: null,
+    },
+
+    isDefaultService: {
+      type: Boolean,
+      default: false,
+    },
   },
   { _id: false }
-)
+);
 
 const CustomerSchema = new mongoose.Schema(
   {
     customerName: {
-      type: mongoose.Schema.Types.Mixed
+      type: mongoose.Schema.Types.Mixed,
     },
 
     address1: {
       type: String,
       trim: true,
-      default: ""
+      default: "",
     },
+
     address2: {
       type: String,
       trim: true,
-      default: ""
+      default: "",
     },
 
     country: {
       type: String,
       trim: true,
-      default: ""
+      default: "",
     },
 
     registrationType: {
       type: String,
       trim: true,
-      default: ""
+      default: "",
     },
 
     gstNo: {
       type: String,
       trim: true,
-      default: ""
+      default: "",
     },
 
     state: {
       type: String,
       trim: true,
-      default: ""
+      default: "",
     },
 
     city: {
       type: String,
       trim: true,
-      default: ""
+      default: "",
     },
 
     pincode: {
       type: String,
       trim: true,
-      default: ""
+      default: "",
     },
 
     email: {
       type: String,
       trim: true,
       lowercase: true,
-      default: ""
+      default: "",
     },
 
     incomingNumber: {
       type: String,
       trim: true,
-      default: ""
+      default: "",
     },
 
     mobile: {
       type: String,
       trim: true,
-      default: ""
+      default: "",
     },
 
     landline: {
       type: String,
       trim: true,
-      default: ""
+      default: "",
     },
 
     industry: {
       type: String,
       trim: true,
-      default: ""
+      default: "",
     },
 
     partner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Partner",
       default: null,
-      set: (v) => (v === "" ? null : v)
+      set: (v) => (v === "" ? null : v),
     },
 
     contactPerson: {
       type: String,
       trim: true,
-      default: ""
+      default: "",
     },
 
     selected: {
       type: [SelectedItemSchema],
-      default: []
+      default: [],
     },
 
     createdFrom: {
       type: String,
       trim: true,
-      default: ""
+      default: "",
     },
 
     callregistration: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "CallRegistration",
-      default: null
-    }
+      default: null,
+    },
   },
   { timestamps: true }
-)
+);
 
-CustomerSchema.index({ mobile: 1, email: 1 })
-CustomerSchema.index({ gstNo: 1 })
-CustomerSchema.index({ customerName: "text" })
-
-CustomerSchema.index({ partner: 1 })
-CustomerSchema.index({ callregistration: 1 })
-CustomerSchema.index({ "selected.licensenumber": 1 })
-CustomerSchema.index({ "selected.company_id": 1 })
-CustomerSchema.index({ "selected.branch_id": 1 })
-CustomerSchema.index({ "selected.product_id": 1 })
-
+CustomerSchema.index({ mobile: 1, email: 1 });
+CustomerSchema.index({ gstNo: 1 });
+CustomerSchema.index({ customerName: "text" });
+CustomerSchema.index({ partner: 1 });
+CustomerSchema.index({ callregistration: 1 });
+CustomerSchema.index({ "selected.licensenumber": 1 });
+CustomerSchema.index({ "selected.company_id": 1 });
+CustomerSchema.index({ "selected.branch_id": 1 });
+CustomerSchema.index({ "selected.product_id": 1 });
 CustomerSchema.index({
   "selected.isActive": 1,
-  "selected.licenseExpiryDate": 1
-})
-
+  "selected.licenseExpiryDate": 1,
+});
 CustomerSchema.index({
   "selected.amcstartDate": 1,
-  "selected.amcendDate": 1
-})
+  "selected.amcendDate": 1,
+});
+CustomerSchema.index({ "selected.tvuexpiryDate": 1 });
 
-CustomerSchema.index({ "selected.tvuexpiryDate": 1 })
-
-export default mongoose.model("Customer", CustomerSchema)
+export default mongoose.model("Customer", CustomerSchema);

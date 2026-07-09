@@ -73,6 +73,973 @@ function DropdownPortal({ anchorEl, children }) {
   )
 }
 
+// function LicenseDropdown({
+//   index,
+//   item,
+//   isReadOnly,
+//   customerTableData,
+//   selectedleadlist,
+//   setSelectedLeadList,
+//   setunselectedtaggedlicense,
+//   setTakenLicense
+// }) {
+//   console.log(selectedleadlist)
+//   console.log(item)
+//   console.log(index)
+//   console.log(customerTableData)
+//   const isMulti = item?.productorservicetype === "Additionalservice"
+//   console.log(isMulti)
+//   const [open, setOpen] = useState(false)
+//   const [search, setSearch] = useState("")
+
+//   const wrapperRef = useRef(null)
+//   const inputRef = useRef(null)
+//   const dropdownId = `license-dropdown-${index}`
+// const selectedLicenses = isMulti ? item?.licenseNumbers || [] : [];
+
+// const multiDisplayValue = selectedLicenses.length
+//   ? selectedLicenses.length === 1
+//     ? String(selectedLicenses[0]?.licenseNumber ?? "")
+//     : `${selectedLicenses[0]?.licenseNumber}`
+//   : "";
+//   useEffect(() => {
+//     if (isMulti) {
+//       setSearch("")
+//       console.log(filtered)
+//       toggleLicense(filtered, true)
+//     } else {
+//       console.log("hhh")
+//       setSearch(String(item?.licenseNumber ?? ""))
+//     }
+//   }, [item?.licenseNumber, isMulti])
+
+//   useEffect(() => {
+//     const handlePointerDown = (event) => {
+//       const target = event.target
+//       const wrapperEl = wrapperRef.current
+//       const dropdownEl = document.getElementById(dropdownId)
+
+//       const clickedInsideWrapper = wrapperEl && wrapperEl.contains(target)
+
+//       const clickedInsideDropdown = dropdownEl && dropdownEl.contains(target)
+
+//       if (!clickedInsideWrapper && !clickedInsideDropdown) {
+//         setOpen(false)
+//       }
+//     }
+
+//     document.addEventListener("mousedown", handlePointerDown)
+//     document.addEventListener("touchstart", handlePointerDown)
+
+//     return () => {
+//       document.removeEventListener("mousedown", handlePointerDown)
+//       document.removeEventListener("touchstart", handlePointerDown)
+//     }
+//   }, [dropdownId])
+
+//   // const selectedLicenses = isMulti ? item?.licenseNumbers || [] : []
+//   console.log(customerTableData)
+// const filtered = (customerTableData || []).filter((lic) => {
+//   const q = String(search || "").toLowerCase()
+//   if (!q) return true
+//   console.log("h")
+//   const license = String(lic?.licenseNumber ?? "").toLowerCase()
+//   const product = String(
+//     lic?.productName || lic?.productorServiceName || ""
+//   ).toLowerCase()
+
+//   return license.includes(q) || product.includes(q)
+// })
+//   console.log(filtered)
+
+//   const updateRow = (newRow) => {
+//     console.log("h")
+//     console.log(newRow)
+//     setSelectedLeadList((prev) =>
+//       prev.map((row, i) =>
+//         i === index
+//           ? {
+//               ...row,
+//               ...newRow
+//             }
+//           : row
+//       )
+//     )
+//   }
+
+//   console.log(selectedleadlist)
+
+//   // const addLicense = (lic) => {
+//   //   if (!lic) return
+//   //   console.log("hh")
+//   //   if (isMulti) {
+//   //     const exists = (item?.licenseNumbers || []).some(
+//   //       (x) => String(x?.licenseNumber) === String(lic?.licenseNumber)
+//   //     )
+
+//   //     if (exists) return
+//   //     console.log("hh")
+//   //     console.log(lic)
+//   //     console.log(item?.licenseNumbers)
+//   //     if (!Array.isArray(lic)) {
+//   //       updateRow({
+//   //         licenseNumbers: [
+//   //           ...(item?.licenseNumbers || []),
+//   //           {
+//   //             licenseNumber: lic?.licenseNumber,
+//   //             productorServiceId: lic?.productorServiceId || "",
+//   //             productorServiceName:
+//   //               lic?.productName || lic?.productorServiceName || "",
+//   //             sourceIndex: lic?.sourceIndex
+//   //           }
+//   //         ]
+//   //       })
+//   //     }
+
+//   //     return
+//   //   }
+
+//   //   updateRow({
+//   //     licenseNumber: lic?.licenseNumber || ""
+//   //   })
+
+//   //   setSearch(String(lic?.licenseNumber ?? ""))
+//   //   setOpen(false)
+//   // }///multiselection checked old logic
+// const addLicense = (lic) => {
+//   if (!lic) return
+
+//   if (isMulti) {
+//     updateRow({
+//       licenseNumbers: [
+//         {
+//           licenseNumber: lic?.licenseNumber,
+//           productorServiceId: lic?.productorServiceId || "",
+//           productorServiceName:
+//             lic?.productName || lic?.productorServiceName || "",
+//           sourceIndex: lic?.sourceIndex
+//         }
+//       ]
+//     })
+
+//     return
+//   }
+
+//   updateRow({
+//     licenseNumber: lic?.licenseNumber || ""
+//   })
+
+//   setSearch(String(lic?.licenseNumber ?? ""))
+//   setOpen(false)
+// }
+//   console.log(selectedleadlist)
+
+//   const removeLicense = (licenseNumber) => {
+//     if (!isMulti) return
+
+//     updateRow({
+//       licenseNumbers: (item?.licenseNumbers || []).filter(
+//         (x) => String(x?.licenseNumber) !== String(licenseNumber)
+//       )
+//     })
+//   }
+
+//   const toggleLicense = (lic, checked) => {
+//     if (!lic || isReadOnly) return
+
+//     if (checked) {
+//       addLicense(lic)
+//     } else {
+//       removeLicense(lic?.licenseNumber)
+//     }
+//   }
+
+//   const handleInputChange = (e) => {
+//     console.log(e.target.value)
+//     setSearch(e.target.value)
+//     setOpen(true)
+//   }
+//   console.log(filtered)
+//   console.log(open)
+//   console.log(item)
+//   return (
+//     <div ref={wrapperRef} className="relative w-full">
+//       <input
+//         ref={inputRef}
+//         type="text"
+//         disabled={isReadOnly}
+//         // value={search}
+//   value={isMulti ? (open ? search : multiDisplayValue) : search}
+//         onChange={handleInputChange}
+//         onClick={() => {
+//           if (!isReadOnly) setOpen(true)
+//         }}
+//         placeholder={
+//           isMulti ? "Search / Add License" : "Search / Select License"
+//         }
+//         className={`w-full px-2 py-1 border border-gray-200 rounded text-xs bg-[#EEF2F8] outline-none ${
+//           isReadOnly ? "cursor-not-allowed opacity-70" : "cursor-text"
+//         }`}
+//       />
+
+//       {open && (
+//         <DropdownPortal anchorEl={inputRef.current}>
+//           <div
+//             id={dropdownId}
+//             onMouseDown={(e) => e.stopPropagation()}
+//             onTouchStart={(e) => e.stopPropagation()}
+//             className="max-h-52 overflow-hidden rounded border border-gray-200 bg-white shadow-xl"
+//           >
+//             <ul className="max-h-52 overflow-y-auto text-xs">
+//               {filtered.length === 0 ? (
+//                 <li className="px-3 py-2 italic text-gray-400">
+//                   No results found
+//                 </li>
+//               ) : (
+//                 filtered.map((lic, i) => {
+//                   const valStr = String(lic?.licenseNumber ?? "")
+//                   const productName =
+//                 lic?.productName || lic?.productorServiceName || ""
+//                   console.log(isMulti)
+//                   console.log(item)
+//                   console.log(valStr)
+//                   const alreadyAdded = isMulti
+//                     ? (item?.licenseNumbers || []).some(
+//                         (x) => String(x?.licenseNumber) === valStr
+//                       )
+//                     : false
+//                   console.log(alreadyAdded)
+//                   console.log(valStr, alreadyAdded)
+//                   return (
+//                     <li
+//                       key={lic?.licenseNumber ?? i}
+//                       className={`flex items-center justify-between gap-2 px-3 py-2 hover:bg-blue-50 ${
+//                         alreadyAdded
+//                           ? "bg-blue-50 font-semibold text-[#1B2A4A]"
+//                           : "text-gray-700"
+//                       }`}
+//                     >
+//                       {isMulti ? (
+//                         <label className="flex w-full cursor-pointer items-center justify-between gap-2">
+//                           <div className="flex min-w-0 items-center gap-2">
+//                             <input
+//                               type="checkbox"
+//                               checked={alreadyAdded}
+//                               disabled={isReadOnly}
+// onChange={(e) => {
+//   const checkedvalue = e.target.checked
+//   const productKey = item?.productorServiceName
+//   const productId = item?.productorServiceId
+
+//   setunselectedtaggedlicense((prev) => {
+//     const updated = { ...prev }
+//     delete updated[productId]
+//     return updated
+//   })
+
+//   if (checkedvalue) {
+//     updateRow({
+//       licenseNumbers: [
+//         {
+//           licenseNumber: lic?.licenseNumber,
+//           productorServiceId: lic?.productorServiceId || "",
+//           productorServiceName:
+//             lic?.productName || lic?.productorServiceName || "",
+//           sourceIndex: lic?.sourceIndex
+//         }
+//       ]
+//     })
+
+//     setTakenLicense((prev) => ({
+//       ...prev,
+//       [productKey]: [String(lic?.licenseNumber)]
+//     }))
+//   } else {
+//     updateRow({
+//       licenseNumbers: []
+//     })
+
+//     setTakenLicense((prev) => {
+//       const updated = { ...prev }
+//       delete updated[productKey]
+//       return updated
+//     })
+//   }
+// }}
+//                               // onChange={(e) => {
+//                               //   console.log(e.target?.value)
+//                               //   console.log(e.target?.checked)
+//                               //   const checkedvalue = e.target.checked
+
+//                               //   const productId = item.productorServiceId
+//                               //   setunselectedtaggedlicense((prev) => {
+//                               //     const updated = { ...prev }
+//                               //     delete updated[productId]
+//                               //     return updated
+//                               //   })
+//                               //   console.log(item)
+
+//                               //   setTakenLicense((prev) => {
+//                               //     console.log(checkedvalue)
+//                               //     const updatedLicenses = checkedvalue
+//                               //       ? [
+//                               //           ...(prev[item?.productorServiceName] ||
+//                               //             []),
+//                               //           valStr
+//                               //         ]
+//                               //       : (
+//                               //           prev[item?.productorServiceName] || []
+//                               //         ).filter((license) => license !== valStr)
+
+//                               //     const updated = { ...prev }
+
+//                               //     if (updatedLicenses.length > 0) {
+//                               //       updated[item?.productorServiceName] =
+//                               //         updatedLicenses
+//                               //     } else {
+//                               //       delete updated[item?.productorServiceName]
+//                               //     }
+
+//                               //     return updated
+//                               //   })
+//                               //   toggleLicense(lic, e.target.checked)
+//                               // }}
+//                               // onMouseDown={(e) => e.stopPropagation()}
+//                               // onTouchStart={(e) => e.stopPropagation()}
+//                               // onClick={(e) => e.stopPropagation()}
+//                               className="h-3.5 w-3.5 cursor-pointer accent-blue-600"
+//                             />
+//                             <span className="font-medium">{valStr}</span>
+//                           </div>
+
+//                           <span className="truncate text-gray-400">
+//                             {productName}
+//                           </span>
+//                         </label>
+//                       ) : (
+//                         <button
+//                           type="button"
+//                           disabled={isReadOnly}
+//                           onMouseDown={(e) => {
+//                             e.preventDefault()
+//                             e.stopPropagation()
+//                             addLicense(lic)
+//                           }}
+//                           className="flex w-full items-center justify-between gap-2 text-left"
+//                         >
+//                           <span className="font-medium">{valStr}</span>
+//                           <span className="truncate text-gray-400">
+//                             {productName}
+//                           </span>
+//                         </button>
+//                       )}
+//                     </li>
+//                   )
+//                 })
+//               )}
+//             </ul>
+//           </div>
+//         </DropdownPortal>
+//       )}
+//     </div>
+//   )
+// }//old logic
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ProductDropdown
+// ─────────────────────────────────────────────────────────────────────────────
+// function ProductDropdown({
+//   index,
+//   item,
+//   process,
+//   isReadOnly,
+//   leadList,
+//   selectedleadlist,
+//   setSelectedLeadList,
+//   selectedBranch,
+//   selectedCustomer,
+// setTakenLicense
+// }) {
+//   console.log(item)
+//   console.log(selectedBranch)
+//   console.log(leadList)
+//   const emptyRow = {
+//     licenseNumber: "",
+//     productorServiceId: "",
+//     productorServiceName: "",
+//     productPrice: "",
+//     hsn: "",
+//     netAmount: ""
+//   }
+
+//   const [open, setOpen] = useState(false)
+//   const [search, setSearch] = useState(item.productorServiceName || "")
+//   const inputRef = useRef(null)
+//   const [selectionMessage, setselectionMessage] = useState({})
+//   useEffect(() => {
+//     console.log("hhh")
+//     setSearch(item.productorServiceName || "")
+//   }, [item.productorServiceName])
+
+//   useEffect(() => {
+//     console.log("jjj")
+//     const handler = (e) => {
+//       const portals = document.querySelectorAll("[data-lead-portal]")
+//       const inPortal = Array.from(portals).some((p) => p.contains(e.target))
+//       if (!inPortal && !inputRef.current?.contains(e.target)) {
+//         setOpen(false)
+//       }
+//     }
+//     if (open) document.addEventListener("mousedown", handler)
+//     return () => document.removeEventListener("mousedown", handler)
+//   }, [open])
+
+//   const filtered = (leadList || []).filter((prod) => {
+//     if (!search) return true
+//     console.log(search)
+//     console.log(!search)
+//     console.log("Hhhh")
+//     const q = search.toLowerCase()
+//     const name =
+//       prod.productName?.toLowerCase() || prod.serviceName?.toLowerCase() || ""
+//     return name.includes(q)
+//   })
+//   console.log(filtered)
+//   console.log(selectedleadlist)
+
+//   console.log(selectedCustomer)
+//   const applySelection = (prod) => {
+//     console.log(prod)
+
+//     const branchdata = (prod?.selected || [])
+//       .filter((item) => item.branch_id === selectedBranch)
+//       .map((item) => ({
+//         company_id: item.company_id,
+//         branch_id: item.branch_id
+//       }))
+//     console.log(branchdata)
+//     console.log(selectedCustomer)
+//     if (
+//       selectedCustomer === null ||
+//       selectedCustomer === undefined ||
+//       selectedCustomer === ""
+//     ) {
+//       console.log("jjj")
+//       setselectionMessage({
+//         productmessage: "Please select the customer first"
+//       })
+//       console.log("hhh")
+//       // Clear the message after 3 seconds (3000ms)
+//       setTimeout(() => {
+//         setselectionMessage({ productmessage: "" })
+//       }, 3000)
+//       return
+//     }
+//     console.log("hhh")
+//     const getRowId = (value) => {
+//       console.log(value)
+//       return String(value?._id || value?.id || value || "")
+//     }
+
+//     const base = selectedleadlist?.length
+//       ? [...selectedleadlist]
+//       : [{ ...emptyRow }]
+
+//     let updated = [...base]
+//     console.log(updated)
+//     // Remove any previously auto-added default services
+//     updated = updated.filter(
+//       (row, idx) => idx === index || !row?.isDefaultService
+//     )
+
+//     const filteredbranch = prod?.selected?.filter(
+//       (item) => item.branch_id === selectedBranch
+//     )
+//     console.log(filteredbranch)
+//     const igstRate = filteredbranch?.[0]?.hsn_id?.onValue?.igstRate
+//     console.log(prod)
+//     if (!prod) {
+//       updated[index] = {
+//         ...updated[index],
+//         productorServiceId: "",
+//         productorServiceName: "",
+//         itemType: "",
+//         productPrice: "",
+//         hsn: "",
+//         netAmount: ""
+//       }
+
+//       setSearch("")
+//       setSelectedLeadList(updated)
+//       return
+//     }
+
+//     const price = Number(prod?.productPrice || 0)
+//     const igst = Number(igstRate || 0)
+//     const rawNet = price + (igst / 100) * price
+//     const netAmount = Math.round(rawNet)
+
+//     // Main selected product
+//     updated[index] = {
+//       ...updated[index],
+//       productorServiceId: prod._id,
+//       productorServiceName: prod.productName || prod.serviceName,
+//       itemType: prod.productName ? "Product" : "Service",
+//       productPrice: prod.productPrice || 0,
+//       productorservicetype: prod?.productorservicetype,
+//       hsn: igstRate || 0,
+//       netAmount,
+//       company_id: branchdata[0].company_id,
+//       branch_id: branchdata[0].branch_id,
+//       actualHsn: igstRate,
+//       actualproductPrice: prod?.productPrice,
+//       actualNetAmount: netAmount
+//     }
+//     console.log(prod)
+//     console.log(selectedBranch)
+//     // Add default services immediately after selected product
+//     if (prod?.defaultservices?.length > 0 && process === "closing") {
+//       console.log("Hhh")
+
+//       const primaryId = getRowId(prod)
+//       console.log(primaryId)
+//       console.log("hhh")
+//       console.log(prod?.defaultservices)
+//       const defaultServiceRows = prod.defaultservices.map((service) => {
+//         const matchbranchrate = service.selected.find(
+//           (b) => b.branch_id === selectedBranch
+//         )
+//         const rawRate = matchbranchrate.hsn_id?.onValue?.igstRate ?? 0 // can be '18', 0, null, undefined
+//         const hsn = Number(rawRate) || 0 // treat null/undefined/NaN as 0
+
+//         const price = Number(service.productPrice) || 0 // base price
+
+//         const actualNetAmount =
+//           hsn > 0 ? Number((price * (1 + hsn / 100)).toFixed(2)) : price
+
+//         return {
+//           ...emptyRow,
+//           licenseNumber: "",
+//           licenseNumbers: [],
+//           productorServiceId: getRowId(service),
+//           productorServiceName:
+//             service?.productName || service?.serviceName || "",
+//           itemType: service?.productName ? "Product" : "Service",
+//           productPrice: 0,
+//           hsn: 0,
+//           productorservicetype:
+//             service?.productorservicetype || "Additionalservice",
+//           netAmount: 0,
+//           isDefaultService: true,
+//           parentPrimaryProductId: primaryId,
+//           actualHsn: hsn,
+//           actualproductPrice: service?.productPrice,
+//           actualNetAmount,
+//           company_id: branchdata[0].company_id,
+//           branch_id: branchdata[0].branch_id
+//         }
+//       })
+//       // const defaultServiceRows = (prod?.defaultservices || []).map(
+//       //   (service) => ({
+//       //     ...emptyRow,
+//       //     licenseNumber: "",
+//       //     licenseNumbers: [],
+//       //     productorServiceId: getRowId(service),
+//       //     productorServiceName:
+//       //       service?.productName || service?.serviceName || "",
+//       //     itemType: service?.productName ? "Product" : "Service",
+//       //     productPrice: 0,
+//       //     hsn: 0,
+//       //     productorservicetype:
+//       //       service?.productorservicetype || "Additionalservice",
+//       //     netAmount: 0,
+//       //     isDefaultService: true,
+//       //     parentPrimaryProductId: primaryId,
+//       //     actualproductPrice: service?.productPrice
+//       //     // actualNetAmount:netAmount
+//       //   })
+//       // )
+
+//       updated.splice(index + 1, 0, ...defaultServiceRows)
+//     }
+
+//     setSearch(prod.productName || prod.serviceName || "")
+//     console.log(updated)
+//     setSelectedLeadList(updated)
+//     console.log("hh")
+//   }
+//   console.log(selectedleadlist)
+//   const handleInputChange = (e) => {
+//     console.log(e)
+//     const value = e.target.value
+//     setSearch(value)
+//     setOpen(true)
+
+//     const exact = (leadList || []).find(
+//       (p) => p.productName === value || p.serviceName === value
+//     )
+//     if (exact) applySelection(exact)
+//     else if (!value) applySelection(null)
+//   }
+
+//   const handleClear = () => {
+//     applySelection(null)
+//     setOpen(false)
+//   }
+//   console.log(search)
+//   return (
+//     <div className="relative w-full">
+//       <input
+//         ref={inputRef}
+//         type="text"
+//         disabled={isReadOnly}
+//         value={search}
+//         onChange={handleInputChange}
+//         onClick={() => !isReadOnly && setOpen(true)}
+//         placeholder="Search / Select Product"
+//         className={`w-full px-2 py-1 border border-gray-200 rounded text-xs bg-[#EEF2F8] outline-none ${
+//           isReadOnly ? "cursor-not-allowed opacity-70" : "cursor-text"
+//         }`}
+//       />
+//       {selectionMessage && selectionMessage.productmessage && (
+//         <p className="text-red-400">{selectionMessage.productmessage}</p>
+//       )}
+//       {search && !isReadOnly && (
+//         <button
+//           type="button"
+//           onMouseDown={(e) => {
+//             e.preventDefault()
+//             handleClear()
+//           }}
+//           className="absolute right-1.5 top-1.5 text-gray-400 hover:text-red-500 text-[10px]"
+//         >
+//           ✕
+//         </button>
+//       )}
+
+//       {open && (
+//         <DropdownPortal anchorEl={inputRef.current}>
+//           <div className="bg-white border border-gray-200 rounded shadow-xl overflow-hidden max-h-52">
+//             <ul className="max-h-52 overflow-y-auto text-xs">
+//               {filtered.length === 0 ? (
+//                 <li className="px-3 py-2 text-gray-400 italic">
+//                   No results found
+//                 </li>
+//               ) : (
+//                 filtered.map((prod) => (
+//                   <li
+//                     key={prod._id}
+//                     className="px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2 text-gray-700"
+//                     onMouseDown={(e) => {
+//                       e.preventDefault()
+//                       applySelection(prod)
+//                       setOpen(false)
+//                     }}
+//                   >
+//                     <span className="font-medium text-[#1B2A4A]">
+//                       {prod.productName || prod.serviceName}
+//                     </span>
+//                   </li>
+//                 ))
+//               )}
+//             </ul>
+//           </div>
+//         </DropdownPortal>
+//       )}
+//     </div>
+//   )
+// }old logic
+// function LicenseDropdown({
+//   index,
+//   item,
+//   isReadOnly,
+//   customerTableData,
+//   selectedleadlist,
+//   setSelectedLeadList,
+//   setunselectedtaggedlicense,
+//   setTakenLicense
+// }) {
+//   const isMulti = item?.productorservicetype === "Additionalservice"
+
+//   const [open, setOpen] = useState(false)
+//   const [search, setSearch] = useState("")
+
+//   const wrapperRef = useRef(null)
+//   const inputRef = useRef(null)
+//   const dropdownId = `license-dropdown-${index}`
+
+//   const selectedLicenses = isMulti ? item?.licenseNumbers || [] : []
+
+//   const multiDisplayValue = selectedLicenses.length
+//     ? String(selectedLicenses[0]?.licenseNumber ?? "")
+//     : ""
+
+//   useEffect(() => {
+//     if (isMulti) {
+//       setSearch("")
+//     } else {
+//       setSearch(String(item?.licenseNumber ?? ""))
+//     }
+//   }, [item?.licenseNumber, item?.productorServiceId, isMulti])
+
+//   useEffect(() => {
+//     const handlePointerDown = (event) => {
+//       const target = event.target
+//       const wrapperEl = wrapperRef.current
+//       const dropdownEl = document.getElementById(dropdownId)
+
+//       const clickedInsideWrapper = wrapperEl && wrapperEl.contains(target)
+//       const clickedInsideDropdown = dropdownEl && dropdownEl.contains(target)
+
+//       if (!clickedInsideWrapper && !clickedInsideDropdown) {
+//         setOpen(false)
+//       }
+//     }
+
+//     document.addEventListener("mousedown", handlePointerDown)
+//     document.addEventListener("touchstart", handlePointerDown)
+
+//     return () => {
+//       document.removeEventListener("mousedown", handlePointerDown)
+//       document.removeEventListener("touchstart", handlePointerDown)
+//     }
+//   }, [dropdownId])
+// console.log(item)
+//   const normalizedCurrentProductId = String(item?.productorServiceId || "")
+//   const normalizedCurrentProductName = String(
+//     item?.productorServiceName || ""
+//   ).toLowerCase()
+// console.log(normalizedCurrentProductName)
+// console.log(customerTableData)
+//   const productMatchedLicenses = (customerTableData || []).filter((lic) => {
+//     const licProductId = String(
+//       lic?.productorServiceId || lic?.productId || ""
+//     )
+//     const licProductName = String(
+//       lic?.productName || lic?.productorServiceName || ""
+//     ).toLowerCase()
+// console.log(licProductName)
+//     return (
+//       (normalizedCurrentProductId && licProductId === normalizedCurrentProductId) ||
+//       (normalizedCurrentProductName &&
+//         licProductName === normalizedCurrentProductName)
+//     )
+//   })
+
+//   const filtered = productMatchedLicenses.filter((lic) => {
+//     const q = String(search || "").toLowerCase()
+//     if (!q) return true
+
+//     const license = String(lic?.licenseNumber ?? "").toLowerCase()
+//     const product = String(
+//       lic?.productName || lic?.productorServiceName || ""
+//     ).toLowerCase()
+
+//     return license.includes(q) || product.includes(q)
+//   })
+// console.log(productMatchedLicenses)
+// console.log(filtered)
+//   const updateRow = (newRow) => {
+//     setSelectedLeadList((prev) =>
+//       prev.map((row, i) =>
+//         i === index
+//           ? {
+//               ...row,
+//               ...newRow
+//             }
+//           : row
+//       )
+//     )
+//   }
+
+//   const addLicense = (lic) => {
+//     if (!lic) return
+
+//     if (isMulti) {
+//       updateRow({
+//         licenseNumbers: [
+//           {
+//             licenseNumber: lic?.licenseNumber,
+//             productorServiceId:
+//               lic?.productorServiceId || item?.productorServiceId || "",
+//             productorServiceName:
+//               lic?.productName ||
+//               lic?.productorServiceName ||
+//               item?.productorServiceName ||
+//               "",
+//             sourceIndex: lic?.sourceIndex
+//           }
+//         ]
+//       })
+//       return
+//     }
+
+//     updateRow({
+//       licenseNumber: lic?.licenseNumber || ""
+//     })
+
+//     setSearch(String(lic?.licenseNumber ?? ""))
+//     setOpen(false)
+//   }
+
+//   const removeLicense = (licenseNumber) => {
+//     if (!isMulti) return
+
+//     updateRow({
+//       licenseNumbers: (item?.licenseNumbers || []).filter(
+//         (x) => String(x?.licenseNumber) !== String(licenseNumber)
+//       )
+//     })
+//   }
+
+//   const handleInputChange = (e) => {
+//     setSearch(e.target.value)
+//     setOpen(true)
+//   }
+
+//   return (
+//     <div ref={wrapperRef} className="relative w-full">
+//       <input
+//         ref={inputRef}
+//         type="text"
+//         disabled={isReadOnly}
+//         value={isMulti ? (open ? search : multiDisplayValue) : search}
+//         onChange={handleInputChange}
+//         onClick={() => {
+//           if (!isReadOnly) setOpen(true)
+//         }}
+//         placeholder={
+//           isMulti ? "Search / Add License" : "Search / Select License"
+//         }
+//         className={`w-full px-2 py-1 border border-gray-200 rounded text-xs bg-[#EEF2F8] outline-none ${
+//           isReadOnly ? "cursor-not-allowed opacity-70" : "cursor-text"
+//         }`}
+//       />
+
+//       {open && (
+//         <DropdownPortal anchorEl={inputRef.current}>
+//           <div
+//             id={dropdownId}
+//             onMouseDown={(e) => e.stopPropagation()}
+//             onTouchStart={(e) => e.stopPropagation()}
+//             className="max-h-52 overflow-hidden rounded border border-gray-200 bg-white shadow-xl"
+//           >
+//             <ul className="max-h-52 overflow-y-auto text-xs">
+//               {filtered.length === 0 ? (
+//                 <li className="px-3 py-2 italic text-gray-400">
+//                   No results found
+//                 </li>
+//               ) : (
+//                 filtered.map((lic, i) => {
+//                   const valStr = String(lic?.licenseNumber ?? "")
+//                   const productName =
+//                     lic?.productName || lic?.productorServiceName || ""
+
+//                   const alreadyAdded = isMulti
+//                     ? (item?.licenseNumbers || []).some(
+//                         (x) => String(x?.licenseNumber) === valStr
+//                       )
+//                     : false
+
+//                   return (
+//                     <li
+//                       key={lic?._id || lic?.licenseNumber || i}
+//                       className={`flex items-center justify-between gap-2 px-3 py-2 hover:bg-blue-50 ${
+//                         alreadyAdded
+//                           ? "bg-blue-50 font-semibold text-[#1B2A4A]"
+//                           : "text-gray-700"
+//                       }`}
+//                     >
+//                       {isMulti ? (
+//                         <label className="flex w-full cursor-pointer items-center justify-between gap-2">
+//                           <div className="flex min-w-0 items-center gap-2">
+//                             <input
+//                               type="checkbox"
+//                               checked={alreadyAdded}
+//                               disabled={isReadOnly}
+//                               onChange={(e) => {
+//                                 const checkedvalue = e.target.checked
+//                                 const productKey = item?.productorServiceName
+//                                 const productId = item?.productorServiceId
+
+//                                 setunselectedtaggedlicense((prev) => {
+//                                   const updated = { ...prev }
+//                                   delete updated[productId]
+//                                   return updated
+//                                 })
+
+//                                 if (checkedvalue) {
+//                                   updateRow({
+//                                     licenseNumbers: [
+//                                       {
+//                                         licenseNumber: lic?.licenseNumber,
+//                                         productorServiceId:
+//                                           lic?.productorServiceId ||
+//                                           item?.productorServiceId ||
+//                                           "",
+//                                         productorServiceName:
+//                                           lic?.productName ||
+//                                           lic?.productorServiceName ||
+//                                           item?.productorServiceName ||
+//                                           "",
+//                                         sourceIndex: lic?.sourceIndex
+//                                       }
+//                                     ]
+//                                   })
+
+//                                   setTakenLicense((prev) => ({
+//                                     ...prev,
+//                                     [productKey]: [String(lic?.licenseNumber)]
+//                                   }))
+//                                 } else {
+//                                   updateRow({
+//                                     licenseNumbers: []
+//                                   })
+
+//                                   setTakenLicense((prev) => {
+//                                     const updated = { ...prev }
+//                                     delete updated[productKey]
+//                                     return updated
+//                                   })
+//                                 }
+//                               }}
+//                               className="h-3.5 w-3.5 cursor-pointer accent-blue-600"
+//                             />
+//                             <span className="font-medium">{valStr}</span>
+//                           </div>
+
+//                           <span className="truncate text-gray-400">
+//                             {productName}
+//                           </span>
+//                         </label>
+//                       ) : (
+//                         <button
+//                           type="button"
+//                           disabled={isReadOnly}
+//                           onMouseDown={(e) => {
+//                             e.preventDefault()
+//                             e.stopPropagation()
+//                             addLicense(lic)
+//                           }}
+//                           className="flex w-full items-center justify-between gap-2 text-left"
+//                         >
+//                           <span className="font-medium">{valStr}</span>
+//                           <span className="truncate text-gray-400">
+//                             {productName}
+//                           </span>
+//                         </button>
+//                       )}
+//                     </li>
+//                   )
+//                 })
+//               )}
+//             </ul>
+//           </div>
+//         </DropdownPortal>
+//       )}
+//     </div>
+//   )
+// }///second
 function LicenseDropdown({
   index,
   item,
@@ -83,35 +1050,28 @@ function LicenseDropdown({
   setunselectedtaggedlicense,
   setTakenLicense
 }) {
-  console.log(selectedleadlist)
-  console.log(item)
-  console.log(index)
-  console.log(customerTableData)
   const isMulti = item?.productorservicetype === "Additionalservice"
-  console.log(isMulti)
+
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState("")
 
   const wrapperRef = useRef(null)
   const inputRef = useRef(null)
   const dropdownId = `license-dropdown-${index}`
-const selectedLicenses = isMulti ? item?.licenseNumbers || [] : [];
 
-const multiDisplayValue = selectedLicenses.length
-  ? selectedLicenses.length === 1
+  const selectedLicenses = isMulti ? item?.licenseNumbers || [] : []
+
+  const multiDisplayValue = selectedLicenses.length
     ? String(selectedLicenses[0]?.licenseNumber ?? "")
-    : `${selectedLicenses[0]?.licenseNumber}`
-  : "";
+    : ""
+
   useEffect(() => {
     if (isMulti) {
       setSearch("")
-      console.log(filtered)
-      toggleLicense(filtered, true)
     } else {
-      console.log("hhh")
       setSearch(String(item?.licenseNumber ?? ""))
     }
-  }, [item?.licenseNumber, isMulti])
+  }, [item?.licenseNumber, item?.productorServiceId, isMulti])
 
   useEffect(() => {
     const handlePointerDown = (event) => {
@@ -120,7 +1080,6 @@ const multiDisplayValue = selectedLicenses.length
       const dropdownEl = document.getElementById(dropdownId)
 
       const clickedInsideWrapper = wrapperEl && wrapperEl.contains(target)
-
       const clickedInsideDropdown = dropdownEl && dropdownEl.contains(target)
 
       if (!clickedInsideWrapper && !clickedInsideDropdown) {
@@ -137,12 +1096,12 @@ const multiDisplayValue = selectedLicenses.length
     }
   }, [dropdownId])
 
-  // const selectedLicenses = isMulti ? item?.licenseNumbers || [] : []
-  console.log(customerTableData)
   const filtered = (customerTableData || []).filter((lic) => {
-    const q = String(search || "").toLowerCase()
+    const q = String(search || "")
+      .toLowerCase()
+      .trim()
     if (!q) return true
-    console.log("h")
+
     const license = String(lic?.licenseNumber ?? "").toLowerCase()
     const product = String(
       lic?.productName || lic?.productorServiceName || ""
@@ -150,11 +1109,8 @@ const multiDisplayValue = selectedLicenses.length
 
     return license.includes(q) || product.includes(q)
   })
-  console.log(filtered)
 
   const updateRow = (newRow) => {
-    console.log("h")
-    console.log(newRow)
     setSelectedLeadList((prev) =>
       prev.map((row, i) =>
         i === index
@@ -167,34 +1123,25 @@ const multiDisplayValue = selectedLicenses.length
     )
   }
 
-  console.log(selectedleadlist)
-
   const addLicense = (lic) => {
     if (!lic) return
-    console.log("hh")
-    if (isMulti) {
-      const exists = (item?.licenseNumbers || []).some(
-        (x) => String(x?.licenseNumber) === String(lic?.licenseNumber)
-      )
 
-      if (exists) return
-      console.log("hh")
-      console.log(lic)
-      console.log(item?.licenseNumbers)
-      if (!Array.isArray(lic)) {
-        updateRow({
-          licenseNumbers: [
-            ...(item?.licenseNumbers || []),
-            {
-              licenseNumber: lic?.licenseNumber,
-              productorServiceId: lic?.productorServiceId || "",
-              productorServiceName:
-                lic?.productName || lic?.productorServiceName || "",
-              sourceIndex: lic?.sourceIndex
-            }
-          ]
-        })
-      }
+    if (isMulti) {
+      updateRow({
+        licenseNumbers: [
+          {
+            licenseNumber: lic?.licenseNumber,
+            productorServiceId: item?.productorServiceId || "",
+            productorServiceName: item?.productorServiceName || "",
+            sourceIndex: lic?.sourceIndex
+          }
+        ]
+      })
+
+      setTakenLicense((prev) => ({
+        ...prev,
+        [item?.productorServiceName]: [String(lic?.licenseNumber)]
+      }))
 
       return
     }
@@ -206,7 +1153,6 @@ const multiDisplayValue = selectedLicenses.length
     setSearch(String(lic?.licenseNumber ?? ""))
     setOpen(false)
   }
-  console.log(selectedleadlist)
 
   const removeLicense = (licenseNumber) => {
     if (!isMulti) return
@@ -216,34 +1162,26 @@ const multiDisplayValue = selectedLicenses.length
         (x) => String(x?.licenseNumber) !== String(licenseNumber)
       )
     })
-  }
 
-  const toggleLicense = (lic, checked) => {
-    if (!lic || isReadOnly) return
-
-    if (checked) {
-      addLicense(lic)
-    } else {
-      removeLicense(lic?.licenseNumber)
-    }
+    setTakenLicense((prev) => {
+      const updated = { ...prev }
+      delete updated[item?.productorServiceName]
+      return updated
+    })
   }
 
   const handleInputChange = (e) => {
-    console.log(e.target.value)
     setSearch(e.target.value)
     setOpen(true)
   }
-  console.log(filtered)
-  console.log(open)
-  console.log(item)
+
   return (
     <div ref={wrapperRef} className="relative w-full">
       <input
         ref={inputRef}
         type="text"
         disabled={isReadOnly}
-        // value={search}
-  value={isMulti ? (open ? search : multiDisplayValue) : search}
+        value={isMulti ? (open ? search : multiDisplayValue) : search}
         onChange={handleInputChange}
         onClick={() => {
           if (!isReadOnly) setOpen(true)
@@ -274,19 +1212,16 @@ const multiDisplayValue = selectedLicenses.length
                   const valStr = String(lic?.licenseNumber ?? "")
                   const productName =
                     lic?.productName || lic?.productorServiceName || ""
-                  console.log(isMulti)
-                  console.log(item)
-                  console.log(valStr)
+
                   const alreadyAdded = isMulti
                     ? (item?.licenseNumbers || []).some(
                         (x) => String(x?.licenseNumber) === valStr
                       )
                     : false
-                  console.log(alreadyAdded)
-                  console.log(valStr, alreadyAdded)
+
                   return (
                     <li
-                      key={lic?.licenseNumber ?? i}
+                      key={lic?._id || `${lic?.licenseNumber}-${i}`}
                       className={`flex items-center justify-between gap-2 px-3 py-2 hover:bg-blue-50 ${
                         alreadyAdded
                           ? "bg-blue-50 font-semibold text-[#1B2A4A]"
@@ -301,49 +1236,46 @@ const multiDisplayValue = selectedLicenses.length
                               checked={alreadyAdded}
                               disabled={isReadOnly}
                               onChange={(e) => {
-                                console.log(e.target?.value)
-                                console.log(e.target?.checked)
                                 const checkedvalue = e.target.checked
-                                // setwarningError((prev) => ({
-                                //   ...prev,
-                                //   taggedlicenseError: ""
-                                // }))
-                                const productId = item.productorServiceId
+                                const productKey = item?.productorServiceName
+                                const productId = item?.productorServiceId
+
                                 setunselectedtaggedlicense((prev) => {
                                   const updated = { ...prev }
                                   delete updated[productId]
                                   return updated
                                 })
-                                console.log(item)
 
-                                setTakenLicense((prev) => {
-                                  console.log(checkedvalue)
-                                  const updatedLicenses = checkedvalue
-                                    ? [
-                                        ...(prev[item?.productorServiceName] ||
-                                          []),
-                                        valStr
-                                      ]
-                                    : (
-                                        prev[item?.productorServiceName] || []
-                                      ).filter((license) => license !== valStr)
+                                if (checkedvalue) {
+                                  updateRow({
+                                    licenseNumbers: [
+                                      {
+                                        licenseNumber: lic?.licenseNumber,
+                                        productorServiceId:
+                                          item?.productorServiceId || "",
+                                        productorServiceName:
+                                          item?.productorServiceName || "",
+                                        sourceIndex: lic?.sourceIndex
+                                      }
+                                    ]
+                                  })
 
-                                  const updated = { ...prev }
+                                  setTakenLicense((prev) => ({
+                                    ...prev,
+                                    [productKey]: [String(lic?.licenseNumber)]
+                                  }))
+                                } else {
+                                  updateRow({
+                                    licenseNumbers: []
+                                  })
 
-                                  if (updatedLicenses.length > 0) {
-                                    updated[item?.productorServiceName] =
-                                      updatedLicenses
-                                  } else {
-                                    delete updated[item?.productorServiceName]
-                                  }
-
-                                  return updated
-                                })
-                                toggleLicense(lic, e.target.checked)
+                                  setTakenLicense((prev) => {
+                                    const updated = { ...prev }
+                                    delete updated[productKey]
+                                    return updated
+                                  })
+                                }
                               }}
-                              // onMouseDown={(e) => e.stopPropagation()}
-                              // onTouchStart={(e) => e.stopPropagation()}
-                              // onClick={(e) => e.stopPropagation()}
                               className="h-3.5 w-3.5 cursor-pointer accent-blue-600"
                             />
                             <span className="font-medium">{valStr}</span>
@@ -380,11 +1312,294 @@ const multiDisplayValue = selectedLicenses.length
       )}
     </div>
   )
-}
+} //third
+// function ProductDropdown({
+//   index,
+//   item,
+//   process,
+//   isReadOnly,
+//   leadList,
+//   selectedleadlist,
+//   setSelectedLeadList,
+//   selectedBranch,
+//   selectedCustomer,
+//   setTakenLicense
+// }) {
+//   const emptyRow = {
+//     licenseNumber: "",
+//     licenseNumbers: [],
+//     productorServiceId: "",
+//     productorServiceName: "",
+//     productPrice: "",
+//     hsn: "",
+//     netAmount: ""
+//   }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ProductDropdown
-// ─────────────────────────────────────────────────────────────────────────────
+//   const [open, setOpen] = useState(false)
+//   const [search, setSearch] = useState(item.productorServiceName || "")
+//   const inputRef = useRef(null)
+//   const [selectionMessage, setselectionMessage] = useState({})
+
+//   useEffect(() => {
+//     setSearch(item.productorServiceName || "")
+//   }, [item.productorServiceName])
+
+//   useEffect(() => {
+//     const handler = (e) => {
+//       const portals = document.querySelectorAll("[data-lead-portal]")
+//       const inPortal = Array.from(portals).some((p) => p.contains(e.target))
+//       if (!inPortal && !inputRef.current?.contains(e.target)) {
+//         setOpen(false)
+//       }
+//     }
+
+//     if (open) document.addEventListener("mousedown", handler)
+//     return () => document.removeEventListener("mousedown", handler)
+//   }, [open])
+
+//   const filtered = (leadList || []).filter((prod) => {
+//     if (!search) return true
+//     const q = search.toLowerCase()
+//     const name =
+//       prod.productName?.toLowerCase() || prod.serviceName?.toLowerCase() || ""
+//     return name.includes(q)
+//   })
+
+//   const clearPreviousTakenLicense = (previousProductKey) => {
+//     if (!previousProductKey || !setTakenLicense) return
+
+//     setTakenLicense((prev) => {
+//       const updated = { ...prev }
+//       delete updated[previousProductKey]
+//       return updated
+//     })
+//   }
+
+//   const applySelection = (prod) => {
+//     const previousProductKey = item?.productorServiceName || ""
+
+//     const branchdata = (prod?.selected || [])
+//       .filter((entry) => entry.branch_id === selectedBranch)
+//       .map((entry) => ({
+//         company_id: entry.company_id,
+//         branch_id: entry.branch_id
+//       }))
+
+//     if (
+//       selectedCustomer === null ||
+//       selectedCustomer === undefined ||
+//       selectedCustomer === ""
+//     ) {
+//       setselectionMessage({
+//         productmessage: "Please select the customer first"
+//       })
+
+//       setTimeout(() => {
+//         setselectionMessage({ productmessage: "" })
+//       }, 3000)
+
+//       return
+//     }
+
+//     const getRowId = (value) => {
+//       return String(value?._id || value?.id || value || "")
+//     }
+
+//     const base = selectedleadlist?.length
+//       ? [...selectedleadlist]
+//       : [{ ...emptyRow }]
+
+//     let updated = [...base]
+
+//     updated = updated.filter(
+//       (row, idx) => idx === index || !row?.isDefaultService
+//     )
+
+//     if (!prod) {
+//       clearPreviousTakenLicense(previousProductKey)
+
+//       updated[index] = {
+//         ...updated[index],
+//         productorServiceId: "",
+//         productorServiceName: "",
+//         itemType: "",
+//         productPrice: "",
+//         productorservicetype: "",
+//         hsn: "",
+//         netAmount: "",
+//         actualHsn: "",
+//         actualproductPrice: "",
+//         actualNetAmount: "",
+//         licenseNumber: "",
+//         licenseNumbers: [],
+//         company_id: "",
+//         branch_id: ""
+//       }
+
+//       setSearch("")
+//       setSelectedLeadList(updated)
+//       return
+//     }
+
+//     const filteredbranch = prod?.selected?.filter(
+//       (entry) => entry.branch_id === selectedBranch
+//     )
+
+//     const igstRate = filteredbranch?.[0]?.hsn_id?.onValue?.igstRate
+//     const price = Number(prod?.productPrice || 0)
+//     const igst = Number(igstRate || 0)
+//     const rawNet = price + (igst / 100) * price
+//     const netAmount = Math.round(rawNet)
+
+//     clearPreviousTakenLicense(previousProductKey)
+
+//     updated[index] = {
+//       ...updated[index],
+//       productorServiceId: prod._id,
+//       productorServiceName: prod.productName || prod.serviceName,
+//       itemType: prod.productName ? "Product" : "Service",
+//       productPrice: prod.productPrice || 0,
+//       productorservicetype: prod?.productorservicetype,
+//       hsn: igstRate || 0,
+//       netAmount,
+//       company_id: branchdata?.[0]?.company_id || "",
+//       branch_id: branchdata?.[0]?.branch_id || "",
+//       actualHsn: igstRate,
+//       actualproductPrice: prod?.productPrice,
+//       actualNetAmount: netAmount,
+//       licenseNumber: "",
+//       licenseNumbers: []
+//     }
+
+//     if (prod?.defaultservices?.length > 0 && process === "closing") {
+//       const primaryId = getRowId(prod)
+
+//       const defaultServiceRows = prod.defaultservices.map((service) => {
+//         const matchbranchrate = service.selected?.find(
+//           (b) => b.branch_id === selectedBranch
+//         )
+
+//         const rawRate = matchbranchrate?.hsn_id?.onValue?.igstRate ?? 0
+//         const hsn = Number(rawRate) || 0
+//         const servicePrice = Number(service.productPrice) || 0
+
+//         const actualNetAmount =
+//           hsn > 0
+//             ? Number((servicePrice * (1 + hsn / 100)).toFixed(2))
+//             : servicePrice
+
+//         return {
+//           ...emptyRow,
+//           licenseNumber: "",
+//           licenseNumbers: [],
+//           productorServiceId: getRowId(service),
+//           productorServiceName:
+//             service?.productName || service?.serviceName || "",
+//           itemType: service?.productName ? "Product" : "Service",
+//           productPrice: 0,
+//           hsn: 0,
+//           productorservicetype:
+//             service?.productorservicetype || "Additionalservice",
+//           netAmount: 0,
+//           isDefaultService: true,
+//           parentPrimaryProductId: primaryId,
+//           actualHsn: hsn,
+//           actualproductPrice: service?.productPrice,
+//           actualNetAmount,
+//           company_id: branchdata?.[0]?.company_id || "",
+//           branch_id: branchdata?.[0]?.branch_id || ""
+//         }
+//       })
+
+//       updated.splice(index + 1, 0, ...defaultServiceRows)
+//     }
+
+//     setSearch(prod.productName || prod.serviceName || "")
+//     setSelectedLeadList(updated)
+//     setOpen(false)
+//   }
+
+//   const handleInputChange = (e) => {
+//     const value = e.target.value
+//     setSearch(value)
+//     setOpen(true)
+
+//     const exact = (leadList || []).find(
+//       (p) => p.productName === value || p.serviceName === value
+//     )
+
+//     if (exact) applySelection(exact)
+//     else if (!value) applySelection(null)
+//   }
+
+//   const handleClear = () => {
+//     applySelection(null)
+//     setOpen(false)
+//   }
+
+//   return (
+//     <div className="relative w-full">
+//       <input
+//         ref={inputRef}
+//         type="text"
+//         disabled={isReadOnly}
+//         value={search}
+//         onChange={handleInputChange}
+//         onClick={() => !isReadOnly && setOpen(true)}
+//         placeholder="Search / Select Product"
+//         className={`w-full px-2 py-1 border border-gray-200 rounded text-xs bg-[#EEF2F8] outline-none ${
+//           isReadOnly ? "cursor-not-allowed opacity-70" : "cursor-text"
+//         }`}
+//       />
+
+//       {selectionMessage?.productmessage && (
+//         <p className="text-red-400">{selectionMessage.productmessage}</p>
+//       )}
+
+//       {search && !isReadOnly && (
+//         <button
+//           type="button"
+//           onMouseDown={(e) => {
+//             e.preventDefault()
+//             handleClear()
+//           }}
+//           className="absolute right-1.5 top-1.5 text-gray-400 hover:text-red-500 text-[10px]"
+//         >
+//           ✕
+//         </button>
+//       )}
+
+//       {open && (
+//         <DropdownPortal anchorEl={inputRef.current}>
+//           <div className="bg-white border border-gray-200 rounded shadow-xl overflow-hidden max-h-52">
+//             <ul className="max-h-52 overflow-y-auto text-xs">
+//               {filtered.length === 0 ? (
+//                 <li className="px-3 py-2 text-gray-400 italic">
+//                   No results found
+//                 </li>
+//               ) : (
+//                 filtered.map((prod) => (
+//                   <li
+//                     key={prod._id}
+//                     className="px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2 text-gray-700"
+//                     onMouseDown={(e) => {
+//                       e.preventDefault()
+//                       applySelection(prod)
+//                     }}
+//                   >
+//                     <span className="font-medium text-[#1B2A4A]">
+//                       {prod.productName || prod.serviceName}
+//                     </span>
+//                   </li>
+//                 ))
+//               )}
+//             </ul>
+//           </div>
+//         </DropdownPortal>
+//       )}
+//     </div>
+//   )
+// }//second
 function ProductDropdown({
   index,
   item,
@@ -394,13 +1609,13 @@ function ProductDropdown({
   selectedleadlist,
   setSelectedLeadList,
   selectedBranch,
-  selectedCustomer
+  selectedCustomer,
+  setTakenLicense,
+  setCustomerTableData
 }) {
-  console.log(item)
-  console.log(selectedBranch)
-  console.log(leadList)
   const emptyRow = {
     licenseNumber: "",
+    licenseNumbers: [],
     productorServiceId: "",
     productorServiceName: "",
     productPrice: "",
@@ -412,13 +1627,12 @@ function ProductDropdown({
   const [search, setSearch] = useState(item.productorServiceName || "")
   const inputRef = useRef(null)
   const [selectionMessage, setselectionMessage] = useState({})
+
   useEffect(() => {
-    console.log("hhh")
     setSearch(item.productorServiceName || "")
   }, [item.productorServiceName])
 
   useEffect(() => {
-    console.log("jjj")
     const handler = (e) => {
       const portals = document.querySelectorAll("[data-lead-portal]")
       const inPortal = Array.from(portals).some((p) => p.contains(e.target))
@@ -426,54 +1640,76 @@ function ProductDropdown({
         setOpen(false)
       }
     }
+
     if (open) document.addEventListener("mousedown", handler)
     return () => document.removeEventListener("mousedown", handler)
   }, [open])
 
   const filtered = (leadList || []).filter((prod) => {
     if (!search) return true
-    console.log(search)
-    console.log(!search)
-    console.log("Hhhh")
     const q = search.toLowerCase()
     const name =
       prod.productName?.toLowerCase() || prod.serviceName?.toLowerCase() || ""
     return name.includes(q)
   })
-  console.log(filtered)
-  console.log(selectedleadlist)
 
-  console.log(selectedCustomer)
+  const clearPreviousTakenLicense = (previousProductKey) => {
+    if (!previousProductKey || !setTakenLicense) return
+
+    setTakenLicense((prev) => {
+      const updated = { ...prev }
+      delete updated[previousProductKey]
+      return updated
+    })
+  }
+
+  const removeOldLicensesFromCustomerTable = () => {
+    const oldSingleLicense = item?.licenseNumber
+    const oldMultiLicenses = (item?.licenseNumbers || []).map((lic) =>
+      String(lic?.licenseNumber)
+    )
+
+    const licensesToRemove = [
+      ...(oldSingleLicense ? [String(oldSingleLicense)] : []),
+      ...oldMultiLicenses
+    ]
+
+    if (!licensesToRemove.length || !setCustomerTableData) return
+
+    setCustomerTableData((prev) =>
+      (prev || []).filter(
+        (row) => !licensesToRemove.includes(String(row?.licenseNumber))
+      )
+    )
+  }
+
   const applySelection = (prod) => {
-    console.log(prod)
+    const previousProductKey = item?.productorServiceName || ""
 
     const branchdata = (prod?.selected || [])
-      .filter((item) => item.branch_id === selectedBranch)
-      .map((item) => ({
-        company_id: item.company_id,
-        branch_id: item.branch_id
+      .filter((entry) => entry.branch_id === selectedBranch)
+      .map((entry) => ({
+        company_id: entry.company_id,
+        branch_id: entry.branch_id
       }))
-    console.log(branchdata)
-    console.log(selectedCustomer)
+
     if (
       selectedCustomer === null ||
       selectedCustomer === undefined ||
       selectedCustomer === ""
     ) {
-      console.log("jjj")
       setselectionMessage({
         productmessage: "Please select the customer first"
       })
-      console.log("hhh")
-      // Clear the message after 3 seconds (3000ms)
+
       setTimeout(() => {
         setselectionMessage({ productmessage: "" })
       }, 3000)
+
       return
     }
-    console.log("hhh")
+
     const getRowId = (value) => {
-      console.log(value)
       return String(value?._id || value?.id || value || "")
     }
 
@@ -482,27 +1718,31 @@ function ProductDropdown({
       : [{ ...emptyRow }]
 
     let updated = [...base]
-    console.log(updated)
-    // Remove any previously auto-added default services
+
     updated = updated.filter(
       (row, idx) => idx === index || !row?.isDefaultService
     )
 
-    const filteredbranch = prod?.selected?.filter(
-      (item) => item.branch_id === selectedBranch
-    )
-    console.log(filteredbranch)
-    const igstRate = filteredbranch?.[0]?.hsn_id?.onValue?.igstRate
-    console.log(prod)
     if (!prod) {
+      clearPreviousTakenLicense(previousProductKey)
+      removeOldLicensesFromCustomerTable()
+
       updated[index] = {
         ...updated[index],
         productorServiceId: "",
         productorServiceName: "",
         itemType: "",
         productPrice: "",
+        productorservicetype: "",
         hsn: "",
-        netAmount: ""
+        netAmount: "",
+        actualHsn: "",
+        actualproductPrice: "",
+        actualNetAmount: "",
+        licenseNumber: "",
+        licenseNumbers: [],
+        company_id: "",
+        branch_id: ""
       }
 
       setSearch("")
@@ -510,12 +1750,19 @@ function ProductDropdown({
       return
     }
 
+    const filteredbranch = prod?.selected?.filter(
+      (entry) => entry.branch_id === selectedBranch
+    )
+
+    const igstRate = filteredbranch?.[0]?.hsn_id?.onValue?.igstRate
     const price = Number(prod?.productPrice || 0)
     const igst = Number(igstRate || 0)
     const rawNet = price + (igst / 100) * price
     const netAmount = Math.round(rawNet)
 
-    // Main selected product
+    clearPreviousTakenLicense(previousProductKey)
+    removeOldLicensesFromCustomerTable()
+
     updated[index] = {
       ...updated[index],
       productorServiceId: prod._id,
@@ -525,33 +1772,31 @@ function ProductDropdown({
       productorservicetype: prod?.productorservicetype,
       hsn: igstRate || 0,
       netAmount,
-      company_id: branchdata[0].company_id,
-      branch_id: branchdata[0].branch_id,
+      company_id: branchdata?.[0]?.company_id || "",
+      branch_id: branchdata?.[0]?.branch_id || "",
       actualHsn: igstRate,
       actualproductPrice: prod?.productPrice,
-      actualNetAmount: netAmount
+      actualNetAmount: netAmount,
+      licenseNumber: "",
+      licenseNumbers: []
     }
-    console.log(prod)
-    console.log(selectedBranch)
-    // Add default services immediately after selected product
-    if (prod?.defaultservices?.length > 0 && process === "closing") {
-      console.log("Hhh")
 
+    if (prod?.defaultservices?.length > 0 && process === "closing") {
       const primaryId = getRowId(prod)
-      console.log(primaryId)
-      console.log("hhh")
-      console.log(prod?.defaultservices)
+
       const defaultServiceRows = prod.defaultservices.map((service) => {
-        const matchbranchrate = service.selected.find(
+        const matchbranchrate = service.selected?.find(
           (b) => b.branch_id === selectedBranch
         )
-        const rawRate = matchbranchrate.hsn_id?.onValue?.igstRate ?? 0 // can be '18', 0, null, undefined
-        const hsn = Number(rawRate) || 0 // treat null/undefined/NaN as 0
 
-        const price = Number(service.productPrice) || 0 // base price
+        const rawRate = matchbranchrate?.hsn_id?.onValue?.igstRate ?? 0
+        const hsn = Number(rawRate) || 0
+        const servicePrice = Number(service.productPrice) || 0
 
         const actualNetAmount =
-          hsn > 0 ? Number((price * (1 + hsn / 100)).toFixed(2)) : price
+          hsn > 0
+            ? Number((servicePrice * (1 + hsn / 100)).toFixed(2))
+            : servicePrice
 
         return {
           ...emptyRow,
@@ -571,42 +1816,20 @@ function ProductDropdown({
           actualHsn: hsn,
           actualproductPrice: service?.productPrice,
           actualNetAmount,
-          company_id: branchdata[0].company_id,
-          branch_id: branchdata[0].branch_id
+          company_id: branchdata?.[0]?.company_id || "",
+          branch_id: branchdata?.[0]?.branch_id || ""
         }
       })
-      // const defaultServiceRows = (prod?.defaultservices || []).map(
-      //   (service) => ({
-      //     ...emptyRow,
-      //     licenseNumber: "",
-      //     licenseNumbers: [],
-      //     productorServiceId: getRowId(service),
-      //     productorServiceName:
-      //       service?.productName || service?.serviceName || "",
-      //     itemType: service?.productName ? "Product" : "Service",
-      //     productPrice: 0,
-      //     hsn: 0,
-      //     productorservicetype:
-      //       service?.productorservicetype || "Additionalservice",
-      //     netAmount: 0,
-      //     isDefaultService: true,
-      //     parentPrimaryProductId: primaryId,
-      //     actualproductPrice: service?.productPrice
-      //     // actualNetAmount:netAmount
-      //   })
-      // )
 
       updated.splice(index + 1, 0, ...defaultServiceRows)
     }
 
     setSearch(prod.productName || prod.serviceName || "")
-    console.log(updated)
     setSelectedLeadList(updated)
-    console.log("hh")
+    setOpen(false)
   }
-  console.log(selectedleadlist)
+
   const handleInputChange = (e) => {
-    console.log(e)
     const value = e.target.value
     setSearch(value)
     setOpen(true)
@@ -614,6 +1837,7 @@ function ProductDropdown({
     const exact = (leadList || []).find(
       (p) => p.productName === value || p.serviceName === value
     )
+
     if (exact) applySelection(exact)
     else if (!value) applySelection(null)
   }
@@ -622,7 +1846,7 @@ function ProductDropdown({
     applySelection(null)
     setOpen(false)
   }
-  console.log(search)
+
   return (
     <div className="relative w-full">
       <input
@@ -637,9 +1861,11 @@ function ProductDropdown({
           isReadOnly ? "cursor-not-allowed opacity-70" : "cursor-text"
         }`}
       />
-      {selectionMessage && selectionMessage.productmessage && (
+
+      {selectionMessage?.productmessage && (
         <p className="text-red-400">{selectionMessage.productmessage}</p>
       )}
+
       {search && !isReadOnly && (
         <button
           type="button"
@@ -669,7 +1895,6 @@ function ProductDropdown({
                     onMouseDown={(e) => {
                       e.preventDefault()
                       applySelection(prod)
-                      setOpen(false)
                     }}
                   >
                     <span className="font-medium text-[#1B2A4A]">
@@ -684,8 +1909,7 @@ function ProductDropdown({
       )}
     </div>
   )
-}
-
+} //third
 // ─────────────────────────────────────────────────────────────────────────────
 // LeadMaster
 // ─────────────────────────────────────────────────────────────────────────────
@@ -738,7 +1962,7 @@ const LeadMaster = ({
   const [productOrserviceSelections, setProductorServiceSelections] = useState(
     {}
   )
-const mobileRegister = registerMain("mobile");
+  const mobileRegister = registerMain("mobile")
   const today = new Date().toISOString().split("T")[0]
   const [takenLicenses, setTakenLicense] = useState([])
   console.log(takenLicenses)
@@ -797,7 +2021,12 @@ const mobileRegister = registerMain("mobile");
   const [isleadForOpen, setIsleadForOpen] = useState(false)
   const [isLicenseOpen, setIslicenseOpen] = useState(false)
   const [branches, setBranches] = useState([])
+  const [originalCustomerTableData, setOriginalCustomerTableData] = useState([])
+  const [temporaryCustomerTableData, setTemporaryCustomerTableData] = useState(
+    []
+  )
   const [customerTableData, setcustomerTableData] = useState([])
+  console.log(customerTableData)
   const [validateError, setValidateError] = useState({})
   const [loggeduser, setloggedUser] = useState(null)
   const [allstaff, setallStaffs] = useState([])
@@ -828,8 +2057,8 @@ const mobileRegister = registerMain("mobile");
   const [isTradeOpen, setIsTradeOpen] = useState(false)
   const discountAmount = watchMain("discamnt")
   const tradeDropdownRef = useRef(null)
-const isFirstRender = useRef(true);
-const isMobileTypedByUser = useRef(false);
+  const isFirstRender = useRef(true)
+  const isMobileTypedByUser = useRef(false)
   console.log(mobileValue)
   console.log(customerNameValue)
   console.log(customerIdValue)
@@ -891,86 +2120,86 @@ const isMobileTypedByUser = useRef(false);
   //   "Hotel",
   //   "Pipes, Tubes Fittings"
   // ]
-const softwareTrades = [
-  "Agriculture",
-  "Business Services",
-  "Computer Hardware Software",
-  "Electronics Electrical Supplies",
-  "FMCG-Fast Moving Consumable Goods",
-  "Garment,Fashion Apparel",
-  "Health Beauty",
-  "Industrial Supplies",
-  "Jewelry Gemstones",
-  "Mobile Accessories",
-  "Pharmaceutical Chemicals",
-  "Textiles Chemicals",
-  "Textiles Fabrics",
-  "Others",
-  "Restaurant, Food And Beverage",
-  "Accounts Chartered Account",
-  "Stationery, Printing Publishing",
-  "Hotel",
-  "Pipes, Tubes Fittings",
+  const softwareTrades = [
+    "Agriculture",
+    "Business Services",
+    "Computer Hardware Software",
+    "Electronics Electrical Supplies",
+    "FMCG-Fast Moving Consumable Goods",
+    "Garment,Fashion Apparel",
+    "Health Beauty",
+    "Industrial Supplies",
+    "Jewelry Gemstones",
+    "Mobile Accessories",
+    "Pharmaceutical Chemicals",
+    "Textiles Chemicals",
+    "Textiles Fabrics",
+    "Others",
+    "Restaurant, Food And Beverage",
+    "Accounts Chartered Account",
+    "Stationery, Printing Publishing",
+    "Hotel",
+    "Pipes, Tubes Fittings",
 
-  "Wholesale Trading",
-  "Retail Trading",
-  "Import & Export",
-  "Distribution / Dealers",
-  "E-commerce / Online Trading",
-  "IT Services",
-  "Web Design & Development",
-  "Cyber Security Services",
-  "Hardware & Networking",
-  "Construction Companies",
-  "Spare Parts Dealers",
-  "Banks",
-  "Printing & Publishing",
+    "Wholesale Trading",
+    "Retail Trading",
+    "Import & Export",
+    "Distribution / Dealers",
+    "E-commerce / Online Trading",
+    "IT Services",
+    "Web Design & Development",
+    "Cyber Security Services",
+    "Hardware & Networking",
+    "Construction Companies",
+    "Spare Parts Dealers",
+    "Banks",
+    "Printing & Publishing",
 
-  "Pharmaceutical Manufacturing",
-  "Food Manufacturing",
-  "Textile / Garment Manufacturing",
-  "Chemical Manufacturing",
-  "Plastic Manufacturing",
-  "Steel / Metal Manufacturing",
-  "Furniture Manufacturing",
-  "Building Contractors",
-  "Real Estate Developers",
-  "Property Management",
-  "Transport & Logistics",
-  "Finance Companies",
+    "Pharmaceutical Manufacturing",
+    "Food Manufacturing",
+    "Textile / Garment Manufacturing",
+    "Chemical Manufacturing",
+    "Plastic Manufacturing",
+    "Steel / Metal Manufacturing",
+    "Furniture Manufacturing",
+    "Building Contractors",
+    "Real Estate Developers",
+    "Property Management",
+    "Transport & Logistics",
+    "Finance Companies",
 
-  "Electrical Equipment Manufacturing",
-  "Electronics Manufacturing",
-  "Automobile Manufacturing",
-  "Hospitals",
-  "Clinics",
-  "Medical Laboratories",
-  "Medical Equipment Suppliers",
-  "Pharmacies / Medical Stores",
-  "Interior Design",
-  "Vehicle Dealers",
-  "Automobile Service Centres",
-  "Insurance Companies",
-  "Chartered Accountants / Audit Firms",
-  "Tax Consultants",
-  "Hotels & Resorts",
+    "Electrical Equipment Manufacturing",
+    "Electronics Manufacturing",
+    "Automobile Manufacturing",
+    "Hospitals",
+    "Clinics",
+    "Medical Laboratories",
+    "Medical Equipment Suppliers",
+    "Pharmacies / Medical Stores",
+    "Interior Design",
+    "Vehicle Dealers",
+    "Automobile Service Centres",
+    "Insurance Companies",
+    "Chartered Accountants / Audit Firms",
+    "Tax Consultants",
+    "Hotels & Resorts",
 
-  "Schools",
-  "Colleges",
-  "Training Institutes",
-  "Coaching Centers",
-  "Educational Consultants",
-  "Software Development",
-  "Restaurants / Cafes",
-  "Travel Agencies",
-  "Tourism Operators",
-  "Advertising & Marketing Agencies",
-  "Event Management",
-  "Security Services",
-  "Cleaning / Facility Management",
-  "NGOs / Non-Profit Organizations",
-  "Government Organizations"
-];
+    "Schools",
+    "Colleges",
+    "Training Institutes",
+    "Coaching Centers",
+    "Educational Consultants",
+    "Software Development",
+    "Restaurants / Cafes",
+    "Travel Agencies",
+    "Tourism Operators",
+    "Advertising & Marketing Agencies",
+    "Event Management",
+    "Security Services",
+    "Cleaning / Facility Management",
+    "NGOs / Non-Profit Organizations",
+    "Government Organizations"
+  ]
 
   const { data: alluser, loading: usersLoading } = UseFetch("/auth/getallUsers")
   const {
@@ -1056,13 +2285,13 @@ const softwareTrades = [
   console.log(customerNameValue)
   console.log(customerIdValue)
   useEffect(() => {
-  if (isFirstRender.current) {
-console.log(isFirstRender)
-    isFirstRender.current = false;
-    return;
-  }
-console.log(isMobileTypedByUser)
-  if (!isMobileTypedByUser.current) return;
+    if (isFirstRender.current) {
+      console.log(isFirstRender)
+      isFirstRender.current = false
+      return
+    }
+    console.log(isMobileTypedByUser)
+    if (!isMobileTypedByUser.current) return
     const cleanedMobile = String(mobileMainValue || "")
       .replace(/^\+?91/, "")
       .replace(/\D/g, "")
@@ -1346,7 +2575,7 @@ console.log(isMobileTypedByUser)
               company_id: service?.selected?.[0]?.company_id,
               branch_id: service?.selected?.[0]?.branch_id,
               actualproductPrice: productPrice,
-actualHsn:igstRate,
+              actualHsn: igstRate,
               actualNetAmount: Number(productPrice + taxAmount)
             }
           })
@@ -1431,6 +2660,8 @@ actualHsn:igstRate,
             })) || []
 
         console.log("d")
+        setOriginalCustomerTableData(selectedcustomerlicenseandproduct)
+        setTemporaryCustomerTableData([])
         setcustomerTableData(selectedcustomerlicenseandproduct)
       }
     }
@@ -1441,6 +2672,22 @@ actualHsn:igstRate,
       setallcustomer(customerData)
     }
   }, [customerData])
+  useEffect(() => {
+    const merged = [
+      ...(originalCustomerTableData || []),
+      ...(temporaryCustomerTableData || [])
+    ]
+
+    const unique = merged.filter(
+      (item, index, arr) =>
+        index ===
+        arr.findIndex(
+          (x) => String(x?.licenseNumber) === String(item?.licenseNumber)
+        )
+    )
+
+    setcustomerTableData(unique)
+  }, [originalCustomerTableData, temporaryCustomerTableData])
   console.log(customerData)
   useEffect(() => {
     if (customerData && customerData.length && selectedBranch) {
@@ -1504,7 +2751,67 @@ actualHsn:igstRate,
     console.log(selectedleadlist)
     setValueMain("netAmount", Math.max(total - discount, 0).toFixed(2))
   }, [selectedleadlist, discountAmount])
+  // useEffect(() => {
+  //   setSelectedLeadList((prev) =>
+  //     prev.map((lead) => ({
+  //       ...lead,
+  //       taggeddata: lead.taggeddata.map((row) => {
+  //         const taxExclusive = Number(row.taxexclusiveAmount || 0);
+  //         const taxRate = Number(row.leadTax || 0);
+  //         const discount = Number(row.discountAmount || 0);
 
+  //         // Tax Amount
+  //         const taxAmount = (taxExclusive * taxRate) / 100;
+
+  //         // (Tax Exclusive + Tax) - Discount
+  //         const taxInclusiveAmount = Number(
+  //           (taxExclusive + taxAmount - discount).toFixed(2)
+  //         );
+
+  //         return {
+  //           ...row,
+  //           taxinclusiveamount: taxInclusiveAmount,
+  //         };
+  //       }),
+  //     }))
+  //   );
+  // }, [discountAmount]);
+  useEffect(() => {
+    if (selectedleadlist && selectedleadlist.length) {
+      console.log(selectedleadlist)
+if(!haveprimaryProduct){
+ 
+setSelectedLeadList((prev) =>
+        prev.map((lead) => {
+          if (lead.productorservicetype !== "Additionalservice"||!Array.isArray(lead.taggeddata)) {
+            return lead
+          }
+
+          return {
+            ...lead,
+            taggeddata: lead.taggeddata.map((row) => {
+              const taxExclusive = Number(row.taxexclusiveAmount || 0)
+              const taxRate = Number(row.leadTax || 0)
+              const discount = Number(discountAmount || 0)
+              console.log(discount)
+              const taxAmount = (taxExclusive * taxRate) / 100
+              console.log(taxAmount)
+              console.log(taxExclusive)
+              return {
+                ...row,
+                taxinclusiveamount: Number(
+                  (taxExclusive + taxAmount - discount).toFixed(2)
+                ),
+                discountAmount: discount
+              }
+            })
+          }
+        })
+      )
+}
+      
+    }
+  }, [discountAmount])
   useEffect(() => {
     console.log("hhh")
     if (!selectedLicense && leadList && leadList.length > 0 && !Data) {
@@ -1525,6 +2832,26 @@ actualHsn:igstRate,
       })),
     []
   )
+  const addTemporaryLicense = (newLicense) => {
+    setTemporaryCustomerTableData((prev) => {
+      const exists = prev.some(
+        (item) =>
+          String(item?.licenseNumber) === String(newLicense?.licenseNumber)
+      )
+
+      if (exists) return prev
+
+      return [...prev, newLicense]
+    })
+  }
+
+  const removeTemporaryLicense = (licenseNumber) => {
+    setTemporaryCustomerTableData((prev) =>
+      prev.filter(
+        (item) => String(item?.licenseNumber) !== String(licenseNumber)
+      )
+    )
+  }
   // const updateLicense = (index, licenseNumber) => {
   //   setSelectedLeadList((prev) =>
   //     prev.map((row, i) =>
@@ -2149,41 +3476,194 @@ actualHsn:igstRate,
   // }
   console.log(detailsForm)
   console.log(selectedleadlist)
+  //   const handleTaggedDueChange = (rowIndex, value, term, hsn, productType) => {
+  //     console.log(rowIndex)
+  //     console.log(value)
+  //     console.log(term)
+  //     console.log(hsn)
+  //     console.log(productType)
+  //     console.log("Hhhz")
+  // console.log(detailsForm)
+  // return
+  //     setDetailsForm((prev) => ({
+  //       ...prev,
+  //       taggeddata: prev.taggeddata.map((row, i) => {
+  //         if (i !== rowIndex) return row
+
+  //         const updatedRow = {
+  //           ...row,
+  //           [term]: value
+  //         }
+  //         if (term !== "nextDue") {
+  //           if (productType.toLowerCase() === "additionalservice") {
+  //             console.log("hhh")
+  //             const taxAmount = (Number(hsn) / 100) * Number(value)
+  //             console.log(value)
+  //             console.log(taxAmount)
+  //             console.log(Number(value) + taxAmount)
+  //             const total = Math.round(Number(value) + taxAmount)
+  // const updatedleadAmount=(Number(value?hsn:0)/100)*
+  //             console.log(total)
+  // updatedRow.leadTax=value?hsn:0
+  //             updatedRow.taxinclusiveamount = total
+  //             updatedRow.taxexclusiveAmount = value
+  //             updatedRow.productAmount = total
+  //           }
+  //         }else{
+  // }
+
+  //         return updatedRow
+  //       })
+  //     }))
+  //     console.log("hhh")
+  //   }
   const handleTaggedDueChange = (rowIndex, value, term, hsn, productType) => {
-    console.log(rowIndex)
+    console.log("hhh")
     console.log(value)
     console.log(term)
     console.log(hsn)
     console.log(productType)
-    console.log("Hhhz")
     setDetailsForm((prev) => ({
       ...prev,
-      taggeddata: prev.taggeddata.map((row, i) => {
+      taggeddata: (prev.taggeddata || []).map((row, i) => {
         if (i !== rowIndex) return row
 
+        const originalHsn = Number(
+          row?.originalHsn || row?.actualHsn || row?.hsn || 0
+        )
+
+        const currentLeadAmount = Number(row?.taxexclusiveAmount || 0)
+        const currentNextDueAmount = Number(row?.nextDueAmount || 0)
+        const currentTotalLeadAmount = Number(row?.taxinclusiveamount || 0)
+        const currentTotalNextDueAmount = Number(row?.totalnextDueAmount || 0)
         const updatedRow = {
-          ...row,
-          [term]: value
-        }
-        if (term !== "nextDue") {
-          if (productType.toLowerCase() === "additionalservice") {
-            console.log("hhh")
-            const taxAmount = (Number(hsn) / 100) * Number(value)
-            console.log(value)
-            console.log(taxAmount)
-            console.log(Number(value) + taxAmount)
-            const total = Math.round(Number(value) + taxAmount)
-            console.log(total)
-            updatedRow.taxinclusiveamount = total
-            updatedRow.taxexclusiveAmount = value
-            updatedRow.productAmount = total
-          }
+          ...row
         }
 
+        if (term === "nextDue") {
+          updatedRow.nextDue = value || ""
+          return updatedRow
+        }
+
+        if (term === "serialNumber") {
+          updatedRow.serialNumber = value
+          return updatedRow
+        }
+
+        if (term === "noofusers") {
+          updatedRow.noofusers = value
+          return updatedRow
+        }
+
+        if (term === "taxexclusiveAmount") {
+          if (Number(value) < row?.discountAmount) {
+            toast.warning(
+              "Lead amount cannot be less than the Discount amount."
+            )
+            return updatedRow
+          }
+          console.log(row.leadTax)
+          const updatedtax = row?.leadTax > 0 ? Number(hsn / 100) * value : 0
+          updatedRow.taxexclusiveAmount = value === "" ? "" : Number(value)
+          const discount = Number(row?.discountAmount ?? 0)
+          updatedRow.taxinclusiveamount = Number(value) + updatedtax - discount
+          return updatedRow
+        }
+
+        if (term === "nextDueAmount") {
+          const updatedtax = row?.nextDueTax > 0 ? Number(hsn / 100) * value : 0
+          updatedRow.nextDueAmount = value === "" ? "" : Number(value)
+          updatedRow.totalnextDueAmount = Number(value) + updatedtax
+          return updatedRow
+        }
+
+        if (term === "discountAmount") {
+          const discountValue = value === "" ? 0 : Number(value)
+          console.log(value)
+          console.log(discountValue)
+          console.log(currentTotalLeadAmount)
+
+          const updatedTotal =
+            currentLeadAmount + Number(row?.leadTax / 100) * currentLeadAmount
+          if (discountValue > updatedTotal) {
+            toast.warning(
+              "Discount amount cannot be greater than the total amount."
+            )
+            return updatedRow
+          }
+          console.log(updatedTotal)
+          updatedRow.discountAmount = discountValue
+          updatedRow.taxinclusiveamount =
+            value === "" ? updatedTotal : updatedTotal - discountValue
+          return updatedRow
+        }
+
+        if (term === "leadTax") {
+          const checked = !!value
+          console.log(checked)
+          if (!checked) {
+            const taxAmount = (originalHsn / 100) * currentLeadAmount
+            console.log(taxAmount)
+            console.log(currentTotalLeadAmount)
+            updatedRow.leadTax = 0
+            updatedRow.taxinclusiveamount = Math.max(
+              0,
+              Number((currentTotalLeadAmount - taxAmount).toFixed(2))
+            )
+          } else {
+            const taxAmount = (originalHsn / 100) * currentLeadAmount
+            updatedRow.leadTax = originalHsn
+
+            const discount = Number(row?.discountAmount ?? 0)
+
+            updatedRow.taxinclusiveamount =
+              Number((currentLeadAmount + taxAmount).toFixed(2)) - discount
+          }
+
+          return updatedRow
+        }
+
+        if (term === "nextDueTax") {
+          const checked = !!value
+
+          if (!checked) {
+            const taxAmount = (originalHsn / 100) * currentNextDueAmount
+            updatedRow.nextDueTax = 0
+            updatedRow.totalnextDueAmount = Math.max(
+              0,
+              Number((currentTotalNextDueAmount - taxAmount).toFixed(2))
+            )
+          } else {
+            const taxAmount = (originalHsn / 100) * currentNextDueAmount
+            updatedRow.nextDueTax = originalHsn
+            updatedRow.totalnextDueAmount = Number(
+              (currentNextDueAmount + taxAmount).toFixed(2)
+            )
+          }
+
+          return updatedRow
+        }
+
+        if (term === "taxexclusiveAmount") {
+          const amount = value === "" ? 0 : Number(value)
+          updatedRow.taxexclusiveAmount = amount
+
+          if (String(productType || "").toLowerCase() === "additionalservice") {
+            const taxAmount = (originalHsn / 100) * amount
+            updatedRow.leadTax = amount > 0 ? originalHsn : 0
+            updatedRow.taxinclusiveamount = Number(
+              (amount + taxAmount).toFixed(2)
+            )
+            updatedRow.productAmount = Number((amount + taxAmount).toFixed(2))
+          }
+
+          return updatedRow
+        }
+
+        updatedRow[term] = value
         return updatedRow
       })
     }))
-    console.log("hhh")
   }
   console.log(selectedleadlist)
   console.log(detailsForm)
@@ -2425,7 +3905,7 @@ actualHsn:igstRate,
     //     message: `${result.data.message},You can't make leads`
     //   }
     // } else
-console.log(result.data.message)
+    console.log(result.data.message)
     if (
       result.data.message ===
       "This customer already has a lead with the same product."
@@ -2584,6 +4064,7 @@ console.log(result.data.message)
     },
     { value: "Government Organizations", label: "Government Organizations" }
   ]
+  console.log(haveprimaryProduct)
   console.log(selectedleadlist)
   const validateSelectedLeadList = (selectedleadlist = []) => {
     const hasAdditionalService = selectedleadlist.some(
@@ -2680,19 +4161,35 @@ console.log(result.data.message)
         if (taggeddata.length > 0) {
           for (let j = 0; j < taggeddata.length; j++) {
             const tag = taggeddata[j]
+console.log(tag)
             const tagLicense = String(
               tag?.licensenumber || tag?.licenseNumber || ""
             ).trim()
             const due = parseDateOnly(tag?.nextDue)
-            const productAmount = Number(tag?.productAmount)
+            const productAmount = Number(tag?.taxexclusiveAmount)
+const nextDueAmount=Number(tag?.nextDueAmount)
+console.log(productAmount)
+console.log(!productAmount > 0)
             if (!tagLicense) {
               console.log("hh")
               return `Tagged license number is required for ${row?.productName || row?.productorServiceName}`
             }
-            if (!productAmount > 0) {
-              console.log("hh")
-              return `Product amount is required for ${row?.productName || row?.productorServiceName} ${tag?.licensenumber},not less than 0`
-            }
+            // if (!productAmount > 0) {
+            //   console.log("hh")
+            //   return `Lead amount is required for ${row?.productName || row?.productorServiceName} ${tag?.licensenumber},not less than 0`
+            // }
+if (Number(productAmount) <= 0) {
+  console.log("hh");
+  return `Lead amount is required for ${
+    row?.productName || row?.productorServiceName
+  } (${tag?.licensenumber}). It must be greater than 0.`;
+}
+if (Number(nextDueAmount) <= 0) {
+  console.log("hh");
+  return `NextDueAmount is required for ${
+    row?.productName || row?.productorServiceName
+  } (${tag?.licensenumber}). It must be greater than 0.`;
+}
             if (!due) {
               return `Next due is required for  ${row?.productName || row?.productorServiceName}`
             }
@@ -2763,8 +4260,8 @@ console.log(result.data.message)
   }
   const onSubmit = async (data) => {
     console.log(data)
-console.log(duplicateWarning)
-if(duplicateWarning)return
+    console.log(duplicateWarning)
+    if (duplicateWarning) return
     if (submitLoading) return
     setsubmitLoading(true)
     if (duplicateWarning) return
@@ -2839,14 +4336,14 @@ if(duplicateWarning)return
         const validationMessage = validateSelectedLeadList(selectedleadlist)
         console.log(validationMessage)
         if (validationMessage) {
-          toast.error(validationMessage)
+          toast.warning(validationMessage)
           return
         }
 
         console.log(selectedleadlist)
         console.log(loggeduser)
         console.log(data)
-
+    
         seteditLoadingState(true)
         const updated = await handleclosingData(
           data,
@@ -2903,17 +4400,29 @@ if(duplicateWarning)return
       detailsItem?.productorservicetype || ""
     ).toLowerCase()
     console.log("hh")
+    console.log(detailsForm)
     console.log(detailsForm.taggeddata)
     console.log(selectedleadlist)
+
     const cleanedTaggedData = Array.isArray(detailsForm.taggeddata)
       ? detailsForm.taggeddata
           .map((tag) => ({
             licensenumber: String(tag?.licensenumber || "").trim(),
             nextDue: String(tag?.nextDue || "").trim(),
-            productAmount: tag?.productAmount,
+            productAmount: tag?.totalnextDueAmount, //tax inclusive if have tax
             taxexclusiveAmount: tag?.taxexclusiveAmount,
             taxinclusiveamount: tag?.taxinclusiveamount,
-            hsn: tag?.hsn
+            hsn: tag?.hsn,
+            noofusers: tag?.noofusers,
+            serialNumber: tag?.serialNumber,
+            nextDueAmount: tag?.nextDueAmount,
+            originalHsn: tag?.originalHsn,
+            leadAmount: tag?.leadAmount,
+            totalleadAmount: tag?.totalleadAmount,
+            totalnextDueAmount: tag?.totalnextDueAmount,
+            leadTax: tag?.leadTax,
+            nextDueTax: tag?.nextDueTax,
+            discountAmount: tag?.discountAmount
           }))
           .filter((tag) => tag.licensenumber !== "")
       : []
@@ -2925,8 +4434,20 @@ if(duplicateWarning)return
       },
       0
     )
+    const totaldiscount = cleanedTaggedData.reduce((sum, item) => {
+      const amount = Number(item?.discountAmount) || 0
+
+      return sum + amount
+    }, 0)
+    console.log(cleanedTaggedData)
+    const totaltaxinclusiveAmount = cleanedTaggedData.reduce((sum, item) => {
+      const amount = Number(item?.taxinclusiveamount) || 0
+      return sum + amount
+    }, 0)
+    console.log(totaltaxinclusiveAmount)
     const taxamount =
-      (Number(detailsForm?.taggeddata[0]?.hsn) / 100) * totaltaxexclusiveAmount
+      (Number(detailsForm?.taggeddata[0]?.leadTax) / 100) *
+      totaltaxexclusiveAmount
     const updatedNetAmount = Math.round(
       Number(totaltaxexclusiveAmount) + taxamount
     )
@@ -2949,7 +4470,8 @@ if(duplicateWarning)return
               ? row?.productPrice
               : totaltaxexclusiveAmount,
             netAmount: haveprimaryProduct ? row?.netAmount : updatedNetAmount,
-            noofusers: detailsForm.quantityUsers,
+            noofusers: detailsForm.noofusers,
+
             amount: detailsForm.amount,
             status: detailsForm.status,
             isActive: detailsForm.status,
@@ -2971,6 +4493,7 @@ if(duplicateWarning)return
       })
     )
 
+    setValueMain("discamnt", totaldiscount)
     setdetailsopen(false)
   }
   console.log(detailsForm)
@@ -3182,19 +4705,62 @@ if(duplicateWarning)return
             return {
               licensenumber: lic?.licenseNumber || "",
               nextDue: existing?.nextDue ?? "",
+              noofusers:
+                existing?.noofusers ??
+                existingTag?.noofusers ??
+                item?.noofusers ??
+                0,
+              nextDueAmount:
+                existing?.nextDueAmount ??
+                existingTag?.nextDueAmount ??
+               item?.actualproductPrice?? item?.productPrice,
               sourceIndex: lic?.sourceIndex,
               productAmount,
               taxexclusiveAmount:
                 existing?.taxexclusiveAmount ??
                 existingTag?.taxexclusiveAmount ??
-                item?.actualproductPrice,
+                item?.actualproductPrice ??
+                item?.productPrice,
               taxinclusiveamount:
                 existing?.taxinclusiveamount ??
                 existingTag?.taxinclusiveamount ??
                 item?.actualNetAmount ??
                 item?.netAmount ??
                 0,
-              hsn: existing?.hsn ?? existingTag?.hsn ?? item?.actualHsn
+              hsn:
+                existing?.hsn ??
+                existingTag?.hsn ??
+                item?.actualHsn ??
+                item?.hsn,
+              originalHsn: item?.actualHsn ?? item?.hsn,
+              leadAmount:
+                existing?.leadAmount ??
+                existingTag?.leadAmount ??
+                item?.productPrice,
+              totalleadAmount:
+                existing?.totalleadAmount ??
+                existingTag?.totalleadAmount ??
+                item?.netAmount,
+              totalnextDueAmount:
+                existing?.totalnextDueAmount ??
+                existingTag?.totalnextDueAmount ??
+item?.actualNetAmount??
+                item?.netAmount,
+              leadTax: existing?.hsn ?? existingTag?.hsn ?? item?.hsn,
+              nextDueTax:
+                existing?.nextDueTax ?? existingTag?.nextDueTax ??item?.actualHsn?? item?.hsn,
+              discountAmount:
+                existing?.discountAmount ??
+                existingTag?.discountAmount ??
+                item?.discountAmount,
+              noofusers:
+                existing?.noofusers ??
+                existingTag?.noofusers ??
+                item?.noofusers,
+              serialNumber:
+                existing?.serialNumber ??
+                existingTag?.serialNumber ??
+                item?.serialNumber
             }
           })
         : Array.isArray(item?.taggeddata)
@@ -3454,7 +5020,7 @@ if(duplicateWarning)return
                       value={selectedBranch}
                       disabled={isReadOnly}
                       onChange={(e) => {
-setDuplicateWarning("")
+                        setDuplicateWarning("")
                         setSelectedBranch(e.target.value)
                         setValueMain("customerName", "")
                         setSelectedCustomer(null)
@@ -3528,10 +5094,10 @@ setDuplicateWarning("")
                       {...mobileRegister}
                       readOnly={isReadOnly}
                       placeholder="Mobile..."
-onChange={(e) => {
-    isMobileTypedByUser.current = true;
-    mobileRegister.onChange(e);
-  }}
+                      onChange={(e) => {
+                        isMobileTypedByUser.current = true
+                        mobileRegister.onChange(e)
+                      }}
                       className={`w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8] ${
                         isReadOnly ? "cursor-not-allowed opacity-70" : ""
                       }`}
@@ -3735,31 +5301,49 @@ onChange={(e) => {
                               <ProductDropdown
                                 index={index}
                                 item={item}
+                                process={process}
                                 isReadOnly={isReadOnly}
                                 leadList={leadList}
                                 selectedleadlist={selectedleadlist}
+                                setSelectedLeadList={setSelectedLeadList}
                                 selectedBranch={selectedBranch}
                                 selectedCustomer={selectedCustomer}
-                                process={process}
-                                setSelectedLeadList={setSelectedLeadList}
+                                setTakenLicense={setTakenLicense}
+                                setCustomerTableData={setcustomerTableData}
+                                addTemporaryLicense={addTemporaryLicense}
+                                removeTemporaryLicense={removeTemporaryLicense}
                               />
                             </td>
                             <td className="border border-gray-300 px-1 py-1">
                               {showLicenseDropdown ? (
                                 <LicenseDropdown
+                                  key={`${index}-${item?.productorServiceId || "no-product"}`}
                                   index={index}
                                   item={item}
                                   isReadOnly={isReadOnly}
                                   customerTableData={customerTableData}
+                                  selectedleadlist={selectedleadlist}
+                                  setSelectedLeadList={setSelectedLeadList}
                                   setunselectedtaggedlicense={
                                     setunselectedtaggedlicense
                                   }
                                   setTakenLicense={setTakenLicense}
-                                  selectedleadlist={selectedleadlist}
-                                  setSelectedLeadList={setSelectedLeadList}
-                                  handleLicenseSelect={handleLicenseSelect}
                                 />
                               ) : (
+                                //                                 <LicenseDropdown
+                                // key={`${index}-${item?.productorServiceId || "no-product"}`}
+                                //                                   index={index}
+                                //                                   item={item}
+                                //                                   isReadOnly={isReadOnly}
+                                //                                   customerTableData={customerTableData}
+                                //                                   setunselectedtaggedlicense={
+                                //                                     setunselectedtaggedlicense
+                                //                                   }
+                                //                                   setTakenLicense={setTakenLicense}
+                                //                                   selectedleadlist={selectedleadlist}
+                                //                                   setSelectedLeadList={setSelectedLeadList}
+                                //                                   handleLicenseSelect={handleLicenseSelect}
+                                //                                 />
                                 // <input
                                 //   value={item.licenseNumber}
                                 //   readOnly={isReadOnly}
@@ -4162,7 +5746,7 @@ onChange={(e) => {
                         field: "taxAmount",
                         viewonly: true
                       },
-                      ...(process === "closing" && haveprimaryProduct
+                      ...(process === "closing"
                         ? [
                             {
                               label: "Disc.Amount",
@@ -4184,7 +5768,33 @@ onChange={(e) => {
                         <input
                           type="number"
                           {...registerMain(field)}
+ onFocus={(e) => {
+    if (field === "discamnt" && !haveprimaryProduct) {
+console.log("hh")
+      const isInvalid = selectedleadlist.some(
+        (lead) =>
+          !lead.taggeddata?.length ||
+          lead.taggeddata.some(
+            (tag) => Number(tag.taxexclusiveAmount || 0) <= 0
+          )
+      );
+console.log(selectedleadlist)
+      if (isInvalid) {
+console.log("hhh")
+        toast.warning(
+          "Please tag a license and enter the Lead Amount in Details PopUp first."
+        );
+        e.target.blur(); // Prevent editing
+
+      }
+    }
+  }}
                           onWheel={(e) => e.currentTarget.blur()}
+ onKeyDown={(e) => {
+    if (["-", "+", "e", "E"].includes(e.key)) {
+      e.preventDefault();
+    }
+  }}
                           readOnly={viewonly}
                           className={`flex-1 min-w-0 border border-gray-300 rounded-r px-3 py-[6px] text-sm text-right bg-white outline-none ${viewonly ? "cursor-not-allowed" : ""} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0`}
                         />
@@ -4329,62 +5939,62 @@ onChange={(e) => {
               </div>
             </div>
           )} */}
-{popupOpen && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm px-4">
-    <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-      <div className="p-6">
-        <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 text-orange-600 shadow-sm">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 9v4m0 4h.01M10.29 3.86l-7.5 13A1 1 0 003.66 18h16.68a1 1 0 00.87-1.5l-7.5-13a1 1 0 00-1.74 0z"
-              />
-            </svg>
-          </div>
+          {popupOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm px-4">
+              <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <div className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 text-orange-600 shadow-sm">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-6 w-6"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M12 9v4m0 4h.01M10.29 3.86l-7.5 13A1 1 0 003.66 18h16.68a1 1 0 00.87-1.5l-7.5-13a1 1 0 00-1.74 0z"
+                        />
+                      </svg>
+                    </div>
 
-          <div className="flex-1">
-            <h2 className="text-lg font-semibold text-slate-800">
-              Confirmation
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              {popupMessage}
-            </p>
-          </div>
-        </div>
+                    <div className="flex-1">
+                      <h2 className="text-lg font-semibold text-slate-800">
+                        Confirmation
+                      </h2>
+                      <p className="mt-2 text-sm leading-6 text-slate-500">
+                        {popupMessage}
+                      </p>
+                    </div>
+                  </div>
 
-        <div className="mt-6 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={() => setPopupOpen(false)}
-            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-          >
-            Cancel
-          </button>
+                  <div className="mt-6 flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setPopupOpen(false)}
+                      className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                    >
+                      Cancel
+                    </button>
 
-          <button
-            type="button"
-            onClick={handlePopupOk}
-            className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700"
-          >
-            Continue
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
-          {showdetailsopen && (
+                    <button
+                      type="button"
+                      onClick={handlePopupOk}
+                      className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700"
+                    >
+                      Continue
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          {/* {showdetailsopen && (
             <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4">
-              <div className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl border border-gray-200 overflow-hidden">
+              <div className="w-full min-w-3xl max-w-auto rounded-2xl bg-white shadow-2xl border border-gray-200 overflow-hidden">
                 <div className="flex items-center justify-between px-5 py-4 border-b bg-[#1B2A4A] text-white">
                   <div>
                     <h2 className="text-sm font-bold">
@@ -4589,19 +6199,31 @@ onChange={(e) => {
                                     <th className="border-b border-[#e7ebf4] px-2.5 py-1.5  text-[11px] font-semibold text-[#43506a]">
                                       Next Due
                                     </th>
-
-                                    <th className="border-b border-[#e7ebf4] px-2.5 py-1.5  text-[11px] font-semibold text-[#43506a]">
-                                      Product price
+ <th className="border-b border-[#e7ebf4] px-2.5 py-1.5  text-[11px] font-semibold text-[#43506a]">
+                                      No.of Users
                                     </th>
-
+ <th className="border-b border-[#e7ebf4] px-2.5 py-1.5  text-[11px] font-semibold text-[#43506a]">
+                                      Serial Number
+                                    </th>
+ 
                                     <th className="border-b border-[#e7ebf4] px-2.5 py-1.5  text-[11px] font-semibold text-[#43506a]">
-                                      Amount(tax.incls)
+                                      Lead Amount
+                                    </th>
+<th className="border-b border-[#e7ebf4] px-2.5 py-1.5  text-[11px] font-semibold text-[#43506a]">
+                                      Lead Tax
+                                    </th>
+                                    <th className="border-b border-[#e7ebf4] px-2.5 py-1.5  text-[11px] font-semibold text-[#43506a]">
+                                      Next Due Amt
+                                    </th>
+ <th className="border-b border-[#e7ebf4] px-2.5 py-1.5  text-[11px] font-semibold text-[#43506a]">
+                                      Next Due Tax
+                                    </th>
+ <th className="border-b border-[#e7ebf4] px-2.5 py-1.5  text-[11px] font-semibold text-[#43506a]">
+                                      Discount Amt.
                                     </th>
                                   </tr>
                                 </thead>
-                                {/* <tbody>
                                 
-                                </tbody> */}
                                 <tbody>
                                   {detailsForm.taggeddata.map(
                                     (tag, rowIndex) => (
@@ -4801,7 +6423,2604 @@ onChange={(e) => {
                 </div>
               </div>
             </div>
-          )}
+          )} */}
+          {/* {showdetailsopen && (
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-3 sm:p-4">
+              <div
+                className={`w-full rounded-2xl bg-white shadow-2xl border border-gray-200 overflow-hidden ${
+                  String(
+                    detailsItem?.productorservicetype || ""
+                  ).toLowerCase() === "primaryproduct"
+                    ? "max-w-4xl"
+                    :haveprimaryProduct?"max-w-4xl": "max-w-5xl"
+                }`}
+              >
+                <div className="flex items-start justify-between px-4 py-3 sm:px-5 sm:py-3.5 border-b bg-[#1B2A4A] text-white">
+                  <div className="pr-3">
+                    <h2 className="text-sm font-bold leading-5">
+                      {String(
+                        detailsItem?.productorservicetype || ""
+                      ).toLowerCase() === "primaryproduct"
+                        ? "Primary Product Details"
+                        : "Additional Service Details"}
+                    </h2>
+                    <p className="text-[11px] text-blue-100 mt-0.5 leading-4">
+                      Fill the details for the selected item
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setdetailsopen(false)}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-white text-lg leading-none hover:bg-white/20"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="p-4 sm:p-5">
+                  {String(
+                    detailsItem?.productorservicetype || ""
+                  ).toLowerCase() === "primaryproduct" ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      <div>
+                        <label className="mb-1 block text-[11px] font-semibold text-gray-600">
+                          Name
+                        </label>
+                        <input
+                          type="text"
+                          name="name"
+                          readOnly
+                          value={detailsForm.name}
+                          onChange={handleDetailsChange}
+                          placeholder="List of Primary Products"
+                          className="h-10 w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 text-sm outline-none focus:border-[#1B2A4A] cursor-not-allowed"
+                        />
+                      </div>
+
+                      <div className="relative" ref={tradeDropdownRef}>
+                        <label className="mb-1 block text-[11px] font-semibold text-gray-600">
+                          Software Trade
+                        </label>
+
+                        <button
+                          type="button"
+                          onClick={() => setIsTradeOpen((prev) => !prev)}
+                          className="flex h-10 w-full items-center justify-between rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 text-sm text-left text-gray-700 outline-none transition-all focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/15"
+                        >
+                          <span
+                            className={
+                              detailsForm.softwareTrade
+                                ? "text-gray-800"
+                                : "text-gray-400"
+                            }
+                          >
+                            {detailsForm.softwareTrade ||
+                              "Select Software Trade"}
+                          </span>
+
+                          <svg
+                            className={`h-4 w-4 text-gray-500 transition-transform ${
+                              isTradeOpen ? "rotate-180" : ""
+                            }`}
+                            viewBox="0 0 20 20"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          >
+                            <path
+                              d="M5 7.5L10 12.5L15 7.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </button>
+
+                        {isTradeOpen && (
+                          <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+                            <div className="max-h-56 overflow-y-auto py-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setDetailsForm((prev) => ({
+                                    ...prev,
+                                    softwareTrade: ""
+                                  }))
+                                  setIsTradeOpen(false)
+                                }}
+                                className={`flex w-full items-center justify-between px-3 py-2 text-sm text-left transition-colors ${
+                                  !detailsForm.softwareTrade
+                                    ? "bg-[#1B2A4A]/8 text-[#1B2A4A] font-medium"
+                                    : "text-gray-700 hover:bg-gray-50"
+                                }`}
+                              >
+                                <span>Select Software Trade</span>
+                              </button>
+
+                              {softwareTrades.map((trade, index) => (
+                                <button
+                                  key={index}
+                                  type="button"
+                                  onClick={() => {
+                                    setDetailsForm((prev) => ({
+                                      ...prev,
+                                      softwareTrade: trade
+                                    }))
+                                    setIsTradeOpen(false)
+                                  }}
+                                  className={`flex w-full items-center justify-between px-3 py-2 text-sm text-left transition-colors ${
+                                    detailsForm.softwareTrade === trade
+                                      ? "bg-[#1B2A4A]/8 text-[#1B2A4A] font-medium"
+                                      : "text-gray-700 hover:bg-gray-50"
+                                  }`}
+                                >
+                                  <span>{trade}</span>
+
+                                  {detailsForm.softwareTrade === trade && (
+                                    <svg
+                                      className="h-4 w-4 text-[#1B2A4A]"
+                                      viewBox="0 0 20 20"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                    >
+                                      <path
+                                        d="M5 10.5L8.5 14L15 7.5"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                      />
+                                    </svg>
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-[11px] font-semibold text-gray-600">
+                          Application Date
+                        </label>
+                        <input
+                          type="date"
+                          name="applicationDate"
+                          value={detailsForm.applicationDate}
+                          onChange={handleDetailsChange}
+                          className="h-10 w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 text-sm outline-none focus:border-[#1B2A4A]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-[11px] font-semibold text-gray-600">
+                          Status
+                        </label>
+                        <select
+                          name="status"
+                          value={detailsForm.status}
+                          onChange={handleDetailsChange}
+                          className="h-10 w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 text-sm outline-none focus:border-[#1B2A4A]"
+                        >
+                          <option value="Running">Active</option>
+                          <option value="Deactive">DE active</option>
+                        </select>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="max-w-52">
+                        <label className="mb-1 block text-[11px] font-semibold text-gray-600 ">
+                          Product Name
+                        </label>
+                        <input
+                          type="text"
+                          name="productName"
+                          readOnly
+                          value={detailsForm.name}
+                          onChange={handleDetailsChange}
+                          placeholder="List of additional service"
+                          className="h-10 w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 text-sm outline-none cursor-not-allowed"
+                        />
+                      </div>
+
+                      {detailsForm?.taggeddata?.length ? (
+                        <div>
+                          <label className="mb-1.5 block text-[11px] font-semibold text-[#5d6983]">
+                            Tagged License Due Details
+                          </label>
+
+                          <div className="overflow-hidden rounded-lg border border-[#e7ebf4] bg-white">
+                            <div className="overflow-x-auto">
+                              <table className="min-w-[980px] w-full border-collapse table-fixed">
+                                <thead className="bg-[#f8fafc]">
+                                  <tr className="text-center">
+                                    <th className="w-[40px] border-b border-[#e7ebf4] px-2 py-2 text-[11px] font-semibold text-[#43506a]">
+                                      License Number
+                                    </th>
+                                    <th className="w-[30px] border-b border-[#e7ebf4] px-2 py-2 text-[11px] font-semibold text-[#43506a]">
+                                      No.Users
+                                    </th>
+                                    <th className="w-[40px] border-b border-[#e7ebf4] px-2 py-2 text-[11px] font-semibold text-[#43506a]">
+                                      Serial Number
+                                    </th>
+                                    {!haveprimaryProduct && (
+                                      <>
+                                        {" "}
+                                        <th className="w-[40px] border-b border-[#e7ebf4] px-2 py-2 text-[11px] font-semibold text-[#43506a]">
+                                          Lead Amount
+                                        </th>
+                                        <th className="w-[30px] border-b border-[#e7ebf4] px-2 py-2 text-[11px] font-semibold text-[#43506a]">
+                                          Lead Tax
+                                        </th>
+                                        <th className="w-[40px] border-b border-[#e7ebf4] px-2 py-2 text-[11px] font-semibold text-[#43506a]">
+                                          Discount Amt.
+                                        </th>
+                                      </>
+                                    )}
+
+                                    <th className="w-[50px] border-b border-[#e7ebf4] px-2 py-2 text-[11px] font-semibold text-[#43506a]">
+                                      Next Due
+                                    </th>
+
+                                    <th className="w-[40px] border-b border-[#e7ebf4] px-2 py-2 text-[11px] font-semibold text-[#43506a]">
+                                      Next Due Amt
+                                    </th>
+                                    <th className="w-[25px] border-b border-[#e7ebf4] px-2 py-2 text-[11px] font-semibold text-[#43506a]">
+                                      Due Tax
+                                    </th>
+                                  </tr>
+                                </thead>
+
+                                <tbody>
+                                  {detailsForm.taggeddata.map(
+                                    (tag, rowIndex) => (
+                                      <tr
+                                        key={`${tag?.licensenumber}-${rowIndex}`}
+                                        className="align-top"
+                                      >
+                                        <td className="border-b border-[#eef2f7] px-1 py-1">
+                                          <input
+                                            value={tag?.licensenumber || ""}
+                                            readOnly
+                                            className="h-8 w-full rounded-md border border-[#dfe5ee] bg-[#f3f6fb] px-2 text-[11px] text-[#1f2a3d] outline-none"
+                                          />
+                                        </td>
+                                        <td className="border-b border-[#eef2f7] px-1 py-1 text-center">
+                                          <input
+                                            type="number"
+                                            value={tag?.noofusers}
+                                            onChange={(e) => {
+                                              handleTaggedDueChange(
+                                                rowIndex,
+                                                e.target.value,
+                                                "noofusers",
+                                                null,
+                                                detailsForm?.productType
+                                              )
+                                            }}
+                                            onWheel={(e) =>
+                                              e.currentTarget.blur()
+                                            }
+                                            className="h-8 w-full rounded-md border border-[#dfe5ee] bg-white px-2 text-center text-[11px] text-[#1f2a3d] outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                          />
+                                        </td>
+
+                                        <td className="border-b border-[#eef2f7] px-1 py-1">
+                                          <input
+                                            type="number"
+                                            // readOnly
+                                            value={tag?.serialNumber || ""}
+                                            onChange={(e) => {
+                                              handleTaggedDueChange(
+                                                rowIndex,
+                                                e.target.value,
+                                                "serialNumber",
+                                                null,
+                                                detailsForm?.productType
+                                              )
+                                            }}
+                                            onWheel={(e) =>
+                                              e.currentTarget.blur()
+                                            }
+                                            className="h-8 w-full rounded-md border border-[#dfe5ee] bg-white px-2 text-right text-[11px] text-[#1f2a3d] outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                          />
+                                        </td>
+                                        {!haveprimaryProduct && (
+                                          <>
+                                            <td className="border-b border-[#eef2f7] px-1 py-1">
+                                              <div className="flex flex-col gap-1">
+                                                <input
+                                                  type="number"
+                                                  onWheel={(e) =>
+                                                    e.currentTarget.blur()
+                                                  }
+                                                  value={
+                                                    tag?.taxexclusiveAmount ||
+                                                    ""
+                                                  }
+                                                  onChange={(e) => {
+                                                    handleTaggedDueChange(
+                                                      rowIndex,
+                                                      e.target.value,
+                                                      "taxexclusiveAmount",
+                                                      tag?.originalHsn,
+                                                      detailsForm?.productType
+                                                    )
+                                                  }}
+                                                  className="h-8 w-full rounded-md border border-[#dfe5ee] bg-white pr-3 text-right text-[11px] outline-none  [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0"
+                                                />
+
+                                                <p className="text-[11px] text-gray-600 text-right font-medium">
+                                                  {Number(
+                                                    tag?.taxinclusiveamount || 0
+                                                  ).toFixed(2)}
+                                                </p>
+                                              </div>
+                                            </td>
+
+                                            <td className="border-b border-[#eef2f7] px-2 py-2 text-center">
+                                              <label className="inline-flex cursor-pointer items-center justify-center">
+                                                <input
+                                                  type="checkbox"
+                                                  checked={
+                                                    Number(tag?.leadTax || 0) >
+                                                    0
+                                                  }
+                                                  onChange={(e) => {
+                                                    handleTaggedDueChange(
+                                                      rowIndex,
+                                                      e.target.checked,
+                                                      "leadTax",
+                                                      tag?.leadTax,
+                                                      detailsForm?.productType
+                                                    )
+                                                  }}
+                                                  className="sr-only"
+                                                />
+
+                                                <span
+                                                  className={`flex h-6 w-6 items-center justify-center rounded-md border shadow-sm transition-all duration-200 ${
+                                                    Number(tag?.leadTax || 0) >
+                                                    0
+                                                      ? "border-[#1B2A4A] bg-[#1B2A4A] text-white"
+                                                      : "border-[#cfd8e3] bg-white text-transparent"
+                                                  }`}
+                                                >
+                                                  ✓
+                                                </span>
+                                              </label>
+                                            </td>
+                                            <td className="border-b border-[#eef2f7] px-1 py-1">
+                                              <input
+                                                type="number"
+                                                value={
+                                                  tag?.discountAmount || ""
+                                                }
+                                                onWheel={(e) =>
+                                                  e.currentTarget.blur()
+                                                }
+                                                onChange={(e) => {
+                                                  handleTaggedDueChange(
+                                                    rowIndex,
+                                                    e.target.value,
+                                                    "discountAmount",
+                                                    null,
+                                                    detailsForm?.productType
+                                                  )
+                                                }}
+                                                className="h-8 w-full rounded-md border border-[#dfe5ee] bg-white pr-3 text-right text-[11px] outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0"
+                                              />
+                                            </td>
+                                          </>
+                                        )}
+
+                                        <td className="border-b border-[#eef2f7] px-1 py-1">
+                                          <input
+                                            type="date"
+                                            min={today}
+                                            value={tag?.nextDue || ""}
+                                            onChange={(e) => {
+                                              const selectedDate =
+                                                e.target.value
+
+                                              if (
+                                                selectedDate &&
+                                                selectedDate < today
+                                              ) {
+                                                setwarningError((prev) => ({
+                                                  ...prev,
+                                                  nextduewarning: {
+                                                    ...(prev.nextduewarning ||
+                                                      {}),
+                                                    [rowIndex]:
+                                                      "Due date must be today or a future date."
+                                                  }
+                                                }))
+                                                return
+                                              }
+
+                                              setwarningError((prev) => ({
+                                                ...prev,
+                                                nextduewarning: {
+                                                  ...(prev.nextduewarning ||
+                                                    {}),
+                                                  [rowIndex]: ""
+                                                }
+                                              }))
+
+                                              handleTaggedDueChange(
+                                                rowIndex,
+                                                selectedDate,
+                                                "nextDue"
+                                              )
+                                            }}
+                                            className={`h-8 w-full rounded-md border bg-white px-2 text-[11px] text-[#1f2a3d] outline-none ${
+                                              warningErrors?.nextduewarning?.[
+                                                rowIndex
+                                              ]
+                                                ? "border-red-400"
+                                                : "border-[#dfe5ee] focus:border-[#1B2A4A]"
+                                            }`}
+                                          />
+
+                                          {warningErrors?.nextduewarning?.[
+                                            rowIndex
+                                          ] && (
+                                            <p className="mt-1 text-[10px] text-red-500 leading-4">
+                                              {
+                                                warningErrors.nextduewarning[
+                                                  rowIndex
+                                                ]
+                                              }
+                                            </p>
+                                          )}
+                                        </td>
+                                        <td className="border-b border-[#eef2f7] px-1 py-1">
+                                          <div className="flex flex-col gap-1">
+                                            <input
+                                              type="number"
+                                              onWheel={(e) =>
+                                                e.currentTarget.blur()
+                                              }
+                                              value={tag?.nextDueAmount || ""}
+                                              onChange={(e) => {
+                                                handleTaggedDueChange(
+                                                  rowIndex,
+                                                  e.target.value,
+                                                  "nextDueAmount",
+                                                  tag?.originalHsn,
+                                                  detailsForm?.productType
+                                                )
+                                              }}
+                                              className="h-8 w-full rounded-md border border-[#dfe5ee] bg-white pr-3 text-right text-[11px] outline-none  [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0"
+                                            />
+
+                                            <p className="text-[11px] text-gray-600 text-right font-medium">
+                                              {Number(
+                                                tag?.totalnextDueAmount || 0
+                                              ).toFixed(2)}
+                                            </p>
+                                          </div>
+                                        </td>
+
+                                        <td className="border-b border-[#eef2f7] px-2 py-2 text-center">
+                                          <label className="inline-flex cursor-pointer items-center justify-center">
+                                            <input
+                                              type="checkbox"
+                                              checked={
+                                                Number(tag?.nextDueTax || 0) > 0
+                                              }
+                                              onChange={(e) => {
+                                                handleTaggedDueChange(
+                                                  rowIndex,
+                                                  e.target.checked,
+                                                  "nextDueTax",
+                                                  tag?.nextDueTax,
+                                                  detailsForm?.productType
+                                                )
+                                              }}
+                                              className="sr-only"
+                                            />
+
+                                            <span
+                                              className={`flex h-6 w-6 items-center justify-center rounded-md border shadow-sm transition-all duration-200 ${
+                                                Number(tag?.nextDueTax || 0) > 0
+                                                  ? "border-[#1B2A4A] bg-[#1B2A4A] text-white"
+                                                  : "border-[#cfd8e3] bg-white text-transparent"
+                                              }`}
+                                            >
+                                              ✓
+                                            </span>
+                                          </label>
+                                        </td>
+                                      </tr>
+                                    )
+                                  )}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="max-w-sm">
+                          <label className="mb-1 block text-[11px] font-semibold text-gray-600">
+                            Next Due
+                          </label>
+                          <input
+                            type="date"
+                            name="nextDue"
+                            value={detailsForm.nextDue}
+                            onChange={handleDetailsChange}
+                            className="h-10 w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 text-sm outline-none focus:border-[#1B2A4A]"
+                          />
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 max-w-52">
+                        <div>
+                          <label className="mb-1 block text-[11px] font-semibold text-gray-600">
+                            Status
+                          </label>
+                          <select
+                            name="status"
+                            value={detailsForm.status}
+                            onChange={handleDetailsChange}
+                            className="h-10 w-full rounded-lg border border-gray-300 bg-[#EEF2F8] px-3 text-sm outline-none focus:border-[#1B2A4A]"
+                          >
+                            <option value="Running">Active</option>
+                            <option value="Deactive">DE active</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-end gap-2 px-4 py-3 sm:px-5 sm:py-4 border-t bg-gray-50">
+                  <button
+                    type="button"
+                    onClick={() => setdetailsopen(false)}
+                    className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDetailsSave}
+                    className="rounded-lg bg-[#1B2A4A] px-4 py-2 text-sm font-semibold text-white hover:bg-[#243660]"
+                  >
+                    Save Details
+                  </button>
+                </div>
+              </div>
+            </div>
+          )} */}
+{/* {showdetailsopen && (
+  <div className="fixed inset-0 z-[9999] bg-slate-950/50 backdrop-blur-[2px]">
+    <div className="flex min-h-dvh items-end justify-center p-0 sm:items-center sm:p-4">
+      <div
+        role="dialog"
+        aria-modal="true"
+        className={`flex h-[94dvh] w-full flex-col overflow-hidden border border-slate-200 bg-white shadow-2xl sm:h-auto sm:max-h-[92dvh] sm:rounded-2xl ${
+          String(detailsItem?.productorservicetype || "").toLowerCase() ===
+          "primaryproduct"
+            ? "sm:max-w-2xl"
+            : haveprimaryProduct
+              ? "sm:max-w-4xl"
+              : "sm:max-w-6xl"
+        }`}
+      >
+        <div className="sticky top-0 z-20 border-b border-slate-200 bg-[#1B2A4A] text-white">
+          <div className="flex items-start justify-between gap-3 px-4 py-3 sm:px-5">
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold leading-5 sm:text-base">
+                {String(detailsItem?.productorservicetype || "").toLowerCase() ===
+                "primaryproduct"
+                  ? "Primary Product Details"
+                  : "Additional Service Details"}
+              </h2>
+              <p className="mt-0.5 text-[11px] leading-4 text-slate-200">
+                Update the selected item details
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setdetailsopen(false)}
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-base text-white transition hover:bg-white/20"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto bg-slate-50">
+          <div className="space-y-4 p-3 sm:p-4">
+            {String(detailsItem?.productorservicetype || "").toLowerCase() ===
+            "primaryproduct" ? (
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="mb-3">
+                  <h3 className="text-sm font-semibold text-slate-800">
+                    Product Information
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                      Name
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      readOnly
+                      value={detailsForm.name}
+                      onChange={handleDetailsChange}
+                      placeholder="List of Primary Products"
+                      className="h-9 w-full rounded-lg border border-slate-200 bg-slate-100 px-2.5 text-sm text-slate-700 outline-none"
+                    />
+                  </div>
+
+                  <div className="relative" ref={tradeDropdownRef}>
+                    <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                      Software Trade
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsTradeOpen((prev) => !prev)}
+                      className="flex h-9 w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-2.5 text-left text-sm text-slate-700 shadow-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                    >
+                      <span
+                        className={
+                          detailsForm.softwareTrade
+                            ? "text-slate-800"
+                            : "text-slate-400"
+                        }
+                      >
+                        {detailsForm.softwareTrade || "Select Software Trade"}
+                      </span>
+
+                      <svg
+                        className={`h-4 w-4 text-slate-500 transition-transform ${
+                          isTradeOpen ? "rotate-180" : ""
+                        }`}
+                        viewBox="0 0 20 20"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path
+                          d="M5 7.5L10 12.5L15 7.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+
+                    {isTradeOpen && (
+                      <div className="absolute z-30 mt-1.5 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+                        <div className="max-h-56 overflow-y-auto p-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDetailsForm((prev) => ({
+                                ...prev,
+                                softwareTrade: ""
+                              }))
+                              setIsTradeOpen(false)
+                            }}
+                            className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-left transition ${
+                              !detailsForm.softwareTrade
+                                ? "bg-[#1B2A4A]/10 font-medium text-[#1B2A4A]"
+                                : "text-slate-700 hover:bg-slate-50"
+                            }`}
+                          >
+                            <span>Select Software Trade</span>
+                          </button>
+
+                          {softwareTrades.map((trade, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => {
+                                setDetailsForm((prev) => ({
+                                  ...prev,
+                                  softwareTrade: trade
+                                }))
+                                setIsTradeOpen(false)
+                              }}
+                              className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-left transition ${
+                                detailsForm.softwareTrade === trade
+                                  ? "bg-[#1B2A4A]/10 font-medium text-[#1B2A4A]"
+                                  : "text-slate-700 hover:bg-slate-50"
+                              }`}
+                            >
+                              <span>{trade}</span>
+
+                              {detailsForm.softwareTrade === trade && (
+                                <svg
+                                  className="h-4 w-4 text-[#1B2A4A]"
+                                  viewBox="0 0 20 20"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                >
+                                  <path
+                                    d="M5 10.5L8.5 14L15 7.5"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                </svg>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                      Application Date
+                    </label>
+                    <input
+                      type="date"
+                      name="applicationDate"
+                      value={detailsForm.applicationDate}
+                      onChange={handleDetailsChange}
+                      className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                      Status
+                    </label>
+                    <select
+                      name="status"
+                      value={detailsForm.status}
+                      onChange={handleDetailsChange}
+                      className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                    >
+                      <option value="Running">Active</option>
+                      <option value="Deactive">DE active</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div
+                  className={`grid grid-cols-1 gap-3 ${
+                    detailsForm?.taggeddata?.length > 0
+                      ? "md:grid-cols-[minmax(0,1.6fr)_minmax(180px,0.8fr)]"
+                      : "md:grid-cols-1"
+                  }`}
+                >
+                  <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                    <h3 className="mb-3 text-sm font-semibold text-slate-800">
+                      Service Information
+                    </h3>
+
+                    <div className={`grid grid-cols-1 gap-3 ${haveprimaryProduct ? "sm:grid-cols-2" : ""}`}>
+                      <div className={haveprimaryProduct ? "sm:col-span-2" : ""}>
+                        <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                          Product Name
+                        </label>
+                        <input
+                          type="text"
+                          name="productName"
+                          readOnly
+                          value={detailsForm.name}
+                          onChange={handleDetailsChange}
+                          placeholder="List of additional service"
+                          className="h-9 w-full rounded-lg border border-slate-200 bg-slate-100 px-2.5 text-sm text-slate-700 outline-none"
+                        />
+                      </div>
+
+                      {!detailsForm?.taggeddata?.length && (
+                        <div>
+                          <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                            Next Due
+                          </label>
+                          <input
+                            type="date"
+                            name="nextDue"
+                            value={detailsForm.nextDue}
+                            onChange={handleDetailsChange}
+                            className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                          />
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                          Status
+                        </label>
+                        <select
+                          name="status"
+                          value={detailsForm.status}
+                          onChange={handleDetailsChange}
+                          className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                        >
+                          <option value="Running">Active</option>
+                          <option value="Deactive">DE active</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {detailsForm?.taggeddata?.length > 0 && (
+                    <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                      <h3 className="mb-3 text-sm font-semibold text-slate-800">
+                        Quick Summary
+                      </h3>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                            Tagged
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-slate-800">
+                            {detailsForm.taggeddata.length}
+                          </p>
+                        </div>
+
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                            Type
+                          </p>
+                          <p className="mt-1 text-[11px] leading-4 font-semibold break-words text-slate-800">
+                            {detailsForm?.productType || "-"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {detailsForm?.taggeddata?.length ? (
+                  <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div className="border-b border-slate-200 px-3 py-3">
+                      <h3 className="text-sm font-semibold text-slate-800">
+                        Tagged License Due Details
+                      </h3>
+                      <p className="mt-0.5 text-[11px] text-slate-500">
+                        Compact editing layout without horizontal scrolling
+                      </p>
+                    </div>
+
+                    <div className="hidden 2xl:block overflow-x-auto">
+                      <div
+                        className={`min-w-fit grid gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-slate-500 ${
+                          !haveprimaryProduct
+                            ? "grid-cols-[170px_64px_78px_92px_44px_78px_108px_92px_44px]"
+                            : "grid-cols-[180px_64px_78px_108px_92px_44px]"
+                        }`}
+                      >
+                        <div>License Number</div>
+                        <div>No.Users</div>
+                        <div>Serial No</div>
+                        {!haveprimaryProduct && (
+                          <>
+                            <div>Lead Amount</div>
+                            <div>Lead Tax</div>
+                            <div>Discount</div>
+                          </>
+                        )}
+                        <div>Next Due</div>
+                        <div>Next Due Amt</div>
+                        <div>Due Tax</div>
+                      </div>
+
+                      <div className="divide-y divide-slate-100">
+                        {detailsForm.taggeddata.map((tag, rowIndex) => (
+                          <div
+                            key={`${tag?.licensenumber}-${rowIndex}`}
+                            className={`min-w-fit grid gap-2 px-3 py-2 ${
+                              !haveprimaryProduct
+                                ? "grid-cols-[170px_64px_78px_92px_44px_78px_108px_92px_44px]"
+                                : "grid-cols-[180px_64px_78px_108px_92px_44px]"
+                            }`}
+                          >
+                            <input
+                              value={tag?.licensenumber || ""}
+                              readOnly
+                              className="h-8 w-full rounded-md border border-slate-200 bg-slate-100 px-2 text-[11px] text-slate-700 outline-none"
+                            />
+
+                            <input
+                              type="number"
+                              value={tag?.noofusers}
+                              onChange={(e) => {
+                                handleTaggedDueChange(
+                                  rowIndex,
+                                  e.target.value,
+                                  "noofusers",
+                                  null,
+                                  detailsForm?.productType
+                                )
+                              }}
+                              onWheel={(e) => e.currentTarget.blur()}
+                              className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-center text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            />
+
+                            <input
+                              type="number"
+                              value={tag?.serialNumber || ""}
+                              onChange={(e) => {
+                                handleTaggedDueChange(
+                                  rowIndex,
+                                  e.target.value,
+                                  "serialNumber",
+                                  null,
+                                  detailsForm?.productType
+                                )
+                              }}
+                              onWheel={(e) => e.currentTarget.blur()}
+                              className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            />
+
+                            {!haveprimaryProduct && (
+                              <>
+                                <div className="space-y-0.5">
+                                  <input
+                                    type="number"
+                                    onWheel={(e) => e.currentTarget.blur()}
+                                    value={tag?.taxexclusiveAmount || ""}
+                                    onChange={(e) => {
+                                      handleTaggedDueChange(
+                                        rowIndex,
+                                        e.target.value,
+                                        "taxexclusiveAmount",
+                                        tag?.originalHsn,
+                                        detailsForm?.productType
+                                      )
+                                    }}
+                                    className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                  />
+                                  <p className="text-right text-[10px] text-slate-500">
+                                    {Number(tag?.taxinclusiveamount || 0).toFixed(2)}
+                                  </p>
+                                </div>
+
+                                <div className="flex items-center justify-center pt-1">
+                                  <label className="inline-flex cursor-pointer items-center justify-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={Number(tag?.leadTax || 0) > 0}
+                                      onChange={(e) => {
+                                        handleTaggedDueChange(
+                                          rowIndex,
+                                          e.target.checked,
+                                          "leadTax",
+                                          tag?.leadTax,
+                                          detailsForm?.productType
+                                        )
+                                      }}
+                                      className="sr-only"
+                                    />
+                                    <span
+                                      className={`flex h-5 w-5 items-center justify-center rounded border text-[11px] shadow-sm transition-all duration-200 ${
+                                        Number(tag?.leadTax || 0) > 0
+                                          ? "border-[#1B2A4A] bg-[#1B2A4A] text-white"
+                                          : "border-[#cfd8e3] bg-white text-transparent"
+                                      }`}
+                                    >
+                                      ✓
+                                    </span>
+                                  </label>
+                                </div>
+
+                                <input
+                                  type="number"
+                                  value={tag?.discountAmount || ""}
+                                  onWheel={(e) => e.currentTarget.blur()}
+                                  onChange={(e) => {
+                                    handleTaggedDueChange(
+                                      rowIndex,
+                                      e.target.value,
+                                      "discountAmount",
+                                      null,
+                                      detailsForm?.productType
+                                    )
+                                  }}
+                                  className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                />
+                              </>
+                            )}
+
+                            <div>
+                              <input
+                                type="date"
+                                min={today}
+                                value={tag?.nextDue || ""}
+                                onChange={(e) => {
+                                  const selectedDate = e.target.value
+
+                                  if (selectedDate && selectedDate < today) {
+                                    setwarningError((prev) => ({
+                                      ...prev,
+                                      nextduewarning: {
+                                        ...(prev.nextduewarning || {}),
+                                        [rowIndex]:
+                                          "Due date must be today or a future date."
+                                      }
+                                    }))
+                                    return
+                                  }
+
+                                  setwarningError((prev) => ({
+                                    ...prev,
+                                    nextduewarning: {
+                                      ...(prev.nextduewarning || {}),
+                                      [rowIndex]: ""
+                                    }
+                                  }))
+
+                                  handleTaggedDueChange(
+                                    rowIndex,
+                                    selectedDate,
+                                    "nextDue"
+                                  )
+                                }}
+                                className={`h-8 w-full rounded-md border bg-white px-2 text-[11px] text-slate-700 outline-none transition ${
+                                  warningErrors?.nextduewarning?.[rowIndex]
+                                    ? "border-red-400 focus:ring-1 focus:ring-red-100"
+                                    : "border-slate-200 focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10"
+                                }`}
+                              />
+                              {warningErrors?.nextduewarning?.[rowIndex] && (
+                                <p className="mt-0.5 text-[10px] leading-4 text-red-500">
+                                  {warningErrors.nextduewarning[rowIndex]}
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="space-y-0.5">
+                              <input
+                                type="number"
+                                onWheel={(e) => e.currentTarget.blur()}
+                                value={tag?.nextDueAmount || ""}
+                                onChange={(e) => {
+                                  handleTaggedDueChange(
+                                    rowIndex,
+                                    e.target.value,
+                                    "nextDueAmount",
+                                    tag?.originalHsn,
+                                    detailsForm?.productType
+                                  )
+                                }}
+                                className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              />
+                              <p className="text-right text-[10px] text-slate-500">
+                                {Number(tag?.totalnextDueAmount || 0).toFixed(2)}
+                              </p>
+                            </div>
+
+                            <div className="flex items-center justify-center pt-1">
+                              <label className="inline-flex cursor-pointer items-center justify-center">
+                                <input
+                                  type="checkbox"
+                                  checked={Number(tag?.nextDueTax || 0) > 0}
+                                  onChange={(e) => {
+                                    handleTaggedDueChange(
+                                      rowIndex,
+                                      e.target.checked,
+                                      "nextDueTax",
+                                      tag?.nextDueTax,
+                                      detailsForm?.productType
+                                    )
+                                  }}
+                                  className="sr-only"
+                                />
+                                <span
+                                  className={`flex h-5 w-5 items-center justify-center rounded border text-[11px] shadow-sm transition-all duration-200 ${
+                                    Number(tag?.nextDueTax || 0) > 0
+                                      ? "border-[#1B2A4A] bg-[#1B2A4A] text-white"
+                                      : "border-[#cfd8e3] bg-white text-transparent"
+                                  }`}
+                                >
+                                  ✓
+                                </span>
+                              </label>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="p-3 2xl:hidden">
+                      <div className="space-y-3">
+                        {detailsForm.taggeddata.map((tag, rowIndex) => (
+                          <div
+                            key={`${tag?.licensenumber}-${rowIndex}`}
+                            className="rounded-xl border border-slate-200 bg-slate-50 p-3"
+                          >
+                            <div className="mb-3 flex items-center justify-between border-b border-slate-200 pb-2">
+                              <div>
+                                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                                  License Number
+                                </p>
+                                <p className="mt-0.5 text-sm font-semibold text-slate-800">
+                                  {tag?.licensenumber || "-"}
+                                </p>
+                              </div>
+
+                              <span className="rounded-full bg-white px-2 py-1 text-[10px] font-medium text-slate-500 shadow-sm">
+                                Row {rowIndex + 1}
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                              <div>
+                                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                                  No. Users
+                                </label>
+                                <input
+                                  type="number"
+                                  value={tag?.noofusers}
+                                  onChange={(e) => {
+                                    handleTaggedDueChange(
+                                      rowIndex,
+                                      e.target.value,
+                                      "noofusers",
+                                      null,
+                                      detailsForm?.productType
+                                    )
+                                  }}
+                                  onWheel={(e) => e.currentTarget.blur()}
+                                  className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                                  Serial Number
+                                </label>
+                                <input
+                                  type="number"
+                                  value={tag?.serialNumber || ""}
+                                  onChange={(e) => {
+                                    handleTaggedDueChange(
+                                      rowIndex,
+                                      e.target.value,
+                                      "serialNumber",
+                                      null,
+                                      detailsForm?.productType
+                                    )
+                                  }}
+                                  onWheel={(e) => e.currentTarget.blur()}
+                                  className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                />
+                              </div>
+
+                              {!haveprimaryProduct && (
+                                <div>
+                                  <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                                    Lead Amount
+                                  </label>
+                                  <input
+                                    type="number"
+                                    value={tag?.taxexclusiveAmount || ""}
+                                    onWheel={(e) => e.currentTarget.blur()}
+                                    onChange={(e) => {
+                                      handleTaggedDueChange(
+                                        rowIndex,
+                                        e.target.value,
+                                        "taxexclusiveAmount",
+                                        tag?.originalHsn,
+                                        detailsForm?.productType
+                                      )
+                                    }}
+                                    className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                  />
+                                  <p className="mt-1 text-right text-[10px] text-slate-500">
+                                    Total: {Number(tag?.taxinclusiveamount || 0).toFixed(2)}
+                                  </p>
+                                </div>
+                              )}
+
+                              {!haveprimaryProduct && (
+                                <div>
+                                  <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                                    Discount Amount
+                                  </label>
+                                  <input
+                                    type="number"
+                                    value={tag?.discountAmount || ""}
+                                    onWheel={(e) => e.currentTarget.blur()}
+                                    onChange={(e) => {
+                                      handleTaggedDueChange(
+                                        rowIndex,
+                                        e.target.value,
+                                        "discountAmount",
+                                        null,
+                                        detailsForm?.productType
+                                      )
+                                    }}
+                                    className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                  />
+                                </div>
+                              )}
+
+                              <div>
+                                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                                  Next Due
+                                </label>
+                                <input
+                                  type="date"
+                                  min={today}
+                                  value={tag?.nextDue || ""}
+                                  onChange={(e) => {
+                                    const selectedDate = e.target.value
+
+                                    if (selectedDate && selectedDate < today) {
+                                      setwarningError((prev) => ({
+                                        ...prev,
+                                        nextduewarning: {
+                                          ...(prev.nextduewarning || {}),
+                                          [rowIndex]:
+                                            "Due date must be today or a future date."
+                                        }
+                                      }))
+                                      return
+                                    }
+
+                                    setwarningError((prev) => ({
+                                      ...prev,
+                                      nextduewarning: {
+                                        ...(prev.nextduewarning || {}),
+                                        [rowIndex]: ""
+                                      }
+                                    }))
+
+                                    handleTaggedDueChange(
+                                      rowIndex,
+                                      selectedDate,
+                                      "nextDue"
+                                    )
+                                  }}
+                                  className={`h-9 w-full rounded-lg border bg-white px-2.5 text-sm text-slate-700 outline-none transition ${
+                                    warningErrors?.nextduewarning?.[rowIndex]
+                                      ? "border-red-400 focus:ring-2 focus:ring-red-100"
+                                      : "border-slate-200 focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                                  }`}
+                                />
+                                {warningErrors?.nextduewarning?.[rowIndex] && (
+                                  <p className="mt-1 text-[10px] text-red-500">
+                                    {warningErrors.nextduewarning[rowIndex]}
+                                  </p>
+                                )}
+                              </div>
+
+                              <div>
+                                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                                  Next Due Amount
+                                </label>
+                                <input
+                                  type="number"
+                                  value={tag?.nextDueAmount || ""}
+                                  onWheel={(e) => e.currentTarget.blur()}
+                                  onChange={(e) => {
+                                    handleTaggedDueChange(
+                                      rowIndex,
+                                      e.target.value,
+                                      "nextDueAmount",
+                                      tag?.originalHsn,
+                                      detailsForm?.productType
+                                    )
+                                  }}
+                                  className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                />
+                                <p className="mt-1 text-right text-[10px] text-slate-500">
+                                  Total: {Number(tag?.totalnextDueAmount || 0).toFixed(2)}
+                                </p>
+                              </div>
+
+                              {!haveprimaryProduct && (
+                                <div className="lg:col-span-3 sm:col-span-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                                        Lead Tax
+                                      </p>
+                                      <p className="mt-0.5 text-[11px] text-slate-500">
+                                        Apply tax to lead amount
+                                      </p>
+                                    </div>
+
+                                    <label className="inline-flex cursor-pointer items-center justify-center">
+                                      <input
+                                        type="checkbox"
+                                        checked={Number(tag?.leadTax || 0) > 0}
+                                        onChange={(e) => {
+                                          handleTaggedDueChange(
+                                            rowIndex,
+                                            e.target.checked,
+                                            "leadTax",
+                                            tag?.leadTax,
+                                            detailsForm?.productType
+                                          )
+                                        }}
+                                        className="sr-only"
+                                      />
+                                      <span
+                                        className={`flex h-5 w-5 items-center justify-center rounded border text-[11px] shadow-sm transition-all duration-200 ${
+                                          Number(tag?.leadTax || 0) > 0
+                                            ? "border-[#1B2A4A] bg-[#1B2A4A] text-white"
+                                            : "border-[#cfd8e3] bg-white text-transparent"
+                                        }`}
+                                      >
+                                        ✓
+                                      </span>
+                                    </label>
+                                  </div>
+                                </div>
+                              )}
+
+                              <div className={`${!haveprimaryProduct ? "lg:col-span-3 sm:col-span-2" : "lg:col-span-3 sm:col-span-2"} rounded-lg border border-slate-200 bg-white px-3 py-2`}>
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                                      Due Tax
+                                    </p>
+                                    <p className="mt-0.5 text-[11px] text-slate-500">
+                                      Apply tax to next due amount
+                                    </p>
+                                  </div>
+
+                                  <label className="inline-flex cursor-pointer items-center justify-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={Number(tag?.nextDueTax || 0) > 0}
+                                      onChange={(e) => {
+                                        handleTaggedDueChange(
+                                          rowIndex,
+                                          e.target.checked,
+                                          "nextDueTax",
+                                          tag?.nextDueTax,
+                                          detailsForm?.productType
+                                        )
+                                      }}
+                                      className="sr-only"
+                                    />
+                                    <span
+                                      className={`flex h-5 w-5 items-center justify-center rounded border text-[11px] shadow-sm transition-all duration-200 ${
+                                        Number(tag?.nextDueTax || 0) > 0
+                                          ? "border-[#1B2A4A] bg-[#1B2A4A] text-white"
+                                          : "border-[#cfd8e3] bg-white text-transparent"
+                                      }`}
+                                    >
+                                      ✓
+                                    </span>
+                                  </label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <h3 className="text-sm font-semibold text-slate-800">
+                      Additional Service Details
+                    </h3>
+                    <p className="mt-1 text-[11px] text-slate-500">
+                      No tagged license rows are available for this item.
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="sticky bottom-0 border-t border-slate-200 bg-white px-4 py-3 sm:px-5">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={() => setdetailsopen(false)}
+              className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDetailsSave}
+              className="inline-flex h-9 items-center justify-center rounded-lg bg-[#1B2A4A] px-4 text-sm font-semibold text-white transition hover:bg-[#243660]"
+            >
+              Save Details
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)} */}
+{/* {showdetailsopen && (
+  <div className="fixed inset-0 z-[9999] bg-slate-950/50 backdrop-blur-[2px]">
+    <div className="flex min-h-dvh items-end justify-center p-0 sm:items-center sm:p-4">
+      <div
+        role="dialog"
+        aria-modal="true"
+        className={`flex h-[94dvh] w-full flex-col overflow-hidden border border-slate-200 bg-white shadow-2xl sm:h-auto sm:max-h-[92dvh] sm:rounded-2xl ${
+          String(detailsItem?.productorservicetype || "").toLowerCase() ===
+          "primaryproduct"
+            ? "sm:max-w-2xl"
+            : haveprimaryProduct
+              ? "sm:max-w-5xl"
+              : "sm:max-w-7xl"
+        }`}
+      >
+        <div className="sticky top-0 z-20 border-b border-slate-200 bg-[#1B2A4A] text-white">
+          <div className="flex items-start justify-between gap-3 px-4 py-3 sm:px-5">
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold leading-5 sm:text-base">
+                {String(detailsItem?.productorservicetype || "").toLowerCase() ===
+                "primaryproduct"
+                  ? "Primary Product Details"
+                  : "Additional Service Details"}
+              </h2>
+              <p className="mt-0.5 text-[11px] leading-4 text-slate-200">
+                Update the selected item details
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setdetailsopen(false)}
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-base text-white transition hover:bg-white/20"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto bg-slate-50">
+          <div className="space-y-4 p-3 sm:p-4">
+            {String(detailsItem?.productorservicetype || "").toLowerCase() ===
+            "primaryproduct" ? (
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="mb-3">
+                  <h3 className="text-sm font-semibold text-slate-800">
+                    Product Information
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                      Name
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      readOnly
+                      value={detailsForm.name}
+                      onChange={handleDetailsChange}
+                      placeholder="List of Primary Products"
+                      className="h-9 w-full rounded-lg border border-slate-200 bg-slate-100 px-2.5 text-sm text-slate-700 outline-none"
+                    />
+                  </div>
+
+                  <div className="relative" ref={tradeDropdownRef}>
+                    <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                      Software Trade
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsTradeOpen((prev) => !prev)}
+                      className="flex h-9 w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-2.5 text-left text-sm text-slate-700 shadow-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                    >
+                      <span
+                        className={
+                          detailsForm.softwareTrade
+                            ? "text-slate-800"
+                            : "text-slate-400"
+                        }
+                      >
+                        {detailsForm.softwareTrade || "Select Software Trade"}
+                      </span>
+
+                      <svg
+                        className={`h-4 w-4 text-slate-500 transition-transform ${
+                          isTradeOpen ? "rotate-180" : ""
+                        }`}
+                        viewBox="0 0 20 20"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path
+                          d="M5 7.5L10 12.5L15 7.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+
+                    {isTradeOpen && (
+                      <div className="absolute z-30 mt-1.5 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+                        <div className="max-h-56 overflow-y-auto p-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDetailsForm((prev) => ({
+                                ...prev,
+                                softwareTrade: ""
+                              }))
+                              setIsTradeOpen(false)
+                            }}
+                            className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-left transition ${
+                              !detailsForm.softwareTrade
+                                ? "bg-[#1B2A4A]/10 font-medium text-[#1B2A4A]"
+                                : "text-slate-700 hover:bg-slate-50"
+                            }`}
+                          >
+                            <span>Select Software Trade</span>
+                          </button>
+
+                          {softwareTrades.map((trade, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => {
+                                setDetailsForm((prev) => ({
+                                  ...prev,
+                                  softwareTrade: trade
+                                }))
+                                setIsTradeOpen(false)
+                              }}
+                              className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-left transition ${
+                                detailsForm.softwareTrade === trade
+                                  ? "bg-[#1B2A4A]/10 font-medium text-[#1B2A4A]"
+                                  : "text-slate-700 hover:bg-slate-50"
+                              }`}
+                            >
+                              <span>{trade}</span>
+
+                              {detailsForm.softwareTrade === trade && (
+                                <svg
+                                  className="h-4 w-4 text-[#1B2A4A]"
+                                  viewBox="0 0 20 20"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                >
+                                  <path
+                                    d="M5 10.5L8.5 14L15 7.5"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                </svg>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                      Application Date
+                    </label>
+                    <input
+                      type="date"
+                      name="applicationDate"
+                      value={detailsForm.applicationDate}
+                      onChange={handleDetailsChange}
+                      className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                      Status
+                    </label>
+                    <select
+                      name="status"
+                      value={detailsForm.status}
+                      onChange={handleDetailsChange}
+                      className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                    >
+                      <option value="Running">Active</option>
+                      <option value="Deactive">DE active</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div
+                  className={`grid grid-cols-1 gap-3 ${
+                    detailsForm?.taggeddata?.length > 0
+                      ? "lg:grid-cols-[minmax(0,1fr)_220px]"
+                      : "lg:grid-cols-1"
+                  }`}
+                >
+                  <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                    <h3 className="mb-3 text-sm font-semibold text-slate-800">
+                      Service Information
+                    </h3>
+
+                    <div className={`grid grid-cols-1 gap-3 ${haveprimaryProduct ? "sm:grid-cols-2" : ""}`}>
+                      <div className={haveprimaryProduct ? "sm:col-span-2" : ""}>
+                        <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                          Product Name
+                        </label>
+                        <input
+                          type="text"
+                          name="productName"
+                          readOnly
+                          value={detailsForm.name}
+                          onChange={handleDetailsChange}
+                          placeholder="List of additional service"
+                          className="h-9 w-full rounded-lg border border-slate-200 bg-slate-100 px-2.5 text-sm text-slate-700 outline-none"
+                        />
+                      </div>
+
+                      {!detailsForm?.taggeddata?.length && (
+                        <div>
+                          <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                            Next Due
+                          </label>
+                          <input
+                            type="date"
+                            name="nextDue"
+                            value={detailsForm.nextDue}
+                            onChange={handleDetailsChange}
+                            className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                          />
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                          Status
+                        </label>
+                        <select
+                          name="status"
+                          value={detailsForm.status}
+                          onChange={handleDetailsChange}
+                          className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                        >
+                          <option value="Running">Active</option>
+                          <option value="Deactive">DE active</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {detailsForm?.taggeddata?.length > 0 && (
+                    <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                      <h3 className="mb-3 text-sm font-semibold text-slate-800">
+                        Quick Summary
+                      </h3>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                            Tagged
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-slate-800">
+                            {detailsForm.taggeddata.length}
+                          </p>
+                        </div>
+
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                            Type
+                          </p>
+                          <p className="mt-1 break-words text-[11px] font-semibold text-slate-800">
+                            {detailsForm?.productType || "-"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {detailsForm?.taggeddata?.length ? (
+                  <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div className="border-b border-slate-200 px-3 py-3">
+                      <h3 className="text-sm font-semibold text-slate-800">
+                        Tagged License Due Details
+                      </h3>
+                      <p className="mt-0.5 text-[11px] text-slate-500">
+                        Editable table layout
+                      </p>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full table-fixed border-collapse">
+                        <colgroup>
+                          {!haveprimaryProduct ? (
+                            <>
+                              <col className="w-[150px]" />
+                              <col className="w-[72px]" />
+                              <col className="w-[84px]" />
+                              <col className="w-[110px]" />
+                              <col className="w-[70px]" />
+                              <col className="w-[95px]" />
+                              <col className="w-[130px]" />
+                              <col className="w-[110px]" />
+                              <col className="w-[70px]" />
+                            </>
+                          ) : (
+                            <>
+                              <col className="w-[180px]" />
+                              <col className="w-[90px]" />
+                              <col className="w-[100px]" />
+                              <col className="w-[150px]" />
+                              <col className="w-[120px]" />
+                              <col className="w-[80px]" />
+                            </>
+                          )}
+                        </colgroup>
+
+                        <thead className="bg-slate-50">
+                          <tr className="border-b border-slate-200 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                            <th className="px-3 py-2 text-left">License Number</th>
+                            <th className="px-2 py-2 text-center">No.Users</th>
+                            <th className="px-2 py-2 text-center">Serial No</th>
+
+                            {!haveprimaryProduct && (
+                              <>
+                                <th className="px-2 py-2 text-right">Lead Amount</th>
+                                <th className="px-2 py-2 text-center">Lead Tax</th>
+                                <th className="px-2 py-2 text-right">Discount</th>
+                              </>
+                            )}
+
+                            <th className="px-2 py-2 text-center">Next Due</th>
+                            <th className="px-2 py-2 text-right">Next Due Amt</th>
+                            <th className="px-2 py-2 text-center">Due Tax</th>
+                          </tr>
+                        </thead>
+
+                        <tbody className="divide-y divide-slate-100">
+                          {detailsForm.taggeddata.map((tag, rowIndex) => (
+                            <tr
+                              key={`${tag?.licensenumber}-${rowIndex}`}
+                              className="align-top"
+                            >
+                              <td className="px-3 py-2">
+                                <input
+                                  value={tag?.licensenumber || ""}
+                                  readOnly
+                                  className="h-8 w-full rounded-md border border-slate-200 bg-slate-100 px-2 text-[11px] text-slate-700 outline-none"
+                                />
+                              </td>
+
+                              <td className="px-2 py-2">
+                                <input
+                                  type="number"
+                                  value={tag?.noofusers ?? ""}
+                                  onChange={(e) => {
+                                    handleTaggedDueChange(
+                                      rowIndex,
+                                      e.target.value,
+                                      "noofusers",
+                                      null,
+                                      detailsForm?.productType
+                                    )
+                                  }}
+                                  onWheel={(e) => e.currentTarget.blur()}
+                                  className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-center text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                />
+                              </td>
+
+                              <td className="px-2 py-2">
+                                <input
+                                  type="number"
+                                  value={tag?.serialNumber || ""}
+                                  onChange={(e) => {
+                                    handleTaggedDueChange(
+                                      rowIndex,
+                                      e.target.value,
+                                      "serialNumber",
+                                      null,
+                                      detailsForm?.productType
+                                    )
+                                  }}
+                                  onWheel={(e) => e.currentTarget.blur()}
+                                  className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                />
+                              </td>
+
+                              {!haveprimaryProduct && (
+                                <>
+                                  <td className="px-2 py-2">
+                                    <div className="space-y-0.5">
+                                      <input
+                                        type="number"
+                                        value={tag?.taxexclusiveAmount || ""}
+                                        onWheel={(e) => e.currentTarget.blur()}
+                                        onChange={(e) => {
+                                          handleTaggedDueChange(
+                                            rowIndex,
+                                            e.target.value,
+                                            "taxexclusiveAmount",
+                                            tag?.originalHsn,
+                                            detailsForm?.productType
+                                          )
+                                        }}
+                                        className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                      />
+                                      <p className="text-right text-[10px] text-slate-500">
+                                        {Number(tag?.taxinclusiveamount || 0).toFixed(2)}
+                                      </p>
+                                    </div>
+                                  </td>
+
+                                  <td className="px-2 py-2">
+                                    <div className="flex justify-center pt-1">
+                                      <label className="inline-flex cursor-pointer items-center justify-center">
+                                        <input
+                                          type="checkbox"
+                                          checked={Number(tag?.leadTax || 0) > 0}
+                                          onChange={(e) => {
+                                            handleTaggedDueChange(
+                                              rowIndex,
+                                              e.target.checked,
+                                              "leadTax",
+                                              tag?.leadTax,
+                                              detailsForm?.productType
+                                            )
+                                          }}
+                                          className="sr-only"
+                                        />
+                                        <span
+                                          className={`flex h-5 w-5 items-center justify-center rounded border text-[11px] shadow-sm transition-all duration-200 ${
+                                            Number(tag?.leadTax || 0) > 0
+                                              ? "border-[#1B2A4A] bg-[#1B2A4A] text-white"
+                                              : "border-[#cfd8e3] bg-white text-transparent"
+                                          }`}
+                                        >
+                                          ✓
+                                        </span>
+                                      </label>
+                                    </div>
+                                  </td>
+
+                                  <td className="px-2 py-2">
+                                    <input
+                                      type="number"
+                                      value={tag?.discountAmount || ""}
+                                      onWheel={(e) => e.currentTarget.blur()}
+                                      onChange={(e) => {
+                                        handleTaggedDueChange(
+                                          rowIndex,
+                                          e.target.value,
+                                          "discountAmount",
+                                          null,
+                                          detailsForm?.productType
+                                        )
+                                      }}
+                                      className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    />
+                                  </td>
+                                </>
+                              )}
+
+                              <td className="px-2 py-2">
+                                <input
+                                  type="date"
+                                  min={today}
+                                  value={tag?.nextDue || ""}
+                                  onChange={(e) => {
+                                    const selectedDate = e.target.value
+
+                                    if (selectedDate && selectedDate < today) {
+                                      setwarningError((prev) => ({
+                                        ...prev,
+                                        nextduewarning: {
+                                          ...(prev.nextduewarning || {}),
+                                          [rowIndex]:
+                                            "Due date must be today or a future date."
+                                        }
+                                      }))
+                                      return
+                                    }
+
+                                    setwarningError((prev) => ({
+                                      ...prev,
+                                      nextduewarning: {
+                                        ...(prev.nextduewarning || {}),
+                                        [rowIndex]: ""
+                                      }
+                                    }))
+
+                                    handleTaggedDueChange(
+                                      rowIndex,
+                                      selectedDate,
+                                      "nextDue"
+                                    )
+                                  }}
+                                  className={`h-8 w-full rounded-md border bg-white px-2 text-[11px] text-slate-700 outline-none transition ${
+                                    warningErrors?.nextduewarning?.[rowIndex]
+                                      ? "border-red-400 focus:ring-1 focus:ring-red-100"
+                                      : "border-slate-200 focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10"
+                                  }`}
+                                />
+                                {warningErrors?.nextduewarning?.[rowIndex] && (
+                                  <p className="mt-0.5 text-[10px] leading-4 text-red-500">
+                                    {warningErrors.nextduewarning[rowIndex]}
+                                  </p>
+                                )}
+                              </td>
+
+                              <td className="px-2 py-2">
+                                <div className="space-y-0.5">
+                                  <input
+                                    type="number"
+                                    value={tag?.nextDueAmount || ""}
+                                    onWheel={(e) => e.currentTarget.blur()}
+                                    onChange={(e) => {
+                                      handleTaggedDueChange(
+                                        rowIndex,
+                                        e.target.value,
+                                        "nextDueAmount",
+                                        tag?.originalHsn,
+                                        detailsForm?.productType
+                                      )
+                                    }}
+                                    className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                  />
+                                  <p className="text-right text-[10px] text-slate-500">
+                                    {Number(tag?.totalnextDueAmount || 0).toFixed(2)}
+                                  </p>
+                                </div>
+                              </td>
+
+                              <td className="px-2 py-2">
+                                <div className="flex justify-center pt-1">
+                                  <label className="inline-flex cursor-pointer items-center justify-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={Number(tag?.nextDueTax || 0) > 0}
+                                      onChange={(e) => {
+                                        handleTaggedDueChange(
+                                          rowIndex,
+                                          e.target.checked,
+                                          "nextDueTax",
+                                          tag?.nextDueTax,
+                                          detailsForm?.productType
+                                        )
+                                      }}
+                                      className="sr-only"
+                                    />
+                                    <span
+                                      className={`flex h-5 w-5 items-center justify-center rounded border text-[11px] shadow-sm transition-all duration-200 ${
+                                        Number(tag?.nextDueTax || 0) > 0
+                                          ? "border-[#1B2A4A] bg-[#1B2A4A] text-white"
+                                          : "border-[#cfd8e3] bg-white text-transparent"
+                                      }`}
+                                    >
+                                      ✓
+                                    </span>
+                                  </label>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <h3 className="text-sm font-semibold text-slate-800">
+                      Additional Service Details
+                    </h3>
+                    <p className="mt-1 text-[11px] text-slate-500">
+                      No tagged license rows are available for this item.
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="sticky bottom-0 border-t border-slate-200 bg-white px-4 py-3 sm:px-5">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={() => setdetailsopen(false)}
+              className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDetailsSave}
+              className="inline-flex h-9 items-center justify-center rounded-lg bg-[#1B2A4A] px-4 text-sm font-semibold text-white transition hover:bg-[#243660]"
+            >
+              Save Details
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)} */}{/*new ui*/}
+{showdetailsopen && (
+  <div className="fixed inset-0 z-[9999] bg-slate-950/60 backdrop-blur-[2px]">
+    <div className="flex min-h-dvh items-end justify-center p-0 sm:items-center sm:p-4 lg:p-6">
+      <div
+        role="dialog"
+        aria-modal="true"
+        className={`flex h-[94dvh] w-full flex-col overflow-hidden border border-slate-200 bg-white shadow-2xl sm:h-auto sm:max-h-[92dvh] sm:rounded-2xl transition-all ${
+          String(detailsItem?.productorservicetype || "").toLowerCase() === "primaryproduct"
+            ? "sm:max-w-xl"
+            : detailsForm?.taggeddata?.length > 0
+              ? haveprimaryProduct?"sm:max-w-2xl":"sm:max-w-4xl"
+              : "sm:max-w-2xl"
+        }`}
+      >
+        {/* Header */}
+        <div className="sticky top-0 z-20 border-b border-slate-200 bg-[#1B2A4A] text-white">
+          <div className="flex items-start justify-between gap-3 px-5 py-4">
+            <div className="min-w-0">
+              <h2 className="text-base font-semibold leading-5">
+                {String(detailsItem?.productorservicetype || "").toLowerCase() === "primaryproduct"
+                  ? "Primary Product Details"
+                  : "Additional Service Details"}
+              </h2>
+              <p className="mt-1 text-[11px] leading-4 text-slate-300">
+                Update the selected item details
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setdetailsopen(false)}
+              aria-label="Close"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-base text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto bg-slate-50">
+          <div className="space-y-4 p-4 sm:p-5">
+            {String(detailsItem?.productorservicetype || "").toLowerCase() === "primaryproduct" ? (
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <h3 className="mb-4 text-sm font-semibold text-slate-800">
+                  Product Information
+                </h3>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                      Name
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      readOnly
+                      value={detailsForm.name}
+                      onChange={handleDetailsChange}
+                      placeholder="List of Primary Products"
+                      className="h-10 w-full cursor-not-allowed rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-500 outline-none"
+                    />
+                  </div>
+
+                  <div className="relative" ref={tradeDropdownRef}>
+                    <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                      Software Trade
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsTradeOpen((prev) => !prev)}
+                      className="flex h-10 w-full items-center justify-between rounded-lg border border-slate-300 bg-white px-3 text-left text-sm text-slate-700 shadow-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                    >
+                      <span className={detailsForm.softwareTrade ? "text-slate-800" : "text-slate-400"}>
+                        {detailsForm.softwareTrade || "Select Software Trade"}
+                      </span>
+
+                      <svg
+                        className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${
+                          isTradeOpen ? "rotate-180" : ""
+                        }`}
+                        viewBox="0 0 20 20"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path d="M5 7.5L10 12.5L15 7.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+
+                    {isTradeOpen && (
+                      <div className="absolute z-30 mt-1.5 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+                        <div className="max-h-56 overflow-y-auto p-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDetailsForm((prev) => ({ ...prev, softwareTrade: "" }))
+                              setIsTradeOpen(false)
+                            }}
+                            className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition ${
+                              !detailsForm.softwareTrade
+                                ? "bg-[#1B2A4A]/10 font-medium text-[#1B2A4A]"
+                                : "text-slate-700 hover:bg-slate-50"
+                            }`}
+                          >
+                            <span>Select Software Trade</span>
+                          </button>
+
+                          {softwareTrades.map((trade, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => {
+                                setDetailsForm((prev) => ({ ...prev, softwareTrade: trade }))
+                                setIsTradeOpen(false)
+                              }}
+                              className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition ${
+                                detailsForm.softwareTrade === trade
+                                  ? "bg-[#1B2A4A]/10 font-medium text-[#1B2A4A]"
+                                  : "text-slate-700 hover:bg-slate-50"
+                              }`}
+                            >
+                              <span>{trade}</span>
+                              {detailsForm.softwareTrade === trade && (
+                                <svg
+                                  className="h-4 w-4 text-[#1B2A4A]"
+                                  viewBox="0 0 20 20"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                >
+                                  <path d="M5 10.5L8.5 14L15 7.5" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                      Application Date
+                    </label>
+                    <input
+                      type="date"
+                      name="applicationDate"
+                      value={detailsForm.applicationDate}
+                      onChange={handleDetailsChange}
+                      className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 shadow-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                      Status
+                    </label>
+                    <select
+                      name="status"
+                      value={detailsForm.status}
+                      onChange={handleDetailsChange}
+                      className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 shadow-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                    >
+                      <option value="Running">Active</option>
+                      <option value="Deactive">DE active</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <h3 className="mb-4 text-sm font-semibold text-slate-800">
+                    Service Information
+                  </h3>
+
+                  {/* Product Name + Status (+ Next Due when no tagged rows) always sit side by side */}
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                        Product Name
+                      </label>
+                      <input
+                        type="text"
+                        name="productName"
+                        readOnly
+                        value={detailsForm.name}
+                        onChange={handleDetailsChange}
+                        placeholder="List of additional service"
+                        className="h-10 w-full cursor-not-allowed rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-500 outline-none"
+                      />
+                    </div>
+
+                    {!detailsForm?.taggeddata?.length && (
+                      <div>
+                        <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                          Next Due
+                        </label>
+                        <input
+                          type="date"
+                          name="nextDue"
+                          value={detailsForm.nextDue}
+                          onChange={handleDetailsChange}
+                          className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 shadow-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                        />
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                        Status
+                      </label>
+                      <select
+                        name="status"
+                        value={detailsForm.status}
+                        onChange={handleDetailsChange}
+                        className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 shadow-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                      >
+                        <option value="Running">Active</option>
+                        <option value="Deactive">DE active</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {detailsForm?.taggeddata?.length ? (
+                  <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div className="border-b border-slate-200 bg-white px-4 py-3">
+                      <h3 className="text-sm font-semibold text-slate-800">
+                        Tagged License Due Details
+                      </h3>
+                      <p className="mt-0.5 text-[11px] text-slate-500">
+                        {detailsForm.taggeddata.length} license{detailsForm.taggeddata.length > 1 ? "s" : ""} tagged to this service
+                      </p>
+                    </div>
+
+                    {/* table-fixed + percentage colgroup = width always matches the container, no horizontal scroll on laptop (12in / ~1024px+) */}
+                    <div className="w-full">
+                      <table className="w-full table-fixed border-collapse">
+                        <colgroup>
+                          {!haveprimaryProduct ? (
+                            <>
+                              <col style={{ width: "10%" }} />
+                              <col style={{ width: "5%" }} />
+                              <col style={{ width: "10%" }} />
+                              <col style={{ width: "6%" }} />
+                              <col style={{ width: "4%" }} />
+                              <col style={{ width: "6%" }} />
+                              <col style={{ width: "8%" }} />
+                              <col style={{ width: "6%" }} />
+                              <col style={{ width: "4%" }} />
+                            </>
+                          ) : (
+                            <>
+                              <col style={{ width: "19%" }} />
+                              <col style={{ width: "12%" }} />
+                              <col style={{ width: "18%" }} />
+                              <col style={{ width: "17%" }} />
+                              <col style={{ width: "16%" }} />
+                              <col style={{ width: "8%" }} />
+                            </>
+                          )}
+                        </colgroup>
+
+                        <thead className="bg-slate-100">
+                          <tr className="text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500">
+                            <th className="border-b border-slate-200 px-2 py-2.5 text-center">License No.</th>
+                            <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Users</th>
+                            <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Serial No</th>
+
+                            {!haveprimaryProduct && (
+                              <>
+                                <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Lead Amt</th>
+                                <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Tax</th>
+                                <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Discount</th>
+                              </>
+                            )}
+
+                            <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Next Due</th>
+                            <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Due Amt</th>
+                            <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Tax</th>
+                          </tr>
+                        </thead>
+
+                        <tbody className="divide-y divide-slate-100">
+                          {detailsForm.taggeddata.map((tag, rowIndex) => (
+                            <tr
+                              key={`${tag?.licensenumber}-${rowIndex}`}
+                              className="align-top odd:bg-white even:bg-slate-50/60"
+                            >
+                              <td className="px-2 py-2">
+                                <input
+                                  value={tag?.licensenumber || ""}
+                                  readOnly
+                                  title={tag?.licensenumber || ""}
+                                  className="h-7 w-full cursor-not-allowed truncate rounded-md border border-slate-200 bg-slate-100 px-2 text-[11px] text-slate-500 outline-none"
+                                />
+                              </td>
+
+                              <td className="px-1.5 py-2">
+                                <input
+                                  type="number"
+                                  value={tag?.noofusers ?? ""}
+                                  onChange={(e) => {
+                                    handleTaggedDueChange(
+                                      rowIndex,
+                                      e.target.value,
+                                      "noofusers",
+                                      null,
+                                      detailsForm?.productType
+                                    )
+                                  }}
+                                  onWheel={(e) => e.currentTarget.blur()}
+                                  className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-center text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                />
+                              </td>
+
+                              <td className="px-1.5 py-2">
+                                <input
+                                  type="text"
+                                  value={tag?.serialNumber || ""}
+                                  onChange={(e) => {
+                                    handleTaggedDueChange(
+                                      rowIndex,
+                                      e.target.value,
+                                      "serialNumber",
+                                      null,
+                                      detailsForm?.productType
+                                    )
+                                  }}
+                                  onWheel={(e) => e.currentTarget.blur()}
+                                  className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                />
+                              </td>
+
+                              {!haveprimaryProduct && (
+                                <>
+                                  <td className="px-1.5 py-2">
+                                    <div className="space-y-0.5">
+                                      <input
+                                        type="number"
+                                        value={tag?.taxexclusiveAmount || ""}
+                                        onWheel={(e) => e.currentTarget.blur()}
+ onKeyDown={(e) => {
+    if (["-", "+", "e", "E"].includes(e.key)) {
+      e.preventDefault();
+    }
+  }}
+                                        onChange={(e) => {
+                                          handleTaggedDueChange(
+                                            rowIndex,
+                                            e.target.value,
+                                            "taxexclusiveAmount",
+                                            tag?.originalHsn,
+                                            detailsForm?.productType
+                                          )
+                                        }}
+                                        className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                      />
+                                      <p className="truncate text-right text-[12px] text-slate-600">
+                                        {Number(tag?.taxinclusiveamount || 0).toFixed(2)}
+                                      </p>
+                                    </div>
+                                  </td>
+
+                                  <td className="px-1.5 py-2">
+                                    <div className="flex justify-center pt-1">
+                                      <label className="inline-flex cursor-pointer items-center justify-center">
+                                        <input
+                                          type="checkbox"
+                                          checked={Number(tag?.leadTax || 0) > 0}
+                                          onChange={(e) => {
+                                            handleTaggedDueChange(
+                                              rowIndex,
+                                              e.target.checked,
+                                              "leadTax",
+                                              tag?.leadTax,
+                                              detailsForm?.productType
+                                            )
+                                          }}
+                                          className="sr-only"
+                                        />
+                                        <span
+                                          className={`flex h-5 w-5 items-center justify-center rounded border text-[11px] shadow-sm transition-all duration-200 ${
+                                            Number(tag?.leadTax || 0) > 0
+                                              ? "border-[#1B2A4A] bg-[#1B2A4A] text-white"
+                                              : "border-slate-300 bg-white text-transparent"
+                                          }`}
+                                        >
+                                          ✓
+                                        </span>
+                                      </label>
+                                    </div>
+                                  </td>
+
+                                  <td className="px-1.5 py-2">
+                                    <input
+                                      type="number"
+                                      value={tag?.discountAmount || ""}
+                                      onWheel={(e) => e.currentTarget.blur()}
+ onKeyDown={(e) => {
+    if (["-", "+", "e", "E"].includes(e.key)) {
+      e.preventDefault();
+    }
+  }}
+                                      onChange={(e) => {
+                                        handleTaggedDueChange(
+                                          rowIndex,
+                                          e.target.value,
+                                          "discountAmount",
+                                          null,
+                                          detailsForm?.productType
+                                        )
+                                      }}
+                                      className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    />
+                                  </td>
+                                </>
+                              )}
+
+                              <td className="px-1.5 py-2">
+                                <input
+                                  type="date"
+                                  min={today}
+                                  value={tag?.nextDue || ""}
+                                  onChange={(e) => {
+                                    const selectedDate = e.target.value
+
+                                    if (selectedDate && selectedDate < today) {
+                                      setwarningError((prev) => ({
+                                        ...prev,
+                                        nextduewarning: {
+                                          ...(prev.nextduewarning || {}),
+                                          [rowIndex]: "Due date must be today or later."
+                                        }
+                                      }))
+                                      return
+                                    }
+
+                                    setwarningError((prev) => ({
+                                      ...prev,
+                                      nextduewarning: {
+                                        ...(prev.nextduewarning || {}),
+                                        [rowIndex]: ""
+                                      }
+                                    }))
+
+                                    handleTaggedDueChange(rowIndex, selectedDate, "nextDue")
+                                  }}
+                                  className={`h-7 w-full rounded-md border bg-white px-1.5 text-[11px] text-slate-700 outline-none transition ${
+                                    warningErrors?.nextduewarning?.[rowIndex]
+                                      ? "border-red-400 focus:ring-1 focus:ring-red-100"
+                                      : "border-slate-200 focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10"
+                                  }`}
+                                />
+                                {warningErrors?.nextduewarning?.[rowIndex] && (
+                                  <p className="mt-1 text-[9px] leading-tight text-red-500">
+                                    {warningErrors.nextduewarning[rowIndex]}
+                                  </p>
+                                )}
+                              </td>
+
+                              <td className="px-1.5 py-2">
+                                <div className="space-y-0.5">
+                                  <input
+                                    type="number"
+                                    value={tag?.nextDueAmount || ""}
+                                    onWheel={(e) => e.currentTarget.blur()}
+ onKeyDown={(e) => {
+    if (["-", "+", "e", "E"].includes(e.key)) {
+      e.preventDefault();
+    }
+  }}
+                                    onChange={(e) => {
+                                      handleTaggedDueChange(
+                                        rowIndex,
+                                        e.target.value,
+                                        "nextDueAmount",
+                                        tag?.originalHsn,
+                                        detailsForm?.productType
+                                      )
+                                    }}
+                                    className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                  />
+                                  <p className="truncate text-right text-[12px] text-slate-600">
+                                    {Number(tag?.totalnextDueAmount || 0).toFixed(2)}
+                                  </p>
+                                </div>
+                              </td>
+
+                              <td className="px-1.5 py-2">
+                                <div className="flex justify-center pt-1">
+                                  <label className="inline-flex cursor-pointer items-center justify-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={Number(tag?.nextDueTax || 0) > 0}
+                                      onChange={(e) => {
+                                        handleTaggedDueChange(
+                                          rowIndex,
+                                          e.target.checked,
+                                          "nextDueTax",
+                                          tag?.nextDueTax,
+                                          detailsForm?.productType
+                                        )
+                                      }}
+                                      className="sr-only"
+                                    />
+                                    <span
+                                      className={`flex h-5 w-5 items-center justify-center rounded border text-[11px] shadow-sm transition-all duration-200 ${
+                                        Number(tag?.nextDueTax || 0) > 0
+                                          ? "border-[#1B2A4A] bg-[#1B2A4A] text-white"
+                                          : "border-slate-300 bg-white text-transparent"
+                                      }`}
+                                    >
+                                      ✓
+                                    </span>
+                                  </label>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center shadow-sm">
+                    <h3 className="text-sm font-semibold text-slate-800">
+                      Additional Service Details
+                    </h3>
+                    <p className="mt-1 text-[12px] text-slate-500">
+                      No tagged license rows are available for this item.
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="sticky bottom-0 border-t border-slate-200 bg-white px-5 py-3.5">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={() => setdetailsopen(false)}
+              className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDetailsSave}
+              className="inline-flex h-10 items-center justify-center rounded-lg bg-[#1B2A4A] px-5 text-sm font-semibold text-white transition hover:bg-[#243660] focus:outline-none focus:ring-2 focus:ring-[#1B2A4A]/40"
+            >
+              Save Details
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
           {modalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-3 sm:p-4">
               <div className="flex w-full max-w-4xl max-h-[88vh] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
@@ -5182,350 +9401,6 @@ onChange={(e) => {
               </div>
             </div>
           )}
-
-          {/* {modalOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center px-4 z-50">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
-                <div className="bg-[#1B2A4A] px-6 py-4 flex items-center justify-between flex-shrink-0">
-                  <div>
-                    <h2 className="text-white text-base font-bold tracking-wide">
-                      {Data ? "Update Customer Details" : "Add New Customer"}
-                    </h2>
-                    {!Data && (
-                      <p className="text-blue-300 text-xs mt-0.5">
-                        Fill in the details to register a new customer
-                      </p>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setModalOpen(false)
-                      clearmodalErros()
-                      resetModal()
-                    }}
-                    className="text-blue-200 hover:text-white hover:bg-white hover:bg-opacity-10 rounded-full p-1.5 transition-colors"
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                </div>
-
-                <form
-                  onSubmit={handleSubmitModal(onmodalsubmit)}
-                  className="overflow-y-auto flex-1 px-6 py-4"
-                >
-                  <div>
-                    <input
-                      type="hidden"
-                      {...registerModal("customerid")}
-                      onBlur={(e) =>
-                        setValueModal("customerid", e.target.value.trim())
-                      }
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-                    />
-                  </div>
-                  <div>
-                    <input
-                      type="hidden"
-                      {...registerModal("leadid")}
-                      onBlur={(e) =>
-                        setValueModal("leadid", e.target.value.trim())
-                      }
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-                    />
-                  </div>
-                  <p className="text-[10px] font-bold text-[#1B2A4A] uppercase tracking-widest mb-2 border-b border-gray-200 pb-1">
-                    Basic Information
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">
-                        Customer Name <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        {...registerModal("customerName", {
-                          required: "Customer Name is required"
-                        })}
-                        onBlur={(e) =>
-                          setValueModal("customerName", e.target.value.trim())
-                        }
-                        placeholder="Customer Name"
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-                      />
-                      {errorsModal.customerName && (
-                        <p className="text-red-500 text-xs mt-1">
-                          {errorsModal.customerName.message}
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">
-                        Email
-                      </label>
-                      <input
-                        type="email"
-                        {...registerModal("email")}
-                        placeholder="Email"
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">
-                        Mobile <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="tel"
-                        {...registerModal("mobile", {
-                          required: "Mobile is Required",
-                          validate: (value) => {
-                            const cleaned = value
-                              .replace(/^\+?91/, "")
-                              .replace(/\D/g, "")
-                            if (cleaned.length !== 10)
-                              return "Must be 10 digits after country code"
-                            return true
-                          }
-                        })}
-                        onBlur={(e) =>
-                          setValueModal("mobile", e.target.value.trim())
-                        }
-                        placeholder="Mobile"
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-                      />
-                      {errorsModal.mobile && (
-                        <p className="text-red-500 text-xs mt-1">
-                          {errorsModal.mobile.message}
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">
-                        Landline
-                      </label>
-                      <input
-                        type="tel"
-                        {...registerModal("landline")}
-                        onBlur={(e) =>
-                          setValueModal("landline", e.target.value.trim())
-                        }
-                        placeholder="Landline"
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">
-                        Contact Person <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        {...registerModal("contactPerson", {
-                          required: "Contact person is Required"
-                        })}
-                        onBlur={(e) =>
-                          setValueModal("contactPerson", e.target.value.trim())
-                        }
-                        placeholder="Contact Person"
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-                      />
-                      {errorsModal.contactPerson && (
-                        <p className="text-red-500 text-xs mt-1">
-                          {errorsModal.contactPerson.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">
-                        Address
-                      </label>
-                      <textarea
-                        {...registerModal("address1")}
-                        onBlur={(e) =>
-                          setValueModal("address1", e.target.value.trim())
-                        }
-                        placeholder="Address"
-                        rows={2}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition resize-none"
-                      />
-                    </div>
-                  </div>
-
-                  <p className="text-[10px] font-bold text-[#1B2A4A] uppercase tracking-widest mb-2 border-b border-gray-200 pb-1">
-                    Location
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">
-                        Country
-                      </label>
-
-                      <Controller
-                        name="country"
-                        control={controlModal}
-                        render={({ field }) => (
-                          <Select
-                            options={countryOptions}
-                            value={
-                              countryOptions.find(
-                                (opt) => opt.value === field.value
-                              ) || null
-                            }
-                            onChange={(option) =>
-                              field.onChange(option?.value || "")
-                            }
-                            getOptionLabel={(o) => o.label}
-                            getOptionValue={(o) => o.value}
-                          />
-                        )}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">
-                        State
-                      </label>
-
-                      <Controller
-                        name="state"
-                        control={controlModal}
-                        render={({ field }) => (
-                          <Select
-                            options={stateOptions}
-                            value={
-                              stateOptions.find(
-                                (opt) => opt.value === field.value
-                              ) || null
-                            }
-                            onChange={(option) => {
-                              field.onChange(option?.value || "")
-                              setSelectedState(option)
-                            }}
-                            isDisabled={!selectedCountry}
-                          />
-                        )}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">
-                        City
-                      </label>
-                      <input
-                        type="text"
-                        {...registerModal("city")}
-                        onBlur={(e) =>
-                          setValueModal("city", e.target.value.trim())
-                        }
-                        placeholder="City"
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">
-                        Pincode
-                      </label>
-                      <input
-                        type="text"
-                        {...registerModal("pincode")}
-                        onBlur={(e) =>
-                          setValueModal("pincode", e.target.value.trim())
-                        }
-                        placeholder="Pincode"
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-                      />
-                    </div>
-                  </div>
-
-                  <p className="text-[10px] font-bold text-[#1B2A4A] uppercase tracking-widest mb-2 border-b border-gray-200 pb-1">
-                    Business Information
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-2">
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">
-                        Partnership Type
-                      </label>
-                      <select
-                        {...registerModal("partner")}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] bg-gray-50 cursor-pointer transition"
-                      >
-                        <option value="">Select Partner</option>
-                        {partner?.map((p, i) => (
-                          <option key={i} value={p._id}>
-                            {p.partner}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">
-                        Registration Type
-                      </label>
-                      <select
-                        {...registerModal("registrationType")}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] bg-gray-50 cursor-pointer transition"
-                      >
-                        <option value="">Select Type</option>
-                        <option value="unregistered">
-                          Unregistered / Consumer
-                        </option>
-                        <option value="regular">Regular</option>
-                      </select>
-                    </div>
-                    {registrationType === "regular" && (
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-600 mb-1">
-                          GSTIN / UIN <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          {...registerModal("gstNo", {
-                            required: "GST is required"
-                          })}
-                          placeholder="e.g. 22AAAAA0000A1Z5"
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-                        />
-                        {errorsModal.gstNo && (
-                          <p className="text-red-500 text-xs mt-1">
-                            {errorsModal.gstNo.message}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setModalOpen(false)
-                        clearmodalErros()
-                        resetModal()
-                      }}
-                      className="px-5 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-6 py-2 rounded-lg bg-[#1B2A4A] hover:bg-[#243660] text-white text-sm font-semibold tracking-wide transition"
-                    >
-                      Submit
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )} */}
         </div>
       </div>
     </div>
