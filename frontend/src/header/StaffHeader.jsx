@@ -10,7 +10,18 @@ import {
   FiX,
   FiChevronDown,
   FiChevronRight,
-  FiLogOut
+  FiLogOut,
+  FiRepeat,
+  FiBox,
+  FiClock,
+  FiFilter,
+  FiPhoneCall,
+  FiCalendar,
+  FiSearch,
+  FiClipboard,
+  FiActivity,
+  FiUserCheck,
+  FiUserX
 } from "react-icons/fi"
 import { FaUserCircle } from "react-icons/fa"
 
@@ -144,6 +155,9 @@ export default function StaffHeader({ hide = false }) {
     [permissions]
   )
 
+  // Kept for reference / getChildItems("Lead") compatibility, but no menu item
+  // currently has label "Lead" with hasChildren, so this flyout is not wired
+  // in anywhere right now (mirrors the current AdminHeader structure).
   const leads = useMemo(
     () => [
       { to: "/staff/transaction/lead", label: "New Lead", control: true },
@@ -153,29 +167,40 @@ export default function StaffHeader({ hide = false }) {
         control: true
       },
       {
-        to: "/staff/transaction/lead/leadAllocation",
-        label: "Lead Allocation",
-        control: permissions.LeadAllocation ?? false
-      },
-      {
         to: "/staff/transaction/lead/leadFollowUp",
         label: "Lead Follow Up",
         control: permissions.LeadFollowUp ?? false
       },
       {
-        to: "/staff/transaction/lead/leadTask",
-        label: "Task Pending",
-        control: true
-      },
-      {
-        to: "/staff/transaction/lead/leadReallocation",
-        label: "Lead Reallocation",
-        control: permissions.LeadReallocation ?? false
-      },
-      {
         to: "/staff/transaction/lead/taskAnalysis",
         label: "Task Analysis",
         control: permissions.TaskAnalysis ?? false
+      },
+      {
+        to: "/staff/transaction/lead/lostLeads",
+        label: "Lost Leads",
+        control: permissions.LostLeads ?? false
+      }
+    ],
+    [permissions]
+  )
+
+  const transactions = useMemo(
+    () => [
+      {
+        to: "/staff/transaction/call-registration",
+        label: "Call Registration",
+        control: permissions.CallRegistration ?? false
+      },
+      {
+        to: "/staff/transaction/leave-application",
+        label: "Leave Application",
+        control: permissions.LeaveApplication ?? false
+      },
+      {
+        to: "/staff/transaction/lead",
+        label: "New Lead",
+        control: true
       },
       {
         to: "/staff/transaction/lead/collectionUpdate",
@@ -186,55 +211,22 @@ export default function StaffHeader({ hide = false }) {
     [permissions]
   )
 
-  const transactions = useMemo(
-    () => [
-      { label: "Lead", hasChildren: true, control: permissions.Lead ?? false },
-      {
-        to: "/staff/transaction/call-registration",
-        label: "Call Registration",
-        control: permissions.CallRegistration ?? false
-      },
-      {
-        to: "/staff/transaction/leave-application",
-        label: "Leave Application",
-        control: permissions.LeaveApplication ?? false
-      }
-    ],
-    [permissions]
-  )
-
-  const reports = useMemo(
-    () => [
-      {
-        to: "/staff/reports/summary",
-        label: "Call Summary",
-        control: permissions.Summary ?? false
-      },
-      {
-        to: "/staff/reports/expiry-register",
-        label: "Expiry Register",
-        control: permissions.ExpiryRegister ?? false
-      },
-      {
-        to: "/staff/reports/account-search",
-        label: "Account Search",
-        control: permissions.AccountSearch ?? false
-      },
-      {
-        to: "/staff/reports/leave-summary",
-        label: "Leave Summary",
-        control: permissions.LeaveSummary ?? false
-      }
-    ],
-    [permissions]
-  )
-
   const tasks = useMemo(
     () => [
       {
-        to: "/staff/tasks/signUp-customer",
-        label: "Sign Up Customer",
-        control: permissions.SignUpCustomer ?? false
+        to: "/staff/transaction/lead/leadReallocation",
+        label: "Task Allocation",
+        control: permissions.LeadReallocation ?? false
+      },
+      {
+        to: "/staff/transaction/lead/leadAllocation",
+        label: "Follow-Up Allocation",
+        control: permissions.LeadAllocation ?? false
+      },
+      {
+        to: "/staff/transaction/lead/leadTask",
+        label: "Task Pending",
+        control: true
       },
       {
         to: "/staff/tasks/leaveApproval-pending",
@@ -242,14 +234,105 @@ export default function StaffHeader({ hide = false }) {
         control: permissions.LeaveApprovalPending ?? false
       },
       {
-        to: "/staff/tasks/workAllocation",
-        label: "Work Allocation",
-        control: permissions.WorkAllocation ?? false
+        to: "/staff/tasks/excelconverter",
+        label: "Customer Converter (Excel to JSON)",
+        control: permissions.ExcelConverter ?? false
       },
       {
-        to: "/staff/tasks/excelconverter",
-        label: "Excel Converter",
-        control: permissions.ExcelConverter ?? false
+        to: "/staff/tasks/attendanceExcelconverter",
+        label: "Attendance Converter",
+        control: permissions.AttendanceExcelConverter ?? false
+      }
+    ],
+    [permissions]
+  )
+console.log(permissions)
+  // Reports is now split into labeled groups (Marketing / Service / My Activities),
+  // matching the Admin header. Each group renders inline in the same dropdown panel
+  // with a highlighted section header instead of a flyout submenu. Every item still
+  // respects its own permission via `control`.
+  const reports = useMemo(
+    () => [
+      {
+        group: "Marketing",
+        items: [
+          {
+            to: "/staff/reports/follow-up-summary",
+            label: "Followup Summary",
+            icon: FiRepeat,
+            control: permissions.FollowupSummary ?? false
+          },
+          {
+            to: "/staff/reports/product-wise-report",
+            label: "Lead ( Staff / Product )",
+            icon: FiBox,
+            control: permissions.ProductWiseReport ?? false
+          },
+          {
+            to: "/staff/reports/sales-funel",
+            label: "Sales Funnel",
+            icon: FiFilter,
+            control: permissions.SalesFunnel ?? false
+          },
+          {
+            to: "/staff/transaction/lead/leadFollowUp",
+            label: "In Follow-Up",
+            icon: FiClock,
+            control: permissions.LeadFollowUp ?? false
+          },
+          {
+            to: "/staff/transaction/lead/ownedLeadlist",
+            label: "Own Lead",
+            icon: FiUserCheck,
+            control: true
+          },
+          {
+            to: "/staff/transaction/lead/lostLeads",
+            label: "Lost Leads",
+            icon: FiUserX,
+            control: permissions.LostLeads ?? false
+          }
+        ]
+      },
+      {
+        group: "Service",
+        items: [
+          {
+            to: "/staff/reports/summary",
+            label: "Call Summary",
+            icon: FiPhoneCall,
+            control: permissions.Summary ?? false
+          },
+          {
+            to: "/staff/reports/expiry-register",
+            label: "Expiry Register",
+            icon: FiCalendar,
+            control: permissions.ExpiryRegister ?? false
+          },
+          {
+            to: "/staff/reports/account-search",
+            label: "Account Search",
+            icon: FiSearch,
+            control: permissions.AccountSearch ?? false
+          }
+        ]
+      },
+      {
+        group: "My Activities",
+        items: [
+          {
+            to: "/staff/reports/leave-summary",
+            label: "Attendance Summary",
+            icon: FiClipboard,
+            control: permissions.LeaveSummary ?? false
+          },
+          {
+            to: "/staff/reports/dailystaffactivity",
+            label: "Daily Staff Activity",
+            icon: FiActivity,
+            control: permissions.DailyStaffActivity ?? false
+          }
+        ]
       }
     ],
     [permissions]
@@ -278,6 +361,11 @@ export default function StaffHeader({ hide = false }) {
     return []
   }
 
+  // Flattens the Reports groups into a single list of permitted items -
+  // used to decide whether the top-level "Reports" nav button should show at all.
+  const getVisibleReportItems = () =>
+    reports.flatMap((groupItem) => groupItem.items).filter((i) => i.control)
+
   const handleSafeNavigate = (path, options = {}) => {
     requestNavigation(() => {
       setMobileOpen(false)
@@ -300,6 +388,12 @@ export default function StaffHeader({ hide = false }) {
       }
       return false
     })
+  }
+
+  const isReportsGroupActive = () => {
+    return reports.some((groupItem) =>
+      groupItem.items.some((child) => location.pathname === child.to)
+    )
   }
 
   const logout = async () => {
@@ -377,6 +471,52 @@ export default function StaffHeader({ hide = false }) {
     </div>
   )
 
+  // Grouped dropdown just for Reports: Marketing / Service / My Activities,
+  // each with a highlighted header and icon-led links, all in one panel.
+  const DesktopReportsDropdown = ({ groups }) => (
+    <div className="invisible absolute left-0 top-[calc(100%+10px)] z-50 w-64 translate-y-1 rounded-2xl border border-white/10 bg-[#162033] p-2 py-2 opacity-0 shadow-[0_20px_60px_rgba(0,0,0,0.45)] transition-all duration-150 group-hover/menu:visible group-hover/menu:translate-y-0 group-hover/menu:opacity-100 group-focus-within/menu:visible group-focus-within/menu:translate-y-0 group-focus-within/menu:opacity-100">
+      {groups.map((groupItem, idx) => {
+        const visible = groupItem.items.filter((i) => i.control)
+        if (!visible.length) return null
+
+        return (
+          <div
+            key={groupItem.group}
+            className={idx !== 0 ? "mt-1 border-t border-white/10 pt-2" : ""}
+          >
+            <div className="px-3 pb-1.5 pt-1 text-[11px] font-bold uppercase tracking-wider text-sky-400">
+              {groupItem.group}
+            </div>
+            {visible.map((child) => {
+              const ChildIcon = child.icon
+              return (
+                <button
+                  key={child.to}
+                  type="button"
+                  onClick={() => handleSafeNavigate(child.to)}
+                  className={`flex w-full items-center gap-1.5 rounded-xl px-3 py-1 text-left text-[13px] font-medium transition ${
+                    isPathActive(child.to)
+                      ? "bg-[#243145] text-white"
+                      : "text-slate-100 hover:bg-[#1E293B] hover:text-white"
+                  }`}
+                >
+                  {ChildIcon && (
+                    <ChildIcon
+                      className={`h-4 w-4 shrink-0 ${
+                        isPathActive(child.to) ? "text-sky-400" : "text-slate-400"
+                      }`}
+                    />
+                  )}
+                  <span>{child.label}</span>
+                </button>
+              )
+            })}
+          </div>
+        )
+      })}
+    </div>
+  )
+
   return (
     <>
       <header
@@ -430,10 +570,15 @@ export default function StaffHeader({ hide = false }) {
               </button>
 
               {menuGroups.map((group) => {
-                const visibleItems = group.items.filter((i) => i.control)
+                const isReports = group.label === "Reports"
+                const visibleItems = isReports
+                  ? getVisibleReportItems()
+                  : group.items.filter((i) => i.control)
                 if (!visibleItems.length) return null
 
-                const activeGroup = isGroupActive(group.items)
+                const activeGroup = isReports
+                  ? isReportsGroupActive()
+                  : isGroupActive(group.items)
 
                 return (
                   <div key={group.label} className="group/menu relative">
@@ -449,7 +594,11 @@ export default function StaffHeader({ hide = false }) {
                       <FiChevronDown size={14} className="text-slate-400" />
                     </button>
 
-                    <DesktopDropdown items={group.items} />
+                    {isReports ? (
+                      <DesktopReportsDropdown groups={reports} />
+                    ) : (
+                      <DesktopDropdown items={group.items} />
+                    )}
                   </div>
                 )
               })}
@@ -569,13 +718,16 @@ export default function StaffHeader({ hide = false }) {
               </button>
 
               {menuGroups.map((group) => {
-                const visibleItems = group.items.filter((i) => i.control)
+                const isReports = group.label === "Reports"
+                const visibleItems = isReports
+                  ? getVisibleReportItems()
+                  : group.items.filter((i) => i.control)
                 if (!visibleItems.length) return null
 
                 return (
                   <div
                     key={group.label}
-                    className="mb-2 rounded-2xl border border-white/10 bg-[#162033]"
+                    className="mb-1 rounded-2xl border border-white/10 bg-[#162033]"
                   >
                     <button
                       onClick={() =>
@@ -594,75 +746,121 @@ export default function StaffHeader({ hide = false }) {
                     </button>
 
                     {mobileMenu === group.label && (
-                      <div className="border-t border-white/10 px-2 pb-2">
-                        {visibleItems.map((item) => {
-                          if (!item.hasChildren) {
-                            return (
-                              <button
-                                key={item.to}
-                                type="button"
-                                onClick={() => handleSafeNavigate(item.to)}
-                                className={`block w-full rounded-xl px-3 py-2.5 text-left text-[13px] font-medium transition ${
-                                  isPathActive(item.to)
-                                    ? "bg-[#243145] text-white"
-                                    : "text-slate-300 hover:bg-[#1E293B]"
-                                }`}
-                              >
-                                {item.label}
-                              </button>
-                            )
-                          }
+                      <div className="border-t border-white/10 px-2 pb-0">
+                        {isReports
+                          ? // ---- Grouped rendering for Reports: Marketing / Service / My Activities ----
+                            reports.map((groupItem) => {
+                              const visible = groupItem.items.filter(
+                                (i) => i.control
+                              )
+                              if (!visible.length) return null
 
-                          const childItems = getChildItems(item.label)
-                          if (!childItems.length) return null
-
-                          return (
-                            <div key={item.label}>
-                              <button
-                                onClick={() =>
-                                  setMobileChildMenu(
-                                    mobileChildMenu === item.label
-                                      ? null
-                                      : item.label
-                                  )
-                                }
-                                className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-300 hover:bg-[#1E293B]"
-                              >
-                                <span>{item.label}</span>
-                                {mobileChildMenu === item.label ? (
-                                  <FiChevronDown
-                                    size={14}
-                                    className="text-slate-500"
-                                  />
-                                ) : (
-                                  <FiChevronRight
-                                    size={14}
-                                    className="text-slate-500"
-                                  />
-                                )}
-                              </button>
-
-                              {mobileChildMenu === item.label && (
-                                <div className="ml-3 border-l border-white/10 pl-2">
-                                  {childItems.map((child) => (
-                                    <button
-                                      key={child.to}
-                                      type="button"
-                                      onClick={() => handleSafeNavigate(child.to)}
-                                      className={`block w-full rounded-xl px-3 py-2.5 text-left text-[13px] transition ${
-                                        isPathActive(child.to)
-                                          ? "bg-[#243145] text-white"
-                                          : "text-slate-300 hover:bg-[#1E293B]"
-                                      }`}
-                                    >
-                                      {child.label}
-                                    </button>
-                                  ))}
+                              return (
+                                <div key={groupItem.group} className="mb-1">
+                                  <div className="px-3 pb-0 pt-0 text-[11px] font-bold uppercase tracking-wider text-sky-400">
+                                    {groupItem.group}
+                                  </div>
+                                  {visible.map((child) => {
+                                    const ChildIcon = child.icon
+                                    return (
+                                      <button
+                                        key={child.to}
+                                        type="button"
+                                        onClick={() =>
+                                          handleSafeNavigate(child.to)
+                                        }
+                                        className={`flex w-full items-center gap-1 rounded-xl px-3 py-1 text-left text-[13px] font-medium ${
+                                          isPathActive(child.to)
+                                            ? "bg-[#243145] text-white"
+                                            : "text-slate-300 hover:bg-[#1E293B]"
+                                        }`}
+                                      >
+                                        {ChildIcon && (
+                                          <ChildIcon
+                                            className={`h-4 w-4 shrink-0 ${
+                                              isPathActive(child.to)
+                                                ? "text-sky-400"
+                                                : "text-slate-400"
+                                            }`}
+                                          />
+                                        )}
+                                        <span>{child.label}</span>
+                                      </button>
+                                    )
+                                  })}
                                 </div>
-                              )}
-                            </div>
-                          )
-                        })}
+                              )
+                            })
+                          : visibleItems.map((item) => {
+                              if (!item.hasChildren) {
+                                return (
+                                  <button
+                                    key={item.to}
+                                    type="button"
+                                    onClick={() => handleSafeNavigate(item.to)}
+                                    className={`block w-full rounded-xl px-3 py-2.5 text-left text-[13px] font-medium transition ${
+                                      isPathActive(item.to)
+                                        ? "bg-[#243145] text-white"
+                                        : "text-slate-300 hover:bg-[#1E293B]"
+                                    }`}
+                                  >
+                                    {item.label}
+                                  </button>
+                                )
+                              }
+
+                              const childItems = getChildItems(item.label)
+                              if (!childItems.length) return null
+
+                              return (
+                                <div key={item.label}>
+                                  <button
+                                    onClick={() =>
+                                      setMobileChildMenu(
+                                        mobileChildMenu === item.label
+                                          ? null
+                                          : item.label
+                                      )
+                                    }
+                                    className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-300 hover:bg-[#1E293B]"
+                                  >
+                                    <span>{item.label}</span>
+                                    {mobileChildMenu === item.label ? (
+                                      <FiChevronDown
+                                        size={14}
+                                        className="text-slate-500"
+                                      />
+                                    ) : (
+                                      <FiChevronRight
+                                        size={14}
+                                        className="text-slate-500"
+                                      />
+                                    )}
+                                  </button>
+
+                                  {mobileChildMenu === item.label && (
+                                    <div className="ml-3 border-l border-white/10 pl-2">
+                                      {childItems.map((child) => (
+                                        <button
+                                          key={child.to}
+                                          type="button"
+                                          onClick={() =>
+                                            handleSafeNavigate(child.to)
+                                          }
+                                          className={`block w-full rounded-xl px-3 py-2.5 text-left text-[13px] transition ${
+                                            isPathActive(child.to)
+                                              ? "bg-[#243145] text-white"
+                                              : "text-slate-300 hover:bg-[#1E293B]"
+                                          }`}
+                                        >
+                                          {child.label}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
                       </div>
                     )}
                   </div>
@@ -683,3 +881,4 @@ export default function StaffHeader({ hide = false }) {
     </>
   )
 }
+
