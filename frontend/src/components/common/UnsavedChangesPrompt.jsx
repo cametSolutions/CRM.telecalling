@@ -1,32 +1,30 @@
-import { useEffect, useCallback } from "react";
-import { unstable_useBlocker as useBlocker } from "react-router-dom";
+import { useEffect } from "react"
+import { unstable_useBlocker as useBlocker } from "react-router-dom"
 
-export function useUnsavedChangesPrompt(isDirty, message = "You have unsaved changes. If you leave this page, the entered data will not be saved.") {
-  const blocker = useBlocker(
-    useCallback(() => isDirty, [isDirty])
-  );
+const useUnsavedChangesPrompt = (when, message) => {
+  const blocker = useBlocker(when)
 
   useEffect(() => {
     if (blocker.state === "blocked") {
-      const ok = window.confirm(message);
-      if (ok) {
-        blocker.proceed();
+      const confirmLeave = window.confirm(message)
+      if (confirmLeave) {
+        blocker.proceed()
       } else {
-        blocker.reset();
+        blocker.reset()
       }
     }
-  }, [blocker, message]);
+  }, [blocker, message])
 
   useEffect(() => {
     const handleBeforeUnload = (e) => {
-      if (!isDirty) return;
-      e.preventDefault();
-      e.returnValue = "";
-    };
+      if (!when) return
+      e.preventDefault()
+      e.returnValue = ""
+    }
 
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, [isDirty]);
+    window.addEventListener("beforeunload", handleBeforeUnload)
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload)
+  }, [when])
 }
+
+export default useUnsavedChangesPrompt

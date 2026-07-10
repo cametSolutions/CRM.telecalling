@@ -1,3 +1,4 @@
+
 import React, { useEffect, useMemo, useState, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import Select from "react-select"
@@ -24,8 +25,10 @@ import {
 import { getLocalStorageItem } from "../../helper/localstorage"
 import UseFetch from "../../hooks/useFetch"
 import useDebounce from "../../hooks/useDebounce"
-import { has } from "lodash"
-
+// import { UnsavedChanges } from "../../context/UnsavedChangesContext"
+import { useUnsavedChanges } from "../../context/UnsavedChangesContext"
+import useUnsavedChangesPrompt from "../../hooks/useUnsavedChangesPrompt"
+import UnsavedChangesModal from "../common/UnsavedChangesModal"
 const CustomerAdd = ({
   navigatebackto,
   process,
@@ -33,9 +36,8 @@ const CustomerAdd = ({
   handleEditedData,
   customer
 }) => {
-  console.log(process)
   const navigate = useNavigate()
-
+  const { setHasUnsavedChanges, requestNavigation } = useUnsavedChanges()
   const {
     register,
     handleSubmit,
@@ -46,7 +48,7 @@ const CustomerAdd = ({
     getValues,
     setValue,
     watch,
-    formState: { errors, isSubmitting }
+    formState: { errors, isSubmitting, isDirty }
   } = useForm({
     defaultValues: {
       productName: null,
@@ -82,6 +84,7 @@ const CustomerAdd = ({
   const loggeduserBranch = useSelector(
     (state) => state.companyBranch.loggeduserbranches
   )
+
   const [detailsData, setdetailsData] = useState({})
   const [duplicatelicense, setduplicatelicense] = useState(null)
   const debounceTimersRef = useRef({})
@@ -93,17 +96,17 @@ const CustomerAdd = ({
   const [partner, setPartner] = useState([])
   const [license, setLicense] = useState([])
   const [tableData, setTableData] = useState([])
-  console.log(tableData)
+  const [initialTableData, setInitialTableData] = useState([])
   const [licenseAvailable, setLicenseAvailable] = useState(true)
   const [showProductPopup, setShowProductPopup] = useState(false)
   const [popupType, setPopupType] = useState("")
   const [editIndex, setEditIndex] = useState(null)
-
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false)
+  const [pendingAction, setPendingAction] = useState(null)
   const selectedProduct = watch("productName")
   const registrationType = watch("registrationType")
   const watchedLicense = watch("licensenumber")
   const watchedTaggedLicenses = watch("taggedLicenses") || []
-  console.log(watchedTaggedLicenses)
   const watchedTaggedLicenseDueDates = watch("taggedLicenseDueDates") || {}
   console.log(watchedTaggedLicenseDueDates)
   const hasTaggedLicenses =
@@ -111,15 +114,6 @@ const CustomerAdd = ({
 
   const { data: licensenumber } = UseFetch("customer/getLicensenumber")
   const { data: partners } = UseFetch("customer/getallpartners")
-  // const {
-  //   data: productData,
-  //   error: productError
-  // } = UseFetch(
-  //   loggeduserBranch,
-  //   `product/getallProducts?branchselected=${encodeURIComponent(
-  //     JSON.stringify(loggeduserBranch)
-  //   )}`
-  // )
   const { data: productData, error: productError } = UseFetch(
     loggeduserBranch &&
       `/product/getallProducts?branchselected=${encodeURIComponent(
@@ -128,108 +122,88 @@ const CustomerAdd = ({
   )
 
   const debouncedLicenseNo = useDebounce(watchedLicense, 1000)
-
-  // const softwareTrades = [
-  //   "Agriculture",
-  //   "Business Services",
-  //   "Computer Hardware Software",
-  //   "Electronics Electrical Supplies",
-  //   "FMCG-Fast Moving Consumable Goods",
-  //   "Garment,Fashion Apparel",
-  //   "Health Beauty",
-  //   "Industrial Supplies",
-  //   "Jewelry Gemstones",
-  //   "Mobile Accessories",
-  //   "Pharmaceutical Chemicals",
-  //   "Textiles Chemicals",
-  //   "Textiles Fabrics",
-  //   "Others",
-  //   "Restaurant, Food And Beverage",
-  //   "Accounts Chartered Account",
-  //   "Stationery, Printing Publishing",
-  //   "Hotel",
-  //   "Pipes, Tubes Fittings"
-  // ]
-const softwareTrades = [
-  "Agriculture",
-  "Business Services",
-  "Computer Hardware Software",
-  "Electronics Electrical Supplies",
-  "FMCG-Fast Moving Consumable Goods",
-  "Garment,Fashion Apparel",
-  "Health Beauty",
-  "Industrial Supplies",
-  "Jewelry Gemstones",
-  "Mobile Accessories",
-  "Pharmaceutical Chemicals",
-  "Textiles Chemicals",
-  "Textiles Fabrics",
-  "Others",
-  "Restaurant, Food And Beverage",
-  "Accounts Chartered Account",
-  "Stationery, Printing Publishing",
-  "Hotel",
-  "Pipes, Tubes Fittings",
-
-  "Wholesale Trading",
-  "Retail Trading",
-  "Import & Export",
-  "Distribution / Dealers",
-  "E-commerce / Online Trading",
-  "IT Services",
-  "Web Design & Development",
-  "Cyber Security Services",
-  "Hardware & Networking",
-  "Construction Companies",
-  "Spare Parts Dealers",
-  "Banks",
-  "Printing & Publishing",
-
-  "Pharmaceutical Manufacturing",
-  "Food Manufacturing",
-  "Textile / Garment Manufacturing",
-  "Chemical Manufacturing",
-  "Plastic Manufacturing",
-  "Steel / Metal Manufacturing",
-  "Furniture Manufacturing",
-  "Building Contractors",
-  "Real Estate Developers",
-  "Property Management",
-  "Transport & Logistics",
-  "Finance Companies",
-
-  "Electrical Equipment Manufacturing",
-  "Electronics Manufacturing",
-  "Automobile Manufacturing",
-  "Hospitals",
-  "Clinics",
-  "Medical Laboratories",
-  "Medical Equipment Suppliers",
-  "Pharmacies / Medical Stores",
-  "Interior Design",
-  "Vehicle Dealers",
-  "Automobile Service Centres",
-  "Insurance Companies",
-  "Chartered Accountants / Audit Firms",
-  "Tax Consultants",
-  "Hotels & Resorts",
-
-  "Schools",
-  "Colleges",
-  "Training Institutes",
-  "Coaching Centers",
-  "Educational Consultants",
-  "Software Development",
-  "Restaurants / Cafes",
-  "Travel Agencies",
-  "Tourism Operators",
-  "Advertising & Marketing Agencies",
-  "Event Management",
-  "Security Services",
-  "Cleaning / Facility Management",
-  "NGOs / Non-Profit Organizations",
-  "Government Organizations"
-];
+  const isTableDirty =
+    JSON.stringify(tableData) !== JSON.stringify(initialTableData)
+  console.log(initialTableData)
+  console.log(tableData)
+  const hasUnsavedChanges = isDirty || isTableDirty
+  console.log(hasUnsavedChanges)
+  const softwareTrades = [
+    "Agriculture",
+    "Business Services",
+    "Computer Hardware Software",
+    "Electronics Electrical Supplies",
+    "FMCG-Fast Moving Consumable Goods",
+    "Garment,Fashion Apparel",
+    "Health Beauty",
+    "Industrial Supplies",
+    "Jewelry Gemstones",
+    "Mobile Accessories",
+    "Pharmaceutical Chemicals",
+    "Textiles Chemicals",
+    "Textiles Fabrics",
+    "Others",
+    "Restaurant, Food And Beverage",
+    "Accounts Chartered Account",
+    "Stationery, Printing Publishing",
+    "Hotel",
+    "Pipes, Tubes Fittings",
+    "Wholesale Trading",
+    "Retail Trading",
+    "Import & Export",
+    "Distribution / Dealers",
+    "E-commerce / Online Trading",
+    "IT Services",
+    "Web Design & Development",
+    "Cyber Security Services",
+    "Hardware & Networking",
+    "Construction Companies",
+    "Spare Parts Dealers",
+    "Banks",
+    "Printing & Publishing",
+    "Pharmaceutical Manufacturing",
+    "Food Manufacturing",
+    "Textile / Garment Manufacturing",
+    "Chemical Manufacturing",
+    "Plastic Manufacturing",
+    "Steel / Metal Manufacturing",
+    "Furniture Manufacturing",
+    "Building Contractors",
+    "Real Estate Developers",
+    "Property Management",
+    "Transport & Logistics",
+    "Finance Companies",
+    "Electrical Equipment Manufacturing",
+    "Electronics Manufacturing",
+    "Automobile Manufacturing",
+    "Hospitals",
+    "Clinics",
+    "Medical Laboratories",
+    "Medical Equipment Suppliers",
+    "Pharmacies / Medical Stores",
+    "Interior Design",
+    "Vehicle Dealers",
+    "Automobile Service Centres",
+    "Insurance Companies",
+    "Chartered Accountants / Audit Firms",
+    "Tax Consultants",
+    "Hotels & Resorts",
+    "Schools",
+    "Colleges",
+    "Training Institutes",
+    "Coaching Centers",
+    "Educational Consultants",
+    "Software Development",
+    "Restaurants / Cafes",
+    "Travel Agencies",
+    "Tourism Operators",
+    "Advertising & Marketing Agencies",
+    "Event Management",
+    "Security Services",
+    "Cleaning / Facility Management",
+    "NGOs / Non-Profit Organizations",
+    "Government Organizations"
+  ]
 
   const industries = [
     "Whole sailor/Distributors",
@@ -250,25 +224,9 @@ const softwareTrades = [
       setPartner(partners)
     }
   }, [partners])
-  console.log(partner)
 
   useEffect(() => {
     if (productData) {
-      console.log(productData)
-      // setProductOptions(
-      //   productData.map((product) => ({
-      //     label: product.productName,
-      //     value: product._id,
-      //     shortName: product?.shortName,
-      //     productorservicetype: product.productorservicetype,
-      //     defaultservices: product?.defaultservices || [],
-      //     company_id: product?.selected[0].company_id,
-      //     companyName: product?.selected[0]?.companyName,
-
-      //     branch_id: product?.selected[0]?.branch_id,
-      //     branchName: product?.selected[0]?.branchName
-      //   }))
-      // )
       setProductOptions(
         productData.map((product) => {
           const basePrice = Number(product?.productPrice || 0)
@@ -300,6 +258,13 @@ const softwareTrades = [
   }, [productData])
 
   useEffect(() => {
+    setHasUnsavedChanges(hasUnsavedChanges)
+
+    return () => {
+      setHasUnsavedChanges(false)
+    }
+  }, [hasUnsavedChanges, setHasUnsavedChanges])
+  useEffect(() => {
     if (licensenumber) {
       setLicense(licensenumber)
     }
@@ -307,7 +272,6 @@ const softwareTrades = [
 
   useEffect(() => {
     if (productError) {
-      console.log(productError)
       toast.error(
         productError?.response?.data?.message || "Something went wrong!"
       )
@@ -355,7 +319,6 @@ const softwareTrades = [
         taggedLicenses: [],
         taggedLicenseDueDates: {}
       })
-      console.log(customer.selected)
 
       const selectedData =
         customer?.selected?.map((sel) => ({
@@ -388,7 +351,6 @@ const softwareTrades = [
           nextDue: sel?.nextDue,
           noofusers: sel?.noofusers,
           productAmount: sel?.productAmount,
-
           isActive: sel?.isActive || "Running",
           productorservicetype: sel?.product_id?.productorservicetype,
           taggedLicenses:
@@ -398,10 +360,13 @@ const softwareTrades = [
             [],
           taggeddata: sel?.taggeddata || []
         })) || []
-      console.log(selectedData)
+
       setTableData(selectedData)
+      setInitialTableData(selectedData)
+    } else {
+      setInitialTableData([])
     }
-  }, [customer, reset, partner])
+  }, [customer, reset])
 
   useEffect(() => {
     if (!debouncedLicenseNo || !String(debouncedLicenseNo).trim()) return
@@ -446,62 +411,47 @@ const softwareTrades = [
         value: branch.branch_id
       }))
   }
-console.log(tableData)
-  // const primaryLicenseOptions = useMemo(() => {
-  //   return [
-  //     ...new Set(
-  //       tableData
-  //         .filter(
-  //           (item) =>
-  //             String(item?.productorservicetype).toLowerCase() ===
-  //             "primaryproduct"
-  //         )
-  //         .map((item) => String(item?.licensenumber).trim())
-  //         .filter(Boolean)
-  //     )
-  //   ]
-  // }, [tableData])
 
-const primaryLicenseOptions = useMemo(() => {
-  const uniqueMap = new Map();
+  const primaryLicenseOptions = useMemo(() => {
+    const uniqueMap = new Map()
 
-  tableData
-    .filter(
-      (item) =>
-        String(item?.productorservicetype).toLowerCase() === "primaryproduct"
-    )
-    .forEach((item) => {
-      const licenseNo = String(item?.licensenumber || "").trim();
+    tableData
+      .filter(
+        (item) =>
+          String(item?.productorservicetype).toLowerCase() === "primaryproduct"
+      )
+      .forEach((item) => {
+        const licenseNo = String(item?.licensenumber || "").trim()
 
-      if (licenseNo && !uniqueMap.has(licenseNo)) {
-        uniqueMap.set(licenseNo, {
-          licenseNo,
-          productName: item?.productName || "",
-        });
-      }
-    });
+        if (licenseNo && !uniqueMap.has(licenseNo)) {
+          uniqueMap.set(licenseNo, {
+            licenseNo,
+            productName: item?.productName || ""
+          })
+        }
+      })
 
-  return Array.from(uniqueMap.values());
-}, [tableData]);
-console.log(primaryLicenseOptions)
-  console.log(productData)
+    return Array.from(uniqueMap.values())
+  }, [tableData])
+
   const handleProductChange = (selectedOption) => {
-    console.log(selectedOption)
-    setValue("productName", selectedOption)
-    setValue("shortName", selectedOption?.shortName)
-    setValue("productAmount", selectedOption?.productprice)
-    setValue("companyName", null)
-    setValue("branchName", null)
-    setValue("licensenumber", "")
-    setValue("taggedLicenses", [])
-    setValue("taggedLicenseDueDates", {})
+    setValue("productName", selectedOption, { shouldDirty: true })
+    setValue("shortName", selectedOption?.shortName, { shouldDirty: true })
+    setValue("productAmount", selectedOption?.productprice, {
+      shouldDirty: true
+    })
+    setValue("companyName", null, { shouldDirty: true })
+    setValue("branchName", null, { shouldDirty: true })
+    setValue("licensenumber", "", { shouldDirty: true })
+    setValue("taggedLicenses", [], { shouldDirty: true })
+    setValue("taggedLicenseDueDates", {}, { shouldDirty: true })
     setCompanyOptions(getCompaniesForProduct(selectedOption?.value))
     setBranchOptions([])
   }
 
   const handleCompanyChange = (selectedCompanyOption) => {
-    setValue("companyName", selectedCompanyOption)
-    setValue("branchName", null)
+    setValue("companyName", selectedCompanyOption, { shouldDirty: true })
+    setValue("branchName", null, { shouldDirty: true })
 
     const branches = getBranchesForCompany(
       getValues("productName")?.value,
@@ -509,9 +459,9 @@ console.log(primaryLicenseOptions)
     )
     setBranchOptions(branches)
   }
-  console.log(tableData)
+
   const handleBranchChange = (selectedBranchOption) => {
-    setValue("branchName", selectedBranchOption)
+    setValue("branchName", selectedBranchOption, { shouldDirty: true })
   }
 
   const openAddPopup = (type) => {
@@ -548,17 +498,46 @@ console.log(primaryLicenseOptions)
     setduplicatelicense(null)
     setdetailsData([])
   }
-  console.log(tableData)
-  console.log(licenseloading)
+  // const handleCancelNavigation = () => {
+  //   if (hasUnsavedChanges) {
+  //     const confirmLeave = window.confirm(
+  //       "You have unsaved customer details. Leaving this page without saving will discard the data. Do you want to continue?"
+  //     )
+  //     if (!confirmLeave) return
+  //   }
+
+  //   if (navigatebackto) {
+  //     navigate(navigatebackto)
+  //   } else {
+  //     navigate(-1)
+  //   }
+  // }
+  // const handleCancelNavigation = () => {
+  //   openUnsavedWarning(() => {
+  //     if (navigatebackto) {
+  //       navigate(navigatebackto)
+  //     } else {
+  //       navigate(-1)
+  //     }
+  //   })
+  // }
+  const handleCancelNavigation = () => {
+    requestNavigation(() => {
+      if (navigatebackto) {
+        navigate(navigatebackto)
+      } else {
+        navigate(-1)
+      }
+    })
+  }
   const handleLicenseBlur = async (licenseNumber) => {
-    console.log(licenseNumber)
     if (!String(licenseNumber).trim()) return
-    console.log(licenseNumber)
+
     try {
-      console.log(tableData)
       const existsInTable = tableData?.some(
         (row) => String(row?.licensenumber) === String(licenseNumber)
       )
+
       if (existsInTable) {
         toast.error(`License ${licenseNumber} already exists`)
         return
@@ -568,25 +547,17 @@ console.log(primaryLicenseOptions)
       const { data } = await api.get(
         `/customer/checkLicense?licenseNumber=${licenseNumber}`
       )
-      console.log(data)
+
       if (data.exists) {
         toast.error(`License ${licenseNumber} already exists`)
-        console.log("hhhhh")
         setduplicatelicense(true)
-        // setSelectedLeadList((prev) =>
-        //   prev.map((row, i) => (i === index ? { ...row } : row))
-        // )
-
         return
       } else {
         setduplicatelicense(null)
       }
 
-      // setlicenseloading(false)
       toast.success("License available")
     } catch (error) {
-      // setlicenseloading(false)
-      console.error(error)
       toast.error("Failed to validate license")
     } finally {
       setlicenseloading(false)
@@ -595,8 +566,8 @@ console.log(primaryLicenseOptions)
 
   const handleEdit = (item, index) => {
     console.log(item)
+
     setdetailsData(item)
-    console.log(index)
     setPopupType(item?.productorservicetype)
     setEditIndex(index)
 
@@ -619,7 +590,6 @@ console.log(primaryLicenseOptions)
       item?.taggeddata?.map((entry) => String(entry?.licensenumber)) ||
       item?.taggedLicenses ||
       []
-    console.log(item)
 
     const taggedLicenseDueDatesFromData =
       item?.taggeddata?.reduce((acc, entry) => {
@@ -627,18 +597,21 @@ console.log(primaryLicenseOptions)
           acc[String(entry.licensenumber)] = {
             nextDue: entry?.nextDue || "",
             productAmount: entry?.productAmount ?? "",
-            taxexclusiveAmount: entry?.taxexclusiveAmount ?? "",
-            taxinclusiveamount: entry?.taxinclusiveamount ?? "",
-            hsn: entry?.hsn ?? ""
+            taxexclusiveAmount: entry?.taxexclusiveAmount ?? 0,
+            taxinclusiveamount: entry?.taxinclusiveamount ?? 0,
+            hsn: entry?.hsn ?? 0,
+nextDueTax:entry?.nextDueTax??0,
+originalHsn:entry?.originalHsn??0,
+serialNumber:entry?.serialNumber??"",
+noofusers:entry?.noofusers??0
           }
         }
         return acc
       }, {}) || {}
-    console.log(taggedLicenseDueDatesFromData)
 
-    setCompanyOptions(getCompaniesForProduct(item?.productid))
-    setBranchOptions(getBranchesForCompany(item?.productid, item?.companyid))
-    console.log(item)
+    setCompanyOptions(getCompaniesForProduct(item?.product_id))
+    setBranchOptions(getBranchesForCompany(item?.product_id, item?.company_id))
+
     reset({
       ...getValues(),
       productName: productOption,
@@ -655,7 +628,7 @@ console.log(primaryLicenseOptions)
       taggedLicenses: taggedLicensesFromData,
       taggedLicenseDueDates: taggedLicenseDueDatesFromData
     })
-    console.log("hh")
+
     setShowProductPopup(true)
   }
 
@@ -663,122 +636,13 @@ console.log(primaryLicenseOptions)
     setTableData((prev) => prev.filter((_, i) => i !== index))
   }
 
-  // const savePopupData = () => {
-  //   const values = getValues()
-
-  //   if (!values?.productName?.value) {
-  //     toast.error("Please select product/service")
-  //     return
-  //   }
-
-  //   if (
-  //     popupType === "Primaryproduct" &&
-  //     !String(values?.licensenumber || "").trim()
-  //   ) {
-  //     setError("licensenumber", {
-  //       type: "manual",
-  //       message: "License number is required for primary product"
-  //     })
-  //     return
-  //   }
-
-  //   if (
-  //     popupType === "Primaryproduct" &&
-  //     String(values?.licensenumber || "").trim() &&
-  //     !licenseAvailable
-  //   ) {
-  //     setError("licensenumber", {
-  //       type: "manual",
-  //       message: "License number already exists"
-  //     })
-  //     return
-  //   }
-
-  //   const selectedTaggedLicenses =
-  //     popupType === "Additionalservice" ? values?.taggedLicenses || [] : []
-
-  //   const dueMap =
-  //     popupType === "Additionalservice"
-  //       ? values?.taggedLicenseDueDates || {}
-  //       : {}
-
-  //   if (
-  //     popupType === "Additionalservice" &&
-  //     selectedTaggedLicenses.length > 0
-  //   ) {
-  //     const hasEmptyDueDate = selectedTaggedLicenses.some(
-  //       (licenseNo) => !String(dueMap[String(licenseNo)] || "").trim()
-  //     )
-
-  //     if (hasEmptyDueDate) {
-  //       toast.error("Please enter due date for all tagged licenses")
-  //       return
-  //     }
-  //   }
-
-  //   const taggeddata =
-  //     popupType === "Additionalservice" && selectedTaggedLicenses.length > 0
-  //       ? selectedTaggedLicenses.map((licenseNo) => ({
-  //           licensenumber: Number(licenseNo),
-  //           nextDue: dueMap[String(licenseNo)] || ""
-  //         }))
-  //       : []
-
-  //   const row = {
-  //     company_id: values?.companyName?.value,
-  //     companyName: values?.companyName?.label,
-  //     branch_id: values?.branchName?.value,
-  //     branchName: values?.branchName?.label,
-  //     product_id: values?.productName?.value,
-  //     productName: values?.productName?.label,
-  //     shortName: values?.shortName,
-  //     licensenumber:
-  //       popupType === "Additionalservice" && taggeddata.length > 0
-  //         ? null
-  //         : values?.licensenumber
-  //           ? Number(values.licensenumber)
-  //           : null,
-  //     softwareTrade:
-  //       popupType === "Primaryproduct" ? values?.softwareTrade : "",
-  //     applicationDate:
-  //       popupType === "Primaryproduct" ? values?.applicationDate : "",
-  //     nextDue:
-  //       popupType === "Additionalservice" && taggeddata.length > 0
-  //         ? null
-  //         : values?.nextDue || "",
-  //     noofusers: values?.noofusers ? Number(values.noofusers) : 0,
-  //     productAmount: values?.productAmount ? Number(values.productAmount) : 0,
-  //     isActive: values?.isActive || "Running",
-  //     productorservicetype: popupType,
-  //     taggeddata,
-  //     taggedLicenses: selectedTaggedLicenses
-  //   }
-
-  //   setTableData((prev) => {
-  //     const updated = [...prev]
-  //     if (editIndex !== null) {
-  //       updated[editIndex] = row
-  //     } else {
-  //       updated.push(row)
-  //     }
-  //     return updated
-  //   })
-
-  //   closePopup()
-  // }
-  console.log(errors)
-  console.log(!licenseAvailable && watchedLicense)
-  console.log(!licenseAvailable)
-  console.log(watchedLicense)
-
   const validateSelectedLeadList = (selectedleadlist = []) => {
     const hasAdditionalService = selectedleadlist.some(
       (row) =>
         String(row?.productorservicetype || "").toLowerCase() ===
         "additionalservice"
     )
-    console.log(selectedleadlist)
-    console.log(hasAdditionalService)
+
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
@@ -789,10 +653,9 @@ console.log(primaryLicenseOptions)
       d.setHours(0, 0, 0, 0)
       return d
     }
-    console.log(selectedleadlist)
+
     for (let i = 0; i < selectedleadlist.length; i++) {
       const row = selectedleadlist[i]
-      const rowNo = i + 1
       const type = String(row?.productorservicetype || "").toLowerCase()
 
       const hasCompany = !!(
@@ -809,31 +672,23 @@ console.log(primaryLicenseOptions)
       if (!hasBranch) {
         return `Branch is required for ${row?.productName}`
       }
-      console.log(row)
+
       const productPrice = Number(
         row?.productAmount ?? row?.productPrice ?? row?.amount ?? 0
       )
-      console.log(productPrice)
-      const netAmount = Number(row?.netamount ?? row?.netAmount ?? 0)
 
       if (type === "primaryproduct") {
         if (!String(row?.licensenumber || row?.licenseNumber || "").trim()) {
-          return `License number is required for  ${row?.productName}`
+          return `License number is required for ${row?.productName}`
         }
         if (!row.applicationDate) {
-          return `Application date is requiered for  ${row?.productName},please add details`
+          return `Application date is requiered for ${row?.productName}, please add details`
         }
         if (!(productPrice > 0)) {
-          console.log("hhh")
-          console.log(row)
-          return `Product price must be greater than 0 for  ${row?.productName} ${row.licensenumber}`
+          return `Product price must be greater than 0 for ${row?.productName}`
         }
-
-        // if (!(netAmount > 0)) {
-        //   return `Net amount is required for primary product in row ${rowNo}`
-        // }
       }
-      console.log(row)
+
       if (type === "additionalservice") {
         const taggeddata = Array.isArray(row?.taggeddata) ? row.taggeddata : []
         const outerLicense = String(
@@ -843,18 +698,11 @@ console.log(primaryLicenseOptions)
           String(tag?.licensenumber || tag?.licenseNumber || "").trim()
         )
         const hasAnyLicense = !!outerLicense || hasTaggedLicense
-        console.log(hasAnyLicense)
-        console.log(!hasAdditionalService)
-        console.log(!hasAdditionalService && !(productPrice > 0))
+
         if (!hasAdditionalService && !(productPrice > 0)) {
-          console.log("jjjj")
           return `Product price must be greater than 0 for additional service ${row.productName}`
         }
 
-        if (!hasAdditionalService && !(netAmount > 0)) {
-          return `Net amount is required for additional service ${row?.productName}`
-        }
-        console.log(taggeddata)
         if (taggeddata.length > 0) {
           for (let j = 0; j < taggeddata.length; j++) {
             const tag = taggeddata[j]
@@ -862,9 +710,8 @@ console.log(primaryLicenseOptions)
               tag?.licensenumber || tag?.licenseNumber || ""
             ).trim()
             const due = parseDateOnly(tag?.nextDue)
-            console.log(due)
+
             if (!tagLicense) {
-              console.log("hh")
               return `Tagged license number is required in ${row?.productName}`
             }
 
@@ -877,14 +724,10 @@ console.log(primaryLicenseOptions)
             }
           }
         } else {
-          console.log(taggeddata)
           if (!row.nextDue) {
-            console.log("hh")
-            console.log(row)
-            return `Additonal service ${row?.productName} must have a next Due, please add Details`
+            return `Additional service ${row?.productName} must have a next Due, please add details`
           }
           if (!outerLicense && taggeddata.length === 0) {
-            console.log("hhh")
             return `Additional service ${row?.productName} must have a license number or tagged license`
           }
 
@@ -894,65 +737,31 @@ console.log(primaryLicenseOptions)
           }
 
           if (due < today) {
-            return `Next due cannot be less than current date for additional service  ${row?.productName}`
+            return `Next due cannot be less than current date for additional service ${row?.productName}`
           }
         }
 
         if (!hasAnyLicense) {
-          console.log("Hhh")
-
-          return `Additional service  ${row?.productName} must have a license number or tagged license`
-        }
-      }
-    }
-
-    const primaryProducts = selectedleadlist.filter(
-      (row) =>
-        String(row?.productorservicetype || "").toLowerCase() ===
-        "primaryproduct"
-    )
-
-    const additionalServices = selectedleadlist.filter(
-      (row) =>
-        String(row?.productorservicetype || "").toLowerCase() ===
-        "additionalservice"
-    )
-
-    if (primaryProducts.length > 0 && additionalServices.length > 0) {
-      for (let i = 0; i < additionalServices.length; i++) {
-        const row = additionalServices[i]
-        const rowNo = selectedleadlist.findIndex((x) => x === row) + 1
-        const taggeddata = Array.isArray(row?.taggeddata) ? row.taggeddata : []
-        const outerLicense = String(
-          row?.licensenumber || row?.licenseNumber || ""
-        ).trim()
-        const hasTaggedLicense = taggeddata.some((tag) =>
-          String(tag?.licensenumber || tag?.licenseNumber || "").trim()
-        )
-
-        if (!outerLicense && !hasTaggedLicense) {
-          return `Additional service  ${row?.productName} should have any one license number or tagged license number`
+          return `Additional service ${row?.productName} must have a license number or tagged license`
         }
       }
     }
 
     return null
   }
+
   const savePopupData = () => {
-    console.log("hhhh")
-    console.log(duplicatelicense)
     if (duplicatelicense) {
-      console.log("hhh")
       toast.error("License already exists")
       return
     }
+
     const values = getValues()
-    console.log(values)
+
     if (!values?.productName?.value) {
       toast.error("Please select product/service")
       return
     }
-    console.log(values)
 
     if (
       popupType === "Primaryproduct" &&
@@ -989,9 +798,6 @@ console.log(primaryLicenseOptions)
       popupType === "Additionalservice" &&
       selectedTaggedLicenses.length > 0
     ) {
-      // const hasEmptyDueDate = selectedTaggedLicenses.some(
-      //   (licenseNo) => !String(dueMap[String(licenseNo)] || "").trim()
-      // )
       const hasEmptyDueDate = selectedTaggedLicenses.some(
         (licenseNo) => !String(dueMap[String(licenseNo)]?.nextDue || "").trim()
       )
@@ -1001,14 +807,7 @@ console.log(primaryLicenseOptions)
         return
       }
     }
-
-    // const taggeddata =
-    //   popupType === "Additionalservice" && selectedTaggedLicenses.length > 0
-    //     ? selectedTaggedLicenses.map((licenseNo) => ({
-    //         licensenumber: Number(licenseNo),
-    //         nextDue: dueMap[String(licenseNo)] || ""
-    //       }))
-    //     : []
+console.log(dueMap)
     const taggeddata =
       popupType === "Additionalservice" && selectedTaggedLicenses.length > 0
         ? selectedTaggedLicenses.map((licenseNo) => ({
@@ -1020,18 +819,24 @@ console.log(primaryLicenseOptions)
             taxexclusiveAmount: Number(
               dueMap[String(licenseNo)]?.taxexclusiveAmount || 0
             ),
+noofusers:Number( dueMap[String(licenseNo)]?.noofusers || 0),
+nextDueTax:Number( dueMap[String(licenseNo)]?.nextDueTax || 0),
+actualHsn:Number( dueMap[String(licenseNo)]?.originalHsn || 0),
+originalHsn:Number( dueMap[String(licenseNo)]?.originalHsn || 0),
+leadTax:Number( dueMap[String(licenseNo)]?.nextDueTax || 0),
+serialNumber: dueMap[String(licenseNo)]?.serialNumber ,
+hsn: Number(
+              dueMap[String(licenseNo)]?.hsn || 0
+            ),
+
             taxinclusiveamount: Number(
               dueMap[String(licenseNo)]?.taxinclusiveamount || 0
             )
           }))
         : []
-    console.log(values)
-    console.log(tableData)
-    console.log(values)
-    const baseRow =
-      editIndex !== null
-        ? tableData[editIndex] // preserve all old fields while editing
-        : {} // or your default schema object
+
+    const baseRow = editIndex !== null ? tableData[editIndex] : {}
+
     const row = {
       ...baseRow,
       company_id: values?.productName?.company_id,
@@ -1062,13 +867,11 @@ console.log(primaryLicenseOptions)
       taggeddata,
       taggedLicenses: selectedTaggedLicenses
     }
-    console.log(row)
-    console.log(productOptions)
+
     const selectedProductObj = productOptions?.find(
       (p) => p.value === values?.productName?.value
     )
-    console.log(selectedProductObj.defaultservices)
-    console.log(selectedProductObj)
+
     const defaultServiceRows =
       popupType === "Primaryproduct" &&
       selectedProductObj?.defaultservices?.length
@@ -1084,7 +887,7 @@ console.log(primaryLicenseOptions)
             softwareTrade: "",
             applicationDate: "",
             nextDue: "",
-            noofusers: 0,
+            noofusers: service?.noofusers,
             productAmount: service?.productPrice
               ? Number(service.productPrice)
               : 0,
@@ -1097,19 +900,7 @@ console.log(primaryLicenseOptions)
             autoAddedFromDefaultService: true
           }))
         : []
-    console.log(defaultServiceRows)
-    console.log(editIndex)
-    console.log(tableData)
-    console.log("hh")
-    // setTableData((prev) => {
-    //   if (editIndex !== null) {
-    //     const updated = [...prev]
-    //     updated[editIndex] = row
-    //     return updated
-    //   }
 
-    //   return [...prev, row, ...defaultServiceRows]
-    // })
     setTableData((prev) => {
       if (editIndex !== null) {
         const updated = [...prev]
@@ -1117,7 +908,6 @@ console.log(primaryLicenseOptions)
         return updated
       }
 
-      // Existing additional service product ids
       const existingAdditionalServiceIds = new Set(
         prev
           .filter(
@@ -1128,7 +918,6 @@ console.log(primaryLicenseOptions)
           .map((item) => String(item.product_id))
       )
 
-      // Only keep default services that don't already exist
       const newDefaultServices = defaultServiceRows.filter(
         (service) =>
           !existingAdditionalServiceIds.has(String(service.product_id))
@@ -1139,14 +928,7 @@ console.log(primaryLicenseOptions)
 
     closePopup()
   }
-  console.log(tableData)
-  // const filteredOptionsByType = useMemo(() => {
-  //   return productOptions.filter(
-  //     (item) =>
-  //       String(item?.productorservicetype).toLowerCase() ===
-  //       String(popupType).toLowerCase()
-  //   )
-  // }, [productOptions, popupType])
+
   const filteredOptionsByType = useMemo(() => {
     let options = productOptions.filter(
       (item) =>
@@ -1167,13 +949,11 @@ console.log(primaryLicenseOptions)
 
       options = options.filter(
         (item) => !existingServiceIds.has(String(item.value))
-        // or String(item._id) depending on your productOptions structure
       )
     }
 
     return options
   }, [productOptions, popupType, tableData])
-  console.log(popupType)
 
   const primaryProducts = useMemo(() => {
     return tableData.filter(
@@ -1181,33 +961,66 @@ console.log(primaryLicenseOptions)
         String(item?.productorservicetype).toLowerCase() === "primaryproduct"
     )
   }, [tableData])
-  console.log(tableData)
-  console.log(primaryProducts)
+
   const additionalServices = useMemo(() => {
     return tableData.filter(
       (item) =>
         String(item?.productorservicetype).toLowerCase() === "additionalservice"
     )
   }, [tableData])
-  console.log(additionalServices)
+
   const formatDateForInput = (date) => {
     if (!date) return ""
     return String(date).split("T")[0]
   }
-  console.log(tableData)
-  console.log(primaryProducts)
-  console.log(tableData)
-  console.log(additionalServices)
+
+  // useUnsavedChangesPrompt(
+  //   hasUnsavedChanges,
+  //   "You have unsaved customer details. Leaving this page without saving will discard the data. Do you want to continue?"
+  // )
+  useUnsavedChangesPrompt({
+    when: hasUnsavedChanges,
+    onBlock: ({ proceed, stay }) => {
+      setPendingAction(() => ({
+        proceed,
+        stay
+      }))
+      setShowUnsavedModal(true)
+    }
+  })
+  const openUnsavedWarning = (action) => {
+    if (!hasUnsavedChanges) {
+      action()
+      return
+    }
+
+    setPendingAction(() => ({
+      proceed: action,
+      stay: () => {}
+    }))
+    setShowUnsavedModal(true)
+  }
+
+  const handleStayOnPage = () => {
+    pendingAction?.stay?.()
+    setShowUnsavedModal(false)
+    setPendingAction(null)
+  }
+
+  const handleLeavePage = () => {
+    setShowUnsavedModal(false)
+    const action = pendingAction?.proceed
+    setPendingAction(null)
+    action?.()
+  }
   const onSubmit = async (data) => {
-    console.log(data)
-    console.log(tableData)
-    console.log(submissionloader)
     const validationMessage = validateSelectedLeadList(tableData)
-    console.log(validationMessage)
+
     if (validationMessage) {
       toast.error(validationMessage)
       return
     }
+
     if (submissionloader) return
 
     setsubmissionloader(true)
@@ -1216,9 +1029,11 @@ console.log(primaryLicenseOptions)
         await handleCustomerData(data, tableData)
         reset()
         setTableData([])
+        setInitialTableData([])
       } else if (process === "edit") {
-        console.log(tableData)
         await handleEditedData(data, tableData, customer?.index)
+        reset(data)
+        setInitialTableData(tableData)
       }
     } catch (error) {
       toast.error("Failed to save customer!")
@@ -1257,7 +1072,6 @@ console.log(primaryLicenseOptions)
     <div className="min-h-screen bg-[#ADD8E6] px-3 py-6 md:px-6">
       <div className="mx-auto max-w-[1180px]">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          {/* your existing top customer form UI remains same */}
           <div className="rounded-[20px] border border-[#edf1f7] bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.05)] md:p-5">
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1276,9 +1090,11 @@ console.log(primaryLicenseOptions)
 
               <button
                 type="button"
-                onClick={() =>
-                  navigatebackto ? navigate(navigatebackto) : navigate(-1)
-                }
+                // onClick={() =>
+                //   navigatebackto ? navigate(navigatebackto) : navigate(-1)
+                // }
+                // onClick={() => navigatebackto ? navigate(navigatebackto) : navigate(-1)}
+                onClick={handleCancelNavigation}
                 className="rounded-md border border-[#e6ebf3] bg-white px-3 py-2 text-[12px] font-medium text-[#6d7890] hover:bg-[#f8fafc]"
               >
                 Cancel
@@ -1299,7 +1115,9 @@ console.log(primaryLicenseOptions)
                     required: "Customer name is required"
                   })}
                   onBlur={(e) =>
-                    setValue("customerName", e.target.value.trim())
+                    setValue("customerName", e.target.value.trim(), {
+                      shouldDirty: true
+                    })
                   }
                   className={tileInputClass}
                   placeholder="Enter customer name"
@@ -1315,8 +1133,13 @@ console.log(primaryLicenseOptions)
                 <input
                   type="number"
                   {...register("pincode")}
-                  onBlur={(e) => setValue("pincode", e.target.value.trim())}
-                  className={tileInputClass}
+                  onBlur={(e) =>
+                    setValue("pincode", e.target.value.trim(), {
+                      shouldDirty: true
+                    })
+                  }
+                  onWheel={(e) => e.currentTarget.blur()}
+                  className={`${tileInputClass} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0`}
                   placeholder="Pincode"
                 />
               </InfoInputCard>
@@ -1330,7 +1153,11 @@ console.log(primaryLicenseOptions)
                 <input
                   type="text"
                   {...register("city")}
-                  onBlur={(e) => setValue("city", e.target.value.trim())}
+                  onBlur={(e) =>
+                    setValue("city", e.target.value.trim(), {
+                      shouldDirty: true
+                    })
+                  }
                   className={tileInputClass}
                   placeholder="City"
                 />
@@ -1352,7 +1179,11 @@ console.log(primaryLicenseOptions)
                       message: "Invalid email address"
                     }
                   })}
-                  onBlur={(e) => setValue("email", e.target.value.trim())}
+                  onBlur={(e) =>
+                    setValue("email", e.target.value.trim(), {
+                      shouldDirty: true
+                    })
+                  }
                   className={tileInputClass}
                   placeholder="Email"
                 />
@@ -1367,7 +1198,11 @@ console.log(primaryLicenseOptions)
                 <input
                   type="text"
                   {...register("address1")}
-                  onBlur={(e) => setValue("address1", e.target.value.trim())}
+                  onBlur={(e) =>
+                    setValue("address1", e.target.value.trim(), {
+                      shouldDirty: true
+                    })
+                  }
                   className={tileInputClass}
                   placeholder="Address line 1"
                 />
@@ -1383,7 +1218,9 @@ console.log(primaryLicenseOptions)
                   type="text"
                   {...register("contactPerson")}
                   onBlur={(e) =>
-                    setValue("contactPerson", e.target.value.trim())
+                    setValue("contactPerson", e.target.value.trim(), {
+                      shouldDirty: true
+                    })
                   }
                   className={tileInputClass}
                   placeholder="Contact person"
@@ -1399,7 +1236,11 @@ console.log(primaryLicenseOptions)
                 <input
                   type="tel"
                   {...register("mobile")}
-                  onBlur={(e) => setValue("mobile", e.target.value.trim())}
+                  onBlur={(e) =>
+                    setValue("mobile", e.target.value.trim(), {
+                      shouldDirty: true
+                    })
+                  }
                   className={tileInputClass}
                   placeholder="Mobile number"
                 />
@@ -1430,7 +1271,11 @@ console.log(primaryLicenseOptions)
                 <input
                   type="text"
                   {...register("address2")}
-                  onBlur={(e) => setValue("address2", e.target.value.trim())}
+                  onBlur={(e) =>
+                    setValue("address2", e.target.value.trim(), {
+                      shouldDirty: true
+                    })
+                  }
                   className={tileInputClass}
                   placeholder="Address line 2"
                 />
@@ -1445,7 +1290,11 @@ console.log(primaryLicenseOptions)
                 <input
                   type="text"
                   {...register("state")}
-                  onBlur={(e) => setValue("state", e.target.value.trim())}
+                  onBlur={(e) =>
+                    setValue("state", e.target.value.trim(), {
+                      shouldDirty: true
+                    })
+                  }
                   className={tileInputClass}
                   placeholder="State"
                 />
@@ -1460,7 +1309,11 @@ console.log(primaryLicenseOptions)
                 <input
                   type="text"
                   {...register("country")}
-                  onBlur={(e) => setValue("country", e.target.value.trim())}
+                  onBlur={(e) =>
+                    setValue("country", e.target.value.trim(), {
+                      shouldDirty: true
+                    })
+                  }
                   className={tileInputClass}
                   placeholder="Country"
                 />
@@ -1475,27 +1328,15 @@ console.log(primaryLicenseOptions)
                 <input
                   type="tel"
                   {...register("landline")}
-                  onBlur={(e) => setValue("landline", e.target.value.trim())}
+                  onBlur={(e) =>
+                    setValue("landline", e.target.value.trim(), {
+                      shouldDirty: true
+                    })
+                  }
                   className={tileInputClass}
                   placeholder="Landline"
                 />
               </InfoInputCard>
-
-              {/* <InfoInputCard
-                icon={<FaStar size={12} />}
-                iconBg="bg-[#eef4ff]"
-                iconColor="text-[#6d86ff]"
-                label="Industry"
-              >
-                <select {...register("industry")} className={tileInputClass}>
-                  <option value="">Select Industry</option>
-                  {industries.map((industry, index) => (
-                    <option key={index} value={industry}>
-                      {industry}
-                    </option>
-                  ))}
-                </select>
-              </InfoInputCard> */}
 
               <InfoInputCard
                 icon={<FaHashtag size={12} />}
@@ -1526,7 +1367,11 @@ console.log(primaryLicenseOptions)
                   <input
                     type="text"
                     {...register("gstNo")}
-                    onBlur={(e) => setValue("gstNo", e.target.value.trim())}
+                    onBlur={(e) =>
+                      setValue("gstNo", e.target.value.trim(), {
+                        shouldDirty: true
+                      })
+                    }
                     className={tileInputClass}
                     placeholder="Enter GSTIN"
                   />
@@ -1635,7 +1480,6 @@ console.log(primaryLicenseOptions)
                                 new Date(a.nextDue) - new Date(b.nextDue)
                             )
 
-                            // 1. Oldest overdue
                             const overdue = tagged.find((x) => {
                               const d = new Date(x.nextDue)
                               d.setHours(0, 0, 0, 0)
@@ -1644,7 +1488,6 @@ console.log(primaryLicenseOptions)
 
                             if (overdue) return overdue
 
-                            // 2. Today
                             const todayItem = tagged.find((x) => {
                               const d = new Date(x.nextDue)
                               d.setHours(0, 0, 0, 0)
@@ -1652,16 +1495,14 @@ console.log(primaryLicenseOptions)
                             })
 
                             if (todayItem) return todayItem
-
-                            // 3. Nearest future
                             return tagged[0] || null
                           })()
                         : null
+                      console.log(selectedTagged)
                       const dueDate = selectedTagged?.nextDue || item?.nextDue
 
                       const isCurrentMonthExpiry = (() => {
                         if (!dueDate) return false
-
                         const date = new Date(dueDate)
                         const today = new Date()
 
@@ -1693,15 +1534,6 @@ console.log(primaryLicenseOptions)
                                   .slice(0, 18)
                               : item?.licensenumber
                           }
-                          // line3={
-                          //   item?.taggeddata?.length > 0
-                          //     ? formatDateToDDMMYYYY(
-                          //         item?.taggeddata?.[0]?.nextDue
-                          //       )
-                          //     : item?.nextDue
-                          //       ? formatDateToDDMMYYYY(item?.nextDue)
-                          //       : ""
-                          // }
                           line3={
                             selectedTagged
                               ? formatDateToDDMMYYYY(selectedTagged.nextDue)
@@ -1717,11 +1549,6 @@ console.log(primaryLicenseOptions)
                               : item?.productAmount
                           }
                           isCurrentMonthExpiry={isCurrentMonthExpiry}
-                          // line5={
-                          //   item?.taggedata
-                          //     ? item?.taggeddata[0]?.productAmount
-                          //     : item?.productAmount
-                          // }
                           onEdit={handleEdit}
                           onDelete={handleDelete}
                         />
@@ -1748,9 +1575,10 @@ console.log(primaryLicenseOptions)
           <div className="flex justify-end gap-3">
             <button
               type="button"
-              onClick={() =>
-                navigatebackto ? navigate(navigatebackto) : navigate(-1)
-              }
+              // onClick={() =>
+              //   navigatebackto ? navigate(navigatebackto) : navigate(-1)
+              // }
+              onClick={handleCancelNavigation}
               className="rounded-lg border border-[#f1c7cc] bg-white px-5 py-2.5 text-[13px] font-semibold text-[#d65b68] hover:bg-[#fff6f7]"
             >
               Cancel
@@ -1769,668 +1597,741 @@ console.log(primaryLicenseOptions)
           </div>
         </form>
       </div>
+
       {licenseloading && <FullScreenLoader text="Checking..." />}
-
-      {showProductPopup && (
-        <div className="fixed inset-0 z-50 bg-black/30 p-2 sm:p-3">
-          <div className="flex min-h-full items-center justify-center">
-            <div className="flex w-full max-w-3xl max-h-[92vh] flex-col overflow-hidden rounded-[14px] bg-white shadow-2xl">
-              <div className="flex shrink-0 items-center justify-between border-b border-[#edf1f7] px-3 py-2.5">
-                <div>
-                  <h3 className="text-[14px] font-semibold text-[#162033]">
-                    {popupType === "Primaryproduct"
-                      ? "Primary Product"
-                      : "Additional Service"}
-                  </h3>
-                  <p className="text-[10px] text-[#7f8aa3]">
-                    Add product or service details
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={closePopup}
-                  className="rounded-full p-1 text-[#7f8aa3] hover:bg-[#f4f7fb]"
-                >
-                  <FaTimes size={14} />
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto px-3 py-2.5">
-                <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
-                  <div>
-                    <label className="mb-1 block text-[11px] font-medium text-[#5d6983]">
-                      Product / Service
-                    </label>
-                    <Controller
-                      name="productName"
-                      control={control}
-                      render={({ field }) => (
-                        <Select
-                          {...field}
-                          options={filteredOptionsByType}
-                          value={field.value}
-                          onChange={(option) => {
-                            field.onChange(option)
-                            handleProductChange(option)
-                          }}
-                          placeholder="Select name"
-                          styles={compactSelectStyles}
-                        />
-                      )}
-                    />
-                  </div>
-
-                  <PopupField
-                    label="Short Name"
-                    error={errors.shortName?.message}
-                  >
-                    <input
-                      readOnly
-                      {...register("shortName")}
-                      className="w-full cursor-not-allowed rounded-[8px] border border-[#dfe5ee] bg-[#f3f6fb] px-2.5 py-1.5 text-[12px] text-[#1f2a3d] outline-none"
-                      placeholder="Enter Short Name"
-                    />
-                  </PopupField>
-
-                  {/* <PopupField label="Company">
-                    <Controller
-                      name="companyName"
-                      control={control}
-                      render={({ field }) => (
-                        <Select
-                          {...field}
-                          options={companyOptions}
-                          value={field.value}
-                          onChange={(option) => {
-                            field.onChange(option)
-                            handleCompanyChange(option)
-                          }}
-                          placeholder="Select company"
-                          isDisabled={!selectedProduct}
-                          styles={compactSelectStyles}
-                        />
-                      )}
-                    />
-                  </PopupField> */}
-
-                  {/* <PopupField label="Branch">
-                    <Controller
-                      name="branchName"
-                      control={control}
-                      render={({ field }) => (
-                        <Select
-                          {...field}
-                          options={branchOptions}
-                          value={field.value}
-                          onChange={(option) => {
-                            field.onChange(option)
-                            handleBranchChange(option)
-                          }}
-                          placeholder="Select branch"
-                          isDisabled={!watch("companyName")}
-                          styles={compactSelectStyles}
-                        />
-                      )}
-                    />
-                  </PopupField> */}
-
-                  {/* <PopupField
-                    label="License Number"
-                    error={
-                      errors.licensenumber?.message ||
-                      (!licenseAvailable && watchedLicense
-                        ? "License number already exists"
-                        : "")
-                    }
-                  >
-                    <input
-                      {...register("licensenumber")}
-                      readOnly={hasTaggedLicenses}
-                      className={`${compactPopupInputClass} ${
-                        hasTaggedLicenses
-                          ? "cursor-not-allowed bg-[#f3f6fb]"
-                          : ""
-                      }`}
-                      placeholder={
-                        popupType === "Primaryproduct"
-                          ? "Enter license number"
-                          : hasTaggedLicenses
-                            ? "Auto handled by tagged licenses"
-                            : "Enter license number"
-                      }
-                      onChange={(e) => {
-                        console.log(primaryProducts.length)
-                        console.log(additionalServices.length)
-                        console.log(hasTaggedLicenses)
-                        if (hasTaggedLicenses) return
-                        let index = 0
-                        if (popupType === "Primaryproduct") {
-                          if (primaryProducts.length > 0) {
-                            index++
-                          }
-                          console.log("hhh")
-                        } else if (popupType === "Additionalservice") {
-                          console.log("hh")
-                          if (additionalServices.length > 0) {
-                            index++
-                          }
-                        }
-                        setValue("licensenumber", e.target.value)
-                        console.log(index)
-                        if (debounceTimersRef.current[index]) {
-                          clearTimeout(debounceTimersRef.current[index])
-                        }
-                        const licenseValue = e.target.value
-                        console.log(licenseValue)
-                        debounceTimersRef.current[index] = setTimeout(() => {
-                          handleLicenseBlur(licenseValue)
-                          delete debounceTimersRef.current[index]
-                        }, 1000)
-                        clearErrors("licensenumber")
-                      }}
-                    />
-                  </PopupField> */}
-                  {popupType === "Primaryproduct" && (
-                    <PopupField
-                      label="License Number"
-                      error={
-                        errors.licensenumber?.message ||
-                        (!licenseAvailable && watchedLicense
-                          ? "License number already exists"
-                          : "")
-                      }
-                    >
-                      <input
-                        {...register("licensenumber")}
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        readOnly={hasTaggedLicenses}
-                        className={`${compactPopupInputClass} ${
-                          hasTaggedLicenses
-                            ? "cursor-not-allowed bg-[#f3f6fb]"
-                            : ""
-                        }`}
-                        placeholder={
-                          popupType === "Primaryproduct"
-                            ? "Enter license number"
-                            : hasTaggedLicenses
-                              ? "Auto handled by tagged licenses"
-                              : "Enter license number"
-                        }
-                        onKeyDown={(e) => {
-                          if (hasTaggedLicenses) return
-
-                          const allowedKeys = [
-                            "Backspace",
-                            "Delete",
-                            "Tab",
-                            "ArrowLeft",
-                            "ArrowRight",
-                            "Home",
-                            "End"
-                          ]
-
-                          if (allowedKeys.includes(e.key)) return
-
-                          if (!/^\d$/.test(e.key)) {
-                            e.preventDefault()
-                          }
-                        }}
-                        onChange={(e) => {
-                          console.log(hasTaggedLicenses)
-                          if (hasTaggedLicenses) return
-
-                          const numericValue = e.target.value.replace(/\D/g, "")
-                          setValue("licensenumber", numericValue, {
-                            shouldValidate: true
-                          })
-
-                          let index = 0
-                          if (popupType === "Primaryproduct") {
-                            if (primaryProducts.length > 0) index++
-                          } else if (popupType === "Additionalservice") {
-                            if (additionalServices.length > 0) index++
-                          }
-
-                          if (debounceTimersRef.current[index]) {
-                            clearTimeout(debounceTimersRef.current[index])
-                          }
-
-                          debounceTimersRef.current[index] = setTimeout(() => {
-                            handleLicenseBlur(numericValue)
-                            delete debounceTimersRef.current[index]
-                          }, 1000)
-
-                          clearErrors("licensenumber")
-                        }}
-                      />
-                    </PopupField>
-                  )}
-
-                  {popupType === "Primaryproduct" && (
-                    <PopupField label="Software Trade">
-                      <select
-                        {...register("softwareTrade")}
-                        className={compactPopupInputClass}
-                      >
-                        <option value="">Select Software Trade</option>
-                        {softwareTrades.map((trade, index) => (
-                          <option key={index} value={trade}>
-                            {trade}
-                          </option>
-                        ))}
-                      </select>
-                    </PopupField>
-                  )}
-
-                  {popupType === "Primaryproduct" && (
-                    <PopupField label="Application Date">
-                      <input
-                        type="date"
-                        {...register("applicationDate")}
-                        className={compactPopupInputClass}
-                      />
-                    </PopupField>
-                  )}
-
-                  {/* {popupType === "Additionalservice" && !hasTaggedLicenses && (
-                    <PopupField label="Next Due">
-                      <input
-                        type="date"
-                        {...register("nextDue")}
-                        className={compactPopupInputClass}
-                      />
-                    </PopupField>
-                  )} */}
-                  {popupType === "Additionalservice" && (
-                    <PopupField label="No of Quantity / Users">
-                      <input
-                        type="number"
-                        {...register("noofusers")}
-                        className={`${compactPopupInputClass} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0`}
-                      />
-                    </PopupField>
-                  )}
-                  {popupType === "Primaryproduct" && (
-                    <PopupField label="Amount">
-                      <input
-                        type="number"
-                        {...register("productAmount")}
-                        className={`${compactPopupInputClass} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0`}
-                      />
-                    </PopupField>
-                  )}
-
-                  <PopupField label="Status">
-                    <select
-                      {...register("isActive")}
-                      className={compactPopupInputClass}
-                    >
-                      <option value="Running">Active</option>
-                      <option value="Deactive">Deactive</option>
-                    </select>
-                  </PopupField>
-
-                  {popupType === "Additionalservice" && (
-                    <div className="md:col-span-2">
-                      <label className="mb-1 block text-[11px] font-medium text-[#5d6983]">
-                        Tagged License Numbers
-                      </label>
-
-                      {/* <div className="max-h-28 overflow-y-auto rounded-[8px] border border-[#e7ebf4] bg-[#fafcff] p-2">
-                        {
-primaryLicenseOptions.map((option) => {
-  const selectedTaggedLicenses = watch("taggedLicenses") || [];
-  const checked = selectedTaggedLicenses.includes(String(option.licenseNo));
-
-  return (
-    <label
-      key={option.licenseNo}
-      className="flex items-center gap-2 rounded-md border border-[#edf1f7] bg-white px-2 py-1.5 text-[11px] text-[#4f5d78]"
-    >
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => {
-          const licenseNo = String(option.licenseNo);
-          const prev = watch("taggedLicenses") || [];
-          const dueMap = watch("taggedLicenseDueDates") || {};
-
-          if (e.target.checked) {
-            setValue("taggedLicenses", [...prev, licenseNo]);
-            setValue("licensenumber", "");
-            setValue("taggedLicenseDueDates", {
-              ...dueMap,
-              [licenseNo]: dueMap[licenseNo] || "",
-            });
-
-            const matched = detailsData?.taggeddata?.find(
-              (item) => String(item.licensenumber) === licenseNo
-            );
-
-            if (matched) {
-              const currentValues = getValues();
-
-              reset({
-                ...currentValues,
-                taggedLicenseDueDates: {
-                  ...currentValues.taggedLicenseDueDates,
-                  [licenseNo]: {
-                    nextDue: matched.nextDue || "",
-                    productAmount: matched.productAmount ?? "",
-                    taxexclusiveAmount: matched.taxexclusiveAmount ?? "",
-                    taxinclusiveamount: matched.taxinclusiveamount ?? "",
-                    hsn: matched.hsn ?? "",
-                  },
-                },
-              });
-            }
-          } else {
-            const updatedLicenses = prev.filter(
-              (item) => String(item) !== licenseNo
-            );
-
-            const updatedDueMap = { ...dueMap };
-            delete updatedDueMap[licenseNo];
-
-            setValue("taggedLicenses", updatedLicenses);
-            setValue("taggedLicenseDueDates", updatedDueMap);
-
-            if (updatedLicenses.length === 0) {
-              setValue("licensenumber", "");
-            }
-          }
-        }}
+      <UnsavedChangesModal
+        open={showUnsavedModal}
+        onClose={handleStayOnPage}
+        onConfirm={handleLeavePage}
+        title="Leave without saving?"
+        description="You have unsaved customer details. If you continue, the entered data will be lost."
       />
+     {showProductPopup && (
+  <div className="fixed inset-0 z-50 bg-black/30 p-2 sm:p-3">
+    <div className="flex min-h-full items-center justify-center">
+      <div
+        className={`flex max-h-[92vh] w-full flex-col overflow-hidden rounded-[14px] bg-white shadow-2xl transition-all ${
+          popupType === "Additionalservice" && hasTaggedLicenses
+            ? "max-w-4xl"
+            : "max-w-3xl"
+        }`}
+      >
+        <div className="flex shrink-0 items-center justify-between border-b border-[#edf1f7] px-3 py-2.5">
+          <div>
+            <h3 className="text-[14px] font-semibold text-[#162033]">
+              {popupType === "Primaryproduct" ? "Primary Product" : "Additional Service"}
+            </h3>
+            <p className="text-[10px] text-[#7f8aa3]">Add product or service details</p>
+          </div>
 
-      <span>{option.licenseNo}</span>
-      <span className="text-[#7b879c]">- {option.productName}</span>
-    </label>
-  );
-})
-
-
-                        ) : (
-                          <p className="text-[11px] italic text-[#96a0b5]">
-                            No primary product license numbers available.
-                          </p>
-                        )}
-                      </div> */}
-<div className="max-h-28 overflow-y-auto rounded-[8px] border border-[#e7ebf4] bg-[#fafcff] p-2">
-  {primaryLicenseOptions.length > 0 ? (
-    <div className="grid grid-cols-1 gap-1.5 md:grid-cols-2">
-      {primaryLicenseOptions.map((option) => {
-        const selectedTaggedLicenses = watch("taggedLicenses") || [];
-        const checked = selectedTaggedLicenses.includes(
-          String(option.licenseNo)
-        );
-
-        return (
-          <label
-            key={option.licenseNo}
-            className="flex items-center gap-2 rounded-md border border-[#edf1f7] bg-white px-2 py-1.5 text-[11px] text-[#4f5d78]"
+          <button
+            type="button"
+            onClick={closePopup}
+            className="rounded-full p-1 text-[#7f8aa3] hover:bg-[#f4f7fb]"
           >
-            <input
-              type="checkbox"
-              checked={checked}
-              onChange={(e) => {
-                const licenseNo = String(option.licenseNo);
-                const prev = watch("taggedLicenses") || [];
-                const dueMap = watch("taggedLicenseDueDates") || {};
+            <FaTimes size={14} />
+          </button>
+        </div>
 
-                if (e.target.checked) {
-                  setValue("taggedLicenses", [...prev, licenseNo]);
-                  setValue("licensenumber", "");
-                  setValue("taggedLicenseDueDates", {
-                    ...dueMap,
-                    [licenseNo]: dueMap[licenseNo] || "",
-                  });
+        <div className="flex-1 overflow-y-auto px-3 py-2.5">
+          <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-[11px] font-medium text-[#5d6983]">
+                Product / Service
+              </label>
+              <Controller
+                name="productName"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    {...field}
+                    options={filteredOptionsByType}
+                    value={field.value}
+                    onChange={(option) => {
+                      field.onChange(option)
+                      handleProductChange(option)
+                    }}
+                    placeholder="Select name"
+                    styles={compactSelectStyles}
+                  />
+                )}
+              />
+            </div>
 
-                  const matched = detailsData?.taggeddata?.find(
-                    (item) => String(item.licensenumber) === licenseNo
-                  );
+            <PopupField label="Short Name" error={errors.shortName?.message}>
+              <input
+                readOnly
+                {...register("shortName")}
+                className="w-full cursor-not-allowed rounded-[8px] border border-[#dfe5ee] bg-[#f3f6fb] px-2.5 py-1.5 text-[12px] text-[#1f2a3d] outline-none"
+                placeholder="Enter Short Name"
+              />
+            </PopupField>
 
-                  if (matched) {
-                    const currentValues = getValues();
-
-                    reset({
-                      ...currentValues,
-                      taggedLicenseDueDates: {
-                        ...currentValues.taggedLicenseDueDates,
-                        [licenseNo]: {
-                          nextDue: matched.nextDue || "",
-                          productAmount: matched.productAmount ?? "",
-                          taxexclusiveAmount: matched.taxexclusiveAmount ?? "",
-                          taxinclusiveamount: matched.taxinclusiveamount ?? "",
-                          hsn: matched.hsn ?? "",
-                        },
-                      },
-                    });
-                  }
-                } else {
-                  const updatedLicenses = prev.filter(
-                    (item) => String(item) !== licenseNo
-                  );
-
-                  const updatedDueMap = { ...dueMap };
-                  delete updatedDueMap[licenseNo];
-
-                  setValue("taggedLicenses", updatedLicenses);
-                  setValue("taggedLicenseDueDates", updatedDueMap);
-
-                  if (updatedLicenses.length === 0) {
-                    setValue("licensenumber", "");
-                  }
+            {popupType === "Primaryproduct" && (
+              <PopupField
+                label="License Number"
+                error={
+                  errors.licensenumber?.message ||
+                  (!licenseAvailable && watchedLicense ? "License number already exists" : "")
                 }
-              }}
-            />
+              >
+                <input
+                  {...register("licensenumber")}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  readOnly={hasTaggedLicenses}
+                  className={`${compactPopupInputClass} ${
+                    hasTaggedLicenses ? "cursor-not-allowed bg-[#f3f6fb]" : ""
+                  }`}
+                  placeholder="Enter license number"
+                  onKeyDown={(e) => {
+                    if (hasTaggedLicenses) return
 
-            <span>{option.licenseNo}</span>
-            <span className="text-[#7b879c]">- {option.productName}</span>
-          </label>
-        );
-      })}
-    </div>
-  ) : (
-    <p className="text-[11px] italic text-[#96a0b5]">
-      No primary product license numbers available.
-    </p>
-  )}
-</div>
-                    </div>
-                  )}
+                    const allowedKeys = [
+                      "Backspace",
+                      "Delete",
+                      "Tab",
+                      "ArrowLeft",
+                      "ArrowRight",
+                      "Home",
+                      "End"
+                    ]
 
-                  {popupType === "Additionalservice" && hasTaggedLicenses && (
-                    <div className="md:col-span-2">
-                      <label className="mb-1.5 block text-[11px] font-medium text-[#5d6983]">
-                        Tagged License Due Details
-                      </label>
+                    if (allowedKeys.includes(e.key)) return
 
-                      <div className="overflow-hidden rounded-[8px] border border-[#e7ebf4]">
-                        <div className="max-h-40 overflow-y-auto">
-                          <table className="w-full border-collapse">
-                            <thead className="sticky top-0 bg-[#f8fafc]">
-                              <tr>
-                                <th className="border-b border-[#e7ebf4] px-2.5 py-1.5 text-left text-[11px] font-semibold text-[#43506a]">
-                                  License Number
-                                </th>
-                                <th className="border-b border-[#e7ebf4] px-2.5 py-1.5 text-left text-[11px] font-semibold text-[#43506a]">
-                                  Next Due
-                                </th>
+                    if (!/^\d$/.test(e.key)) {
+                      e.preventDefault()
+                    }
+                  }}
+                  onChange={(e) => {
+                    if (hasTaggedLicenses) return
 
-                                <th className="border-b border-[#e7ebf4] px-2.5 py-1.5 text-left text-[11px] font-semibold text-[#43506a]">
-                                  Product Price
-                                </th>
-                                <th className="border-b border-[#e7ebf4] px-2.5 py-1.5 text-left text-[11px] font-semibold text-[#43506a]">
-                                  Amount(tax.inclusive)
-                                </th>
-                              </tr>
-                            </thead>
-                            {/* <tbody>
-                              {watchedTaggedLicenses.map((licenseNo) => (
-                                <tr key={licenseNo}>
-                                  <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
-                                    <input
-                                      value={licenseNo}
-                                      readOnly
-                                      className="w-full cursor-not-allowed rounded-[7px] border border-[#dfe5ee] bg-[#f3f6fb] px-2 py-1.5 text-[11px] text-[#1f2a3d] outline-none"
-                                    />
-                                  </td>
-                                  <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
-                                    <input
-                                      type="date"
-                                     
-                                      value={formatDateForInput(
-                                        watchedTaggedLicenseDueDates?.[
-                                          licenseNo
-                                        ]
-                                      )}
-                                      onChange={(e) => {
-                                        console.log(licenseNo)
-                                        const dueMap =
-                                          watch("taggedLicenseDueDates") || {}
-                                        setValue("taggedLicenseDueDates", {
-                                          ...dueMap,
-                                          [licenseNo]: e.target.value
-                                        })
-                                      }}
-                                      className={compactPopupInputClass}
-                                    />
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody> */}
-                            <tbody>
-                              {watchedTaggedLicenses.map((licenseNo) => (
-                                <tr key={licenseNo}>
-                                  <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
-                                    <input
-                                      value={licenseNo}
-                                      readOnly
-                                      className="w-full cursor-not-allowed rounded-[7px] border border-[#dfe5ee] bg-[#f3f6fb] px-2 py-1.5 text-[11px] text-[#1f2a3d] outline-none"
-                                    />
-                                  </td>
+                    const numericValue = e.target.value.replace(/\D/g, "")
+                    setValue("licensenumber", numericValue, {
+                      shouldValidate: true,
+                      shouldDirty: true
+                    })
 
-                                  <td className="border-b border-[#eef2f7] px-2.5 py-1.5 ">
-                                    <input
-                                      type="date"
-                                      value={formatDateForInput(
-                                        watchedTaggedLicenseDueDates?.[
-                                          licenseNo
-                                        ]?.nextDue
-                                      )}
-                                      onChange={(e) => {
-                                        const dueMap =
-                                          watch("taggedLicenseDueDates") || {}
+                    let index = 0
+                    if (popupType === "Primaryproduct") {
+                      if (primaryProducts.length > 0) index++
+                    } else if (popupType === "Additionalservice") {
+                      if (additionalServices.length > 0) index++
+                    }
 
-                                        setValue("taggedLicenseDueDates", {
-                                          ...dueMap,
-                                          [licenseNo]: {
-                                            ...dueMap[licenseNo],
-                                            nextDue: e.target.value
-                                          }
-                                        })
-                                      }}
-                                      className={compactPopupInputClass}
-                                    />
-                                  </td>
+                    if (debounceTimersRef.current[index]) {
+                      clearTimeout(debounceTimersRef.current[index])
+                    }
 
-                                  <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
-                                    <input
-                                      type="number"
-                                      value={
-                                        watchedTaggedLicenseDueDates?.[
-                                          licenseNo
-                                        ]?.taxexclusiveAmount ?? ""
+                    debounceTimersRef.current[index] = setTimeout(() => {
+                      handleLicenseBlur(numericValue)
+                      delete debounceTimersRef.current[index]
+                    }, 1000)
+
+                    clearErrors("licensenumber")
+                  }}
+                />
+              </PopupField>
+            )}
+
+            {popupType === "Primaryproduct" && (
+              <PopupField label="Software Trade">
+                <select {...register("softwareTrade")} className={compactPopupInputClass}>
+                  <option value="">Select Software Trade</option>
+                  {softwareTrades.map((trade, index) => (
+                    <option key={index} value={trade}>
+                      {trade}
+                    </option>
+                  ))}
+                </select>
+              </PopupField>
+            )}
+
+            {popupType === "Primaryproduct" && (
+              <PopupField label="Application Date">
+                <input type="date" {...register("applicationDate")} className={compactPopupInputClass} />
+              </PopupField>
+            )}
+
+            {popupType === "Additionalservice" && (
+              <PopupField label="No of Quantity / Users">
+                <input
+                  type="number"
+                  {...register("noofusers")}
+                  onWheel={(e) => e.currentTarget.blur()}
+                  className={`${compactPopupInputClass} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0`}
+                />
+              </PopupField>
+            )}
+
+            {popupType === "Primaryproduct" && (
+              <PopupField label="Amount">
+                <input
+                  type="number"
+                  {...register("productAmount")}
+                  className={`${compactPopupInputClass} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0`}
+                />
+              </PopupField>
+            )}
+
+            <PopupField label="Status">
+              <select {...register("isActive")} className={compactPopupInputClass}>
+                <option value="Running">Active</option>
+                <option value="Deactive">Deactive</option>
+              </select>
+            </PopupField>
+
+            {popupType === "Additionalservice" && (
+              <div className="md:col-span-2">
+                <label className="mb-1 block text-[11px] font-medium text-[#5d6983]">
+                  Tagged License Numbers
+                </label>
+
+                <div className="max-h-28 overflow-y-auto rounded-[8px] border border-[#e7ebf4] bg-[#fafcff] p-2">
+                  {primaryLicenseOptions.length > 0 ? (
+                    <div className="grid grid-cols-1 gap-1.5 md:grid-cols-2">
+                      {primaryLicenseOptions.map((option) => {
+                        const selectedTaggedLicenses = watch("taggedLicenses") || []
+                        const checked = selectedTaggedLicenses.includes(String(option.licenseNo))
+
+                        return (
+                          <label
+                            key={option.licenseNo}
+                            className="flex items-center gap-2 rounded-md border border-[#edf1f7] bg-white px-2 py-1.5 text-[11px] text-[#4f5d78]"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={(e) => {
+                                const licenseNo = String(option.licenseNo)
+                                const prev = watch("taggedLicenses") || []
+                                const dueMap = watch("taggedLicenseDueDates") || {}
+
+                                if (e.target.checked) {
+                                  setValue("taggedLicenses", [...prev, licenseNo], {
+                                    shouldDirty: true
+                                  })
+                                  setValue("licensenumber", "", { shouldDirty: true })
+                                  setValue(
+                                    "taggedLicenseDueDates",
+                                    {
+                                      ...dueMap,
+                                      [licenseNo]: dueMap[licenseNo] || ""
+                                    },
+                                    { shouldDirty: true }
+                                  )
+
+                                  const matched = detailsData?.taggeddata?.find(
+                                    (item) => String(item.licensenumber) === licenseNo
+                                  )
+
+                                  if (matched) {
+                                    const currentValues = getValues()
+
+                                    reset({
+                                      ...currentValues,
+                                      taggedLicenseDueDates: {
+                                        ...currentValues.taggedLicenseDueDates,
+                                        [licenseNo]: {
+                                          nextDue: matched.nextDue || "",
+                                          productAmount: matched.productAmount ?? "",
+                                          taxexclusiveAmount: matched.taxexclusiveAmount ?? "",
+                                          taxinclusiveamount: matched.taxinclusiveamount ?? "",
+                                          hsn: matched.hsn ?? ""
+                                        }
                                       }
-                                      onChange={(e) => {
-                                        const inputValue = e.target.value
-                                        const dueMap =
-                                          watch("taggedLicenseDueDates") || {}
-                                        console.log(dueMap)
-                                        console.log(dueMap[licenseNo])
-                                        const matchedData = dueMap[licenseNo]
-                                        const taxAmount =
-                                          (Number(matchedData?.hsn) / 100) *
-                                          Number(inputValue)
-                                        const total = Math.round(
-                                          Number(inputValue) + taxAmount
-                                        )
-                                        console.log(taxAmount)
-                                        console.log(total)
-                                        setValue("taggedLicenseDueDates", {
-                                          ...dueMap,
-                                          [licenseNo]: {
-                                            ...dueMap[licenseNo],
-                                            taxexclusiveAmount: inputValue,
-                                            taxinclusiveamount: total,
-                                            productAmount: total
-                                          }
-                                        })
-                                      }}
-                                      onWheel={(e) => e.currentTarget.blur()}
-                                      className={`${compactPopupInputClass} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0`}
-                                    />
-                                  </td>
-                                  <td className="border-b border-[#eef2f7] px-2.5 py-1.5">
-                                    <input
-                                      type="number"
-                                      readOnly
-                                      value={
-                                        watchedTaggedLicenseDueDates?.[
-                                          licenseNo
-                                        ]?.taxinclusiveamount ?? ""
-                                      }
-                                      onChange={(e) => {
-                                        const dueMap =
-                                          watch("taggedLicenseDueDates") || {}
+                                    })
+                                  } else {
+                                    const currentValues = getValues()
+                                    const filteredproduct = productOptions.filter(
+                                      (item) => item.value === currentValues?.productName?.value
+                                    )
 
-                                        setValue("taggedLicenseDueDates", {
-                                          ...dueMap,
-                                          [licenseNo]: {
-                                            ...dueMap[licenseNo],
-                                            productAmount: e.target.value,
-                                            taxinclusiveamount: e.target.value
-                                          }
-                                        })
-                                      }}
-                                      onWheel={(e) => e.currentTarget.blur()}
-                                      className={`${compactPopupInputClass} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0 bg-gray-100`}
-                                    />
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
+                                    reset({
+                                      ...currentValues,
+                                      taggedLicenseDueDates: {
+                                        ...currentValues.taggedLicenseDueDates,
+                                        [licenseNo]: {
+                                          nextDue: "",
+                                          productAmount: "",
+                                          taxexclusiveAmount: filteredproduct[0]?.basePrice || 0,
+                                          taxinclusiveamount: filteredproduct[0]?.productprice || 0,
+                                          hsn: filteredproduct[0]?.igstRate || 0
+                                        }
+                                      }
+                                    })
+                                  }
+                                } else {
+                                  const updatedLicenses = prev.filter(
+                                    (item) => String(item) !== licenseNo
+                                  )
+
+                                  const updatedDueMap = { ...dueMap }
+                                  delete updatedDueMap[licenseNo]
+
+                                  setValue("taggedLicenses", updatedLicenses, { shouldDirty: true })
+                                  setValue("taggedLicenseDueDates", updatedDueMap, {
+                                    shouldDirty: true
+                                  })
+
+                                  if (updatedLicenses.length === 0) {
+                                    setValue("licensenumber", "", { shouldDirty: true })
+                                  }
+                                }
+                              }}
+                            />
+
+                            <span>{option.licenseNo}</span>
+                            <span className="text-[#7b879c]">- {option.productName}</span>
+                          </label>
+                        )
+                      })}
                     </div>
+                  ) : (
+                    <p className="text-[11px] italic text-[#96a0b5]">
+                      No primary product license numbers available.
+                    </p>
                   )}
                 </div>
               </div>
+            )}
 
-              <div className="flex shrink-0 justify-end gap-2 border-t border-[#edf1f7] bg-white px-3 py-2.5">
-                <button
-                  type="button"
-                  onClick={closePopup}
-                  className="rounded-md border border-[#e4e9f2] px-3 py-1.5 text-[12px] text-[#5c6981] hover:bg-[#f8fafc]"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={savePopupData}
-                  className="rounded-md bg-[#2f80ed] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#246cd0]"
-                >
-                  {editIndex !== null ? "Save Details" : "Save Details"}
-                </button>
+            {popupType === "Additionalservice" && hasTaggedLicenses && (
+              // <div className="md:col-span-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              //   <div className="border-b border-slate-200 px-4 py-3">
+              //     <h3 className="text-sm font-semibold text-slate-800">Tagged License Due Details</h3>
+              //     <p className="mt-0.5 text-[11px] text-slate-500">
+              //       {watchedTaggedLicenses.length} license
+              //       {watchedTaggedLicenses.length > 1 ? "s" : ""} tagged to this service
+              //     </p>
+              //   </div>
+
+              //   <div className="w-full">
+              //     <table className="w-full table-fixed border-collapse">
+              //       <colgroup>
+              //         <col style={{ width: "22%" }} /> {/* License No */}
+              //         <col style={{ width: "12%" }} /> {/* Users */}
+              //         <col style={{ width: "16%" }} /> {/* Serial No */}
+              //         <col style={{ width: "20%" }} /> {/* Next Due */}
+              //         <col style={{ width: "20%" }} /> {/* Next Due Amt */}
+              //         <col style={{ width: "10%" }} /> {/* Due Tax */}
+              //       </colgroup>
+
+              //       <thead className="bg-slate-100">
+              //         <tr className="text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500">
+              //           <th className="border-b border-slate-200 px-2 py-2.5 text-left">License No.</th>
+              //           <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Users</th>
+              //           <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Serial No</th>
+              //           <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Next Due</th>
+              //           <th className="border-b border-slate-200 px-1.5 py-2.5 text-right">Due Amt</th>
+              //           <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Tax</th>
+              //         </tr>
+              //       </thead>
+
+              //       <tbody className="divide-y divide-slate-100">
+              //         {watchedTaggedLicenses.map((licenseNo, rowIndex) => (
+              //           <tr key={licenseNo} className="align-top odd:bg-white even:bg-slate-50/60">
+              //             {/* License No */}
+              //             <td className="px-2 py-2">
+              //               <input
+              //                 value={licenseNo}
+              //                 readOnly
+              //                 title={licenseNo}
+              //                 className="h-9 w-full cursor-not-allowed truncate rounded-md border border-slate-200 bg-slate-100 px-2 text-[11px] text-slate-500 outline-none"
+              //               />
+              //             </td>
+
+              //             {/* Users */}
+              //             <td className="px-1.5 py-2">
+              //               <input
+              //                 type="number"
+              //                 value={watchedTaggedLicenseDueDates?.[licenseNo]?.noofusers ?? ""}
+              //                 onChange={(e) => {
+              //                   const dueMap = watch("taggedLicenseDueDates") || {}
+
+              //                   setValue(
+              //                     "taggedLicenseDueDates",
+              //                     {
+              //                       ...dueMap,
+              //                       [licenseNo]: {
+              //                         ...dueMap[licenseNo],
+              //                         noofusers: e.target.value
+              //                       }
+              //                     },
+              //                     { shouldDirty: true }
+              //                   )
+              //                 }}
+              //                 onWheel={(e) => e.currentTarget.blur()}
+              //                 className="h-9 w-full rounded-md border border-slate-200 bg-white px-1.5 text-center text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              //               />
+              //             </td>
+
+              //             {/* Serial No */}
+              //             <td className="px-1.5 py-2">
+              //               <input
+              //                 type="text"
+              //                 value={watchedTaggedLicenseDueDates?.[licenseNo]?.serialNumber ?? ""}
+              //                 onChange={(e) => {
+              //                   const dueMap = watch("taggedLicenseDueDates") || {}
+
+              //                   setValue(
+              //                     "taggedLicenseDueDates",
+              //                     {
+              //                       ...dueMap,
+              //                       [licenseNo]: {
+              //                         ...dueMap[licenseNo],
+              //                         serialNumber: e.target.value
+              //                       }
+              //                     },
+              //                     { shouldDirty: true }
+              //                   )
+              //                 }}
+              //                 className="h-9 w-full rounded-md border border-slate-200 bg-white px-1.5 text-center text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10"
+              //               />
+              //             </td>
+
+              //             {/* Next Due (date) */}
+              //             <td className="px-1.5 py-2">
+              //               <input
+              //                 type="date"
+              //                 value={formatDateForInput(
+              //                   watchedTaggedLicenseDueDates?.[licenseNo]?.nextDue
+              //                 )}
+              //                 onChange={(e) => {
+              //                   const dueMap = watch("taggedLicenseDueDates") || {}
+
+              //                   setValue(
+              //                     "taggedLicenseDueDates",
+              //                     {
+              //                       ...dueMap,
+              //                       [licenseNo]: {
+              //                         ...dueMap[licenseNo],
+              //                         nextDue: e.target.value
+              //                       }
+              //                     },
+              //                     { shouldDirty: true }
+              //                   )
+              //                 }}
+              //                 className="h-9 w-full rounded-md border border-slate-200 bg-white px-1.5 text-center text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10"
+              //               />
+              //             </td>
+
+              //             {/* Next Due Amount (+ inclusive total underneath) */}
+              //             <td className="px-1.5 py-2">
+              //               <div className="space-y-0.5">
+              //                 <input
+              //                   type="number"
+              //                   value={
+              //                     watchedTaggedLicenseDueDates?.[licenseNo]?.taxexclusiveAmount ?? ""
+              //                   }
+              //                   onWheel={(e) => e.currentTarget.blur()}
+              //                   onKeyDown={(e) => {
+              //                     if (["-", "+", "e", "E"].includes(e.key)) {
+              //                       e.preventDefault()
+              //                     }
+              //                   }}
+              //                   onChange={(e) => {
+              //                     handleTaggedDueChange(
+              //                       rowIndex,
+              //                       e.target.value,
+              //                       "taxexclusiveAmount",
+              //                       watchedTaggedLicenseDueDates?.[licenseNo]?.originalHsn ?? "",
+              //                       detailsForm?.productType
+              //                     )
+              //                   }}
+              //                   className="h-9 w-full rounded-md border border-slate-200 bg-white px-1.5 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              //                 />
+              //                 <p className="truncate text-right text-[9px] text-slate-500">
+              //                   {Number(
+              //                     watchedTaggedLicenseDueDates?.[licenseNo]?.taxinclusiveamount || 0
+              //                   ).toFixed(2)}
+              //                 </p>
+              //               </div>
+              //             </td>
+
+              //             {/* Due Tax */}
+              //             <td className="px-1.5 py-2">
+              //               <div className="flex justify-center pt-1">
+              //                 <label className="inline-flex cursor-pointer items-center justify-center">
+              //                   <input
+              //                     type="checkbox"
+              //                     checked={
+              //                       Number(
+              //                         watchedTaggedLicenseDueDates?.[licenseNo]?.nextDueTax || 0
+              //                       ) > 0
+              //                     }
+              //                     onChange={(e) => {
+              //                       handleTaggedDueChange(
+              //                         rowIndex,
+              //                         e.target.checked,
+              //                         "nextDueTax",
+              //                         watchedTaggedLicenseDueDates?.[licenseNo]?.nextDueTax,
+              //                         detailsForm?.productType
+              //                       )
+              //                     }}
+              //                     className="sr-only"
+              //                   />
+              //                   <span
+              //                     className={`flex h-5 w-5 items-center justify-center rounded border text-[11px] shadow-sm transition-all duration-200 ${
+              //                       Number(
+              //                         watchedTaggedLicenseDueDates?.[licenseNo]?.nextDueTax || 0
+              //                       ) > 0
+              //                         ? "border-[#1B2A4A] bg-[#1B2A4A] text-white"
+              //                         : "border-slate-300 bg-white text-transparent"
+              //                     }`}
+              //                   >
+              //                     ✓
+              //                   </span>
+              //                 </label>
+              //               </div>
+              //             </td>
+              //           </tr>
+              //         ))}
+              //       </tbody>
+              //     </table>
+              //   </div>
+              // </div>
+<div className="md:col-span-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+  <div className="border-b border-slate-200 px-4 py-3">
+    <h3 className="text-sm font-semibold text-slate-800">Tagged License Due Details</h3>
+    <p className="mt-0.5 text-[11px] text-slate-500">
+      {watchedTaggedLicenses.length} license{watchedTaggedLicenses.length > 1 ? "s" : ""} tagged to this service
+    </p>
+  </div>
+
+  <div className="w-full">
+    <table className="w-full table-fixed border-collapse">
+      <colgroup>
+        <col style={{ width: "22%" }} /> {/* License No */}
+        <col style={{ width: "12%" }} /> {/* Users */}
+        <col style={{ width: "16%" }} /> {/* Serial No */}
+        <col style={{ width: "20%" }} /> {/* Next Due */}
+        <col style={{ width: "20%" }} /> {/* Next Due Amt */}
+        <col style={{ width: "10%" }} /> {/* Due Tax */}
+      </colgroup>
+
+      <thead className="bg-slate-100">
+        <tr className="text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500">
+          <th className="border-b border-slate-200 px-2 py-2.5 text-left">License No.</th>
+          <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Users</th>
+          <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Serial No</th>
+          <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Next Due</th>
+          <th className="border-b border-slate-200 px-1.5 py-2.5 text-right">Next Due Amt</th>
+          <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Tax</th>
+        </tr>
+      </thead>
+
+      <tbody className="divide-y divide-slate-100">
+        {watchedTaggedLicenses.map((licenseNo) => (
+          <tr key={licenseNo} className="align-top odd:bg-white even:bg-slate-50/60">
+            {/* License No */}
+            <td className="px-2 py-2">
+              <input
+                value={licenseNo}
+                readOnly
+                title={licenseNo}
+                className="h-7 w-full cursor-not-allowed truncate rounded-md border border-slate-200 bg-slate-100 px-2 text-[11px] text-slate-500 outline-none"
+              />
+            </td>
+
+            {/* Users */}
+            <td className="px-1.5 py-2">
+              <input
+                type="number"
+                value={watchedTaggedLicenseDueDates?.[licenseNo]?.noofusers ?? ""}
+                onChange={(e) => {
+                  const dueMap = watch("taggedLicenseDueDates") || {}
+
+                  setValue(
+                    "taggedLicenseDueDates",
+                    {
+                      ...dueMap,
+                      [licenseNo]: {
+                        ...dueMap[licenseNo],
+                        noofusers: e.target.value
+                      }
+                    },
+                    { shouldDirty: true }
+                  )
+                }}
+                onWheel={(e) => e.currentTarget.blur()}
+                className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-center text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              />
+            </td>
+
+            {/* Serial No */}
+            <td className="px-1.5 py-2">
+              <input
+                type="text"
+                value={watchedTaggedLicenseDueDates?.[licenseNo]?.serialNumber ?? ""}
+                onChange={(e) => {
+                  const dueMap = watch("taggedLicenseDueDates") || {}
+
+                  setValue(
+                    "taggedLicenseDueDates",
+                    {
+                      ...dueMap,
+                      [licenseNo]: {
+                        ...dueMap[licenseNo],
+                        serialNumber: e.target.value
+                      }
+                    },
+                    { shouldDirty: true }
+                  )
+                }}
+                className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-center text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10"
+              />
+            </td>
+
+            {/* Next Due (date) */}
+            <td className="px-1.5 py-2">
+              <input
+                type="date"
+                value={formatDateForInput(watchedTaggedLicenseDueDates?.[licenseNo]?.nextDue)}
+                onChange={(e) => {
+                  const dueMap = watch("taggedLicenseDueDates") || {}
+
+                  setValue(
+                    "taggedLicenseDueDates",
+                    {
+                      ...dueMap,
+                      [licenseNo]: {
+                        ...dueMap[licenseNo],
+                        nextDue: e.target.value
+                      }
+                    },
+                    { shouldDirty: true }
+                  )
+                }}
+                className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-center text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10"
+              />
+            </td>
+
+            {/* Next Due Amount (+ inclusive total underneath) — old tax-calc logic, no handleTaggedDueChange */}
+            <td className="px-1.5 py-2">
+              <div className="space-y-0.5">
+                <input
+                  type="number"
+                  value={watchedTaggedLicenseDueDates?.[licenseNo]?.taxexclusiveAmount ?? ""}
+                  onWheel={(e) => e.currentTarget.blur()}
+                  onKeyDown={(e) => {
+                    if (["-", "+", "e", "E"].includes(e.key)) {
+                      e.preventDefault()
+                    }
+                  }}
+                  onChange={(e) => {
+                    const inputValue = e.target.value
+                    const dueMap = watch("taggedLicenseDueDates") || {}
+                    const matchedData = dueMap[licenseNo]
+
+                    const isTaxApplied = Number(matchedData?.nextDueTax || 0) > 0
+                    const taxAmount = isTaxApplied
+                      ? (Number(matchedData?.hsn || matchedData?.originalHsn || 0) / 100) *
+                        Number(inputValue || 0)
+                      : 0
+                    const total = Math.round(Number(inputValue || 0) + taxAmount)
+
+                    setValue(
+                      "taggedLicenseDueDates",
+                      {
+                        ...dueMap,
+                        [licenseNo]: {
+                          ...matchedData,
+                          taxexclusiveAmount: inputValue,
+                          taxinclusiveamount: total,
+                          productAmount: total
+                        }
+                      },
+                      { shouldDirty: true }
+                    )
+                  }}
+                  className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
+                <p className="truncate text-right text-[12px] text-slate-600">
+                  {Number(watchedTaggedLicenseDueDates?.[licenseNo]?.taxinclusiveamount || 0).toFixed(2)}
+                </p>
               </div>
-            </div>
+            </td>
+
+            {/* Due Tax — same watch/setValue pattern, recalculates the amount fields when toggled */}
+            <td className="px-1.5 py-2">
+              <div className="flex justify-center pt-1">
+                <label className="inline-flex cursor-pointer items-center justify-center">
+                  <input
+                    type="checkbox"
+                    checked={Number(watchedTaggedLicenseDueDates?.[licenseNo]?.nextDueTax || 0) > 0}
+                    onChange={(e) => {
+                      const checked = e.target.checked
+console.log(checked)
+                      const dueMap = watch("taggedLicenseDueDates") || {}
+                      const matchedData = dueMap[licenseNo]
+                      const hsn = Number(matchedData?.hsn || matchedData?.originalHsn || 0)
+console.log(hsn)
+                      const exclusiveAmount = Number(matchedData?.taxexclusiveAmount || 0)
+
+                      const taxAmount = checked ? (hsn / 100) * exclusiveAmount : 0
+                      const total = Math.round(exclusiveAmount + taxAmount)
+
+                      setValue(
+                        "taggedLicenseDueDates",
+                        {
+                          ...dueMap,
+                          [licenseNo]: {
+                            ...matchedData,
+                            nextDueTax: checked ? hsn : 0,
+                            taxinclusiveamount: total,
+                            productAmount: total
+                          }
+                        },
+                        { shouldDirty: true }
+                      )
+                    }}
+                    className="sr-only"
+                  />
+                  <span
+                    className={`flex h-5 w-5 items-center justify-center rounded border text-[11px] shadow-sm transition-all duration-200 ${
+                      Number(watchedTaggedLicenseDueDates?.[licenseNo]?.nextDueTax || 0) > 0
+                        ? "border-[#1B2A4A] bg-[#1B2A4A] text-white"
+                        : "border-slate-300 bg-white text-transparent"
+                    }`}
+                  >
+                    ✓
+                  </span>
+                </label>
+              </div>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</div>
+            )}
           </div>
         </div>
-      )}
+
+        <div className="flex shrink-0 justify-end gap-2 border-t border-[#edf1f7] bg-white px-3 py-2.5">
+          <button
+            type="button"
+            onClick={closePopup}
+            className="rounded-md border border-[#e4e9f2] px-3 py-1.5 text-[12px] text-[#5c6981] hover:bg-[#f8fafc]"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={savePopupData}
+            className="rounded-md bg-[#2f80ed] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#246cd0]"
+          >
+            Save Details
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   )
 }
@@ -2483,10 +2384,8 @@ const ProductCircleCard = ({
   onEdit,
   onDelete,
   c,
-isCurrentMonthExpiry
+  isCurrentMonthExpiry
 }) => {
-  console.log(line5)
-  console.log(c)
   const variantClass =
     variant === "danger"
       ? "bg-[#ffdedd] border-[#f4c6c2]"
@@ -2499,19 +2398,19 @@ isCurrentMonthExpiry
       <button
         type="button"
         onClick={() => onEdit(item, actualIndex)}
-        className={`relative flex h-[120px] w-[120px]  flex-col items-center justify-center overflow-hidden rounded-full border text-center shadow-sm transition hover:scale-[1.02] ${variantClass}  ${
-      isCurrentMonthExpiry
-        ? "ring-4 ring-red-500 ring-offset-2 animate-pulse"
-        : ""
-    }`}
+        className={`relative flex h-[120px] w-[120px] flex-col items-center justify-center overflow-hidden rounded-full border text-center shadow-sm transition hover:scale-[1.02] ${variantClass} ${
+          isCurrentMonthExpiry
+            ? "animate-pulse ring-4 ring-red-500 ring-offset-2"
+            : ""
+        }`}
       >
-        <div className="flex w-[90px] flex-col items-center justify-center mr-1">
-          <p className="w-full overflow-hidden text-center text-[10px] font-medium leading-[12px] text-[#1e293b] break-words line-clamp-2">
+        <div className="mr-1 flex w-[90px] flex-col items-center justify-center">
+          <p className="line-clamp-2 w-full overflow-hidden break-words text-center text-[10px] font-medium leading-[12px] text-[#1e293b]">
             {line1}
           </p>
 
           {line2 ? (
-            <p className="mt-1 w-full truncate text-center text-[10px] leading-[12px] text-[#4b5563] font-medium">
+            <p className="mt-1 w-full truncate text-center text-[10px] font-medium leading-[12px] text-[#4b5563]">
               {line2}
             </p>
           ) : null}
@@ -2564,6 +2463,6 @@ const tileInputClass =
   "w-full border-0 bg-transparent p-0 text-[12px] font-medium text-[#1f2a3d] outline-none placeholder:text-[#c0c8d8]"
 
 const compactPopupInputClass =
-  "w-full rounded-[8px] border border-[#dfe5ee]  px-2.5 py-1.5 text-[12px] text-[#1f2a3d] outline-none focus:border-[#7ba7ff] "
+  "w-full rounded-[8px] border border-[#dfe5ee] px-2.5 py-1.5 text-[12px] text-[#1f2a3d] outline-none focus:border-[#7ba7ff]"
 
 export default CustomerAdd

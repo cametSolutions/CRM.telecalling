@@ -22,7 +22,7 @@ import {
   updateReallocation,
   GetallTask,
   GetalltaskanalysisLeads,
-  LeadClosing,
+  LeadClosingAmount,
   TaskRegistration,
   TaskDelete,
   TaskEdit,
@@ -67,7 +67,7 @@ router.get("/getalltasktoreport", authMiddleware, Getalltasktoreport)
 router.delete("/taskDelete", authMiddleware, TaskDelete);
 router.put("/taskEdit", authMiddleware, TaskEdit);
 router.put("/closingleads",authMiddleware,Leadclosing)
-router.post("/leadClosingAmount", authMiddleware, LeadClosing);
+router.post("/leadClosingAmount", authMiddleware, LeadClosingAmount);
 router.put("/followupDateUpdate", authMiddleware, UpdateLeadfollowUpDate);
 router.get("/getSelectedLead", authMiddleware, GetselectedLeadData);
 router.post("/leadAllocation", authMiddleware, UpadateOrLeadAllocationRegister);

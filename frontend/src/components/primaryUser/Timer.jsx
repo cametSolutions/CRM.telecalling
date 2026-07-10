@@ -11,6 +11,7 @@ const Timer = ({
   productDetails,
   selectedProducts
 }) => {
+console.log(selectedProducts)
   const [time, setTime] = useState(0)
   const wasRunning = useRef(isRunning)
   useEffect(() => {
