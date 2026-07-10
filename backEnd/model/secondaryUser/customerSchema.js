@@ -193,9 +193,9 @@ const TaggedDataSchema = new mongoose.Schema(
     },
 
     serialNumber: {
-      type: Number,
+      type: String,
       default: null,
-      set: toNullableNumber,
+    
     },
 
     nextDueAmount: {

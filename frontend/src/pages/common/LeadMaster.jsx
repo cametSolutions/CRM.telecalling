@@ -8702,7 +8702,7 @@ console.log("hhh")
                               <col style={{ width: "5%" }} />
                               <col style={{ width: "10%" }} />
                               <col style={{ width: "6%" }} />
-                              <col style={{ width: "4%" }} />
+                              <col style={{ width: "6%" }} />
                               <col style={{ width: "6%" }} />
                               <col style={{ width: "8%" }} />
                               <col style={{ width: "6%" }} />
@@ -8729,14 +8729,14 @@ console.log("hhh")
                             {!haveprimaryProduct && (
                               <>
                                 <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Lead Amt</th>
-                                <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Tax</th>
+                                <th className="border-b border-slate-200 px-1.5 py-2.5 text-center"> Lead Tax</th>
                                 <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Discount</th>
                               </>
                             )}
 
                             <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Next Due</th>
-                            <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Due Amt</th>
-                            <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Tax</th>
+                            <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Next Due Amt</th>
+                            <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Due Tax</th>
                           </tr>
                         </thead>
 
@@ -8953,6 +8953,7 @@ console.log("hhh")
                                       type="checkbox"
                                       checked={Number(tag?.nextDueTax || 0) > 0}
                                       onChange={(e) => {
+console.log(tag?.nextDueTax)
                                         handleTaggedDueChange(
                                           rowIndex,
                                           e.target.checked,

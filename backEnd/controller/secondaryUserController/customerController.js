@@ -1891,7 +1891,42 @@ export const CustomerEdit = async (req, res) => {
     }
 
     Object.assign(existingCustomer, customerData)
-    existingCustomer.selected = tableData
+    // existingCustomer.selected = tableData
+const updatedSelected = existingCustomer.selected.map((existingItem) => {
+  const incomingItem = tableData.find(
+    (item) =>
+      String(item.productid || item.product_id) ===
+      String(existingItem.productid || existingItem.product_id)
+  );
+
+  if (!incomingItem) return existingItem;
+
+  // Merge taggeddata
+  const mergedTaggedData = [...(existingItem.taggeddata || [])];
+
+  (incomingItem.taggeddata || []).forEach((incomingTag) => {
+    const index = mergedTaggedData.findIndex(
+      (tag) => String(tag.licensenumber) === String(incomingTag.licensenumber)
+    );
+
+    if (index >= 0) {
+      mergedTaggedData[index] = {
+        ...mergedTaggedData[index],
+        ...incomingTag
+      };
+    } else {
+      mergedTaggedData.push(incomingTag);
+    }
+  });
+
+  return {
+    ...existingItem,
+    ...incomingItem,
+    taggeddata: mergedTaggedData
+  };
+});
+
+existingCustomer.selected = updatedSelected;
 
     await existingCustomer.save()
 
