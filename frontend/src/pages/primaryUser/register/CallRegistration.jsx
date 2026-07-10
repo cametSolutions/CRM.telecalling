@@ -137,7 +137,6 @@ export default function CallRegistration() {
   const [callreport, setcallReport] = useState({})
   const [customerData, setCustomerData] = useState([])
   console.log(customerData)
-console.log("hhh")
   const [submitLoading, setSubmitLoading] = useState(false)
   const [loading, setloading] = useState(false)
   const [message, setMessage] = useState("")
@@ -453,6 +452,7 @@ console.log("hhh")
           setSelectedCustomer(callData?.callDetails?.customerid)
           console.log("hhh")
           console.log(matchingProducts)
+console.log(matchingRegistration)
           if (matchingProducts.length === 0 && productId) {
             console.log("hhh")
             setProductDetails([
@@ -465,6 +465,8 @@ console.log("hhh")
               }
             ])
           } else if (productId === undefined) {
+console.log(
+"hh")
             const matchedLicenseofthecustomer = matchingRegistration.license
 
             const matchingproducts =
@@ -473,6 +475,7 @@ console.log("hhh")
               )
             setProductDetails(matchingproducts)
           } else {
+console.log(matchingProducts)
             setProductDetails(matchingProducts)
           }
           console.log("hhh")
@@ -493,6 +496,7 @@ console.log("hhh")
             callData?.callDetails?.customerid.selected?.map((sel) => ({
               company_id: sel?.company_id,
               companyName: sel?.companyName,
+              amcEndDate: sel?.amcEndDate,
               branch_id: sel?.branch_id,
               branchName: sel?.branchName,
               product_id: sel?.product_id,
@@ -540,6 +544,7 @@ console.log("hhh")
   }, [calldetails])
 
   const fetchCallDetails = async (callId) => {
+console.log(callId)
     setLoader(true)
     const response = await fetch(
       `https://www.crmtest.camet.in/api/customer/getcallregister/${callId}`,
@@ -581,6 +586,7 @@ console.log("hhh")
   useEffect(() => {
     // Set the default product if there's only one
     if (productDetails?.length === 1) {
+console.log(productDetails)
       setSelectedProducts([productDetails[0]])
     }
   }, [productDetails])
@@ -866,7 +872,10 @@ console.log("hhh")
         toast.error(response.data.message)
       }
     } else {
-      const branchName = product?.branch_id?.branchName
+console.log(product)
+console.log(selectedProducts)
+
+      const branchName = product?.branchName
       console.log(branchName)
       const timeData = {
         startTime: startTime.toISOString(),
@@ -1152,6 +1161,7 @@ Problem:    \t${selectedText}
     } else {
       const branches = JSON.stringify(branch)
 
+    
       // url =
       //   branches &&
       //   branches.length > 0 &&
@@ -1314,6 +1324,7 @@ Problem:    \t${selectedText}
           data[0].selected?.map((sel) => ({
             company_id: sel?.company_id?._id,
             companyName: sel?.company_id?.companyName,
+            amcendDate: sel?.amcendDate,
             branch_id: sel?.branch_id?._id,
             branchName: sel?.branch_id?.branchName,
             product_id: sel?.product_id?._id,
@@ -1700,9 +1711,9 @@ Problem:    \t${selectedText}
             />
           )}
 
-          <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
+          <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden ">
             <div className="flex min-h-0 min-w-0 flex-1 justify-center overflow-y-auto p-2 sm:p-3 lg:p-4">
-              <div className="flex h-fit min-h-full w-full max-w-7xl flex-col rounded-xl bg-white p-3 shadow-lg sm:p-4 lg:p-5">
+              <div className="flex h-fit min-h-full w-full max-w-7xl flex-col rounded-xl bg-[#ADD8E6] p-3  sm:p-4 lg:p-5">
                 <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <h2 className="text-lg font-semibold sm:text-xl">
                     Call Registration
@@ -1720,7 +1731,7 @@ Problem:    \t${selectedText}
                   </div>
                 </div>
 
-                <hr className="mb-3 border-t-2 border-gray-300" />
+                <hr className="mb-3 border-t-2 border-black" />
 
                 {/* -------------------- SEARCH INPUT -------------------- */}
                 <div className="w-full md:max-w-xl">
@@ -1790,29 +1801,7 @@ Problem:    \t${selectedText}
                           </tr>
                         </thead>
 
-                        {/* <tbody className="divide-y divide-gray-200">
-                          {customerData?.map((customer, index) =>
-                            customer?.selected?.map((item, subIndex) => (
-                              <tr
-                                key={`${index}-${subIndex}`}
-                                onClick={() =>
-                                  handleRowClick(customer, item?.licensenumber)
-                                }
-                                className="cursor-pointer transition-colors hover:bg-gray-50"
-                              >
-                                <td className="px-3 py-2 text-center text-sm text-gray-700">
-                                  {customer?.customerName}
-                                </td>
-                                <td className="px-3 py-2 text-center text-sm text-gray-700">
-                                  {item?.licensenumber}
-                                </td>
-                                <td className="px-3 py-2 text-center text-sm text-gray-700">
-                                  {customer?.mobile}
-                                </td>
-                              </tr>
-                            ))
-                          )}
-                        </tbody> */}
+                      
                         <tbody className="divide-y divide-gray-200">
                           {customerData?.map((customer, index) =>
                             customer?.selected
@@ -2103,7 +2092,7 @@ Problem:    \t${selectedText}
                     </div>
 
                     {/* ==================== PRODUCT DETAILS CARD ==================== */}
-                    <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50/60 p-3 shadow-sm">
+                    <div className="mt-3 rounded-lg border border-slate-200 bg-gray-50 p-3 shadow-sm">
                       <div className="mb-2.5 border-b border-slate-200 pb-2">
                         <h3 className="text-sm font-semibold text-slate-800">
                           Product Details
@@ -2119,7 +2108,7 @@ Problem:    \t${selectedText}
                           <h2 className="mb-3 text-sm font-medium">
                             Primary Products
                           </h2>
-                          {primaryProducts.length > 0 ? (
+                          {/* {primaryProducts.length > 0 ? (
                             <div className="grid grid-cols-[repeat(auto-fill,minmax(100px,120px))] justify-center gap-x-6 gap-y-6 sm:justify-start">
                               {primaryProducts.map((item, index) => {
                                 const actualIndex = primaryProducts.findIndex(
@@ -2135,33 +2124,45 @@ Problem:    \t${selectedText}
                                   String(item?.licensenumber ?? "") ===
                                   String(selectedLicenseNumber ?? "")
                                 console.log(isSelected)
+                                // const matchedamc=item?.selected.find((item)=>item?.product_id?.branch_id)
                                 return (
-                                  <ProductCircleCard
-                                    key={`primary-${actualIndex}`}
-                                    item={item}
-                                    actualIndex={actualIndex}
-                                    productType="Primaryproduct"
-                                    variant={isDeactive ? "danger" : "success"}
-                                    topBadgeIcon={<FaBuilding size={10} />}
-                                    line1={
-                                      item?.shortName
-                                        ? item?.shortName
-                                        : item?.productName
-                                    }
-                                    line2={item?.licensenumber}
-                                    line3={
-                                      item?.applicationDate
-                                        ? formatDateToDDMMYYYY(
-                                            item?.applicationDate
-                                          )
-                                        : ""
-                                    }
-                                    line4={isDeactive ? "De Active" : "Active"}
-                                    isSelected={isSelected}
-                                    isreadonly={true}
-                                    onEdit={handleEdit}
-                                    onSelect={handleSelectCard}
-                                  />
+                                  <>
+                                    <ProductCircleCard
+                                      key={`primary-${actualIndex}`}
+                                      item={item}
+                                      actualIndex={actualIndex}
+                                      productType="Primaryproduct"
+                                      variant={
+                                        isDeactive ? "danger" : "success"
+                                      }
+                                      topBadgeIcon={<FaBuilding size={10} />}
+                                      line1={
+                                        item?.shortName
+                                          ? item?.shortName
+                                          : item?.productName
+                                      }
+                                      line2={item?.licensenumber}
+                                      line3={
+                                        item?.applicationDate
+                                          ? formatDateToDDMMYYYY(
+                                              item?.applicationDate
+                                            )
+                                          : ""
+                                      }
+                                      line4={
+                                        isDeactive ? "De Active" : "Active"
+                                      }
+                                      isSelected={isSelected}
+                                      isreadonly={true}
+                                      onEdit={handleEdit}
+                                      onSelect={handleSelectCard}
+                                    />
+                                    <div>
+                                      <span>amcendDate:</span>
+
+                                      <span>{item?.amcendDate}</span>
+                                    </div>
+                                  </>
                                 )
                               })}
                             </div>
@@ -2169,7 +2170,64 @@ Problem:    \t${selectedText}
                             <div className="flex h-[110px] items-center justify-center rounded-[12px] border border-dashed border-[#e7ebf4] bg-[#fbfcff] text-[12px] text-[#8a95ab]">
                               No primary products added.
                             </div>
-                          )}
+                          )} */}
+<div className="grid grid-cols-[repeat(auto-fill,minmax(100px,120px))] justify-center gap-x-6 gap-y-6 sm:justify-start">
+  {primaryProducts.map((item) => {
+    const actualIndex = primaryProducts.findIndex((x) => x === item);
+
+    const isDeactive =
+      String(item?.isActive).toLowerCase() === "deactive";
+
+    const isSelected =
+      String(item?.licensenumber ?? "") ===
+      String(selectedLicenseNumber ?? "");
+
+    return (
+      <div
+        key={`primary-${actualIndex}`}
+        className="flex flex-col items-center"
+      >
+        <ProductCircleCard
+          item={item}
+          actualIndex={actualIndex}
+          productType="Primaryproduct"
+          variant={isDeactive ? "danger" : "success"}
+          topBadgeIcon={<FaBuilding size={10} />}
+          line1={item?.shortName || item?.productName}
+          line2={item?.licensenumber}
+          line3={
+            item?.applicationDate
+              ? formatDateToDDMMYYYY(item?.applicationDate)
+              : ""
+          }
+          line4={isDeactive ? "De Active" : "Active"}
+          isSelected={isSelected}
+          isreadonly={true}
+          onEdit={handleEdit}
+          onSelect={handleSelectCard}
+        />
+
+        {/* AMC End Date */}
+        <div className="mt-3 w-full rounded-lg bg-gray-100 px-2 py-1 text-center shadow-sm">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">
+            AMC End
+          </p>
+          <p
+            className={`text-xs font-bold ${
+              item?.amcendDate
+                ? "text-red-600"
+                : "text-gray-400"
+            }`}
+          >
+            {item?.amcendDate
+              ? formatDateToDDMMYYYY(item.amcendDate)
+              : "--"}
+          </p>
+        </div>
+      </div>
+    );
+  })}
+</div>
                         </div>
 
                         <div className="min-h-[140px] w-full rounded-lg border border-slate-100 bg-white px-3 py-4 xl:w-1/2">
@@ -2291,7 +2349,7 @@ Problem:    \t${selectedText}
                     </div>
 
                     {/* ==================== CALL INPUT CARD ==================== */}
-                    <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50/60 p-3 shadow-sm">
+                    <div className="mt-3 rounded-lg border border-slate-200 bg-gray-50 p-3 shadow-sm">
                       <div className="mb-3 flex flex-col items-center justify-center gap-3 border-b border-slate-200 pb-3">
                         <Timer
                           isRunning={isRunning}
@@ -2523,7 +2581,7 @@ Problem:    \t${selectedText}
 
                     {/* ==================== CALL HISTORY TABLE CARD ==================== */}
                     {callData?.length > 0 && (
-                      <div className="mt-3 overflow-hidden rounded-lg border border-slate-200 bg-slate-50/60 p-3 shadow-sm">
+                      <div className="mt-3 overflow-hidden rounded-lg border border-slate-200 bg-gray-50 p-3 shadow-sm">
                         <div className="mb-2 border-b border-slate-200 pb-2">
                           <h3 className="text-sm font-semibold text-slate-800">
                             Call History

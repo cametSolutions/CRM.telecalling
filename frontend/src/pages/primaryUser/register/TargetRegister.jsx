@@ -257,7 +257,9 @@ export const TargetRegister = () => {
     const nextIncentiveTypes = {}
     const nextMonthTypes = {}
     const committedProducts = {}
-
+console.log(targets)
+const a=targets.filter((item)=>item?.categoryName==="MODULE")
+console.log(a)
     targets.forEach((targetItem) => {
       const categoryId = targetItem.categoryId?._id || targetItem.categoryId
 
@@ -276,6 +278,7 @@ export const TargetRegister = () => {
 
       ;(targetItem.allocationValues || targetItem.allocations || []).forEach(
         (allocValue) => {
+console.log(allocValue,targetItem?.periodName)
           const allocId =
             allocValue.allocationId?._id || allocValue.allocationId
 
@@ -332,6 +335,8 @@ export const TargetRegister = () => {
     })
 
     setSelectedProducts(nextSelectedProducts)
+console.log("hhh")
+console.log(nextSelectedAllocationsMap)
     setSelectedAllocations(() => {
       const merged = [...Object.values(nextSelectedAllocationsMap)]
       const followup = availableAllocations.find(
@@ -349,6 +354,7 @@ export const TargetRegister = () => {
     })
     console.log(nextCommittedSplitData)
     console.log(nextCommittedTargetData)
+console.log(nextIncentiveValues)
     setCommittedTargetData(nextCommittedTargetData)
     setCommittedSplitData(nextCommittedSplitData)
     settargetpriceorpercentageValue(nextIncentiveValues)
@@ -356,7 +362,7 @@ export const TargetRegister = () => {
     setrespectedmonthtargetType(nextMonthTypes)
     committedProductsRef.current = committedProducts
   }
-
+console.log(selectedAllocations)
   const fetchTargets = async ({
     periodName,
     branchId,
@@ -400,6 +406,7 @@ export const TargetRegister = () => {
 
   const applyBackendResponse = (payload, year) => {
     const targets = payload?.targets || []
+console.log(targets)
     const allperiods = payload?.allperiods || []
     const selectedperiod = payload?.selectedperiod || null
     const selectedPeriodName = payload?.selectedPeriodName || ""
@@ -608,7 +615,7 @@ export const TargetRegister = () => {
         const name = (item.taskName || "").trim().toLowerCase()
 
         // keep lead/closing always, drop followup, keep others
-        if (name === "lead" || name === "closing") return true
+        if (name === "lead" || name === "follow-up closing") return true
         if (name === "followup") return false
         if (item.listed) return true
       })
@@ -1768,6 +1775,7 @@ export const TargetRegister = () => {
                     ))}
 
                     {selectedAllocations.map((alloc) => {
+console.log(targetpriceorpercentageValue)
                       const warningKey = `${product.id}-${alloc.id}`
                       return (
                         <td

@@ -3444,7 +3444,6 @@ const getTargetConfigurations = async (req, res) => {
                 new Date(t.endDate).getTime() === new Date(effectivePeriod.endDate).getTime()
             )
         })
-
         return res.json({
             success: true,
             data: {

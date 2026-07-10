@@ -6,6 +6,7 @@ import Mainrouter from "../router/Mainrouter.jsx"
 
 import { useLocation, matchPath } from "react-router-dom"
 import useAutoLogout from "../hooks/useAutoLogout.jsx"
+import GlobalUnsavedChangesModal from "../components/common/GlobalUnsavedChangesModal.jsx"
 const Layout = () => {
   const [headerHeight, setHeaderHeight] = useState(0)
   const headerRef = useRef(null)
@@ -91,6 +92,7 @@ const Layout = () => {
       <main className="flex-1 overflow-hidden">
         <Mainrouter headerHeight={headerHeight} />
       </main>
+    <GlobalUnsavedChangesModal />
     </div>
   )
 }

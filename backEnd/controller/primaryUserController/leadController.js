@@ -354,7 +354,20 @@ export const LeadRegister = async (req, res) => {
     await session.abortTransaction()
     await session.endSession()
     console.log("error:", error)
-    return res.status(500).json({ message: "Internal server error" })
+    // return res.status(500).json({ message: "Internal server error",data:error })
+
+ return res.status(500).json({
+    success: false,
+    message: "Internal server error",
+    error:
+      process.env.NODE_ENV === "development"
+        ? {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+          }
+        : error.message, // or omit this entirely
+  });
   }
 }
 export const Checkexistinglead = async (req, res) => {
@@ -1554,8 +1567,154 @@ export const Checkduplicatecustomer = async (req, res) => {
     });
   }
 }
+
 export const Leadclosing = async (req, res) => {
   const session = await mongoose.startSession();
+
+  const toNum = (value, fallback = 0) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+  };
+
+  const round2 = (value) => Number(toNum(value).toFixed(2));
+
+  const isNonEmpty = (value) =>
+    value !== null &&
+    value !== undefined &&
+    String(value).trim() !== "";
+
+  const normalizeString = (value) =>
+    value === null || value === undefined ? "" : String(value).trim();
+
+  const isAdditionalService = (item) =>
+    String(item?.productorservicetype || "").toLowerCase() ===
+    "additionalservice";
+
+  const isPrimaryProduct = (item) =>
+    String(item?.productorservicetype || "").toLowerCase() ===
+    "primaryproduct";
+
+  const normalizeLicenseNumberValue = (value) => {
+    if (!isNonEmpty(value)) return null;
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  const buildCustomerTaggedDataForAdditionalOnly = (taggeddata = []) => {
+    return (Array.isArray(taggeddata) ? taggeddata : []).map((tag) => {
+      const totalNextDueAmount = round2(
+        tag?.totalnextDueAmount ?? tag?.taxinclusiveamount ?? 0
+      );
+      const nextDueAmount = round2(
+        tag?.nextDueAmount ?? tag?.taxexclusiveAmount ?? 0
+      );
+console.log(tag?.nextDueAmount)
+console.log(tag?.taxexclusiveAmount)
+console.log("nextdueamount",nextDueAmount)
+      const nextDueTax = toNum(tag?.nextDueTax ?? 0, 0);
+
+      return {
+        ...(tag?.toObject ? tag.toObject() : tag),
+        licensenumber: normalizeLicenseNumberValue(tag?.licensenumber),
+        nextDue: tag?.nextDue || "",
+        hsn: nextDueTax,
+        originalHsn: toNum(tag?.originalHsn ?? tag?.hsn ?? 0, 0),
+        noofusers: toNum(tag?.noofusers, 0),
+        serialNumber: tag?.serialNumber ?? null,
+        nextDueAmount,
+        totalnextDueAmount:totalNextDueAmount,
+        taxexclusiveAmount: nextDueAmount,
+        taxinclusiveamount: totalNextDueAmount,
+        productAmount: totalNextDueAmount,
+        leadAmount: totalNextDueAmount,
+        totalleadAmount: totalNextDueAmount,
+        leadTax: nextDueTax,
+        nextDueTax,
+        discountAmount: toNum(tag?.discountAmount, 0),
+      };
+    });
+  };
+
+  const buildLeadMasterTaggedData = (taggeddata = []) => {
+    return (Array.isArray(taggeddata) ? taggeddata : []).map((tag) => ({
+      ...(tag?.toObject ? tag.toObject() : tag),
+      licensenumber: normalizeLicenseNumberValue(tag?.licensenumber),
+      nextDue: tag?.nextDue || "",
+      productAmount: round2(tag?.productAmount ?? tag?.totalnextDueAmount ?? 0),
+      taxexclusiveAmount: round2(tag?.taxexclusiveAmount ?? 0),
+      taxinclusiveamount: round2(tag?.taxinclusiveamount ?? 0),
+      hsn: toNum(tag?.hsn, 0),
+      noofusers: toNum(tag?.noofusers, 0),
+      serialNumber: tag?.serialNumber ?? null,
+      nextDueAmount: round2(tag?.nextDueAmount ?? 0),
+      originalHsn: toNum(tag?.originalHsn ?? tag?.hsn, 0),
+      leadAmount: round2(tag?.leadAmount ?? 0),
+      totalleadAmount: round2(tag?.totalleadAmount ?? 0),
+      totalnextDueAmount: round2(tag?.totalnextDueAmount ?? 0),
+      leadTax: toNum(tag?.leadTax, 0),
+      nextDueTax: toNum(tag?.nextDueTax, 0),
+      discountAmount: toNum(tag?.discountAmount, 0),
+    }));
+  };
+
+  const mergeLicenseNumbers = (existingLicenses = [], incomingLicenses = []) => {
+    const merged = [
+      ...(Array.isArray(existingLicenses) ? existingLicenses : []),
+    ].map((item) => (item?.toObject ? item.toObject() : item));
+
+    for (const license of Array.isArray(incomingLicenses) ? incomingLicenses : []) {
+      const normalizedLicense = {
+        ...(license?.toObject ? license.toObject() : license),
+        licenseNumber: normalizeLicenseNumberValue(license?.licenseNumber),
+        productorServiceId: license?.productorServiceId || null,
+        productorServiceName: license?.productorServiceName || "",
+        sourceIndex: license?.sourceIndex,
+      };
+
+      const exists = merged.some(
+        (l) =>
+          String(l?.licenseNumber ?? "") ===
+            String(normalizedLicense.licenseNumber ?? "") &&
+          String(l?.productorServiceId || "") ===
+            String(normalizedLicense.productorServiceId || "")
+      );
+
+      if (!exists) merged.push(normalizedLicense);
+    }
+
+    return merged;
+  };
+
+  const mergeTaggedData = (existingTagged = [], incomingTagged = []) => {
+    const merged = [
+      ...(Array.isArray(existingTagged) ? existingTagged : []),
+    ].map((item) => (item?.toObject ? item.toObject() : item));
+console.log("merged",merged)
+console.log("incomingtag",incomingTagged)
+    for (const tag of Array.isArray(incomingTagged) ? incomingTagged : []) {
+      const normalizedTag = {
+        ...(tag?.toObject ? tag.toObject() : tag),
+        licensenumber: normalizeLicenseNumberValue(tag?.licensenumber),
+      };
+
+      const index = merged.findIndex(
+        (t) =>
+          String(t?.licensenumber ?? "") ===
+          String(normalizedTag.licensenumber ?? "")
+      );
+
+      if (index === -1) {
+        merged.push(normalizedTag);
+      } else {
+        merged[index] = {
+          ...merged[index],
+          ...normalizedTag,
+        };
+      }
+    }
+
+    return merged;
+  };
 
   try {
     const { data, leadData, userId, role } = req.body;
@@ -1564,13 +1723,19 @@ export const Leadclosing = async (req, res) => {
     if (!docID) {
       return res.status(400).json({ message: "docID is required" });
     }
+
     if (!data) {
       return res.status(400).json({ message: "data is required" });
     }
+
     if (!Array.isArray(leadData) || leadData.length === 0) {
       return res
         .status(400)
         .json({ message: "leadData must be a non-empty array" });
+    }
+
+    if (!data?.customerName) {
+      return res.status(400).json({ message: "Customer id is required" });
     }
 
     const objectId = new mongoose.Types.ObjectId(docID);
@@ -1582,131 +1747,202 @@ export const Leadclosing = async (req, res) => {
         throw new Error("Lead not found");
       }
 
-      const discountAmount = Number(data?.discamnt || 0);
+      const hasPrimaryProduct = leadData.some(isPrimaryProduct);
+      const onlyAdditionalServices =
+        !hasPrimaryProduct && leadData.every(isAdditionalService);
 
-      // Gross total of raw (pre-discount) item net amounts
-      const grossAmount = leadData.reduce(
-        (sum, item) => sum + Number(item?.netAmount || 0),
-        0
+      const discountAmount = round2(data?.discamnt || 0);
+      const inputTaxableAmount = round2(data?.taxableAmount || 0);
+      const inputTaxAmount = round2(data?.taxAmount || 0);
+      const inputNetAmount = round2(data?.netAmount || 0);
+
+      const grossAmount = round2(
+        leadData.reduce((sum, item) => sum + toNum(item?.netAmount, 0), 0)
       );
 
-      // Final net amount for the whole lead (single source of truth)
-      const newNetAmount = Number(
-        data?.netAmount ?? grossAmount - discountAmount
-      );
+      let newTaxableAmount = inputTaxableAmount;
+      let newTaxAmount = inputTaxAmount;
+      let newNetAmount = inputNetAmount;
 
-      // ---------------------------------------------------------------
-      // Single pass: apportion the discount across items proportionally,
-      // fix rounding drift on the last item, and scale productPrice /
-      // taxAmount so netAmount = productPrice + taxAmount stays true.
-      // This replaces the two separate (and inconsistent) calculations
-      // that used to live in mappedleadData and mappedproductData.
-      // ---------------------------------------------------------------
-      let runningTotal = 0;
+      let adjustedItems = [];
 
-      const adjustedItems = leadData.map((item, index) => {
-        const originalNetAmount = Number(item?.netAmount || 0);
-        const ratio = grossAmount > 0 ? originalNetAmount / grossAmount : 0;
+      if (onlyAdditionalServices) {
+        adjustedItems = leadData.map((item) => {
+          const originalProductPrice = round2(
+            item?.actualproductPrice ?? item?.productPrice ?? 0
+          );
+          const originalNetAmount = round2(
+            item?.actualNetAmount ?? item?.netAmount ?? 0
+          );
+          const originalTaxAmount = round2(
+            originalNetAmount - originalProductPrice
+          );
 
-        let finalNetAmount = Number(
-          (originalNetAmount - ratio * discountAmount).toFixed(2)
+          return {
+            item,
+            originalNetAmount,
+            finalNetAmount: originalNetAmount,
+            scaledProductPrice: originalProductPrice,
+            scaledTaxAmount: originalTaxAmount,
+          };
+        });
+
+        newTaxableAmount = inputTaxableAmount;
+        newTaxAmount = inputTaxAmount;
+        newNetAmount = inputNetAmount;
+      } else {
+        newNetAmount = round2(
+          data?.netAmount ?? grossAmount - discountAmount
         );
 
-        const isLastItem = index === leadData.length - 1;
-        if (isLastItem) {
-          // absorb rounding leftovers so items sum exactly to newNetAmount
-          finalNetAmount = Number((newNetAmount - runningTotal).toFixed(2));
-        }
+        let runningTotal = 0;
 
-        runningTotal = Number((runningTotal + finalNetAmount).toFixed(2));
+        adjustedItems = leadData.map((item, index) => {
+          const originalNetAmount = round2(item?.netAmount || 0);
+          const ratio = grossAmount > 0 ? originalNetAmount / grossAmount : 0;
 
-        const originalProductPrice = Number(item?.productPrice || 0);
-        const scaleFactor =
-          originalNetAmount > 0 ? finalNetAmount / originalNetAmount : 0;
+          let finalNetAmount = round2(
+            originalNetAmount - ratio * discountAmount
+          );
 
-        const scaledProductPrice = Number(
-          (originalProductPrice * scaleFactor).toFixed(2)
-        );
-        const scaledTaxAmount = Number(
-          (finalNetAmount - scaledProductPrice).toFixed(2)
-        );
+          const isLastItem = index === leadData.length - 1;
+          if (isLastItem) {
+            finalNetAmount = round2(newNetAmount - runningTotal);
+          }
 
-        return {
-          item,
-          originalNetAmount,
-          finalNetAmount,
-          scaledProductPrice,
-          scaledTaxAmount,
-        };
-      });
+          runningTotal = round2(runningTotal + finalNetAmount);
+
+          const originalProductPrice = round2(item?.productPrice || 0);
+          const scaleFactor =
+            originalNetAmount > 0 ? finalNetAmount / originalNetAmount : 0;
+
+          const scaledProductPrice = round2(originalProductPrice * scaleFactor);
+          const scaledTaxAmount = round2(finalNetAmount - scaledProductPrice);
+
+          return {
+            item,
+            originalNetAmount,
+            finalNetAmount,
+            scaledProductPrice,
+            scaledTaxAmount,
+          };
+        });
+
+        newTaxableAmount = inputTaxableAmount;
+        newTaxAmount = inputTaxAmount;
+      }
 
       const mappedleadData = adjustedItems.map(
         ({ item, finalNetAmount, scaledProductPrice, scaledTaxAmount }) => ({
-          licenseNumber: item?.licenseNumber ?? null,
-          licenseNumbers: item?.licenseNumbers,
-          taggeddata: item?.taggeddata,
+          licenseNumber: normalizeLicenseNumberValue(item?.licenseNumber),
+          licenseNumbers: Array.isArray(item?.licenseNumbers)
+            ? item.licenseNumbers.map((license) => ({
+                ...(license?.toObject ? license.toObject() : license),
+                licenseNumber: normalizeLicenseNumberValue(license?.licenseNumber),
+                productorServiceId: license?.productorServiceId || null,
+                productorServiceName: license?.productorServiceName || "",
+                sourceIndex: license?.sourceIndex,
+              }))
+            : [],
+          taggeddata: buildLeadMasterTaggedData(item?.taggeddata),
           productorServiceName: item?.productorServiceName || "",
           productorServiceId: item?.productorServiceId || null,
           productorServicemodel: item?.itemType || "",
           price: item?.price ?? null,
           productPrice: scaledProductPrice,
-          hsn: Number(item?.hsn || 0),
-          netAmount: finalNetAmount, // now discount-adjusted, in sync with header
-          taxAmount: scaledTaxAmount,
+          hsn: toNum(item?.hsn || 0, 0),
+          netAmount: round2(finalNetAmount),
+          taxAmount: round2(scaledTaxAmount),
           productorservicetype: item?.productorservicetype || "",
           company_id: item?.company_id || null,
           branch_id: item?.branch_id || null,
+          applicationDate: item?.applicationDate || "",
+          softwareTrade: item?.softwareTrade || "",
+          nextDue: item?.nextDue || "",
+          noofusers: toNum(item?.noofusers, 0),
+          isActive: item?.status ?? item?.isActive,
+          version: item?.version,
+          status: item?.status,
+          actualproductPrice: toNum(item?.actualproductPrice, 0),
+          actualHsn: toNum(item?.actualHsn, 0),
+          actualNetAmount: toNum(item?.actualNetAmount, 0),
+          parentPrimaryProductId: item?.parentPrimaryProductId || null,
+          isDefaultService: !!item?.isDefaultService,
         })
       );
 
-      const mappedproductData = adjustedItems.map(({ item, finalNetAmount }) => ({
-        company_id: item?.company_id || null,
-        branch_id: item?.branch_id || null,
-        product_id: item?.productorServiceId || null,
+      const mappedproductData = adjustedItems.map(
+        ({ item, finalNetAmount, scaledProductPrice, scaledTaxAmount }) => {
+          const normalizedTaggedData = buildCustomerTaggedDataForAdditionalOnly(item?.taggeddata)
+            
 
-        licensenumber:
-          item?.licenseNumber != null &&
-            String(item.licenseNumber).trim() !== ""
-            ? Number(item.licenseNumber)
-            : null,
+          return {
+            company_id: item?.company_id || null,
+            branch_id: item?.branch_id || null,
+            product_id: item?.productorServiceId || null,
+            productName: item?.productorServiceName || "",
+            productorServiceName: item?.productorServiceName || "",
+            productorservicetype: item?.productorservicetype || "",
+            licensenumber: normalizeLicenseNumberValue(item?.licenseNumber),
+            noofusers: toNum(item?.noofusers, 0),
+            applicationDate: item?.applicationDate || "",
+            productAmount: round2(
+              onlyAdditionalServices
+                ? item?.actualNetAmount ?? item?.netAmount ?? finalNetAmount
+                : finalNetAmount
+            ),
+            productPrice: round2(
+              onlyAdditionalServices
+                ? item?.actualproductPrice ??
+                    item?.productPrice ??
+                    scaledProductPrice
+                : scaledProductPrice
+            ),
+            taxAmount: round2(
+              onlyAdditionalServices
+                ? (item?.actualNetAmount ?? item?.netAmount ?? finalNetAmount) -
+                    (item?.actualproductPrice ??
+                      item?.productPrice ??
+                      scaledProductPrice)
+                : scaledTaxAmount
+            ),
+            hsn: toNum(
+              onlyAdditionalServices ? item?.actualHsn ?? item?.hsn : item?.hsn,
+              0
+            ),
+            softwareTrade: item?.softwareTrade || "",
+            nextDue: item?.nextDue || "",
+            licenseNumbers: Array.isArray(item?.licenseNumbers)
+              ? item.licenseNumbers.map((license) => ({
+                  ...(license?.toObject ? license.toObject() : license),
+                  licenseNumber: normalizeLicenseNumberValue(license?.licenseNumber),
+                  productorServiceId: license?.productorServiceId || null,
+                  productorServiceName: license?.productorServiceName || "",
+                  sourceIndex: license?.sourceIndex,
+                }))
+              : [],
+            taggeddata: normalizedTaggedData,
+            isActive: item?.status ?? item?.isActive,
+            version: item?.version,
+            parentPrimaryProductId: item?.parentPrimaryProductId || null,
+            isDefaultService: !!item?.isDefaultService,
+            createdFrom: "Lead",
+            productAddedDate: new Date(),
+          };
+        }
+      );
 
-        noofusers: Number(item?.noofusers),
-        applicationDate: item?.applicationDate,
-
-        // same value as leadFor[].netAmount now — no more drift
-        productAmount: finalNetAmount,
-
-        softwareTrade: item?.softwareTrade,
-        nextDue: item?.nextDue,
-        licenseNumbers: item?.licenseNumbers,
-        taggeddata: Array.isArray(item?.taggeddata) ? item.taggeddata : [],
-        productorservicetype: item?.productorservicetype || "",
-        isActive: item?.status,
-        version: item?.version,
-      }));
-
-      const newTaxableAmount = Number(data?.taxableAmount || 0);
-      const newTaxAmount = Number(data?.taxAmount || 0);
-
-      const totalPaidAmount = Number(matchedDoc.totalPaidAmount || 0);
-console.log("totalpaidamount",totalPaidAmount)
-      const rawBalanceAmount = newNetAmount - totalPaidAmount;
-console.log("rawBalanceAmount",rawBalanceAmount)
+      const totalPaidAmount = round2(matchedDoc.totalPaidAmount || 0);
+      const rawBalanceAmount = round2(newNetAmount - totalPaidAmount);
       const newBalanceAmount = rawBalanceAmount < 0 ? 0 : rawBalanceAmount;
-console.log("newbalanceamount",newBalanceAmount)
       const excessPaidAmount =
         rawBalanceAmount < 0 ? Math.abs(rawBalanceAmount) : 0;
-console.log("excesspaidamount",excessPaidAmount)
 
-      // const Product = mappedleadData.find(
-      //   (item) => item.productorservicetype === "Primaryproduct"
-      // );
       const Product =
         mappedleadData.length > 1
-          ? mappedleadData.find(
-            (item) => item.productorservicetype === "Primaryproduct"
-          )
+          ? mappedleadData.find((item) => isPrimaryProduct(item))
           : mappedleadData[0] || null;
+
       const primaryProductId = Product?.productorServiceId || null;
       const primaryProductModel =
         Product?.productorServicemodel || "Product";
@@ -1715,14 +1951,13 @@ console.log("excesspaidamount",excessPaidAmount)
         ? matchedDoc.paymentHistory
         : [];
 
-      // paymentHistory[].netAmount kept in sync with the same newNetAmount
       const updatedPaymentHistory = existingPaymentHistory.map((history) => {
         const paymentEntries = Array.isArray(history.paymentEntries)
           ? history.paymentEntries
           : [];
 
         const updatedEntries = paymentEntries.map((entry) => {
-          const existingReceivedAmount = Number(entry?.receivedAmount || 0);
+          const existingReceivedAmount = round2(entry?.receivedAmount || 0);
 
           return {
             ...(entry?.toObject ? entry.toObject() : entry),
@@ -1730,7 +1965,10 @@ console.log("excesspaidamount",excessPaidAmount)
             productorServicemodel: primaryProductModel,
             receivedAmount: existingReceivedAmount,
             netAmount: newNetAmount,
-            balanceAmount: Math.max(newNetAmount - existingReceivedAmount, 0),
+            balanceAmount: Math.max(
+              round2(newNetAmount - existingReceivedAmount),
+              0
+            ),
           };
         });
 
@@ -1741,6 +1979,7 @@ console.log("excesspaidamount",excessPaidAmount)
       });
 
       const taskName = await Task.findOne({ taskName: "Lead Closing" }).lean();
+
       const activityLogEntry = {
         submissionDate: new Date(),
         submittedUser: userId,
@@ -1757,6 +1996,7 @@ console.log("excesspaidamount",excessPaidAmount)
         taxAmount: newTaxAmount,
         netAmount: newNetAmount,
         balanceAmount: newBalanceAmount,
+        excessPaidAmount,
         leadFor: mappedleadData,
         paymentHistory: updatedPaymentHistory,
       };
@@ -1774,33 +2014,26 @@ console.log("excesspaidamount",excessPaidAmount)
         throw new Error("Lead update failed");
       }
 
-      if (!data?.customerName) {
-        throw new Error("Customer id is required");
-      }
-
       const custobjectId = new mongoose.Types.ObjectId(data.customerName);
       const existingCustomer = await Customer.findById(custobjectId).session(
         session
       );
+
       if (!existingCustomer) {
         throw new Error("Customer not found");
       }
 
       const directLicenseNumbers = leadData
-        .filter(
-          (item) =>
-            item?.licenseNumber !== null &&
-            item?.licenseNumber !== undefined &&
-            String(item?.licenseNumber).trim() !== ""
-        )
+        .filter((item) => isNonEmpty(item?.licenseNumber))
         .map((item) => ({
-          licensenumber: Number(item.licenseNumber),
+          licensenumber: normalizeLicenseNumberValue(item.licenseNumber),
           productid:
             item?.productid ||
             item?.product_id ||
             item?.productorServiceId ||
             null,
-        }));
+        }))
+        .filter((item) => item.licensenumber !== null);
 
       const uniqueLicenseMap = new Map();
       for (const item of directLicenseNumbers) {
@@ -1834,6 +2067,7 @@ console.log("excesspaidamount",excessPaidAmount)
             customerName: existingCustomer._id,
             licensenumber: item.licensenumber,
           }));
+
           await License.insertMany(licenseDocs, { session });
         }
       }
@@ -1841,18 +2075,28 @@ console.log("excesspaidamount",excessPaidAmount)
       const customerDoc = await Customer.findById(data.customerName).session(
         session
       );
-      const selected = [...customerDoc.selected];
+
+      if (!customerDoc) {
+        throw new Error("Customer not found while saving selected products");
+      }
+
+      const selected = Array.isArray(customerDoc.selected)
+        ? customerDoc.selected.map((item) =>
+            item?.toObject ? item.toObject() : item
+          )
+        : [];
 
       for (const item of mappedproductData) {
-        if (item.productorservicetype !== "Additionalservice") {
+        if (!isAdditionalService(item)) {
           selected.push(item);
           continue;
         }
 
         const existingIndex = selected.findIndex(
           (s) =>
-            String(s.product_id) === String(item.product_id) &&
-            String(s.productorservicetype).toLowerCase() === "additionalservice"
+            String(s?.product_id || "") === String(item?.product_id || "") &&
+            String(s?.productorservicetype || "").toLowerCase() ===
+              "additionalservice"
         );
 
         if (existingIndex === -1) {
@@ -1862,33 +2106,19 @@ console.log("excesspaidamount",excessPaidAmount)
 
         const existing = selected[existingIndex];
 
-        const mergedLicenseNumbers = [...(existing.licenseNumbers || [])];
-        for (const license of item.licenseNumbers || []) {
-          const exists = mergedLicenseNumbers.some(
-            (l) =>
-              String(l.licenseNumber) === String(license.licenseNumber) &&
-              String(l.productorServiceId) === String(license.productorServiceId)
-          );
-          if (!exists) mergedLicenseNumbers.push(license);
-        }
+        const mergedLicenseNumbers = mergeLicenseNumbers(
+          existing?.licenseNumbers,
+          item?.licenseNumbers
+        );
 
-        const mergedTagged = [...(existing.taggeddata || [])];
-        for (const tag of item.taggeddata || []) {
-          const exists = mergedTagged.some(
-            (t) => String(t.licensenumber) === String(tag.licensenumber)
-          );
-          if (!exists) {
-            mergedTagged.push(tag);
-          } else {
-            const idx = mergedTagged.findIndex(
-              (t) => String(t.licensenumber) === String(tag.licensenumber)
-            );
-            mergedTagged[idx] = { ...mergedTagged[idx], ...tag };
-          }
-        }
+        const mergedTagged = mergeTaggedData(
+          existing?.taggeddata,
+          item?.taggeddata
+        );
 
         selected[existingIndex] = {
-          ...(existing.toObject ? existing.toObject() : existing),
+          ...existing,
+          ...item,
           licenseNumbers: mergedLicenseNumbers,
           taggeddata: mergedTagged,
         };
@@ -1911,6 +2141,9 @@ console.log("excesspaidamount",excessPaidAmount)
         lead: updatedLead,
         customer: updatedcustomer,
         extra: {
+          scenario: onlyAdditionalServices
+            ? "additional-service-only"
+            : "primary-with-optional-additional-services",
           newTaxableAmount,
           newTaxAmount,
           newNetAmount,
@@ -1935,9 +2168,145 @@ console.log("excesspaidamount",excessPaidAmount)
   } finally {
     await session.endSession();
   }
-};///claude code
+};
+
+
+
 // export const Leadclosing = async (req, res) => {
 //   const session = await mongoose.startSession();
+
+//   const toNum = (value, fallback = 0) => {
+//     const n = Number(value);
+//     return Number.isFinite(n) ? n : fallback;
+//   };
+
+//   const round2 = (value) => Number(toNum(value).toFixed(2));
+
+//   const isNonEmpty = (value) =>
+//     value !== null &&
+//     value !== undefined &&
+//     String(value).trim() !== "";
+
+//   const normalizeString = (value) =>
+//     value === null || value === undefined ? "" : String(value).trim();
+
+//   const isAdditionalService = (item) =>
+//     String(item?.productorservicetype || "").toLowerCase() ===
+//     "additionalservice";
+
+//   const isPrimaryProduct = (item) =>
+//     String(item?.productorservicetype || "").toLowerCase() ===
+//     "primaryproduct";
+
+//   const normalizeLicenseNumberValue = (value) => {
+//     if (!isNonEmpty(value)) return null;
+//     const n = Number(value);
+//     return Number.isFinite(n) ? n : null;
+//   };
+
+//   const buildCustomerTaggedDataForAdditionalOnly = (taggeddata = []) => {
+//     return (Array.isArray(taggeddata) ? taggeddata : []).map((tag) => ({
+//       ...(tag?.toObject ? tag.toObject() : tag),
+//       licensenumber: normalizeString(tag?.licensenumber),
+//       nextDue: tag?.nextDue || "",
+//       hsn: toNum(tag?.originalHsn ?? tag?.hsn, 0),
+//       originalHsn: toNum(tag?.originalHsn ?? tag?.hsn, 0),
+//       noofusers: tag?.noofusers,
+//       serialNumber: tag?.serialNumber,
+//       nextDueAmount: toNum(tag?.nextDueAmount, 0),
+//       totalnextDueAmount: round2(
+//         tag?.totalnextDueAmount ?? tag?.taxinclusiveamount ?? 0
+//       ),
+//       taxexclusiveAmount: round2(tag?.nextDueAmount ?? 0),
+//       taxinclusiveamount: round2(tag?.totalnextDueAmount ?? 0),
+//       productAmount: round2(tag?.totalnextDueAmount ?? 0),
+//       leadAmount: round2(tag?.nextDueAmount ?? 0),
+//       totalleadAmount: round2(tag?.totalnextDueAmount ?? 0),
+//       leadTax: toNum(tag?.nextDueTax, 0),
+//       nextDueTax: toNum(tag?.nextDueTax, 0),
+//       discountAmount: toNum(tag?.discountAmount, 0),
+//     }));
+//   };
+
+//   const buildLeadMasterTaggedData = (taggeddata = []) => {
+//     return (Array.isArray(taggeddata) ? taggeddata : []).map((tag) => ({
+//       ...(tag?.toObject ? tag.toObject() : tag),
+//       licensenumber: normalizeString(tag?.licensenumber),
+//       nextDue: tag?.nextDue || "",
+//       productAmount: round2(tag?.productAmount ?? tag?.totalnextDueAmount ?? 0),
+//       taxexclusiveAmount: round2(tag?.taxexclusiveAmount ?? 0),
+//       taxinclusiveamount: round2(tag?.taxinclusiveamount ?? 0),
+//       hsn: toNum(tag?.hsn, 0),
+//       noofusers: tag?.noofusers,
+//       serialNumber: tag?.serialNumber,
+//       nextDueAmount: round2(tag?.nextDueAmount ?? 0),
+//       originalHsn: toNum(tag?.originalHsn ?? tag?.hsn, 0),
+//       leadAmount: round2(tag?.leadAmount ?? 0),
+//       totalleadAmount: round2(tag?.totalleadAmount ?? 0),
+//       totalnextDueAmount: round2(tag?.totalnextDueAmount ?? 0),
+//       leadTax: toNum(tag?.leadTax, 0),
+//       nextDueTax: toNum(tag?.nextDueTax, 0),
+//       discountAmount: toNum(tag?.discountAmount, 0),
+//     }));
+//   };
+
+//   const mergeLicenseNumbers = (existingLicenses = [], incomingLicenses = []) => {
+//     const merged = [
+//       ...(Array.isArray(existingLicenses) ? existingLicenses : []),
+//     ].map((item) => (item?.toObject ? item.toObject() : item));
+
+//     for (const license of Array.isArray(incomingLicenses) ? incomingLicenses : []) {
+//       const normalizedLicense = {
+//         ...(license?.toObject ? license.toObject() : license),
+//         licenseNumber: normalizeString(license?.licenseNumber),
+//         productorServiceId: license?.productorServiceId || null,
+//         productorServiceName: license?.productorServiceName || "",
+//         sourceIndex: license?.sourceIndex,
+//       };
+
+//       const exists = merged.some(
+//         (l) =>
+//           normalizeString(l?.licenseNumber) ===
+//             normalizeString(normalizedLicense.licenseNumber) &&
+//           String(l?.productorServiceId || "") ===
+//             String(normalizedLicense.productorServiceId || "")
+//       );
+
+//       if (!exists) merged.push(normalizedLicense);
+//     }
+
+//     return merged;
+//   };
+
+//   const mergeTaggedData = (existingTagged = [], incomingTagged = []) => {
+//     const merged = [
+//       ...(Array.isArray(existingTagged) ? existingTagged : []),
+//     ].map((item) => (item?.toObject ? item.toObject() : item));
+
+//     for (const tag of Array.isArray(incomingTagged) ? incomingTagged : []) {
+//       const normalizedTag = {
+//         ...(tag?.toObject ? tag.toObject() : tag),
+//         licensenumber: normalizeString(tag?.licensenumber),
+//       };
+
+//       const index = merged.findIndex(
+//         (t) =>
+//           normalizeString(t?.licensenumber) ===
+//           normalizeString(normalizedTag.licensenumber)
+//       );
+
+//       if (index === -1) {
+//         merged.push(normalizedTag);
+//       } else {
+//         merged[index] = {
+//           ...merged[index],
+//           ...normalizedTag,
+//         };
+//       }
+//     }
+
+//     return merged;
+//   };
 
 //   try {
 //     const { data, leadData, userId, role } = req.body;
@@ -1957,159 +2326,214 @@ console.log("excesspaidamount",excessPaidAmount)
 //         .json({ message: "leadData must be a non-empty array" });
 //     }
 
-//     const objectId = new mongoose.Types.ObjectId(docID);
+//     if (!data?.customerName) {
+//       return res.status(400).json({ message: "Customer id is required" });
+//     }
 
+//     const objectId = new mongoose.Types.ObjectId(docID);
 //     let responsePayload = null;
 
 //     await session.withTransaction(async () => {
 //       const matchedDoc = await LeadMaster.findById(objectId).session(session);
-
 //       if (!matchedDoc) {
 //         throw new Error("Lead not found");
 //       }
 
-//       const mappedleadData = leadData.map((item) => {
-//         const productPrice = Number(item?.productPrice || 0);
-//         const hsn = Number(item?.hsn || 0);
-//         const netAmount = Number(item?.netAmount || 0);
-//         const taxAmount = netAmount - productPrice;
+//       const hasPrimaryProduct = leadData.some(isPrimaryProduct);
+//       const onlyAdditionalServices =
+//         !hasPrimaryProduct && leadData.every(isAdditionalService);
 
-//         return {
-//           licenseNumber: item?.licenseNumber ?? null,
-//           licenseNumbers: item?.licenseNumbers,
-//           taggeddata: item?.taggeddata,
+//       const discountAmount = round2(data?.discamnt || 0);
+//       const inputTaxableAmount = round2(data?.taxableAmount || 0);
+//       const inputTaxAmount = round2(data?.taxAmount || 0);
+//       const inputNetAmount = round2(data?.netAmount || 0);
+
+//       const grossAmount = round2(
+//         leadData.reduce((sum, item) => sum + toNum(item?.netAmount, 0), 0)
+//       );
+
+//       let newTaxableAmount = inputTaxableAmount;
+//       let newTaxAmount = inputTaxAmount;
+//       let newNetAmount = inputNetAmount;
+
+//       let adjustedItems = [];
+
+//       if (onlyAdditionalServices) {
+//         adjustedItems = leadData.map((item) => {
+//           const originalProductPrice = round2(
+//             item?.actualproductPrice ?? item?.productPrice ?? 0
+//           );
+//           const originalNetAmount = round2(
+//             item?.actualNetAmount ?? item?.netAmount ?? 0
+//           );
+//           const originalTaxAmount = round2(
+//             originalNetAmount - originalProductPrice
+//           );
+
+//           return {
+//             item,
+//             originalNetAmount,
+//             finalNetAmount: originalNetAmount,
+//             scaledProductPrice: originalProductPrice,
+//             scaledTaxAmount: originalTaxAmount,
+//           };
+//         });
+
+//         newTaxableAmount = inputTaxableAmount;
+//         newTaxAmount = inputTaxAmount;
+//         newNetAmount = inputNetAmount;
+//       } else {
+//         newNetAmount = round2(
+//           data?.netAmount ?? grossAmount - discountAmount
+//         );
+
+//         let runningTotal = 0;
+
+//         adjustedItems = leadData.map((item, index) => {
+//           const originalNetAmount = round2(item?.netAmount || 0);
+//           const ratio = grossAmount > 0 ? originalNetAmount / grossAmount : 0;
+
+//           let finalNetAmount = round2(
+//             originalNetAmount - ratio * discountAmount
+//           );
+
+//           const isLastItem = index === leadData.length - 1;
+//           if (isLastItem) {
+//             finalNetAmount = round2(newNetAmount - runningTotal);
+//           }
+
+//           runningTotal = round2(runningTotal + finalNetAmount);
+
+//           const originalProductPrice = round2(item?.productPrice || 0);
+//           const scaleFactor =
+//             originalNetAmount > 0 ? finalNetAmount / originalNetAmount : 0;
+
+//           const scaledProductPrice = round2(originalProductPrice * scaleFactor);
+//           const scaledTaxAmount = round2(finalNetAmount - scaledProductPrice);
+
+//           return {
+//             item,
+//             originalNetAmount,
+//             finalNetAmount,
+//             scaledProductPrice,
+//             scaledTaxAmount,
+//           };
+//         });
+
+//         newTaxableAmount = inputTaxableAmount;
+//         newTaxAmount = inputTaxAmount;
+//       }
+
+//       const mappedleadData = adjustedItems.map(
+//         ({ item, finalNetAmount, scaledProductPrice, scaledTaxAmount }) => ({
+//           licenseNumber: isNonEmpty(item?.licenseNumber)
+//             ? String(item.licenseNumber)
+//             : "",
+//           licenseNumbers: Array.isArray(item?.licenseNumbers)
+//             ? item.licenseNumbers.map((license) => ({
+//                 ...(license?.toObject ? license.toObject() : license),
+//                 licenseNumber: normalizeString(license?.licenseNumber),
+//                 productorServiceId: license?.productorServiceId || null,
+//                 productorServiceName: license?.productorServiceName || "",
+//                 sourceIndex: license?.sourceIndex,
+//               }))
+//             : [],
+//           taggeddata: buildLeadMasterTaggedData(item?.taggeddata),
 //           productorServiceName: item?.productorServiceName || "",
 //           productorServiceId: item?.productorServiceId || null,
 //           productorServicemodel: item?.itemType || "",
 //           price: item?.price ?? null,
-//           productPrice,
-//           hsn,
-//           netAmount,
-//           taxAmount,
+//           productPrice: scaledProductPrice,
+//           hsn: toNum(item?.hsn || 0, 0),
+//           netAmount: round2(finalNetAmount),
+//           taxAmount: round2(scaledTaxAmount),
 //           productorservicetype: item?.productorservicetype || "",
 //           company_id: item?.company_id || null,
 //           branch_id: item?.branch_id || null,
-//         };
-//       });
-//       console.log("leaddataaaaaa", leadData)
-//       const grossAmount = leadData.reduce(
-//         (sum, item) => sum + Number(item?.netAmount || 0),
-//         0
-//       );
-
-//       const discountAmount = Number(data?.discamnt || 0);
-
-//       const mappedproductData = leadData.map((item, index) => {
-
-//         const originalAmount = Number(item?.netAmount || 0);
-
-//         const ratio =
-//           grossAmount > 0 ? originalAmount / grossAmount : 0;
-
-//         let finalProductAmount =
-//           originalAmount - ratio * discountAmount;
-
-//         // Fix rounding difference on last item
-//         if (index === leadData.length - 1) {
-//           const previousTotal = leadData
-//             .slice(0, index)
-//             .reduce((sum, p) => {
-//               const amt = Number(p?.netAmount || 0);
-//               const r = grossAmount > 0 ? amt / grossAmount : 0;
-//               return sum + Number((amt - r * discountAmount).toFixed(2));
-//             }, 0);
-
-//           finalProductAmount =
-//             Number(data.netAmount) - previousTotal;
-//         }
-
-//         return {
-//           company_id: item?.company_id || null,
-//           branch_id: item?.branch_id || null,
-//           product_id: item?.productorServiceId || null,
-
-//           licensenumber:
-//             item?.licenseNumber != null &&
-//               String(item.licenseNumber).trim() !== ""
-//               ? Number(item.licenseNumber)
-//               : null,
-
-//           noofusers: item?.quantityUsers,
-//           applicationDate: item?.applicationDate,
-
-//           // Updated amount after discount
-//           productAmount: Number(finalProductAmount.toFixed(2)),
-
-//           softwareTrade: item?.softwareTrade,
-//           nextDue: item?.nextDue,
-//           licenseNumbers: item?.licenseNumbers,
-//           taggeddata: Array.isArray(item?.taggeddata)
-//             ? item.taggeddata
-//             : [],
-//           productorservicetype: item?.productorservicetype || "",
-//           isActive: item?.status,
+//           applicationDate: item?.applicationDate || "",
+//           softwareTrade: item?.softwareTrade || "",
+//           nextDue: item?.nextDue || "",
+//           noofusers: item?.noofusers,
+//           isActive: item?.status ?? item?.isActive,
 //           version: item?.version,
-//         };
-//       });
-//       // const mappedproductData = leadData.map((item) => ({
-//       //   company_id: item?.company_id || null,
-//       //   branch_id: item?.branch_id || null,
-//       //   product_id: item?.productorServiceId || null,
-//       //   licensenumber:
-//       //     item?.licenseNumber !== null &&
-//       //       item?.licenseNumber !== undefined &&
-//       //       String(item?.licenseNumber).trim() !== ""
-//       //       ? Number(item?.licenseNumber)
-//       //       : null,
-//       //   noofusers: item?.quantityUsers,
-//       //   applicationDate: item?.applicationDate,
-//       //   productAmount: item?.netAmount,
-//       //   softwareTrade: item?.softwareTrade,
-//       //   nextDue: item?.nextDue,
-//       //   licenseNumbers: item?.licenseNumbers,
-//       //   taggeddata: Array.isArray(item?.taggeddata) ? item.taggeddata : [],
-//       //   productorservicetype: item?.productorservicetype || "",
-//       //   isActive: item?.status,
-//       //   version: item?.version,
-//       // }));
-//       console.log("mappedproductdataaaaaaaa", mappedproductData)
-//       // const newTaxableAmount = mappedleadData.reduce(
-//       //   (sum, item) => sum + Number(item.productPrice || 0),
-//       //   0
-//       // );
-
-//       // const newNetAmount = mappedleadData.reduce(
-//       //   (sum, item) => sum + Number(item.netAmount || 0),
-//       //   0
-//       // );
-
-//       // const newTaxAmount = newNetAmount - newTaxableAmount;
-
-//       const newTaxableAmount = Number(data?.taxableAmount || 0);
-
-//       const newTaxAmount = Number(data?.taxAmount || 0);
-
-//       const grossNetAmount = mappedleadData.reduce(
-//         (sum, item) => sum + Number(item.netAmount || 0),
-//         0
+//           status: item?.status,
+//           actualproductPrice: toNum(item?.actualproductPrice, 0),
+//           actualHsn: toNum(item?.actualHsn, 0),
+//           actualNetAmount: toNum(item?.actualNetAmount, 0),
+//           parentPrimaryProductId: item?.parentPrimaryProductId || null,
+//           isDefaultService: !!item?.isDefaultService,
+//         })
 //       );
 
-//       // use the value coming from frontend
-//       const newNetAmount = Number(data?.netAmount || grossNetAmount - discountAmount);
+//       const mappedproductData = adjustedItems.map(
+//         ({ item, finalNetAmount, scaledProductPrice, scaledTaxAmount }) => {
+//           const normalizedTaggedData = onlyAdditionalServices
+//             ? buildCustomerTaggedDataForAdditionalOnly(item?.taggeddata)
+//             : buildLeadMasterTaggedData(item?.taggeddata);
 
-//       const totalPaidAmount = Number(matchedDoc.totalPaidAmount || 0);
-//       const rawBalanceAmount = newNetAmount - totalPaidAmount;
+//           return {
+//             company_id: item?.company_id || null,
+//             branch_id: item?.branch_id || null,
+//             product_id: item?.productorServiceId || null,
+//             productorServiceName: item?.productorServiceName || "",
+//             productorservicetype: item?.productorservicetype || "",
+//             licensenumber: normalizeLicenseNumberValue(item?.licenseNumber),
+//             noofusers: item?.noofusers,
+//             applicationDate: item?.applicationDate || "",
+//             productAmount: round2(
+//               onlyAdditionalServices
+//                 ? item?.actualNetAmount ?? item?.netAmount ?? finalNetAmount
+//                 : finalNetAmount
+//             ),
+//             productPrice: round2(
+//               onlyAdditionalServices
+//                 ? item?.actualproductPrice ?? item?.productPrice ?? scaledProductPrice
+//                 : scaledProductPrice
+//             ),
+//             taxAmount: round2(
+//               onlyAdditionalServices
+//                 ? (item?.actualNetAmount ?? item?.netAmount ?? finalNetAmount) -
+//                     (item?.actualproductPrice ?? item?.productPrice ?? scaledProductPrice)
+//                 : scaledTaxAmount
+//             ),
+//             hsn: toNum(
+//               onlyAdditionalServices ? item?.actualHsn ?? item?.hsn : item?.hsn,
+//               0
+//             ),
+//             softwareTrade: item?.softwareTrade || "",
+//             nextDue: item?.nextDue || "",
+//             licenseNumbers: Array.isArray(item?.licenseNumbers)
+//               ? item.licenseNumbers.map((license) => ({
+//                   ...(license?.toObject ? license.toObject() : license),
+//                   licenseNumber: normalizeString(license?.licenseNumber),
+//                   productorServiceId: license?.productorServiceId || null,
+//                   productorServiceName: license?.productorServiceName || "",
+//                   sourceIndex: license?.sourceIndex,
+//                 }))
+//               : [],
+//             taggeddata: normalizedTaggedData,
+//             isActive: item?.status ?? item?.isActive,
+//             version: item?.version,
+//             parentPrimaryProductId: item?.parentPrimaryProductId || null,
+//             isDefaultService: !!item?.isDefaultService,
+//           };
+//         }
+//       );
+
+//       const totalPaidAmount = round2(matchedDoc.totalPaidAmount || 0);
+//       const rawBalanceAmount = round2(newNetAmount - totalPaidAmount);
 //       const newBalanceAmount = rawBalanceAmount < 0 ? 0 : rawBalanceAmount;
 //       const excessPaidAmount =
 //         rawBalanceAmount < 0 ? Math.abs(rawBalanceAmount) : 0;
 
-//       const primaryProduct = mappedleadData.find(
-//         (item) => item.productorservicetype === "Primaryproduct"
-//       );
+//       const Product =
+//         mappedleadData.length > 1
+//           ? mappedleadData.find((item) => isPrimaryProduct(item))
+//           : mappedleadData[0] || null;
 
-//       const primaryProductId = primaryProduct?.productorServiceId || null;
+//       const primaryProductId = Product?.productorServiceId || null;
 //       const primaryProductModel =
-//         primaryProduct?.productorServicemodel || "Product";
+//         Product?.productorServicemodel || "Product";
 
 //       const existingPaymentHistory = Array.isArray(matchedDoc.paymentHistory)
 //         ? matchedDoc.paymentHistory
@@ -2121,7 +2545,7 @@ console.log("excesspaidamount",excessPaidAmount)
 //           : [];
 
 //         const updatedEntries = paymentEntries.map((entry) => {
-//           const existingReceivedAmount = Number(entry?.receivedAmount || 0);
+//           const existingReceivedAmount = round2(entry?.receivedAmount || 0);
 
 //           return {
 //             ...(entry?.toObject ? entry.toObject() : entry),
@@ -2129,7 +2553,10 @@ console.log("excesspaidamount",excessPaidAmount)
 //             productorServicemodel: primaryProductModel,
 //             receivedAmount: existingReceivedAmount,
 //             netAmount: newNetAmount,
-//             balanceAmount: Math.max(newNetAmount - existingReceivedAmount, 0),
+//             balanceAmount: Math.max(
+//               round2(newNetAmount - existingReceivedAmount),
+//               0
+//             ),
 //           };
 //         });
 
@@ -2138,27 +2565,16 @@ console.log("excesspaidamount",excessPaidAmount)
 //           paymentEntries: updatedEntries,
 //         };
 //       });
-//       const taskName = await Task.findOne({ taskName: "Lead Closing" }).lean()
+
+//       const taskName = await Task.findOne({ taskName: "Lead Closing" }).lean();
 //       const activityLogEntry = {
 //         submissionDate: new Date(),
 //         submittedUser: userId,
 //         submissiondoneByModel: role === "Admin" ? "Admin" : "Staff",
 //         remarks: data?.remark,
-//         taskBy: taskName?._id
-//       }
+//         taskBy: taskName?._id,
+//       };
 
-
-//       // const leadUpdatePayload = {
-//       //   ...data,
-//       //   discountAmount: data?.discamnt,
-//       //   leadConfirmed: true,
-//       //   taxableAmount: newTaxableAmount,
-//       //   taxAmount: newTaxAmount,
-//       //   netAmount: newNetAmount,
-//       //   balanceAmount: newBalanceAmount,
-//       //   leadFor: mappedleadData,
-//       //   paymentHistory: updatedPaymentHistory,
-//       // };
 //       const leadUpdatePayload = {
 //         ...data,
 //         discountAmount,
@@ -2171,32 +2587,20 @@ console.log("excesspaidamount",excessPaidAmount)
 //         paymentHistory: updatedPaymentHistory,
 //       };
 
-
 //       const updatedLead = await LeadMaster.findByIdAndUpdate(
 //         objectId,
 //         {
-//           $push: {
-//             activityLog: activityLogEntry,
-//           },
+//           $push: { activityLog: activityLogEntry },
 //           $set: leadUpdatePayload,
 //         },
-//         {
-//           new: true,
-//           runValidators: true,
-//           session,
-//         }
+//         { new: true, runValidators: true, session }
 //       );
 
 //       if (!updatedLead) {
 //         throw new Error("Lead update failed");
 //       }
 
-//       if (!data?.customerName) {
-//         throw new Error("Customer id is required");
-//       }
-
 //       const custobjectId = new mongoose.Types.ObjectId(data.customerName);
-
 //       const existingCustomer = await Customer.findById(custobjectId).session(
 //         session
 //       );
@@ -2206,23 +2610,18 @@ console.log("excesspaidamount",excessPaidAmount)
 //       }
 
 //       const directLicenseNumbers = leadData
-//         .filter(
-//           (item) =>
-//             item?.licenseNumber !== null &&
-//             item?.licenseNumber !== undefined &&
-//             String(item?.licenseNumber).trim() !== ""
-//         )
+//         .filter((item) => isNonEmpty(item?.licenseNumber))
 //         .map((item) => ({
-//           licensenumber: Number(item.licenseNumber),
+//           licensenumber: normalizeLicenseNumberValue(item.licenseNumber),
 //           productid:
 //             item?.productid ||
 //             item?.product_id ||
 //             item?.productorServiceId ||
 //             null,
-//         }));
+//         }))
+//         .filter((item) => item.licensenumber !== null);
 
 //       const uniqueLicenseMap = new Map();
-
 //       for (const item of directLicenseNumbers) {
 //         if (!uniqueLicenseMap.has(String(item.licensenumber))) {
 //           uniqueLicenseMap.set(String(item.licensenumber), item);
@@ -2259,38 +2658,31 @@ console.log("excesspaidamount",excessPaidAmount)
 //         }
 //       }
 
-//       //       const updatedcustomer = await Customer.findByIdAndUpdate(
-//       //         data.customerName,
-//       //         {
-//       //           $set: {
-//       //             mobile: data.mobile,
-//       //             email: data.email,
-//       //             landline: data.phone,
-//       // partner:data.partner
-//       //           },
-//       //           $push: {
-//       //             selected: {
-//       //               $each: mappedproductData,
-//       //             },
-//       //           },
-//       //         },
-//       //         { new: true, session }
-//       //       );
-//       const customerDoc = await Customer.findById(data.customerName).session(session);
+//       const customerDoc = await Customer.findById(data.customerName).session(
+//         session
+//       );
 
-//       const selected = [...customerDoc.selected];
+//       if (!customerDoc) {
+//         throw new Error("Customer not found while saving selected products");
+//       }
+
+//       const selected = Array.isArray(customerDoc.selected)
+//         ? customerDoc.selected.map((item) =>
+//             item?.toObject ? item.toObject() : item
+//           )
+//         : [];
 
 //       for (const item of mappedproductData) {
-
-//         if (item.productorservicetype !== "Additionalservice") {
+//         if (!isAdditionalService(item)) {
 //           selected.push(item);
 //           continue;
 //         }
 
 //         const existingIndex = selected.findIndex(
-//           s =>
-//             String(s.product_id) === String(item.product_id) &&
-//             String(s.productorservicetype).toLowerCase() === "additionalservice"
+//           (s) =>
+//             String(s?.product_id || "") === String(item?.product_id || "") &&
+//             String(s?.productorservicetype || "").toLowerCase() ===
+//               "additionalservice"
 //         );
 
 //         if (existingIndex === -1) {
@@ -2300,59 +2692,21 @@ console.log("excesspaidamount",excessPaidAmount)
 
 //         const existing = selected[existingIndex];
 
-//         //----------------------------------
-//         // Merge licenseNumbers
-//         //----------------------------------
+//         const mergedLicenseNumbers = mergeLicenseNumbers(
+//           existing?.licenseNumbers,
+//           item?.licenseNumbers
+//         );
 
-//         const mergedLicenseNumbers = [
-//           ...(existing.licenseNumbers || [])
-//         ];
-
-//         for (const license of item.licenseNumbers || []) {
-
-//           const exists = mergedLicenseNumbers.some(l =>
-//             String(l.licenseNumber) === String(license.licenseNumber) &&
-//             String(l.productorServiceId) === String(license.productorServiceId)
-//           );
-
-//           if (!exists) {
-//             mergedLicenseNumbers.push(license);
-//           }
-//         }
-
-//         //----------------------------------
-//         // Merge taggeddata
-//         //----------------------------------
-
-//         const mergedTagged = [
-//           ...(existing.taggeddata || [])
-//         ];
-
-//         for (const tag of item.taggeddata || []) {
-
-//           const exists = mergedTagged.some(t =>
-//             String(t.licensenumber) === String(tag.licensenumber)
-//           );
-
-//           if (!exists) {
-//             mergedTagged.push(tag);
-//           } else {
-
-//             const index = mergedTagged.findIndex(
-//               t => String(t.licensenumber) === String(tag.licensenumber)
-//             );
-
-//             mergedTagged[index] = {
-//               ...mergedTagged[index],
-//               ...tag
-//             };
-//           }
-//         }
+//         const mergedTagged = mergeTaggedData(
+//           existing?.taggeddata,
+//           item?.taggeddata
+//         );
 
 //         selected[existingIndex] = {
-//           ...existing.toObject(),
+//           ...existing,
+//           ...item,
 //           licenseNumbers: mergedLicenseNumbers,
-//           taggeddata: mergedTagged
+//           taggeddata: mergedTagged,
 //         };
 //       }
 
@@ -2360,11 +2714,10 @@ console.log("excesspaidamount",excessPaidAmount)
 //       customerDoc.email = data.email;
 //       customerDoc.landline = data.phone;
 //       customerDoc.partner = data.partner;
-//       customerDoc.createdFrom = "Lead"
+//       customerDoc.createdFrom = "Lead";
 //       customerDoc.selected = selected;
 
 //       const updatedcustomer = await customerDoc.save({ session });
-
 //       if (!updatedcustomer) {
 //         throw new Error("Customer update failed");
 //       }
@@ -2374,6 +2727,9 @@ console.log("excesspaidamount",excessPaidAmount)
 //         lead: updatedLead,
 //         customer: updatedcustomer,
 //         extra: {
+//           scenario: onlyAdditionalServices
+//             ? "additional-service-only"
+//             : "primary-with-optional-additional-services",
 //           newTaxableAmount,
 //           newTaxAmount,
 //           newNetAmount,
@@ -2388,7 +2744,6 @@ console.log("excesspaidamount",excessPaidAmount)
 //     return res.status(200).json(responsePayload);
 //   } catch (error) {
 //     console.error("Leadclosing error:", error);
-
 //     return res.status(500).json({
 //       message: error?.message || "Something went wrong while closing lead",
 //       error: {
@@ -2401,6 +2756,11 @@ console.log("excesspaidamount",excessPaidAmount)
 //   }
 // };
 
+
+
+
+
+
 // export const Leadclosing = async (req, res) => {
 //   const session = await mongoose.startSession();
 
@@ -2411,11 +2771,9 @@ console.log("excesspaidamount",excessPaidAmount)
 //     if (!docID) {
 //       return res.status(400).json({ message: "docID is required" });
 //     }
-
 //     if (!data) {
 //       return res.status(400).json({ message: "data is required" });
 //     }
-
 //     if (!Array.isArray(leadData) || leadData.length === 0) {
 //       return res
 //         .status(400)
@@ -2423,23 +2781,74 @@ console.log("excesspaidamount",excessPaidAmount)
 //     }
 
 //     const objectId = new mongoose.Types.ObjectId(docID);
-
 //     let responsePayload = null;
 
 //     await session.withTransaction(async () => {
 //       const matchedDoc = await LeadMaster.findById(objectId).session(session);
-
 //       if (!matchedDoc) {
 //         throw new Error("Lead not found");
 //       }
 
-//       const mappedleadData = leadData.map((item) => {
-//         const productPrice = Number(item?.productPrice || 0);
-//         const hsn = Number(item?.hsn || 0);
-//         const netAmount = Number(item?.netAmount || 0);
-//         const taxAmount = netAmount - productPrice;
+//       const discountAmount = Number(data?.discamnt || 0);
+
+//       // Gross total of raw (pre-discount) item net amounts
+//       const grossAmount = leadData.reduce(
+//         (sum, item) => sum + Number(item?.netAmount || 0),
+//         0
+//       );
+
+//       // Final net amount for the whole lead (single source of truth)
+//       const newNetAmount = Number(
+//         data?.netAmount ?? grossAmount - discountAmount
+//       );
+
+//       // ---------------------------------------------------------------
+//       // Single pass: apportion the discount across items proportionally,
+//       // fix rounding drift on the last item, and scale productPrice /
+//       // taxAmount so netAmount = productPrice + taxAmount stays true.
+//       // This replaces the two separate (and inconsistent) calculations
+//       // that used to live in mappedleadData and mappedproductData.
+//       // ---------------------------------------------------------------
+//       let runningTotal = 0;
+
+//       const adjustedItems = leadData.map((item, index) => {
+//         const originalNetAmount = Number(item?.netAmount || 0);
+//         const ratio = grossAmount > 0 ? originalNetAmount / grossAmount : 0;
+
+//         let finalNetAmount = Number(
+//           (originalNetAmount - ratio * discountAmount).toFixed(2)
+//         );
+
+//         const isLastItem = index === leadData.length - 1;
+//         if (isLastItem) {
+//           // absorb rounding leftovers so items sum exactly to newNetAmount
+//           finalNetAmount = Number((newNetAmount - runningTotal).toFixed(2));
+//         }
+
+//         runningTotal = Number((runningTotal + finalNetAmount).toFixed(2));
+
+//         const originalProductPrice = Number(item?.productPrice || 0);
+//         const scaleFactor =
+//           originalNetAmount > 0 ? finalNetAmount / originalNetAmount : 0;
+
+//         const scaledProductPrice = Number(
+//           (originalProductPrice * scaleFactor).toFixed(2)
+//         );
+//         const scaledTaxAmount = Number(
+//           (finalNetAmount - scaledProductPrice).toFixed(2)
+//         );
 
 //         return {
+//           item,
+//           originalNetAmount,
+//           finalNetAmount,
+//           scaledProductPrice,
+//           scaledTaxAmount,
+//         };
+//       });
+
+//       const mappedleadData = adjustedItems.map(
+//         ({ item, finalNetAmount, scaledProductPrice, scaledTaxAmount }) => ({
 //           licenseNumber: item?.licenseNumber ?? null,
 //           licenseNumbers: item?.licenseNumbers,
 //           taggeddata: item?.taggeddata,
@@ -2447,107 +2856,73 @@ console.log("excesspaidamount",excessPaidAmount)
 //           productorServiceId: item?.productorServiceId || null,
 //           productorServicemodel: item?.itemType || "",
 //           price: item?.price ?? null,
-//           productPrice,
-//           hsn,
-//           netAmount,
-//           taxAmount,
+//           productPrice: scaledProductPrice,
+//           hsn: Number(item?.hsn || 0),
+//           netAmount: finalNetAmount, // now discount-adjusted, in sync with header
+//           taxAmount: scaledTaxAmount,
 //           productorservicetype: item?.productorservicetype || "",
 //           company_id: item?.company_id || null,
 //           branch_id: item?.branch_id || null,
-//         };
-//       });
-//       console.log("leaddataaaaaa", leadData)
-//       const grossAmount = leadData.reduce(
-//         (sum, item) => sum + Number(item?.netAmount || 0),
-//         0
+//         })
 //       );
 
-//       const discountAmount = Number(data?.discamnt || 0);
+//       const mappedproductData = adjustedItems.map(({ item, finalNetAmount }) => ({
+//         company_id: item?.company_id || null,
+//         branch_id: item?.branch_id || null,
+//         product_id: item?.productorServiceId || null,
 
-//       const mappedproductData = leadData.map((item, index) => {
+//         licensenumber:
+//           item?.licenseNumber != null &&
+//             String(item.licenseNumber).trim() !== ""
+//             ? Number(item.licenseNumber)
+//             : null,
 
-//         const originalAmount = Number(item?.netAmount || 0);
+//         noofusers: Number(item?.noofusers),
+//         applicationDate: item?.applicationDate,
 
-//         const ratio =
-//           grossAmount > 0 ? originalAmount / grossAmount : 0;
+//         // same value as leadFor[].netAmount now — no more drift
+//         productAmount: finalNetAmount,
 
-//         let finalProductAmount =
-//           originalAmount - ratio * discountAmount;
-
-//         // Fix rounding difference on last item
-//         if (index === leadData.length - 1) {
-//           const previousTotal = leadData
-//             .slice(0, index)
-//             .reduce((sum, p) => {
-//               const amt = Number(p?.netAmount || 0);
-//               const r = grossAmount > 0 ? amt / grossAmount : 0;
-//               return sum + Number((amt - r * discountAmount).toFixed(2));
-//             }, 0);
-
-//           finalProductAmount =
-//             Number(data.netAmount) - previousTotal;
-//         }
-
-//         return {
-//           company_id: item?.company_id || null,
-//           branch_id: item?.branch_id || null,
-//           product_id: item?.productorServiceId || null,
-
-//           licensenumber:
-//             item?.licenseNumber != null &&
-//               String(item.licenseNumber).trim() !== ""
-//               ? Number(item.licenseNumber)
-//               : null,
-
-//           noofusers: item?.quantityUsers,
-//           applicationDate: item?.applicationDate,
-
-//           // Updated amount after discount
-//           productAmount: Number(finalProductAmount.toFixed(2)),
-
-//           softwareTrade: item?.softwareTrade,
-//           nextDue: item?.nextDue,
-//           licenseNumbers: item?.licenseNumbers,
-//           taggeddata: Array.isArray(item?.taggeddata)
-//             ? item.taggeddata
-//             : [],
-//           productorservicetype: item?.productorservicetype || "",
-//           isActive: item?.status,
-//           version: item?.version,
-//         };
-//       });
-
+//         softwareTrade: item?.softwareTrade,
+//         nextDue: item?.nextDue,
+//         licenseNumbers: item?.licenseNumbers,
+//         taggeddata: Array.isArray(item?.taggeddata) ? item.taggeddata : [],
+//         productorservicetype: item?.productorservicetype || "",
+//         isActive: item?.status,
+//         version: item?.version,
+//       }));
 
 //       const newTaxableAmount = Number(data?.taxableAmount || 0);
-
 //       const newTaxAmount = Number(data?.taxAmount || 0);
 
-//       const grossNetAmount = mappedleadData.reduce(
-//         (sum, item) => sum + Number(item.netAmount || 0),
-//         0
-//       );
-
-//       // use the value coming from frontend
-//       const newNetAmount = Number(data?.netAmount || grossNetAmount - discountAmount);
-
 //       const totalPaidAmount = Number(matchedDoc.totalPaidAmount || 0);
+// console.log("totalpaidamount",totalPaidAmount)
 //       const rawBalanceAmount = newNetAmount - totalPaidAmount;
+// console.log("rawBalanceAmount",rawBalanceAmount)
 //       const newBalanceAmount = rawBalanceAmount < 0 ? 0 : rawBalanceAmount;
+// console.log("newbalanceamount",newBalanceAmount)
 //       const excessPaidAmount =
 //         rawBalanceAmount < 0 ? Math.abs(rawBalanceAmount) : 0;
+// console.log("excesspaidamount",excessPaidAmount)
 
-//       const primaryProduct = mappedleadData.find(
-//         (item) => item.productorservicetype === "Primaryproduct"
-//       );
-
-//       const primaryProductId = primaryProduct?.productorServiceId || null;
+//       // const Product = mappedleadData.find(
+//       //   (item) => item.productorservicetype === "Primaryproduct"
+//       // );
+//       const Product =
+//         mappedleadData.length > 1
+//           ? mappedleadData.find(
+//             (item) => item.productorservicetype === "Primaryproduct"
+//           )
+//           : mappedleadData[0] || null;
+//       const primaryProductId = Product?.productorServiceId || null;
 //       const primaryProductModel =
-//         primaryProduct?.productorServicemodel || "Product";
+//         Product?.productorServicemodel || "Product";
 
 //       const existingPaymentHistory = Array.isArray(matchedDoc.paymentHistory)
 //         ? matchedDoc.paymentHistory
 //         : [];
 
+//       // paymentHistory[].netAmount kept in sync with the same newNetAmount
 //       const updatedPaymentHistory = existingPaymentHistory.map((history) => {
 //         const paymentEntries = Array.isArray(history.paymentEntries)
 //           ? history.paymentEntries
@@ -2571,15 +2946,15 @@ console.log("excesspaidamount",excessPaidAmount)
 //           paymentEntries: updatedEntries,
 //         };
 //       });
-//       const taskName = await Task.findOne({ taskName: "Lead Closing" }).lean()
+
+//       const taskName = await Task.findOne({ taskName: "Lead Closing" }).lean();
 //       const activityLogEntry = {
 //         submissionDate: new Date(),
 //         submittedUser: userId,
 //         submissiondoneByModel: role === "Admin" ? "Admin" : "Staff",
 //         remarks: data?.remark,
-//         taskBy: taskName?._id
-//       }
-
+//         taskBy: taskName?._id,
+//       };
 
 //       const leadUpdatePayload = {
 //         ...data,
@@ -2593,20 +2968,13 @@ console.log("excesspaidamount",excessPaidAmount)
 //         paymentHistory: updatedPaymentHistory,
 //       };
 
-
 //       const updatedLead = await LeadMaster.findByIdAndUpdate(
 //         objectId,
 //         {
-//           $push: {
-//             activityLog: activityLogEntry,
-//           },
+//           $push: { activityLog: activityLogEntry },
 //           $set: leadUpdatePayload,
 //         },
-//         {
-//           new: true,
-//           runValidators: true,
-//           session,
-//         }
+//         { new: true, runValidators: true, session }
 //       );
 
 //       if (!updatedLead) {
@@ -2618,11 +2986,9 @@ console.log("excesspaidamount",excessPaidAmount)
 //       }
 
 //       const custobjectId = new mongoose.Types.ObjectId(data.customerName);
-
 //       const existingCustomer = await Customer.findById(custobjectId).session(
 //         session
 //       );
-
 //       if (!existingCustomer) {
 //         throw new Error("Customer not found");
 //       }
@@ -2644,7 +3010,6 @@ console.log("excesspaidamount",excessPaidAmount)
 //         }));
 
 //       const uniqueLicenseMap = new Map();
-
 //       for (const item of directLicenseNumbers) {
 //         if (!uniqueLicenseMap.has(String(item.licensenumber))) {
 //           uniqueLicenseMap.set(String(item.licensenumber), item);
@@ -2676,24 +3041,23 @@ console.log("excesspaidamount",excessPaidAmount)
 //             customerName: existingCustomer._id,
 //             licensenumber: item.licensenumber,
 //           }));
-
 //           await License.insertMany(licenseDocs, { session });
 //         }
 //       }
 
-//       const customerDoc = await Customer.findById(data.customerName).session(session);
-
+//       const customerDoc = await Customer.findById(data.customerName).session(
+//         session
+//       );
 //       const selected = [...customerDoc.selected];
 
 //       for (const item of mappedproductData) {
-
 //         if (item.productorservicetype !== "Additionalservice") {
 //           selected.push(item);
 //           continue;
 //         }
 
 //         const existingIndex = selected.findIndex(
-//           s =>
+//           (s) =>
 //             String(s.product_id) === String(item.product_id) &&
 //             String(s.productorservicetype).toLowerCase() === "additionalservice"
 //         );
@@ -2705,59 +3069,35 @@ console.log("excesspaidamount",excessPaidAmount)
 
 //         const existing = selected[existingIndex];
 
-//         //----------------------------------
-//         // Merge licenseNumbers
-//         //----------------------------------
-
-//         const mergedLicenseNumbers = [
-//           ...(existing.licenseNumbers || [])
-//         ];
-
+//         const mergedLicenseNumbers = [...(existing.licenseNumbers || [])];
 //         for (const license of item.licenseNumbers || []) {
-
-//           const exists = mergedLicenseNumbers.some(l =>
-//             String(l.licenseNumber) === String(license.licenseNumber) &&
-//             String(l.productorServiceId) === String(license.productorServiceId)
+//           const exists = mergedLicenseNumbers.some(
+//             (l) =>
+//               String(l.licenseNumber) === String(license.licenseNumber) &&
+//               String(l.productorServiceId) === String(license.productorServiceId)
 //           );
-
-//           if (!exists) {
-//             mergedLicenseNumbers.push(license);
-//           }
+//           if (!exists) mergedLicenseNumbers.push(license);
 //         }
 
-//         //----------------------------------
-//         // Merge taggeddata
-//         //----------------------------------
-
-//         const mergedTagged = [
-//           ...(existing.taggeddata || [])
-//         ];
-
+//         const mergedTagged = [...(existing.taggeddata || [])];
 //         for (const tag of item.taggeddata || []) {
-
-//           const exists = mergedTagged.some(t =>
-//             String(t.licensenumber) === String(tag.licensenumber)
+//           const exists = mergedTagged.some(
+//             (t) => String(t.licensenumber) === String(tag.licensenumber)
 //           );
-
 //           if (!exists) {
 //             mergedTagged.push(tag);
 //           } else {
-
-//             const index = mergedTagged.findIndex(
-//               t => String(t.licensenumber) === String(tag.licensenumber)
+//             const idx = mergedTagged.findIndex(
+//               (t) => String(t.licensenumber) === String(tag.licensenumber)
 //             );
-
-//             mergedTagged[index] = {
-//               ...mergedTagged[index],
-//               ...tag
-//             };
+//             mergedTagged[idx] = { ...mergedTagged[idx], ...tag };
 //           }
 //         }
 
 //         selected[existingIndex] = {
-//           ...existing.toObject(),
+//           ...(existing.toObject ? existing.toObject() : existing),
 //           licenseNumbers: mergedLicenseNumbers,
-//           taggeddata: mergedTagged
+//           taggeddata: mergedTagged,
 //         };
 //       }
 
@@ -2765,11 +3105,10 @@ console.log("excesspaidamount",excessPaidAmount)
 //       customerDoc.email = data.email;
 //       customerDoc.landline = data.phone;
 //       customerDoc.partner = data.partner;
-//       customerDoc.createdFrom = "Lead"
+//       customerDoc.createdFrom = "Lead";
 //       customerDoc.selected = selected;
 
 //       const updatedcustomer = await customerDoc.save({ session });
-
 //       if (!updatedcustomer) {
 //         throw new Error("Customer update failed");
 //       }
@@ -2793,7 +3132,6 @@ console.log("excesspaidamount",excessPaidAmount)
 //     return res.status(200).json(responsePayload);
 //   } catch (error) {
 //     console.error("Leadclosing error:", error);
-
 //     return res.status(500).json({
 //       message: error?.message || "Something went wrong while closing lead",
 //       error: {
@@ -2804,7 +3142,10 @@ console.log("excesspaidamount",excessPaidAmount)
 //   } finally {
 //     await session.endSession();
 //   }
-// };
+// };///claude code
+
+
+
 export const UpdateLeadRegister = async (req, res) => {
   const session = await mongoose.startSession();
 
@@ -5704,7 +6045,7 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
     });
   }
 };
-export const LeadClosing = async (req, res) => {
+export const LeadClosingAmount = async (req, res) => {
   try {
     const { leadId, allocationType, allocatedBy } = req.query;
     const { formData } = req.body;
@@ -8678,10 +9019,12 @@ export const GetlostLeads = async (req, res) => {
 
 export const GetallproductwiseReport = async (req, res) => {
   try {
+console.log("calledddddddddddddddddddddddd")
     const { startDate, endDate } = req.query;
 
     const start = new Date(startDate);
     const end = new Date(endDate);
+console.log("called")
     console.log("startdate", start)
     console.log('enddataee', end)
     ///for productwise report
@@ -9773,11 +10116,14 @@ export const GetallproductwiseReport = async (req, res) => {
       totalPendingAmount: item.totalPendingAmount,
       lostNetAmount: item.lostNetAmount
     }))
-
+console.log("mappedata",mappeddata)
+console.log("reeeeeeeee",re)
 
     if (result && result.length > 0) {
       return res.status(200).json({ message: "lead found", data: { mappeddata, re } })
-    }
+    }else{
+      return res.status(200).json({ message: "lead found", data: { mappeddata, re } })
+}
   } catch (error) {
     console.log("error", error.message);
     return res.status(500).json({ message: "Internal server error" });

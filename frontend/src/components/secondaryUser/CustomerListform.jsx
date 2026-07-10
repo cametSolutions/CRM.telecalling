@@ -347,17 +347,16 @@ setAfterSearchData(filteredCustomers);
   }
 
   return (
-    <div className="h-full overflow-hidden">
+    <div className="h-full overflow-hidden bg-[#ADD8E6] p-2 md:p-4 lg:p-6 ">
       {/* {scrollLoading && (
         <BarLoader
           cssOverride={{ width: "100%", height: "4px" }}
           color="#4A90E2"
         />
       )} */}
-
-      <div className="w-full shadow-lg rounded p-8 h-full flex flex-col">
+      <div className="w-full shadow-lg h-full flex flex-col rounded-md bg-white p-2">
         {/* Sticky Header Section */}
-        <div className="flex-shrink-0 bg-white">
+        <div className="flex-shrink-0">
           {/* Title and Search Bar */}
           <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-4">
             <h3 className="text-2xl text-black font-bold">
