@@ -18,6 +18,7 @@ const reportsRoutes = [
   { path: "/admin/reports/account-search", component: AccountSearch },
 
   { path: "/admin/reports/leave-summary", component: LeaveSummary },
+  { path: "/admin/reports/markettingdashboard", component: MarketingDashboard },
   {
     path: "/admin/reports/product-wise-report",
     component: ProductWiseleadReport,
@@ -27,8 +28,8 @@ const reportsRoutes = [
     component: FollowupSummaryDashboard,
   },
   { path: "/admin/reports/sales-funel", component: SalesFunnel },
-  { path: "/admin/reports/dailystaffactivity", component: DailyStaffActivity },
-  { path: "/admin/reports/markettingdashboard", component: MarketingDashboard }
+  { path: "/admin/reports/dailystaffactivity", component: DailyStaffActivity }
+
 ];
 
 export default reportsRoutes;
