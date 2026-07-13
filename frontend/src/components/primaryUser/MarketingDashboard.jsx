@@ -1,6 +1,8 @@
 import {
   Mail,
   MessageSquareText,
+Bell,
+X,
   Settings,
   User,
   Users,
@@ -17,7 +19,7 @@ import { BranchSelect } from "./BranchSelect"
 import { toast } from "react-toastify"
 import { useEffect, useState } from "react"
 import UseFetch from "../../hooks/useFetch"
-
+import AnnouncementBanner from "./AnnouncementBanner"
 import {
   getLocalStorageItem,
   setLocalStorageItem
@@ -85,7 +87,7 @@ const MarketingDashboard = () => {
   const [selectedDatapopup, setselectedDataPopup] = useState({})
   const [achievedproducts, setacheivedProducts] = useState([])
   const [selectedPeriod, setselectedPeriod] = useState("")
-
+ const [showNotification, setShowNotification] = useState(false);
   const [cardDisplay, setcardDisplay] = useState([])
   const [selectedBranch, setselectedBranch] = useState(null)
   console.log(selectedBranch)
@@ -377,6 +379,18 @@ console.log(updatedCategories)
     ).toLocaleDateString("en-CA")
     setdate({ startDate, endDate })
   }, [])
+const pendingTasks = [
+  {
+    staffName: "Arun",
+    taskName: "Customer Follow-up",
+    completionDate: "2026-07-15",
+  },
+  {
+    staffName: "Rahul",
+    taskName: "Generate Report",
+    completionDate: "2026-07-18",
+  },
+];
   const handleLogout = async () => {
     try {
       const res = await api.post("/auth/logout")
@@ -645,18 +659,21 @@ ownlead:true,
             )}
 
             <div className="flex items-center gap-1.5 text-slate-700 mr-3">
-              <button className="rounded-full p-1.5 transition bg-slate-100">
+              {/* <button className="rounded-full p-1.5 transition bg-slate-100">
                 <Mail size={15} strokeWidth={2.2} />
-              </button>
+              </button> */}
               <div className="relative">
-                <button className="rounded-full p-1.5 transition bg-slate-100">
+                <button 
+onClick={() => setShowNotification(true)}
+
+className="rounded-full p-1.5 transition bg-slate-100">
                   <MessageSquareText size={15} strokeWidth={2.2} />
                 </button>
                 <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />
               </div>
-              <button className="rounded-full p-1.5 transition bg-slate-100">
+              {/* <button className="rounded-full p-1.5 transition bg-slate-100">
                 <Settings size={15} strokeWidth={2.2} />
-              </button>
+              </button> */}
               {/* <button className="rounded-full p-1.5 transition bg-slate-100">
                 <User size={15} strokeWidth={2.2} />
               </button> */}
@@ -688,7 +705,12 @@ ownlead:true,
               </div>
             </div>
           </header>
-
+{showNotification && (
+        <NotificationPopup onClose={() => setShowNotification(false)} />
+      )}
+<div className="px-4">
+<AnnouncementBanner/>
+</div>
           <main className="min-h-0 flex-1 overflow-y-auto">
             <section className="p-3 sm:p-4 lg:p-4">
               <div className="grid grid-cols-6 gap-2">
@@ -938,7 +960,7 @@ text-[clamp(9px,0.75vw,11px)]
                 </div>
 
                 {/* Product Performance */}
-                <div
+                {/* <div
                   className="
       rounded-xl border border-slate-200/90 bg-white
       p-2.5 sm:p-3
@@ -1052,7 +1074,190 @@ text-[clamp(9px,0.75vw,11px)]
                       $88,500
                     </span>
                   </p>
+                </div> */}
+<div
+  className="
+    rounded-xl border border-slate-200/90 bg-white
+    p-2.5 sm:p-3
+  "
+  style={{
+    boxShadow:
+      "0 4px 12px rgba(15,23,42,0.05), inset 0 1px 0 rgba(255,255,255,0.85)",
+  }}
+>
+  {/* Header */}
+  <div className="mb-3 flex items-center justify-between">
+    <h2
+      className="
+        font-semibold leading-4 text-slate-900
+        [font-size:clamp(11px,1.5vw,13px)]
+      "
+    >
+      Task Pending
+    </h2>
+
+    <p
+      className="
+        font-medium text-slate-600
+        [font-size:clamp(10px,1.4vw,12px)]
+      "
+    >
+      Pending Tasks:
+      <span className="ml-1 font-semibold text-slate-900">
+        {pendingTasks?.length || 0}
+      </span>
+    </p>
+  </div>
+
+
+  {/* Table Wrapper */}
+  <div
+    className="
+      max-h-[260px]
+      overflow-auto
+      rounded-lg
+      border border-slate-200
+    "
+  >
+    <table className="w-full border-collapse text-left">
+      
+      {/* Table Header */}
+      <thead
+        className="
+          sticky top-0 z-10
+          bg-slate-50
+          backdrop-blur
+        "
+      >
+        <tr>
+          {[
+            "Staff Name",
+            "Task Name",
+            "Completion Date",
+          ].map((header) => (
+            <th
+              key={header}
+              className="
+                whitespace-nowrap
+                border-b border-slate-200
+                px-3 py-2
+                font-semibold
+                text-slate-700
+                [font-size:clamp(10px,1.4vw,12px)]
+              "
+            >
+              {header}
+            </th>
+          ))}
+        </tr>
+      </thead>
+
+
+      {/* Table Body */}
+      <tbody>
+        {pendingTasks?.length > 0 ? (
+          pendingTasks.map((task, index) => (
+            <tr
+              key={index}
+              className="
+                transition
+                hover:bg-slate-50
+              "
+            >
+              {/* Staff Name */}
+              <td
+                className="
+                  border-b border-slate-100
+                  px-3 py-2
+                  text-slate-700
+                  [font-size:clamp(10px,1.4vw,12px)]
+                "
+              >
+                <div className="flex items-center gap-2">
+                  
+                  <div
+                    className="
+                      flex h-7 w-7
+                      items-center justify-center
+                      rounded-full
+                      bg-indigo-100
+                      text-indigo-600
+                      font-semibold
+                    "
+                  >
+                    {task.staffName?.charAt(0)}
+                  </div>
+
+                  <span className="font-medium">
+                    {task.staffName}
+                  </span>
+
                 </div>
+              </td>
+
+
+              {/* Task Name */}
+              <td
+                className="
+                  border-b border-slate-100
+                  px-3 py-2
+                  font-medium
+                  text-slate-800
+                  [font-size:clamp(10px,1.4vw,12px)]
+                "
+              >
+                {task.taskName}
+              </td>
+
+
+              {/* Completion Date */}
+              <td
+                className="
+                  border-b border-slate-100
+                  px-3 py-2
+                "
+              >
+                <span
+                  className="
+                    rounded-full
+                    bg-amber-100
+                    px-2 py-1
+                    font-medium
+                    text-amber-700
+                    [font-size:clamp(9px,1.3vw,11px)]
+                  "
+                >
+                  {task.completionDate}
+                </span>
+              </td>
+
+            </tr>
+          ))
+        ) : (
+
+          <tr>
+            <td
+              colSpan="3"
+              className="
+                py-8
+                text-center
+                text-slate-500
+                [font-size:clamp(10px,1.4vw,12px)]
+              "
+            >
+              No pending tasks found
+            </td>
+          </tr>
+
+        )}
+      </tbody>
+
+    </table>
+  </div>
+
+
+
+</div>
               </div>
               {/*bottom div*/}
               {/* <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
@@ -1129,3 +1334,577 @@ text-[clamp(9px,0.75vw,11px)]
 }
 
 export default MarketingDashboard
+function NotificationPopup({ onClose }) {
+const notifications = [
+  {
+    type: "news",
+    title: "New Notification",
+    unread: true,
+    data: [
+      {
+        title: "CRM Version 2.5 Released",
+        description: "New lead allocation improvements and performance enhancements are now available.",
+      },
+      {
+        title: "Server Maintenance",
+        description: "Scheduled on Sunday from 10:00 PM to 11:30 PM.",
+      },
+    ],
+  },
+  {
+    type: "leave",
+    title: "Today's Leave",
+    unread: true,
+    data: [
+      { name: "Rahul" },
+      { name: "Arun" },
+      { name: "Sneha" },
+    ],
+  },
+  {
+    type: "birthday",
+    title: "Today's Birthdays",
+    unread: false,
+    data: [
+      { name: "Rahul", dob: "11 Jul" },
+      { name: "Anu", dob: "11 Jul" },
+    ],
+  },
+  {
+    type: "holiday",
+    title: "Monthly Holidays",
+    unread: false,
+    data: [
+      { holiday: "Bakrid", date: "12 Jul" },
+      { holiday: "Independence Day", date: "15 Aug" },
+    ],
+  },
+  {
+    type: "quarterly",
+    title: "Quarterly Achievers",
+    unread: false,
+    data: [
+      {
+        name: "Rahul",
+        photo: "https://i.pravatar.cc/100?img=1",
+      },
+      {
+        name: "Arun",
+        photo: "https://i.pravatar.cc/100?img=2",
+      },
+    ],
+  },
+  {
+    type: "yearly",
+    title: "Yearly Achievers",
+    unread: false,
+    data: [
+      {
+        name: "Sneha",
+        photo: "https://i.pravatar.cc/100?img=3",
+      },
+    ],
+  },
+];
+// const notifications = [
+//   {
+//     type: "leave",
+//     title: "Today's Leave",
+//     unread: true,
+//     data: [
+//       { name: "Rahul" },
+//       { name: "Arun" },
+//       { name: "Sneha" },
+//     ],
+//   },
+//   {
+//     type: "birthday",
+//     title: "Today's Birthdays",
+//     unread: false,
+//     data: [
+//       { name: "Rahul", dob: "11 Jul" },
+//       { name: "Anu", dob: "11 Jul" },
+//     ],
+//   },
+//   {
+//     type: "holiday",
+//     title: "Monthly Holidays",
+//     unread: false,
+//     data: [
+//       { holiday: "Bakrid", date: "12 Jul" },
+//       { holiday: "Independence Day", date: "15 Aug" },
+//     ],
+//   },
+//   {
+//     type: "quarterly",
+//     title: "Quarterly Achievers",
+//     unread: false,
+//     data: [
+//       {
+//         name: "Rahul",
+//         photo: "https://i.pravatar.cc/100?img=1",
+//       },
+//       {
+//         name: "Arun",
+//         photo: "https://i.pravatar.cc/100?img=2",
+//       },
+//     ],
+//   },
+//   {
+//     type: "yearly",
+//     title: "Yearly Achievers",
+//     unread: false,
+//     data: [
+//       {
+//         name: "Sneha",
+//         photo: "https://i.pravatar.cc/100?img=3",
+//       },
+//     ],
+//   },
+// ];
+// const notifications = [
+//   {
+//     title: "Today's Leave",
+//     staff: ["Rahul", "Arun", "Sneha"],
+//     time: "Today",
+//     unread: true,
+//   },
+//   {
+//     title: "Birthdays",
+//     staff: ["Akhil", "Priya"],
+//     time: "Today",
+//     unread: false,
+//   },
+//   {
+//     title: "Monthly Holidays",
+//     message: "July 13, July 28",
+//     time: "This Month",
+//     unread: false,
+//   },
+//   {
+//     title: "Quarterly Achievers",
+//     staff: ["Rahul", "Anu", "John", "Nikhil"],
+//     time: "Q2 - 2026",
+//     unread: false,
+//   },
+//   {
+//     title: "Yearly Achievers",
+//     staff: ["Arun", "Joseph"],
+//     time: "2026",
+//     unread: false,
+//   },
+// ];
+// const notifications = [
+//   {
+//     title: "New Message Received",
+//     message: "You have received a new message from John Doe.",
+//     time: "2 minutes ago",
+//     unread: true,
+//   },
+//   {
+//     title: "Today's Leave",
+//     message: "A new support ticket has been assigned to you.",
+//     time: "1 hour ago",
+//     unread: false,
+//   },
+//   {
+//     title: "Birth Day's",
+//     message: "An employee has submitted a leave request for approval.",
+//     time: "3 hours ago",
+//     unread: false,
+//   },
+//   {
+//     title: "Monthly Holiday's",
+//     message: "A new customer has been registered successfully.",
+//     time: "Yesterday",
+//     unread: false,
+//   },
+//   {
+//     title: "Quarterly Achiever",
+//     message: "You have 5 pending customer follow-ups scheduled for today.",
+//     time: "Yesterday",
+//     unread: false,
+//   },
+//   {
+//     title: "Yearly Achiever",
+//     message: "Sales team meeting starts at 3:00 PM in the conference room.",
+//     time: "Today, 2:30 PM",
+//     unread: false,
+//   },
+// ];
+  return (
+    <div className="fixed bottom-3 right-3 z-50 flex w-72 max-h-[calc(100vh-24px)] flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
+
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-slate-700 bg-slate-800 px-4 py-3">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/15">
+            <Bell size={16} className="text-blue-400" />
+          </div>
+
+          <span className="text-sm font-semibold text-white">
+            Notifications
+          </span>
+        </div>
+
+        <button
+          onClick={onClose}
+          className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-700 hover:text-white"
+        >
+          <X size={16} />
+        </button>
+      </div>
+
+      {/* Notification List */}
+      <div className="flex-1 overflow-y-auto bg-slate-900 p-3 space-y-3">
+
+       
+
+        {/* Read Notifications */}
+        {/* {Array.from({ length: 3 }).map((_, index) => (
+          <div
+            key={index}
+            className="rounded-xl border border-slate-700 bg-slate-800 p-3 transition-all duration-200 hover:bg-slate-700"
+          >
+            <p className="text-sm font-semibold text-white">
+              Task Assigned
+            </p>
+
+            <p className="mt-1 text-xs leading-5 text-slate-300">
+              A new support ticket has been assigned to you.
+            </p>
+
+            <p className="mt-2 text-[11px] text-slate-500">
+              {index + 1} hour ago
+            </p>
+          </div>
+        ))} */}
+<div className="flex-1 space-y-3 overflow-y-auto bg-slate-900 ">
+<div className="flex-1 space-y-3 overflow-y-auto bg-slate-900 ">
+ {notifications.map((item, index) => (
+  <div
+    key={index}
+    className={`rounded-lg border p-2 transition-colors ${
+      item.unread
+        ? "border-blue-500/20 bg-slate-800"
+        : "border-slate-700 bg-slate-800"
+    }`}
+  >
+    {/* Header */}
+    <div className="mb-2 flex items-center justify-between">
+      <h3 className="text-xs font-semibold tracking-wide text-white">
+        {item.title}
+      </h3>
+
+      {item.unread && (
+        <span className="h-1.5 w-1.5 rounded-full bg-blue-500"></span>
+      )}
+    </div>
+
+    {/* Leave */}
+    {item.type === "leave" && (
+      <div className="space-y-1">
+        {item.data.map((staff, i) => (
+          <div
+            key={i}
+            className="rounded-md bg-slate-700 px-2 py-1 text-xs text-slate-200"
+          >
+            {staff.name}
+          </div>
+        ))}
+      </div>
+    )}
+
+    {/* Birthday */}
+    {item.type === "birthday" && (
+      <div className="space-y-1">
+        {item.data.map((staff, i) => (
+          <div
+            key={i}
+            className="flex items-center justify-between rounded-md bg-slate-700 px-2 py-1"
+          >
+            <span className="text-xs text-white">
+              🎂 {staff.name}
+            </span>
+
+            <span className="text-[10px] text-slate-300">
+              {staff.dob}
+            </span>
+          </div>
+        ))}
+      </div>
+    )}
+
+    {/* Holidays */}
+    {item.type === "holiday" && (
+      <div className="space-y-1">
+        {item.data.map((holiday, i) => (
+          <div
+            key={i}
+            className="flex items-center justify-between rounded-md bg-slate-700 px-2 py-1"
+          >
+            <span className="text-xs text-white">
+              📅 {holiday.holiday}
+            </span>
+
+            <span className="text-[10px] text-slate-300">
+              {holiday.date}
+            </span>
+          </div>
+        ))}
+      </div>
+    )}
+
+    {/* Quarterly & Yearly */}
+    {(item.type === "quarterly" || item.type === "yearly") && (
+      <div className="space-y-1">
+        {item.data.map((staff, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-2 rounded-md bg-slate-700 px-2 py-1"
+          >
+            <img
+              src={staff.photo}
+              alt={staff.name}
+              className="h-8 w-8 rounded-full border border-yellow-400 object-cover"
+            />
+
+            <div className="min-w-0">
+              <p className="truncate text-xs font-medium text-white">
+                {staff.name}
+              </p>
+
+              <p className="text-[10px] text-yellow-400">
+                🏆 Achiever
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+))}
+</div>
+{/* {notifications.map((item, index) => (
+  <div
+    key={index}
+    className={`rounded-xl border p-3 transition-all duration-200 hover:bg-slate-700 ${
+      item.unread
+        ? "border-blue-500/20 bg-slate-800"
+        : "border-slate-700 bg-slate-800"
+    }`}
+  >
+    <div className="flex items-start justify-between">
+      <h3 className="text-sm font-semibold text-white">
+        {item.title}
+      </h3>
+
+      {item.unread && (
+        <span className="mt-1 h-2 w-2 rounded-full bg-blue-500"></span>
+      )}
+    </div>
+
+    {item.staff ? (
+      <div className="mt-2 flex flex-wrap gap-2">
+        {item.staff.map((name, i) => (
+          <span
+            key={i}
+            className="rounded-full bg-slate-700 px-2.5 py-1 text-xs text-slate-200"
+          >
+            {name}
+          </span>
+        ))}
+      </div>
+    ) : (
+      <p className="mt-2 text-xs text-slate-300">
+        {item.message}
+      </p>
+    )}
+
+    <p className="mt-3 text-[11px] text-slate-500">
+      {item.time}
+    </p>
+  </div>
+))} */}
+  {/* {notifications.map((item, index) => (
+    <div
+      key={index}
+      className={`rounded-xl border p-3 transition-all duration-200 hover:bg-slate-700 ${
+        item.unread
+          ? "border-blue-500/20 bg-slate-800"
+          : "border-slate-700 bg-slate-800"
+      }`}
+    >
+      <div className="flex items-start justify-between">
+        <h3 className="text-sm font-semibold text-white">
+          {item.title}
+        </h3>
+
+        {item.unread && (
+          <span className="mt-1 h-2 w-2 rounded-full bg-blue-500"></span>
+        )}
+      </div>
+
+      <p className="mt-1 text-xs leading-5 text-slate-300">
+        {item.message}
+      </p>
+
+      <p className="mt-2 text-[11px] text-slate-500">
+        {item.time}
+      </p>
+    </div>
+  ))} */}
+</div>
+
+      </div>
+    </div>
+  );
+}
+// function NotificationPopup({ onClose }) {
+//   return (
+//     <div className="fixed bottom-3 right-3 z-50 w-80 max-w-[calc(100vw-2.5rem)] overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
+
+//       {/* Header */}
+//       <div className="flex items-center justify-between border-b border-slate-700 bg-slate-800 px-4 py-3">
+//         <div className="flex items-center gap-2">
+//           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/15">
+//             <Bell size={16} className="text-blue-400" />
+//           </div>
+
+//           <span className="text-sm font-semibold text-white">
+//             Notifications
+//           </span>
+//         </div>
+
+//         <button
+//           onClick={onClose}
+//           className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-700 hover:text-white"
+//         >
+//           <X size={16} />
+//         </button>
+//       </div>
+
+//       {/* Notifications */}
+//       <div className="max-h-80 space-y-3 overflow-y-auto bg-slate-900 p-3">
+
+//         {/* Unread */}
+//         <div className="rounded-xl border border-blue-500/20 bg-slate-800 p-3 transition hover:bg-slate-700">
+//           <div className="flex items-start justify-between">
+//             <p className="text-sm font-semibold text-white">
+//               New Message Received
+//             </p>
+
+//             <span className="h-2 w-2 rounded-full bg-blue-500"></span>
+//           </div>
+
+//           <p className="mt-1 text-xs leading-5 text-slate-300">
+//             You have a new message in your inbox.
+//           </p>
+
+//           <p className="mt-2 text-[11px] text-slate-500">
+//             2 minutes ago
+//           </p>
+//         </div>
+
+//         {/* Read */}
+//         <div className="rounded-xl border border-slate-700 bg-slate-800 p-3 transition hover:bg-slate-700">
+//           <p className="text-sm font-semibold text-white">
+//             Task Assigned
+//           </p>
+
+//           <p className="mt-1 text-xs leading-5 text-slate-300">
+//             A new support ticket has been assigned to you.
+//           </p>
+
+//           <p className="mt-2 text-[11px] text-slate-500">
+//             1 hour ago
+//           </p>
+//         </div>
+// <div className="rounded-xl border border-slate-700 bg-slate-800 p-3 transition hover:bg-slate-700">
+//           <p className="text-sm font-semibold text-white">
+//             Task Assigned
+//           </p>
+
+//           <p className="mt-1 text-xs leading-5 text-slate-300">
+//             A new support ticket has been assigned to you.
+//           </p>
+
+//           <p className="mt-2 text-[11px] text-slate-500">
+//             1 hour ago
+//           </p>
+//         </div>
+// <div className="rounded-xl border border-slate-700 bg-slate-800 p-3 transition hover:bg-slate-700">
+//           <p className="text-sm font-semibold text-white">
+//             Task Assigned
+//           </p>
+
+//           <p className="mt-1 text-xs leading-5 text-slate-300">
+//             A new support ticket has been assigned to you.
+//           </p>
+
+//           <p className="mt-2 text-[11px] text-slate-500">
+//             1 hour ago
+//           </p>
+//         </div>
+// <div className="rounded-xl border border-slate-700 bg-slate-800 p-3 transition hover:bg-slate-700">
+//           <p className="text-sm font-semibold text-white">
+//             Task Assigned
+//           </p>
+
+//           <p className="mt-1 text-xs leading-5 text-slate-300">
+//             A new support ticket has been assigned to you.
+//           </p>
+
+//           <p className="mt-2 text-[11px] text-slate-500">
+//             1 hour ago
+//           </p>
+//         </div>
+// <div className="rounded-xl border border-slate-700 bg-slate-800 p-3 transition hover:bg-slate-700">
+//           <p className="text-sm font-semibold text-white">
+//             Task Assigned
+//           </p>
+
+//           <p className="mt-1 text-xs leading-5 text-slate-300">
+//             A new support ticket has been assigned to you.
+//           </p>
+
+//           <p className="mt-2 text-[11px] text-slate-500">
+//             1 hour ago
+//           </p>
+//         </div>
+
+//       </div>
+//     </div>
+//   );
+// }
+// function NotificationPopup({ onClose }) {
+//   return (
+//     <div className="fixed bottom-3 right-3 z-50 w-80 max-w-[calc(100vw-2.5rem)] rounded-xl border border-slate-200 bg-white shadow-2xl ring-1 ring-black/5">
+//       <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5">
+//         <div className="flex items-center gap-2">
+//           <Bell size={14} className="text-slate-500" strokeWidth={2.25} />
+//           <span className="text-sm font-semibold text-slate-800">Notifications</span>
+//         </div>
+//         <button
+//           onClick={onClose}
+//           className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+//         >
+//           <X size={14} strokeWidth={2.25} />
+//         </button>
+//       </div>
+
+//       <div className="max-h-80 overflow-y-auto p-2">
+//         <div className="rounded-lg px-3 py-2.5 hover:bg-slate-50">
+//           <p className="text-sm font-medium text-slate-800">New message received</p>
+//           <p className="mt-0.5 text-xs text-slate-500">You have a new message in your inbox.</p>
+//           <p className="mt-1 text-[11px] text-slate-400">2 minutes ago</p>
+//         </div>
+//         <div className="rounded-lg px-3 py-2.5 hover:bg-slate-50">
+//           <p className="text-sm font-medium text-slate-800">Task assigned to you</p>
+//           <p className="mt-0.5 text-xs text-slate-500">A new support ticket needs your attention.</p>
+//           <p className="mt-1 text-[11px] text-slate-400">1 hour ago</p>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }

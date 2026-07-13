@@ -1,8 +1,9 @@
 
 
-import { useEffect, useMemo, useState } from "react"
+import { act, useEffect, useMemo, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
+import { useSelector } from "react-redux"
 import api from "../api/api"
 import { useUnsavedChanges } from "../context/UnsavedChangesContext"
 import {
@@ -27,6 +28,7 @@ import { FaUserCircle } from "react-icons/fa"
 
 export default function StaffHeader({ hide = false }) {
   const [user, setUser] = useState(null)
+console.log(user)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [mobileMenu, setMobileMenu] = useState(null)
   const [mobileChildMenu, setMobileChildMenu] = useState(null)
@@ -34,7 +36,11 @@ export default function StaffHeader({ hide = false }) {
   const navigate = useNavigate()
   const location = useLocation()
   const { requestNavigation } = useUnsavedChanges()
+const activeCompany = useSelector(
+  state => state.auth.activeCompany
+);
 
+console.log(activeCompany)
   useEffect(() => {
     const storedUser = localStorage.getItem("user")
     if (storedUser) setUser(JSON.parse(storedUser))
@@ -367,6 +373,8 @@ console.log(permissions)
     reports.flatMap((groupItem) => groupItem.items).filter((i) => i.control)
 
   const handleSafeNavigate = (path, options = {}) => {
+console.log(path)
+console.log(options)
     requestNavigation(() => {
       setMobileOpen(false)
       setMobileMenu(null)
@@ -559,14 +567,40 @@ console.log(permissions)
             <div className="flex items-center gap-1 rounded-2xl border border-white/10 bg-[#162033] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
               <button
                 type="button"
-                onClick={() => handleSafeNavigate("/staff/dashBoard")}
+                onClick={() =>{
+ let userwisepath=null
+if (user.role === "Admin") {
+            userwisepath="/admin/dashboard"
+          } else {
+            switch (user.department?.code) {
+              case "DEPARTMENT1":
+                userwisepath="/staff/dashboard"
+                break
+
+              case "DEPARTMENT2":
+                userwisepath="/staff/dashboard"
+                break
+
+              case "DEPARTMENT3":
+                userwisepath="/staff/reports/markettingdashboard"
+                break
+              case "DEPARTMENT4":
+                userwisepath="/staff/support&department"
+                break
+
+              default:
+                userwisepath="/staff/dashboard"
+            }
+          }
+
+ handleSafeNavigate(userwisepath)}}
                 className={`px-3.5 py-2 rounded-xl text-[13px] font-medium transition-all duration-200 ${
                   isPathActive("/staff/dashBoard")
                     ? "bg-[#243145] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
                     : "text-slate-300 hover:text-white hover:bg-[#1E293B]"
                 }`}
               >
-                Dashboard
+                Dashboards
               </button>
 
               {menuGroups.map((group) => {

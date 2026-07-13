@@ -6,6 +6,7 @@ import { FaSearch, FaPhone } from "react-icons/fa"
 import Tiles from "../../../components/common/Tiles"
 import { useNavigate } from "react-router-dom"
 import { PropagateLoader } from "react-spinners"
+import AnnouncementBanner from "../../../components/primaryUser/AnnouncementBanner"
 import UseFetch from "../../../hooks/useFetch"
 import { getLocalStorageItem } from "../../../helper/localstorage"
 import { StaticSidebar } from "../../../components/primaryUser/StaticSidebar"
@@ -540,7 +541,10 @@ console.log(a)
               </div>
             </div>
           </header>
+<div className="px-4">
 
+<AnnouncementBanner/>
+</div>
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-2 md:p-3">
             <div className="flex min-h-0 flex-1 flex-col rounded-xl bg-neutral-50 px-3 py-2 shadow-lg md:px-4">
               <div className="mb-2 flex shrink-0 flex-col gap-2 px-1 lg:flex-row lg:items-start lg:justify-between lg:px-2">
