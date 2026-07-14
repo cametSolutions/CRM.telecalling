@@ -46,11 +46,11 @@ GetleadById,
 ApprovedforcefullyClosedTarget,
 Leadclosing,
 Checkduplicatecustomer,
-exportBranchWiseProductUsage,
+// exportBranchWiseProductUsage,
 getBranchwiseMarketingPendingTasks
 } from "../../controller/primaryUserController/leadController.js";
 const router = express.Router();
-router.get("/export-branch-wise-product-usage",exportBranchWiseProductUsage)
+// router.get("/export-branch-wise-product-usage",exportBranchWiseProductUsage)
 router.get("/getstaffdailyreports", authMiddleware, Getdailystaffreport)
 router.post("/approveforcefullyclosetarget",authMiddleware,ApprovedforcefullyClosedTarget)
 router.get("/getsalesfunnels", authMiddleware, Getallsalesfunnels)

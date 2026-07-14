@@ -19,224 +19,241 @@ import License from "../../model/secondaryUser/licenseSchema.js";
 
 import Branch from "../../model/primaryUser/branchSchema.js";
 import CallRegistration from "../../model/secondaryUser/CallRegistrationSchema.js";
-export const exportBranchWiseProductUsage = async (req, res) => {
-  try {
-    const { companyId } = req.query;
+// export const exportBranchWiseProductUsage = async (req, res) => {
+//   try {
+//     const { companyId } = req.query;
 
-    if (!companyId) {
-      return res.status(400).json({ message: "companyId is required" });
-    }
+//     if (!companyId) {
+//       return res.status(400).json({ message: "companyId is required" });
+//     }
 
-    const companyObjectId = new mongoose.Types.ObjectId(companyId);
+//     const companyObjectId = new mongoose.Types.ObjectId(companyId);
 
-    // 1. Load branches for this company
-    const branches = await Branch.find({ companyName: companyObjectId })
-      .select("_id branchName")
-      .lean();
+//     // 1. Load branches for this company
+//     const branches = await Branch.find({ companyName: companyObjectId })
+//       .select("_id branchName")
+//       .lean();
 
-    if (!branches || branches.length === 0) {
-      return res.status(404).json({ message: "No branches found for company" });
-    }
+//     if (!branches || branches.length === 0) {
+//       return res.status(404).json({ message: "No branches found for company" });
+//     }
 
   
-const products = await Product.find({
-  selected: {
-    $elemMatch: {
-      company_id: companyObjectId.toString(),
-    },
-  },
-})
-  .select("productName selected")
-  .lean();
-console.log("productsss",products)
+// const products = await Product.find({
+//   selected: {
+//     $elemMatch: {
+//       company_id: companyObjectId.toString(),
+//     },
+//   },
+// })
+//   .select("productName selected")
+//   .lean();
+// console.log("productsss",products)
 
    
-const productsByBranch = new Map();
+// const productsByBranch = new Map();
 
-for (const product of products) {
-  (product.selected || []).forEach((sel) => {
-    const branchId = String(sel.branch_id || "");
+// for (const product of products) {
+//   (product.selected || []).forEach((sel) => {
+//     const branchId = String(sel.branch_id || "");
 
-    if (!productsByBranch.has(branchId)) {
-      productsByBranch.set(branchId, []);
-    }
+//     if (!productsByBranch.has(branchId)) {
+//       productsByBranch.set(branchId, []);
+//     }
 
-    productsByBranch.get(branchId).push({
-      _id: product._id,
-      productName: product.productName,
-      branch_id: sel.branch_id,
-      branchName: sel.branchName,
-      company_id: sel.company_id,
-      companyName: sel.companyName,
-    });
-  });
-}
+//     productsByBranch.get(branchId).push({
+//       _id: product._id,
+//       productName: product.productName,
+//       branch_id: sel.branch_id,
+//       branchName: sel.branchName,
+//       company_id: sel.company_id,
+//       companyName: sel.companyName,
+//     });
+//   });
+// }
 
-    // Prepare workbook
-    // const workbook = new ExcelJS.Workbook();
-    // const sheet = workbook.addWorksheet("Branch Product Usage");
+//     // Prepare workbook
+//     // const workbook = new ExcelJS.Workbook();
+//     // const sheet = workbook.addWorksheet("Branch Product Usage");
 
-    // // Column setup (we’ll use simple 3 columns to match your layout)
-    // sheet.columns = [
-    //   { header: "Branch", key: "branch", width: 30 },
-    //   { header: "Type", key: "type", width: 20 },
-    //   { header: "Product", key: "product", width: 50 },
-    // ];
+//     // // Column setup (we’ll use simple 3 columns to match your layout)
+//     // sheet.columns = [
+//     //   { header: "Branch", key: "branch", width: 30 },
+//     //   { header: "Type", key: "type", width: 20 },
+//     //   { header: "Product", key: "product", width: 50 },
+//     // ];
 
-    // // Helper to add branch section
-    // const addBranchSection = (branchName, usedProducts, unusedProducts) => {
-    //   // Blank row between branches (optional)
-    //   if (sheet.rowCount > 0) {
-    //     sheet.addRow(["", "", ""]);
-    //   }
+//     // // Helper to add branch section
+//     // const addBranchSection = (branchName, usedProducts, unusedProducts) => {
+//     //   // Blank row between branches (optional)
+//     //   if (sheet.rowCount > 0) {
+//     //     sheet.addRow(["", "", ""]);
+//     //   }
 
-    //   // Branch heading
-    //   sheet.addRow([branchName, "", ""]);
+//     //   // Branch heading
+//     //   sheet.addRow([branchName, "", ""]);
 
-    //   // Used products
-    //   sheet.addRow(["", "Used Products", ""]);
-    //   if (usedProducts.length === 0) {
-    //     sheet.addRow(["", "", "(none)"]);
-    //   } else {
-    //     for (const p of usedProducts) {
-    //       sheet.addRow(["", "", p]);
-    //     }
-    //   }
+//     //   // Used products
+//     //   sheet.addRow(["", "Used Products", ""]);
+//     //   if (usedProducts.length === 0) {
+//     //     sheet.addRow(["", "", "(none)"]);
+//     //   } else {
+//     //     for (const p of usedProducts) {
+//     //       sheet.addRow(["", "", p]);
+//     //     }
+//     //   }
 
-    //   // Unused products
-    //   sheet.addRow(["", "Unused Products", ""]);
-    //   if (unusedProducts.length === 0) {
-    //     sheet.addRow(["", "", "(none)"]);
-    //   } else {
-    //     for (const p of unusedProducts) {
-    //       sheet.addRow(["", "", p]);
-    //     }
-    //   }
-    // };
-// ================= Workbook =================
-const workbook = new ExcelJS.Workbook();
+//     //   // Unused products
+//     //   sheet.addRow(["", "Unused Products", ""]);
+//     //   if (unusedProducts.length === 0) {
+//     //     sheet.addRow(["", "", "(none)"]);
+//     //   } else {
+//     //     for (const p of unusedProducts) {
+//     //       sheet.addRow(["", "", p]);
+//     //     }
+//     //   }
+//     // };
+// // ================= Workbook =================
+// const workbook = new ExcelJS.Workbook();
 
-workbook.creator = "CRM";
-workbook.created = new Date();
+// workbook.creator = "CRM";
+// workbook.created = new Date();
 
-const sheet = workbook.addWorksheet("Branch Wise Product Usage", {
-  properties: { defaultRowHeight: 22 },
-  views: [{ showGridLines: false }],
-});
+// const sheet = workbook.addWorksheet("Branch Wise Product Usage", {
+//   properties: { defaultRowHeight: 22 },
+//   views: [{ showGridLines: false }],
+// });
 
-sheet.columns = [
-  { header: "No", key: "no", width: 8 },
-  { header: "Product Name", key: "product", width: 45 },
-];
-// Hide all remaining columns
-for (let i = 3; i <= 50; i++) {
-  sheet.getColumn(i).hidden = true;
-}
+// sheet.columns = [
+//   { header: "No", key: "no", width: 8 },
+//   { header: "Product Name", key: "product", width: 45 },
+// ];
+// // Hide all remaining columns
+// for (let i = 3; i <= 50; i++) {
+//   sheet.getColumn(i).hidden = true;
+// }
 
-// Report Title
-sheet.mergeCells("A1:B1");
-const title = sheet.getCell("A1");
-title.value = "Branch Wise Product Usage Report";
-title.font = {
-  bold: true,
-  size: 18,
-  color: { argb: "FFFFFFFF" },
-};
-title.alignment = {
-  vertical: "middle",
-  horizontal: "center",
-};
-title.fill = {
-  type: "pattern",
-  pattern: "solid",
-  fgColor: { argb: "1F4E78" },
-};
+// // Report Title
+// sheet.mergeCells("A1:B1");
+// const title = sheet.getCell("A1");
+// title.value = "Branch Wise Product Usage Report";
+// title.font = {
+//   bold: true,
+//   size: 18,
+//   color: { argb: "FFFFFFFF" },
+// };
+// title.alignment = {
+//   vertical: "middle",
+//   horizontal: "center",
+// };
+// title.fill = {
+//   type: "pattern",
+//   pattern: "solid",
+//   fgColor: { argb: "1F4E78" },
+// };
 
-sheet.getRow(1).height = 30;
+// sheet.getRow(1).height = 30;
 
-let currentRow = 3;
+// let currentRow = 3;
 
+// // const styleTableHeader = (row) => {
+// //   row.font = {
+// //     bold: true,
+// //     color: { argb: "FFFFFFFF" },
+// //   };
+
+// //   row.alignment = {
+// //     horizontal: "center",
+// //     vertical: "middle",
+// //   };
+
+// //   row.fill = {
+// //     type: "pattern",
+// //     pattern: "solid",
+// //     fgColor: { argb: "4472C4" },
+// //   };
+
+// //   row.eachCell((cell) => {
+// //     cell.border = {
+// //       top: { style: "thin" },
+// //       left: { style: "thin" },
+// //       right: { style: "thin" },
+// //       bottom: { style: "thin" },
+// //     };
+// //   });
+// // };
+
+// // const styleDataRow = (row) => {
+// //   row.eachCell((cell) => {
+// //     cell.border = {
+// //       top: { style: "thin", color: { argb: "D9D9D9" } },
+// //       left: { style: "thin", color: { argb: "D9D9D9" } },
+// //       right: { style: "thin", color: { argb: "D9D9D9" } },
+// //       bottom: { style: "thin", color: { argb: "D9D9D9" } },
+// //     };
+
+// //     cell.alignment = {
+// //       vertical: "middle",
+// //       horizontal: cell.col === 1 ? "center" : "left",
+// //     };
+// //   });
+// // };
 // const styleTableHeader = (row) => {
-//   row.font = {
-//     bold: true,
-//     color: { argb: "FFFFFFFF" },
-//   };
+//   // Only A and B
+//   for (let i = 1; i <= 2; i++) {
+//     const cell = row.getCell(i);
 
-//   row.alignment = {
-//     horizontal: "center",
-//     vertical: "middle",
-//   };
+//     cell.font = {
+//       bold: true,
+//       color: { argb: "FFFFFFFF" },
+//     };
 
-//   row.fill = {
-//     type: "pattern",
-//     pattern: "solid",
-//     fgColor: { argb: "4472C4" },
-//   };
+//     cell.alignment = {
+//       horizontal: "center",
+//       vertical: "middle",
+//     };
 
-//   row.eachCell((cell) => {
+//     cell.fill = {
+//       type: "pattern",
+//       pattern: "solid",
+//       fgColor: { argb: "4472C4" },
+//     };
+
 //     cell.border = {
 //       top: { style: "thin" },
 //       left: { style: "thin" },
 //       right: { style: "thin" },
 //       bottom: { style: "thin" },
 //     };
-//   });
+//   }
 // };
+// // const styleDataRow = (row, fillColor = "FFFFFF") => {
+// //   // Fill the entire visible row (A to Q)
+// //   for (let i = 1; i <= 17; i++) {
+// //     const cell = row.getCell(i);
 
+// //     cell.fill = {
+// //       type: "pattern",
+// //       pattern: "solid",
+// //       fgColor: { argb: fillColor },
+// //     };
+
+// //     cell.border = {
+// //       top: { style: "thin", color: { argb: "D9D9D9" } },
+// //       left: { style: "thin", color: { argb: "D9D9D9" } },
+// //       right: { style: "thin", color: { argb: "D9D9D9" } },
+// //       bottom: { style: "thin", color: { argb: "D9D9D9" } },
+// //     };
+
+// //     cell.alignment = {
+// //       vertical: "middle",
+// //       horizontal: i === 1 ? "center" : "left",
+// //     };
+// //   }
+// // };
 // const styleDataRow = (row) => {
-//   row.eachCell((cell) => {
-//     cell.border = {
-//       top: { style: "thin", color: { argb: "D9D9D9" } },
-//       left: { style: "thin", color: { argb: "D9D9D9" } },
-//       right: { style: "thin", color: { argb: "D9D9D9" } },
-//       bottom: { style: "thin", color: { argb: "D9D9D9" } },
-//     };
-
-//     cell.alignment = {
-//       vertical: "middle",
-//       horizontal: cell.col === 1 ? "center" : "left",
-//     };
-//   });
-// };
-const styleTableHeader = (row) => {
-  // Only A and B
-  for (let i = 1; i <= 2; i++) {
-    const cell = row.getCell(i);
-
-    cell.font = {
-      bold: true,
-      color: { argb: "FFFFFFFF" },
-    };
-
-    cell.alignment = {
-      horizontal: "center",
-      vertical: "middle",
-    };
-
-    cell.fill = {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: { argb: "4472C4" },
-    };
-
-    cell.border = {
-      top: { style: "thin" },
-      left: { style: "thin" },
-      right: { style: "thin" },
-      bottom: { style: "thin" },
-    };
-  }
-};
-// const styleDataRow = (row, fillColor = "FFFFFF") => {
-//   // Fill the entire visible row (A to Q)
-//   for (let i = 1; i <= 17; i++) {
+//   for (let i = 1; i <= 2; i++) {
 //     const cell = row.getCell(i);
-
-//     cell.fill = {
-//       type: "pattern",
-//       pattern: "solid",
-//       fgColor: { argb: fillColor },
-//     };
 
 //     cell.border = {
 //       top: { style: "thin", color: { argb: "D9D9D9" } },
@@ -251,278 +268,261 @@ const styleTableHeader = (row) => {
 //     };
 //   }
 // };
-const styleDataRow = (row) => {
-  for (let i = 1; i <= 2; i++) {
-    const cell = row.getCell(i);
+// const addBranchSection = (branchName, usedProducts, unusedProducts) => {
 
-    cell.border = {
-      top: { style: "thin", color: { argb: "D9D9D9" } },
-      left: { style: "thin", color: { argb: "D9D9D9" } },
-      right: { style: "thin", color: { argb: "D9D9D9" } },
-      bottom: { style: "thin", color: { argb: "D9D9D9" } },
-    };
+//   // Space
+//   currentRow++;
 
-    cell.alignment = {
-      vertical: "middle",
-      horizontal: i === 1 ? "center" : "left",
-    };
-  }
-};
-const addBranchSection = (branchName, usedProducts, unusedProducts) => {
+//   // Branch Heading
+//   sheet.mergeCells(`A${currentRow}:B${currentRow}`);
 
-  // Space
-  currentRow++;
+//   const branchCell = sheet.getCell(`A${currentRow}`);
 
-  // Branch Heading
-  sheet.mergeCells(`A${currentRow}:B${currentRow}`);
+//   branchCell.value = branchName;
 
-  const branchCell = sheet.getCell(`A${currentRow}`);
+//   branchCell.font = {
+//     bold: true,
+//     size: 15,
+//     color: { argb: "FFFFFF" },
+//   };
 
-  branchCell.value = branchName;
+//   branchCell.fill = {
+//     type: "pattern",
+//     pattern: "solid",
+//     fgColor: { argb: "2F75B5" },
+//   };
 
-  branchCell.font = {
-    bold: true,
-    size: 15,
-    color: { argb: "FFFFFF" },
-  };
+//   branchCell.alignment = {
+//     horizontal: "center",
+//     vertical: "middle",
+//   };
 
-  branchCell.fill = {
-    type: "pattern",
-    pattern: "solid",
-    fgColor: { argb: "2F75B5" },
-  };
+//   currentRow += 2;
 
-  branchCell.alignment = {
-    horizontal: "center",
-    vertical: "middle",
-  };
+//   // ================= USED =================
 
-  currentRow += 2;
+//   sheet.mergeCells(`A${currentRow}:B${currentRow}`);
 
-  // ================= USED =================
+//   const usedHeading = sheet.getCell(`A${currentRow}`);
 
-  sheet.mergeCells(`A${currentRow}:B${currentRow}`);
+//   usedHeading.value = "USED PRODUCTS";
 
-  const usedHeading = sheet.getCell(`A${currentRow}`);
+//   usedHeading.font = {
+//     bold: true,
+//     size: 13,
+//     color: { argb: "FFFFFF" },
+//   };
 
-  usedHeading.value = "USED PRODUCTS";
+//   usedHeading.fill = {
+//     type: "pattern",
+//     pattern: "solid",
+//     fgColor: { argb: "70AD47" },
+//   };
 
-  usedHeading.font = {
-    bold: true,
-    size: 13,
-    color: { argb: "FFFFFF" },
-  };
+//   currentRow++;
 
-  usedHeading.fill = {
-    type: "pattern",
-    pattern: "solid",
-    fgColor: { argb: "70AD47" },
-  };
+//   const usedHeader = sheet.getRow(currentRow);
+//   usedHeader.values = ["No", "Product Name"];
+//   styleTableHeader(usedHeader);
 
-  currentRow++;
+//   currentRow++;
 
-  const usedHeader = sheet.getRow(currentRow);
-  usedHeader.values = ["No", "Product Name"];
-  styleTableHeader(usedHeader);
+//   if (usedProducts.length) {
 
-  currentRow++;
+//     usedProducts.forEach((name, index) => {
 
-  if (usedProducts.length) {
+//       const row = sheet.getRow(currentRow);
 
-    usedProducts.forEach((name, index) => {
+//       row.values = [index + 1, name];
 
-      const row = sheet.getRow(currentRow);
+//       styleDataRow(row);
 
-      row.values = [index + 1, name];
+//       currentRow++;
+//     });
 
-      styleDataRow(row);
+//   } else {
 
-      currentRow++;
-    });
+//     const row = sheet.getRow(currentRow);
 
-  } else {
+//     row.values = ["", "No Used Products"];
 
-    const row = sheet.getRow(currentRow);
+//     styleDataRow(row);
 
-    row.values = ["", "No Used Products"];
+//     currentRow++;
+//   }
 
-    styleDataRow(row);
+//   currentRow++;
 
-    currentRow++;
-  }
+//   // ================= UNUSED =================
 
-  currentRow++;
+//   sheet.mergeCells(`A${currentRow}:B${currentRow}`);
 
-  // ================= UNUSED =================
+//   const unusedHeading = sheet.getCell(`A${currentRow}`);
 
-  sheet.mergeCells(`A${currentRow}:B${currentRow}`);
+//   unusedHeading.value = "UNUSED PRODUCTS";
 
-  const unusedHeading = sheet.getCell(`A${currentRow}`);
+//   unusedHeading.font = {
+//     bold: true,
+//     size: 13,
+//     color: { argb: "FFFFFF" },
+//   };
 
-  unusedHeading.value = "UNUSED PRODUCTS";
+//   unusedHeading.fill = {
+//     type: "pattern",
+//     pattern: "solid",
+//     fgColor: { argb: "C00000" },
+//   };
 
-  unusedHeading.font = {
-    bold: true,
-    size: 13,
-    color: { argb: "FFFFFF" },
-  };
+//   currentRow++;
 
-  unusedHeading.fill = {
-    type: "pattern",
-    pattern: "solid",
-    fgColor: { argb: "C00000" },
-  };
+//   const unusedHeader = sheet.getRow(currentRow);
 
-  currentRow++;
+//   unusedHeader.values = ["No", "Product Name"];
 
-  const unusedHeader = sheet.getRow(currentRow);
+//   styleTableHeader(unusedHeader);
 
-  unusedHeader.values = ["No", "Product Name"];
+//   currentRow++;
 
-  styleTableHeader(unusedHeader);
+//   if (unusedProducts.length) {
 
-  currentRow++;
+//     unusedProducts.forEach((name, index) => {
 
-  if (unusedProducts.length) {
+//       const row = sheet.getRow(currentRow);
 
-    unusedProducts.forEach((name, index) => {
+//       row.values = [index + 1, name];
 
-      const row = sheet.getRow(currentRow);
+//       styleDataRow(row);
 
-      row.values = [index + 1, name];
+//       currentRow++;
 
-      styleDataRow(row);
+//     });
 
-      currentRow++;
+//   } else {
 
-    });
+//     const row = sheet.getRow(currentRow);
 
-  } else {
+//     row.values = ["", "No Unused Products"];
 
-    const row = sheet.getRow(currentRow);
+//     styleDataRow(row);
 
-    row.values = ["", "No Unused Products"];
+//     currentRow++;
 
-    styleDataRow(row);
+//   }
 
-    currentRow++;
+//   currentRow += 2;
+// };
 
-  }
+//     // 3. For each branch, compute used and unused products
+//     for (const branch of branches) {
+//       const branchIdStr = String(branch._id);
+// console.log("branchstr",branchIdStr)
+//       // All products for this branch
+//       const branchProducts = productsByBranch.get(branchIdStr) || [];
+//       const allProductIds = branchProducts.map((p) => String(p._id));
 
-  currentRow += 2;
-};
+//       // 3a. Used products from CallRegistration
+//       // Your CallRegistration sample:
+//       // callregistration.formdata.product = Product ObjectId
+//       const callRegs = await CallRegistration.find({
+//         "callregistration.formdata.product": { $exists: true },
+//         "callregistration.branchName": branch.branchName, // adapt if branch is stored differently
+//       })
+//         .select("callregistration")
+//         .lean();
 
-    // 3. For each branch, compute used and unused products
-    for (const branch of branches) {
-      const branchIdStr = String(branch._id);
-console.log("branchstr",branchIdStr)
-      // All products for this branch
-      const branchProducts = productsByBranch.get(branchIdStr) || [];
-      const allProductIds = branchProducts.map((p) => String(p._id));
+//       const usedFromCalls = new Set();
+//       for (const reg of callRegs) {
+//         const list = Array.isArray(reg.callregistration) ? reg.callregistration : [];
+//         for (const cr of list) {
+//           const productId = cr?.product;
+//           if (productId) {
+//             usedFromCalls.add(String(productId));
+//           }
+//         }
+//       }
 
-      // 3a. Used products from CallRegistration
-      // Your CallRegistration sample:
-      // callregistration.formdata.product = Product ObjectId
-      const callRegs = await CallRegistration.find({
-        "callregistration.formdata.product": { $exists: true },
-        "callregistration.branchName": branch.branchName, // adapt if branch is stored differently
-      })
-        .select("callregistration")
-        .lean();
+//       // 3b. Used products from Customer.selected
+//       const customers = await Customer.find({
+//         "selected.branch_id": branch._id,
+//       })
+//         .select("selected")
+//         .lean();
 
-      const usedFromCalls = new Set();
-      for (const reg of callRegs) {
-        const list = Array.isArray(reg.callregistration) ? reg.callregistration : [];
-        for (const cr of list) {
-          const productId = cr?.product;
-          if (productId) {
-            usedFromCalls.add(String(productId));
-          }
-        }
-      }
+//       const usedFromCustomers = new Set();
+//       for (const cust of customers) {
+//         const selected = Array.isArray(cust.selected) ? cust.selected : [];
+//         for (const s of selected) {
+//           if (String(s.branch_id || "") === branchIdStr && s.product_id) {
+//             usedFromCustomers.add(String(s.product_id));
+//           }
+//           // Also consider defaultservices/enhanced services if needed
+//         }
+//       }
 
-      // 3b. Used products from Customer.selected
-      const customers = await Customer.find({
-        "selected.branch_id": branch._id,
-      })
-        .select("selected")
-        .lean();
-
-      const usedFromCustomers = new Set();
-      for (const cust of customers) {
-        const selected = Array.isArray(cust.selected) ? cust.selected : [];
-        for (const s of selected) {
-          if (String(s.branch_id || "") === branchIdStr && s.product_id) {
-            usedFromCustomers.add(String(s.product_id));
-          }
-          // Also consider defaultservices/enhanced services if needed
-        }
-      }
-
-      // 3c. Used products from LeadMaster.leadFor for this branch
-      const leads = await LeadMaster.find({
-        leadBranch: branch._id,
+//       // 3c. Used products from LeadMaster.leadFor for this branch
+//       const leads = await LeadMaster.find({
+//         leadBranch: branch._id,
         
-      })
-        .select("leadFor")
-        .lean();
+//       })
+//         .select("leadFor")
+//         .lean();
 
-      const usedFromLeads = new Set();
-      for (const lead of leads) {
-        const leadFor = Array.isArray(lead.leadFor) ? lead.leadFor : [];
-        for (const lf of leadFor) {
-          if (String(lf.branch_id || "") === branchIdStr && lf.productorServiceId) {
-            usedFromLeads.add(String(lf.productorServiceId));
-          }
-        }
-      }
+//       const usedFromLeads = new Set();
+//       for (const lead of leads) {
+//         const leadFor = Array.isArray(lead.leadFor) ? lead.leadFor : [];
+//         for (const lf of leadFor) {
+//           if (String(lf.branch_id || "") === branchIdStr && lf.productorServiceId) {
+//             usedFromLeads.add(String(lf.productorServiceId));
+//           }
+//         }
+//       }
 
-      // 3d. Combine used product ids
-      const usedProductIds = new Set([
-        ...usedFromCalls,
-        ...usedFromCustomers,
-        ...usedFromLeads,
-      ]);
+//       // 3d. Combine used product ids
+//       const usedProductIds = new Set([
+//         ...usedFromCalls,
+//         ...usedFromCustomers,
+//         ...usedFromLeads,
+//       ]);
 
-      // 3e. Split used/unused lists based on all branch products
-      const usedProducts = [];
-      const unusedProducts = [];
-console.log("branchproducts",branchProducts)
-      for (const p of branchProducts) {
-        if (usedProductIds.has(String(p._id))) {
-          usedProducts.push(p.productName || "");
-        } else {
-          unusedProducts.push(p.productName || "");
-        }
-      }
+//       // 3e. Split used/unused lists based on all branch products
+//       const usedProducts = [];
+//       const unusedProducts = [];
+// console.log("branchproducts",branchProducts)
+//       for (const p of branchProducts) {
+//         if (usedProductIds.has(String(p._id))) {
+//           usedProducts.push(p.productName || "");
+//         } else {
+//           unusedProducts.push(p.productName || "");
+//         }
+//       }
 
-      // 4. Add to Excel sheet
-      addBranchSection(branch.branchName, usedProducts, unusedProducts);
-    }
+//       // 4. Add to Excel sheet
+//       addBranchSection(branch.branchName, usedProducts, unusedProducts);
+//     }
 
-    // 5. Send Excel file as response
-    res.setHeader(
-      "Content-Disposition",
-      "attachment; filename=branch_product_usage_report.xlsx"
-    );
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    );
+//     // 5. Send Excel file as response
+//     res.setHeader(
+//       "Content-Disposition",
+//       "attachment; filename=branch_product_usage_report.xlsx"
+//     );
+//     res.setHeader(
+//       "Content-Type",
+//       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+//     );
 
-    await workbook.xlsx.write(res);
-    res.end();
-  } catch (error) {
-    console.error("exportBranchWiseProductUsage error:", error);
-    return res.status(500).json({
-      message: "Something went wrong while generating unused product report",
-      error: {
-        name: error?.name || "Error",
-        message: error?.message || "Unknown error",
-      },
-    });
-  }
-};
+//     await workbook.xlsx.write(res);
+//     res.end();
+//   } catch (error) {
+//     console.error("exportBranchWiseProductUsage error:", error);
+//     return res.status(500).json({
+//       message: "Something went wrong while generating unused product report",
+//       error: {
+//         name: error?.name || "Error",
+//         message: error?.message || "Unknown error",
+//       },
+//     });
+//   }
+// };
 
 
 ////////
