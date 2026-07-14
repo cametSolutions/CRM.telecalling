@@ -4992,12 +4992,12 @@ const handledownloadexcel = async () => {
                 <div className="text-sm font-bold px-4 py-1 rounded border-2 text-red-600 border-red-500 bg-white">
                   {process === "Registration" ? "New Lead" : "Edit Lead"}
                 </div>
-<button
+{/* <button
 type="button"
 onClick={handledownloadexcel}
 >
 convertexcel
-</button>
+</button> */}
               </div>
 
               <div className="p-3 md:p-4 space-y-3">
