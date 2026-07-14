@@ -30,11 +30,13 @@ import {
   ChevronDown,
   ChevronRight,
   X,
+Bell,
   PhoneCall,
   PhoneMissed,
   PhoneIncoming,
   BadgeCheck
 } from "lucide-react"
+import { all } from "axios"
 
 const CallregistrationList = () => {
   const navigate = useNavigate()
@@ -50,11 +52,14 @@ console.log(userBranch)
   const [userCallStatus, setUserCallstatus] = useState([])
   const [callList, setCallList] = useState([])
   const [filteredCalls, setFilteredCalls] = useState([])
+console.log(filteredCalls?.length)
   const [loading, setLoading] = useState(false)
   const [selectedCompanyBranch, setSelectedCompanyBranch] = useState(null)
   const [selectedcompanybranchId, setselectedcompanybranchId] = useState(null)
-
-  const [pendingCallsCount, setPendingCallsCount] = useState(0)
+  const [showNotification, setShowNotification] = useState(false)
+const [oldPendingCallsCount,setoldpendingCallCount]=useState(0)
+  const [todaypendingCallsCount, settodayPendingCallsCount] = useState(0)
+console.log(todaypendingCallsCount)
   const [todayCallsCount, setTodayCallsCount] = useState(0)
   const [solvedCallsCount, setTodaysSolvedCount] = useState(0)
   const [branchids, setbranchids] = useState(null)
@@ -255,13 +260,22 @@ console.log(userBranch)
 
   const filterCallData = useCallback(() => {
     const allCallRegistrations = (callList || []).flatMap((call) => call.callregistration || [])
+console.log(allCallRegistrations.length)
     const pending = allCallRegistrations.filter(
       (call) => call.formdata?.status?.toLowerCase() === "pending"
     )
     const todaysSolvedCount = getTodaysSolved(callList || [])
+const todaysPendingCount=getTodaysPending(pending)
+console.log(todaysPendingCount)
     const todaysCallsCount = getTodaysCalls(callList || [])
+console.log(todaysCallsCount)
+settodayPendingCallsCount(todaysPendingCount.todaysPendingCount)
+const oldpendingCallCount=getOldPending(pending)
+console.log(pending)
+console.log(oldpendingCallCount)
+setoldpendingCallCount(oldpendingCallCount.oldPendingCount)
 
-    setPendingCallsCount(pending.length)
+    // setPendingCallsCount(pending.length)
     setTodayCallsCount(todaysCallsCount)
     setTodaysSolvedCount(todaysSolvedCount.todaysSolvedCount)
   }, [callList])
@@ -310,7 +324,7 @@ console.log(a)
     const today = new Date().toISOString().split("T")[0]
     let todaysSolvedCount = 0
     let arr = []
-
+console.log(calls)
     calls.forEach((customer) => {
       customer.callregistration?.forEach((call) => {
         if (call.formdata?.status === "solved") {
@@ -325,6 +339,47 @@ console.log(a)
 
     return { todaysSolvedCount, arr }
   }
+const getTodaysPending = (calls) => {
+  const today = new Date().toISOString().split("T")[0];
+  let todaysPendingCount = 0;
+  let arr = [];
+console.log(calls)
+
+    calls?.forEach((call) => {
+      if (call.formdata?.status === "pending") {
+        const callDate = call.timedata?.endTime?.split("T")[0];
+console.log(calls)
+        if (callDate === today) {
+          todaysPendingCount++;
+          arr.push(call.timedata?.token);
+        }
+      }
+    });
+  
+
+  return { todaysPendingCount, arr };
+};
+const getOldPending = (calls) => {
+  const today = new Date().toISOString().split("T")[0];
+console.log(today)
+  let oldPendingCount = 0;
+  let arr = [];
+console.log(calls)
+  
+    calls.forEach((call) => {
+      if (call.formdata?.status === "pending") {
+        const callDate = call.timedata?.endTime?.split("T")[0];
+console.log(callDate)
+        if (callDate < today) {
+          oldPendingCount++;
+          arr.push(call.timedata?.token);
+        }
+      }
+    });
+  
+
+  return { oldPendingCount, arr };
+};
 
   const getCallStats = (calls, userName) => {
     let totalCalls = 0
@@ -419,11 +474,27 @@ console.log(a)
     const secs = seconds % 60
     return `${hrs} hr ${mins} min ${secs} sec`
   }
+const getBaseRow = useMemo(() => {
+  const todayDate = new Date().toISOString().split("T")[0]
 
+  const filteredCallList = callList.flatMap((calls) =>
+    (calls.callregistration || [])
+      .filter((item) => item.branchName?.includes(null)) // get only null branch calls
+      .map((item) => ({
+        ...item,
+        calls
+      }))
+  )
+
+  console.log("Null branch calls", filteredCallList)
+
+  return filteredCallList
+}, [callList])
   const getBaseRows = useMemo(() => {
     const todayDate = new Date().toISOString().split("T")[0]
     const branchArray = userBranch || []
-
+console.log(callList.length)
+console.log(callList)
     return (callList || [])
       .flatMap((calls) =>
         (calls.callregistration || []).map((item) => ({
@@ -459,7 +530,10 @@ console.log(a)
   }, [callList, userBranch, searchTerm, activeFilter])
 
   useEffect(() => {
+console.log("h")
+console.log(getBaseRows.length)
     setFilteredCalls(getBaseRows)
+console.log(getBaseRow)
   }, [getBaseRows])
 
   const handleSearch = debounce((search) => {
@@ -519,7 +593,9 @@ console.log(a)
               </button>
 
               <div className="relative">
-                <button className="rounded-full bg-slate-100 p-1.5 transition">
+                <button 
+//  onClick={() => setShowNotification(true)}
+className="rounded-full bg-slate-100 p-1.5 transition">
                   <MessageSquareText size={15} strokeWidth={2.2} />
                 </button>
                 <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />
@@ -541,10 +617,13 @@ console.log(a)
               </div>
             </div>
           </header>
-<div className="px-4">
+{showNotification && (
+            <NotificationPopup onClose={() => setShowNotification(false)} />
+          )}
+{/* <div className="px-4">
 
 <AnnouncementBanner/>
-</div>
+</div> */}
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-2 md:p-3">
             <div className="flex min-h-0 flex-1 flex-col rounded-xl bg-neutral-50 px-3 py-2 shadow-lg md:px-4">
               <div className="mb-2 flex shrink-0 flex-col gap-2 px-1 lg:flex-row lg:items-start lg:justify-between lg:px-2">
@@ -630,7 +709,7 @@ console.log(a)
               <div className="mb-2 grid shrink-0 grid-cols-2 gap-4 lg:grid-cols-4">
                 <Tiles
                   title="Pending Calls"
-                  count={pendingCallsCount}
+                  count={oldPendingCallsCount}
                   subtitle="Awaiting follow-up"
                   icon={<PhoneMissed size={12} strokeWidth={2.2} />}
                   style={{
@@ -641,8 +720,8 @@ console.log(a)
                 />
 
                 <Tiles
-                  title="Today Calls"
-                  count={todayCallsCount}
+                  title="Today Pending Calls"
+                  count={todaypendingCallsCount}
                   subtitle="Scheduled today"
                   icon={<PhoneIncoming size={12} strokeWidth={2.2} />}
                   style={{
@@ -752,7 +831,7 @@ console.log(a)
                                       </td>
 
                                       <td className="break-words border-b border-slate-300 px-2 py-1 align-top text-slate-900">
-                                        {item.calls?.customerName || "N/A"}
+                                        {item.calls?.customerName?.toUpperCase() || "N/A"}
                                       </td>
 
                                       <td className="break-words border-b border-slate-300 px-2 py-1 align-top text-slate-900">
@@ -896,7 +975,7 @@ console.log(a)
                                       </td>
 
                                       <td className="break-words border-b border-slate-300 px-2 py-1 align-top text-slate-900">
-                                        {item.calls?.customerName || "N/A"}
+                                        {item.calls?.customerName?.toUpperCase() || "N/A"}
                                       </td>
 
                                       <td className="break-words border-b border-slate-300 px-2 py-1 align-top text-slate-900">
@@ -1061,3 +1140,419 @@ console.log(a)
 }
 
 export default CallregistrationList
+function NotificationPopup({ onClose }) {
+
+const [showTasks, setShowTasks] = useState(false);
+const [showFollowups, setShowFollowups] = useState(false);
+  const notifications = [
+    {
+      type: "news",
+      title: "New Notification",
+      unread: true,
+      
+
+
+ data: {
+    tasks: [
+      {
+        taskName: "System and study",
+        remark: "Make it clear vision about the system",
+        dueDate: "14 Jul 2026"
+      },
+      {
+        taskName: "Coding",
+        remark: "Customized coding needed",
+        dueDate: "15 Jul 2026"
+      }
+    ],
+    followups: [
+      {
+        customerName: "ABC Traders",
+        lastRemark: "Requested demo next week"
+      },
+      {
+        customerName: "XYZ Industries",
+        lastRemark: "Waiting for quotation approval"
+      }
+    ]
+  }
+    },
+    {
+      type: "leave",
+      title: "Today's Leave",
+      unread: true,
+      data: [{ name: "Rahul" }, { name: "Arun" }, { name: "Sneha" }]
+    },
+    {
+      type: "birthday",
+      title: "Today's Birthdays",
+      unread: false,
+      data: [
+        { name: "Rahul", dob: "11 Jul" },
+        { name: "Anu", dob: "11 Jul" }
+      ]
+    },
+    {
+      type: "holiday",
+      title: "Monthly Holidays",
+      unread: false,
+      data: [
+        { holiday: "Bakrid", date: "12 Jul" },
+        { holiday: "Independence Day", date: "15 Aug" }
+      ]
+    },
+    {
+      type: "quarterly",
+      title: "Quarterly Achievers",
+      unread: false,
+      data: [
+        {
+          name: "Rahul",
+          photo: "https://i.pravatar.cc/100?img=1"
+        },
+        {
+          name: "Arun",
+          photo: "https://i.pravatar.cc/100?img=2"
+        }
+      ]
+    },
+    {
+      type: "yearly",
+      title: "Yearly Achievers",
+      unread: false,
+      data: [
+        {
+          name: "Sneha",
+          photo: "https://i.pravatar.cc/100?img=3"
+        }
+      ]
+    }
+  ]
+  
+  return (
+    <div className="fixed bottom-3 right-3 z-50 flex w-72 max-h-[calc(100vh-24px)] flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-slate-700 bg-slate-800 px-4 py-3">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/15">
+            <Bell size={16} className="text-blue-400" />
+          </div>
+
+          <span className="text-sm font-semibold text-white">
+            Notifications
+          </span>
+        </div>
+
+        <button
+          onClick={onClose}
+          className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-700 hover:text-white"
+        >
+          <X size={16} />
+        </button>
+      </div>
+
+      {/* Notification List */}
+      <div className="flex-1 overflow-y-auto bg-slate-900 p-3 space-y-3">
+        {/* Read Notifications */}
+        {/* {Array.from({ length: 3 }).map((_, index) => (
+          <div
+            key={index}
+            className="rounded-xl border border-slate-700 bg-slate-800 p-3 transition-all duration-200 hover:bg-slate-700"
+          >
+            <p className="text-sm font-semibold text-white">
+              Task Assigned
+            </p>
+
+            <p className="mt-1 text-xs leading-5 text-slate-300">
+              A new support ticket has been assigned to you.
+            </p>
+
+            <p className="mt-2 text-[11px] text-slate-500">
+              {index + 1} hour ago
+            </p>
+          </div>
+        ))} */}
+        <div className="flex-1 space-y-3 overflow-y-auto bg-slate-900 ">
+          <div className="flex-1 space-y-3 overflow-y-auto bg-slate-900 ">
+            {notifications.map((item, index) => (
+              <div
+                key={index}
+                className={`rounded-lg border p-2 transition-colors ${
+                  item.unread
+                    ? "border-blue-500/20 bg-slate-800"
+                    : "border-slate-700 bg-slate-800"
+                }`}
+              >
+                {/* Header */}
+                <div className="mb-2 flex items-center justify-between">
+                  <h3 className="text-xs font-semibold tracking-wide text-white">
+                    {item.title}
+                  </h3>
+
+
+                  {item.unread && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-blue-500"></span>
+                  )}
+                </div>
+{item.type === "news" && (
+  <div className="space-y-2">
+
+   
+
+    {/* Pending Tasks */}
+    <div className="rounded-md border border-orange-500/20 bg-slate-700/40">
+      <button
+        onClick={() => setShowTasks(!showTasks)}
+        className="flex w-full items-center justify-between px-3 py-2"
+      >
+        <div className="flex items-center gap-2">
+          <span>📋</span>
+
+          <span className="text-[11px] font-semibold text-orange-300">
+            Pending Tasks
+          </span>
+
+          <span className="rounded bg-orange-500/20 px-1.5 py-0.5 text-[10px] text-orange-300">
+            {item.data.tasks.length}
+          </span>
+        </div>
+
+        {showTasks ? (
+          <ChevronUp size={15} className="text-slate-400" />
+        ) : (
+          <ChevronDown size={15} className="text-slate-400" />
+        )}
+      </button>
+
+      {showTasks && (
+        <div className="space-y-1 border-t border-slate-600 px-2 py-2">
+          {item.data.tasks.map((task, i) => (
+            <div
+              key={i}
+              className="rounded bg-slate-800 px-2 py-1.5"
+            >
+              <div className="flex items-center justify-between">
+                <p className="truncate text-[11px] font-medium text-white">
+                  {task.taskName}
+                </p>
+
+                <span className="text-[10px] font-medium text-red-400">
+                  {task.dueDate}
+                </span>
+              </div>
+
+              <p className="mt-0.5 truncate text-[10px] text-slate-400">
+                {task.remark}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+
+    {/* Pending Follow-ups */}
+    <div className="rounded-md border border-blue-500/20 bg-slate-700/40">
+      <button
+        onClick={() => setShowFollowups(!showFollowups)}
+        className="flex w-full items-center justify-between px-3 py-2"
+      >
+        <div className="flex items-center gap-2">
+          <span>📞</span>
+
+          <span className="text-[11px] font-semibold text-blue-300">
+            Pending Follow-ups
+          </span>
+
+          <span className="rounded bg-blue-500/20 px-1.5 py-0.5 text-[10px] text-blue-300">
+            {item.data.followups.length}
+          </span>
+        </div>
+
+        {showFollowups ? (
+          <ChevronUp size={15} className="text-slate-400" />
+        ) : (
+          <ChevronDown size={15} className="text-slate-400" />
+        )}
+      </button>
+
+      {showFollowups && (
+        <div className="space-y-1 border-t border-slate-600 px-2 py-2">
+          {item.data.followups.map((followup, i) => (
+            <div
+              key={i}
+              className="rounded bg-slate-800 px-2 py-1.5"
+            >
+              <p className="truncate text-[11px] font-medium text-white">
+                {followup.customerName}
+              </p>
+
+              <p className="mt-0.5 truncate text-[10px] text-slate-400">
+                {followup.lastRemark}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+)}
+{/* {item.type === "news" && (
+  <div className="space-y-2">
+
+  
+    <div className="rounded-md border border-orange-500/20 bg-slate-700/40 p-2">
+      <div className="mb-1 flex items-center justify-between">
+        <p className="text-[11px] font-semibold text-orange-300">
+          📋 Pending Tasks
+        </p>
+        <span className="rounded bg-orange-500/20 px-1.5 py-0.5 text-[10px] text-orange-300">
+          {item.data.tasks.length}
+        </span>
+      </div>
+
+      <div className="space-y-1">
+        {item.data.tasks.map((task, i) => (
+          <div
+            key={i}
+            className="flex items-start justify-between rounded bg-slate-800 px-2 py-1"
+          >
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[11px] font-medium text-white">
+                {task.taskName}
+              </p>
+
+              <p className="truncate text-[10px] text-slate-400">
+                {task.remark}
+              </p>
+            </div>
+
+            <span className="ml-2 whitespace-nowrap text-[10px] text-red-400">
+              {task.dueDate}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    
+    <div className="rounded-md border border-blue-500/20 bg-slate-700/40 p-2">
+      <div className="mb-1 flex items-center justify-between">
+        <p className="text-[11px] font-semibold text-blue-300">
+          📞 Pending Follow-ups
+        </p>
+
+        <span className="rounded bg-blue-500/20 px-1.5 py-0.5 text-[10px] text-blue-300">
+          {item.data.followups.length}
+        </span>
+      </div>
+
+      <div className="space-y-1">
+        {item.data.followups.map((followup, i) => (
+          <div
+            key={i}
+            className="rounded bg-slate-800 px-2 py-1"
+          >
+            <p className="truncate text-[11px] font-medium text-white">
+              {followup.customerName}
+            </p>
+
+            <p className="truncate text-[10px] text-slate-400">
+              {followup.lastRemark}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+
+  </div>
+)} */}
+
+                {/* Leave */}
+                {item.type === "leave" && (
+                  <div className="space-y-1">
+                    {item.data.map((staff, i) => (
+                      <div
+                        key={i}
+                        className="rounded-md bg-slate-700 px-2 py-1 text-xs text-slate-200"
+                      >
+                        {staff.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Birthday */}
+                {item.type === "birthday" && (
+                  <div className="space-y-1">
+                    {item.data.map((staff, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between rounded-md bg-slate-700 px-2 py-1"
+                      >
+                        <span className="text-xs text-white">
+                          🎂 {staff.name}
+                        </span>
+
+                        <span className="text-[10px] text-slate-300">
+                          {staff.dob}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Holidays */}
+                {item.type === "holiday" && (
+                  <div className="space-y-1">
+                    {item.data.map((holiday, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between rounded-md bg-slate-700 px-2 py-1"
+                      >
+                        <span className="text-xs text-white">
+                          📅 {holiday.holiday}
+                        </span>
+
+                        <span className="text-[10px] text-slate-300">
+                          {holiday.date}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Quarterly & Yearly */}
+                {(item.type === "quarterly" || item.type === "yearly") && (
+                  <div className="space-y-1">
+                    {item.data.map((staff, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-2 rounded-md bg-slate-700 px-2 py-1"
+                      >
+                        <img
+                          src={staff.photo}
+                          alt={staff.name}
+                          className="h-8 w-8 rounded-full border border-yellow-400 object-cover"
+                        />
+
+                        <div className="min-w-0">
+                          <p className="truncate text-xs font-medium text-white">
+                            {staff.name}
+                          </p>
+
+                          <p className="text-[10px] text-yellow-400">
+                            🏆 Achiever
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

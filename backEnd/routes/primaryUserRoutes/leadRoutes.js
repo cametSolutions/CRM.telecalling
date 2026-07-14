@@ -47,14 +47,18 @@ ApprovedforcefullyClosedTarget,
 Leadclosing,
 Checkduplicatecustomer,
 exportBranchWiseProductUsage,
-marketingDashboardpendingTask
+getBranchwiseMarketingPendingTasks
 } from "../../controller/primaryUserController/leadController.js";
 const router = express.Router();
 router.get("/export-branch-wise-product-usage",exportBranchWiseProductUsage)
 router.get("/getstaffdailyreports", authMiddleware, Getdailystaffreport)
 router.post("/approveforcefullyclosetarget",authMiddleware,ApprovedforcefullyClosedTarget)
 router.get("/getsalesfunnels", authMiddleware, Getallsalesfunnels)
-router.get("/branchwisemarkettingdashboardpendingTask",authMiddleware,marketingDashboardpendingTask)
+router.get(
+  "/branchwise-marketing-pending-tasks",
+  authMiddleware,
+  getBranchwiseMarketingPendingTasks
+)
 router.get("/getallproductwisereport", authMiddleware, GetallproductwiseReport);
 router.get("/getfollowupsummaryReport", authMiddleware, GetfollowupsummaryReport)
 router.post("/leadRegister", authMiddleware, LeadRegister);

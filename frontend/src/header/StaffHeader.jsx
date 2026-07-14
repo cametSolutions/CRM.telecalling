@@ -47,7 +47,7 @@ console.log(activeCompany)
   }, [])
 
   const permissions = user?.permissions?.[0] || {}
-
+console.log(permissions)
   const masters = useMemo(
     () => [
       {
@@ -198,6 +198,12 @@ console.log(activeCompany)
         label: "Call Registration",
         control: permissions.CallRegistration ?? false
       },
+ {
+        to: "/staff/support&department",
+        label: "Support Department",
+        control: permissions.SupportDepartment ?? false
+      },
+
       {
         to: "/staff/transaction/leave-application",
         label: "Leave Application",

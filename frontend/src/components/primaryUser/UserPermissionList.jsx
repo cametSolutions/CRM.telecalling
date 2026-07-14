@@ -26,6 +26,7 @@ const UserPermissionList = ({ user, closeModal, refresh }) => {
     LeadFollowUp: false,
 LostLeads:false,
     CallRegistration: false,
+SupportDepartment:false,
     LeaveApplication: false,
     SignUpCustomer: false,
     ProductMerge: false,

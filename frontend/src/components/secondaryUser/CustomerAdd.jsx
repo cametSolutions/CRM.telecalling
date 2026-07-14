@@ -86,6 +86,8 @@ const CustomerAdd = ({
   )
 
   const [detailsData, setdetailsData] = useState({})
+const [isSaved, setIsSaved] = useState(false);
+console.log(isSaved)
   const [duplicatelicense, setduplicatelicense] = useState(null)
   const debounceTimersRef = useRef({})
   const [submissionloader, setsubmissionloader] = useState(false)
@@ -96,6 +98,7 @@ const CustomerAdd = ({
   const [partner, setPartner] = useState([])
   const [license, setLicense] = useState([])
   const [tableData, setTableData] = useState([])
+console.log(tableData)
   const [initialTableData, setInitialTableData] = useState([])
   const [licenseAvailable, setLicenseAvailable] = useState(true)
   const [showProductPopup, setShowProductPopup] = useState(false)
@@ -289,7 +292,8 @@ const CustomerAdd = ({
   }
 
   useEffect(() => {
-    if (customer) {
+    if (customer&&process==="edit"&&!isSaved) {
+console.log("hhhh")
       reset({
         customerName: customer?.customerName || "",
         address1: customer?.address1 || "",
@@ -364,10 +368,12 @@ const CustomerAdd = ({
       setTableData(selectedData)
       setInitialTableData(selectedData)
     } else {
+console.log("hhhh")
       setInitialTableData([])
     }
   }, [customer, reset])
-
+console.log(tableData)
+console.log(initialTableData)
   useEffect(() => {
     if (!debouncedLicenseNo || !String(debouncedLicenseNo).trim()) return
 
@@ -590,7 +596,7 @@ const CustomerAdd = ({
       item?.taggeddata?.map((entry) => String(entry?.licensenumber)) ||
       item?.taggedLicenses ||
       []
-
+console.log(item.taggeddata)
     const taggedLicenseDueDatesFromData =
       item?.taggeddata?.reduce((acc, entry) => {
         if (entry?.licensenumber) {
@@ -719,9 +725,9 @@ noofusers:entry?.noofusers??0
               return `Next due is required for tagged license ${tagLicense} for ${row?.productName}`
             }
 
-            if (due < today) {
-              return `Next due cannot be less than current date for tagged license ${tagLicense} for ${row?.productName}`
-            }
+            // if (due < today) {
+            //   return `Next due cannot be less than current date for tagged license ${tagLicense} for ${row?.productName}`
+            // }
           }
         } else {
           if (!row.nextDue) {
@@ -1029,11 +1035,51 @@ hsn: Number(
         await handleCustomerData(data, tableData)
         reset()
         setTableData([])
+setIsSaved(true)
         setInitialTableData([])
+console.log("")
       } else if (process === "edit") {
+console.log(data)
+console.log(tableData)
+console.log(customer?.index)
         await handleEditedData(data, tableData, customer?.index)
-        reset(data)
-        setInitialTableData(tableData)
+       
+ reset({
+        customerName: "",
+        address1:  "",
+        address2:  "",
+        country: "",
+        state: "",
+        city:"",
+        pincode:  "",
+        contactPerson: "",
+        email:  "",
+        mobile: "",
+        landline:  "",
+        partner: "",
+        industry: "",
+        registrationType:"",
+        gstNo: "",
+        productName: null,
+        companyName: null,
+        branchName: null,
+        licensenumber: "",
+        softwareTrade: "",
+        applicationDate: "",
+        nextDue: "",
+        noofusers: "",
+        productAmount: "",
+        isActive: "Running",
+        taggedLicenses: [],
+        taggedLicenseDueDates: {}
+      })
+console.log(
+"hhh")
+ setTableData([])
+        setInitialTableData([])
+setIsSaved(true)
+navigate(-1)
+console.log("hhh")
       }
     } catch (error) {
       toast.error("Failed to save customer!")
@@ -1695,8 +1741,17 @@ hsn: Number(
                       "ArrowLeft",
                       "ArrowRight",
                       "Home",
-                      "End"
+                      "End",
+"Control",
+    "Meta"
                     ]
+// allow shortcuts like Ctrl+C, Ctrl+V, Ctrl+A
+  if (
+    (e.ctrlKey || e.metaKey) &&
+    ["a", "c", "v", "x"].includes(e.key.toLowerCase())
+  ) {
+    return
+  }
 
                     if (allowedKeys.includes(e.key)) return
 
@@ -1807,7 +1862,7 @@ hsn: Number(
                                 const licenseNo = String(option.licenseNo)
                                 const prev = watch("taggedLicenses") || []
                                 const dueMap = watch("taggedLicenseDueDates") || {}
-
+console.log(dueMap)
                                 if (e.target.checked) {
                                   setValue("taggedLicenses", [...prev, licenseNo], {
                                     shouldDirty: true
@@ -1821,12 +1876,14 @@ hsn: Number(
                                     },
                                     { shouldDirty: true }
                                   )
-
+console.log(detailsData.taggeddata)
                                   const matched = detailsData?.taggeddata?.find(
                                     (item) => String(item.licensenumber) === licenseNo
                                   )
+console.log(matched)
 
                                   if (matched) {
+console.log("hh")
                                     const currentValues = getValues()
 
                                     reset({
@@ -1857,7 +1914,8 @@ hsn: Number(
                                           productAmount: "",
                                           taxexclusiveAmount: filteredproduct[0]?.basePrice || 0,
                                           taxinclusiveamount: filteredproduct[0]?.productprice || 0,
-                                          hsn: filteredproduct[0]?.igstRate || 0
+                                          hsn: filteredproduct[0]?.igstRate || 0,
+nextDueTax:filteredproduct[0]?.igstRate ||0
                                         }
                                       }
                                     })
@@ -1898,200 +1956,7 @@ hsn: Number(
             )}
 
             {popupType === "Additionalservice" && hasTaggedLicenses && (
-              // <div className="md:col-span-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-              //   <div className="border-b border-slate-200 px-4 py-3">
-              //     <h3 className="text-sm font-semibold text-slate-800">Tagged License Due Details</h3>
-              //     <p className="mt-0.5 text-[11px] text-slate-500">
-              //       {watchedTaggedLicenses.length} license
-              //       {watchedTaggedLicenses.length > 1 ? "s" : ""} tagged to this service
-              //     </p>
-              //   </div>
-
-              //   <div className="w-full">
-              //     <table className="w-full table-fixed border-collapse">
-              //       <colgroup>
-              //         <col style={{ width: "22%" }} /> {/* License No */}
-              //         <col style={{ width: "12%" }} /> {/* Users */}
-              //         <col style={{ width: "16%" }} /> {/* Serial No */}
-              //         <col style={{ width: "20%" }} /> {/* Next Due */}
-              //         <col style={{ width: "20%" }} /> {/* Next Due Amt */}
-              //         <col style={{ width: "10%" }} /> {/* Due Tax */}
-              //       </colgroup>
-
-              //       <thead className="bg-slate-100">
-              //         <tr className="text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500">
-              //           <th className="border-b border-slate-200 px-2 py-2.5 text-left">License No.</th>
-              //           <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Users</th>
-              //           <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Serial No</th>
-              //           <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Next Due</th>
-              //           <th className="border-b border-slate-200 px-1.5 py-2.5 text-right">Due Amt</th>
-              //           <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Tax</th>
-              //         </tr>
-              //       </thead>
-
-              //       <tbody className="divide-y divide-slate-100">
-              //         {watchedTaggedLicenses.map((licenseNo, rowIndex) => (
-              //           <tr key={licenseNo} className="align-top odd:bg-white even:bg-slate-50/60">
-              //             {/* License No */}
-              //             <td className="px-2 py-2">
-              //               <input
-              //                 value={licenseNo}
-              //                 readOnly
-              //                 title={licenseNo}
-              //                 className="h-9 w-full cursor-not-allowed truncate rounded-md border border-slate-200 bg-slate-100 px-2 text-[11px] text-slate-500 outline-none"
-              //               />
-              //             </td>
-
-              //             {/* Users */}
-              //             <td className="px-1.5 py-2">
-              //               <input
-              //                 type="number"
-              //                 value={watchedTaggedLicenseDueDates?.[licenseNo]?.noofusers ?? ""}
-              //                 onChange={(e) => {
-              //                   const dueMap = watch("taggedLicenseDueDates") || {}
-
-              //                   setValue(
-              //                     "taggedLicenseDueDates",
-              //                     {
-              //                       ...dueMap,
-              //                       [licenseNo]: {
-              //                         ...dueMap[licenseNo],
-              //                         noofusers: e.target.value
-              //                       }
-              //                     },
-              //                     { shouldDirty: true }
-              //                   )
-              //                 }}
-              //                 onWheel={(e) => e.currentTarget.blur()}
-              //                 className="h-9 w-full rounded-md border border-slate-200 bg-white px-1.5 text-center text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-              //               />
-              //             </td>
-
-              //             {/* Serial No */}
-              //             <td className="px-1.5 py-2">
-              //               <input
-              //                 type="text"
-              //                 value={watchedTaggedLicenseDueDates?.[licenseNo]?.serialNumber ?? ""}
-              //                 onChange={(e) => {
-              //                   const dueMap = watch("taggedLicenseDueDates") || {}
-
-              //                   setValue(
-              //                     "taggedLicenseDueDates",
-              //                     {
-              //                       ...dueMap,
-              //                       [licenseNo]: {
-              //                         ...dueMap[licenseNo],
-              //                         serialNumber: e.target.value
-              //                       }
-              //                     },
-              //                     { shouldDirty: true }
-              //                   )
-              //                 }}
-              //                 className="h-9 w-full rounded-md border border-slate-200 bg-white px-1.5 text-center text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10"
-              //               />
-              //             </td>
-
-              //             {/* Next Due (date) */}
-              //             <td className="px-1.5 py-2">
-              //               <input
-              //                 type="date"
-              //                 value={formatDateForInput(
-              //                   watchedTaggedLicenseDueDates?.[licenseNo]?.nextDue
-              //                 )}
-              //                 onChange={(e) => {
-              //                   const dueMap = watch("taggedLicenseDueDates") || {}
-
-              //                   setValue(
-              //                     "taggedLicenseDueDates",
-              //                     {
-              //                       ...dueMap,
-              //                       [licenseNo]: {
-              //                         ...dueMap[licenseNo],
-              //                         nextDue: e.target.value
-              //                       }
-              //                     },
-              //                     { shouldDirty: true }
-              //                   )
-              //                 }}
-              //                 className="h-9 w-full rounded-md border border-slate-200 bg-white px-1.5 text-center text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10"
-              //               />
-              //             </td>
-
-              //             {/* Next Due Amount (+ inclusive total underneath) */}
-              //             <td className="px-1.5 py-2">
-              //               <div className="space-y-0.5">
-              //                 <input
-              //                   type="number"
-              //                   value={
-              //                     watchedTaggedLicenseDueDates?.[licenseNo]?.taxexclusiveAmount ?? ""
-              //                   }
-              //                   onWheel={(e) => e.currentTarget.blur()}
-              //                   onKeyDown={(e) => {
-              //                     if (["-", "+", "e", "E"].includes(e.key)) {
-              //                       e.preventDefault()
-              //                     }
-              //                   }}
-              //                   onChange={(e) => {
-              //                     handleTaggedDueChange(
-              //                       rowIndex,
-              //                       e.target.value,
-              //                       "taxexclusiveAmount",
-              //                       watchedTaggedLicenseDueDates?.[licenseNo]?.originalHsn ?? "",
-              //                       detailsForm?.productType
-              //                     )
-              //                   }}
-              //                   className="h-9 w-full rounded-md border border-slate-200 bg-white px-1.5 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-              //                 />
-              //                 <p className="truncate text-right text-[9px] text-slate-500">
-              //                   {Number(
-              //                     watchedTaggedLicenseDueDates?.[licenseNo]?.taxinclusiveamount || 0
-              //                   ).toFixed(2)}
-              //                 </p>
-              //               </div>
-              //             </td>
-
-              //             {/* Due Tax */}
-              //             <td className="px-1.5 py-2">
-              //               <div className="flex justify-center pt-1">
-              //                 <label className="inline-flex cursor-pointer items-center justify-center">
-              //                   <input
-              //                     type="checkbox"
-              //                     checked={
-              //                       Number(
-              //                         watchedTaggedLicenseDueDates?.[licenseNo]?.nextDueTax || 0
-              //                       ) > 0
-              //                     }
-              //                     onChange={(e) => {
-              //                       handleTaggedDueChange(
-              //                         rowIndex,
-              //                         e.target.checked,
-              //                         "nextDueTax",
-              //                         watchedTaggedLicenseDueDates?.[licenseNo]?.nextDueTax,
-              //                         detailsForm?.productType
-              //                       )
-              //                     }}
-              //                     className="sr-only"
-              //                   />
-              //                   <span
-              //                     className={`flex h-5 w-5 items-center justify-center rounded border text-[11px] shadow-sm transition-all duration-200 ${
-              //                       Number(
-              //                         watchedTaggedLicenseDueDates?.[licenseNo]?.nextDueTax || 0
-              //                       ) > 0
-              //                         ? "border-[#1B2A4A] bg-[#1B2A4A] text-white"
-              //                         : "border-slate-300 bg-white text-transparent"
-              //                     }`}
-              //                   >
-              //                     ✓
-              //                   </span>
-              //                 </label>
-              //               </div>
-              //             </td>
-              //           </tr>
-              //         ))}
-              //       </tbody>
-              //     </table>
-              //   </div>
-              // </div>
+             
 <div className="md:col-span-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
   <div className="border-b border-slate-200 px-4 py-3">
     <h3 className="text-sm font-semibold text-slate-800">Tagged License Due Details</h3>

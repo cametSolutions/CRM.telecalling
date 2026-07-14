@@ -1365,14 +1365,275 @@ export const UpdatepaymentVerification = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-export const marketingDashboardpendingTask=async(req,res)=>{
-try{
-const {brancId}=req.query
-console.log("branchid",branchId)
-}catch(error){
-console.log("error",error)
-return res.status(500).json({message:"Internal server error",data:[]})}
-}
+// export const getBranchwiseMarketingPendingTasks = async (req, res) => {
+//   try {
+//     const { branchId } = req.query;
+
+//     if (!branchId) {
+//       return res.status(400).json({
+//         message: "Branch Id is required",
+//         data: []
+//       });
+//     }
+
+//     const leads = await LeadMaster.find({
+//       leadBranch: branchId
+//     })
+//       .populate("activityLog.taskallocatedTo")
+//       .populate("activityLog.taskId");
+// // console.log("leadssssss",leads)
+// const filter=leads.filter((it)=>it.leadId==="00104")
+// // console.log("filter",filter)
+// // console.dir(filter, { depth: null })
+// console.log(JSON.stringify(filter, null, 2))
+//     const pendingTasks = [];
+
+//     leads.forEach((lead) => {
+//       lead.activityLog.forEach((activity) => {
+//         if (
+//           activity.allocationChanged === false &&
+//           activity.taskClosed === false &&
+//           activity.taskTo !== "followup" &&
+//           activity.allocationDate
+//         ) {
+//           pendingTasks.push({
+//             staffName:
+//               activity.taskallocatedTo?.staffName ||
+//               activity.taskallocatedTo?.name ||
+//               activity.taskallocatedTo?.userName ||
+//               "N/A",
+
+//             taskName: activity.taskId?.taskName || "N/A",
+
+//             completionDate: activity.allocationDate
+//           });
+//         }
+//       });
+//     });
+
+//     pendingTasks.sort(
+//       (a, b) => new Date(a.completionDate) - new Date(b.completionDate)
+//     );
+
+//     return res.status(200).json({
+//       message: "Pending tasks fetched successfully",
+//       data: pendingTasks
+//     });
+//   } catch (error) {
+//     console.log(error);
+//     return res.status(500).json({
+//       message: "Internal server error",
+//       data: []
+//     });
+//   }
+// };
+// export const getBranchwiseMarketingPendingTasks = async (req, res) => {
+//   try {
+//     const { branchId } = req.query
+
+//     if (!branchId) {
+//       return res.status(400).json({
+//         message: "Branch Id is required",
+//         data: []
+//       })
+//     }
+
+//     const pendingTasks = await LeadMaster.aggregate([
+//       {
+//         $match: {
+//           leadBranch: new mongoose.Types.ObjectId(branchId)
+//         }
+//       },
+//       {
+//         $unwind: "$activityLog"
+//       },
+//       {
+//         $match: {
+//           "activityLog.allocationChanged": false,
+//           "activityLog.taskClosed": false,
+//           "activityLog.taskTo": {
+//             $nin: ["followup", "", null]
+//           },
+//           "activityLog.allocationDate": {
+//             $ne: null
+//           }
+//         }
+//       },
+
+//       // Staff Lookup
+//       {
+//         $lookup: {
+//           from: "staffs",
+//           localField: "activityLog.taskallocatedTo",
+//           foreignField: "_id",
+//           as: "staff"
+//         }
+//       },
+
+//       // Admin Lookup
+//       {
+//         $lookup: {
+//           from: "admin", // change to "users" if that's your collection
+//           localField: "activityLog.taskallocatedTo",
+//           foreignField: "_id",
+//           as: "admin"
+//         }
+//       },
+
+//       // Task Lookup
+//       {
+//         $lookup: {
+//           from: "tasks",
+//           localField: "activityLog.taskId",
+//           foreignField: "_id",
+//           as: "task"
+//         }
+//       },
+
+//       {
+//         $project: {
+//           _id: 0,
+
+//           staffName: {
+//             $switch: {
+//               branches: [
+//                 {
+//                   case: {
+//                     $eq: ["$activityLog.taskallocatedToModel", "Staff"]
+//                   },
+//                   then: {
+//                     $arrayElemAt: ["$staff.staffName", 0]
+//                   }
+//                 },
+//                 {
+//                   case: {
+//                     $eq: ["$activityLog.taskallocatedToModel", "Admin"]
+//                   },
+//                   then: {
+//                     $arrayElemAt: ["$admin.name", 0] // Change if admin field differs
+//                   }
+//                 }
+//               ],
+//               default: null
+//             }
+//           },
+
+//           taskName: {
+//             $arrayElemAt: ["$task.taskName", 0]
+//           },
+
+//           completionDate: "$activityLog.allocationDate"
+//         }
+//       },
+
+//       {
+//         $sort: {
+//           completionDate: 1
+//         }
+//       }
+//     ])
+
+//     return res.status(200).json({
+//       message: "Pending tasks fetched successfully",
+//       data: pendingTasks
+//     })
+//   } catch (error) {
+//     console.log("error:", error)
+//     return res.status(500).json({
+//       message: "Internal server error",
+//       data: []
+//     })
+//   }
+// }
+
+export const getBranchwiseMarketingPendingTasks = async (req, res) => {
+  try {
+    const { branchId } = req.query;
+
+    if (!branchId) {
+      return res.status(400).json({
+        message: "Branch Id is required",
+        data: []
+      });
+    }
+
+    // Only populate the static ref here — taskId works fine as-is
+    const leads = await LeadMaster.find({ leadBranch: branchId })
+      .populate("activityLog.taskId")
+      .lean(); // lean() is fine since we're manually attaching taskallocatedTo below
+
+    // 1. Collect all taskallocatedTo ids, grouped by their model
+    const idsByModel = { Staff: new Set(), Admin: new Set() };
+
+    leads.forEach((lead) => {
+      lead.activityLog.forEach((activity) => {
+        if (activity.taskallocatedTo && activity.taskallocatedToModel) {
+          idsByModel[activity.taskallocatedToModel]?.add(
+            activity.taskallocatedTo.toString()
+          );
+        }
+      });
+    });
+
+    // 2. Batch fetch each model's docs in one query per model
+    const [staffDocs, adminDocs] = await Promise.all([
+      Staff.find({ _id: { $in: [...idsByModel.Staff] } })
+        .select("staffName name userName")
+        .lean(),
+      Admin.find({ _id: { $in: [...idsByModel.Admin] } })
+        .select("staffName name userName")
+        .lean()
+    ]);
+
+    // 3. Build a single lookup map: id -> doc
+    const userMap = new Map();
+    staffDocs.forEach((doc) => userMap.set(doc._id.toString(), doc));
+    adminDocs.forEach((doc) => userMap.set(doc._id.toString(), doc));
+
+    // 4. Build pending tasks, resolving the name from the map
+    const pendingTasks = [];
+
+    leads.forEach((lead) => {
+      lead.activityLog.forEach((activity) => {
+        if (
+          activity.allocationChanged === false &&
+          activity.taskClosed === false &&
+          activity.taskTo !== "followup" &&
+          activity.allocationDate
+        ) {
+          const allocatedUser = activity.taskallocatedTo
+            ? userMap.get(activity.taskallocatedTo.toString())
+            : null;
+
+          pendingTasks.push({
+            staffName:
+              allocatedUser?.staffName ||
+              allocatedUser?.name ||
+              allocatedUser?.userName ||
+              "N/A",
+            taskName: activity.taskId?.taskName || "N/A",
+            completionDate: activity.allocationDate
+          });
+        }
+      });
+    });
+
+    pendingTasks.sort(
+      (a, b) => new Date(a.completionDate) - new Date(b.completionDate)
+    );
+
+    return res.status(200).json({
+      message: "Pending tasks fetched successfully",
+      data: pendingTasks
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: "Internal server error",
+      data: []
+    });
+  }
+};
 export const Getallsalesfunnels = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
