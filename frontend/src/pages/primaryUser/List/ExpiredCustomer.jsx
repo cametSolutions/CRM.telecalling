@@ -1,13 +1,14 @@
-
 import { useEffect, useState, useRef } from "react"
 import { PropagateLoader } from "react-spinners"
 import { CiEdit } from "react-icons/ci"
 import MyDatePicker from "../../../components/common/MyDatePicker"
 import BarLoader from "react-spinners/BarLoader"
 import api from "../../../api/api"
+import ExpiryRegisterTable from "../../../components/primaryUser/ExpiryRegisterTable"
 import BranchDropdown from "../../../components/primaryUser/BranchDropdown"
 import { useNavigate } from "react-router-dom"
 import { formatDate } from "../../../utils/dateUtils"
+import NoDataAvailable from "../../../components/NodataAvailable"
 import Tiles from "../../../components/common/Tiles"
 import { parseISO, differenceInDays } from "date-fns"
 import { PerformanceModal } from "../../../components/primaryUser/PerformanceModal"
@@ -44,6 +45,8 @@ const ExpiredCustomer = () => {
   const [user, setUser] = useState(null)
   const [Calls, setCalls] = useState([])
   const [callList, setCallList] = useState([])
+  const [expiryFilterType, setExpiryFilterType] = useState("amc")
+  console.log(expiryFilterType)
   const [cachedcallsummary, setcachedcallsummary] = useState([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [individualData, setIndividualData] = useState([])
@@ -55,6 +58,7 @@ const ExpiredCustomer = () => {
   const [userBranchId, setUserBranchId] = useState([])
   const [isToggled, setIsToggled] = useState(false)
   const [isCallsToggled, setIscallsToggled] = useState(false)
+  console.log(isCallsToggled)
   const [loading, setLoading] = useState(false)
   const [selectedBranch, setSelectedBranch] = useState("All")
   const [selectedCompanyBranch, setselectedCompanyBranch] = useState(null)
@@ -64,24 +68,25 @@ const ExpiredCustomer = () => {
   const [selectedUserName, setselecteduserName] = useState(null)
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
-const now=new Date()
+  const now = new Date()
   const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   const [periodMode, setperiodMode] = useState("all")
   const [targetData, settargetData] = useState([])
   console.log(targetData)
   const [performanceopenModal, setperformanceOpenModal] = useState(false)
   const [productlist, setproductList] = useState([])
- const [activeUserId, setActiveUserId] = useState(null)
+  const [activeUserId, setActiveUserId] = useState(null)
   const [achievedproducts, setacheivedProducts] = useState([])
   const [selectedPeriod, setselectedPeriod] = useState("")
   const filterRef = useRef(null)
   // const { data: branches } = UseFetch("/branch/getBranch")
   const navigate = useNavigate()
   const { data: branchProduct } = UseFetch(
-selectedCompanyBranch&&
-    `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
+    selectedCompanyBranch &&
+      `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
   )
- useEffect(() => {
+  console.log(expiredCustomerList)
+  useEffect(() => {
     if (selectedCategory) {
       console.log("jj")
       const Datas = targetData?.userWiseResults
@@ -100,7 +105,7 @@ selectedCompanyBranch&&
       setproductList(filteredList)
       console.log("J")
       console.log(targetData)
-     
+
       console.log("hhh")
 
       console.log(Datas)
@@ -109,7 +114,7 @@ selectedCompanyBranch&&
       const filteredselectedCategory = Datas.flatMap(
         (user) => user.categories || []
       ).filter((item) => item.categoryId === selectedCategory?.Id)
-console.log(filteredselectedCategory)
+      console.log(filteredselectedCategory)
       console.log("Hh")
       const summary = filteredselectedCategory.reduce(
         (acc, cur) => {
@@ -124,8 +129,8 @@ console.log(filteredselectedCategory)
       setselectedDataPopup(summary)
       console.log(filteredselectedCategory && filteredselectedCategory.length)
       if (filteredselectedCategory && filteredselectedCategory.length) {
-console.log("hh")
-console.log(filteredselectedCategory)
+        console.log("hh")
+        console.log(filteredselectedCategory)
         setacheivedProducts((prev) => [
           ...prev,
           ...filteredselectedCategory.flatMap((item) =>
@@ -168,89 +173,7 @@ console.log(filteredselectedCategory)
     console.log(user.selected[0].branch_id)
     setselectedCompanyBranch(user.selected[0].branch_id)
     setUser(user)
-    // if (user.role !== "Admin") {
-    //   const branchid = user.selected.map((branch) => branch.branch_id)
-    //   setUserBranchId(branchid)
-    // } else {
-    //   const branchid = branches.map((id) => id._id)
-    //   setUserBranchId(branchid)
-    // }
   }, [])
-  // useEffect(() => {
-  //   if (expiryRegisterCustomer) {
-  //     const userData = localStorage.getItem("user")
-  //     const user = JSON.parse(userData)
-  //     setUser(user)
-  //     if (user.role === "Admin") {
-  //       setexpiryRegisterList(expiryRegisterCustomer)
-  //     } else {
-  //       const userBranchName = new Set(
-  //         user?.selected?.map((branch) => branch.branchName)
-  //       )
-
-  //       const branchNamesArray = Array.from(userBranchName)
-
-  //       const filtered = expiryRegisterCustomer.filter((customer) =>
-  //         customer.selected.some((selection) =>
-  //           branchNamesArray.includes(selection.branchName)
-  //         )
-  //       )
-  //       setexpiryRegisterList(filtered)
-  //     }
-  //     const expiredCustomerIds = expiryRegisterCustomer.map(
-  //       (customer) => customer._id
-  //     )
-  //     setExpiredCustomerId(expiredCustomerIds)
-  //   }
-  // }, [expiryRegisterCustomer])
-
-  // useEffect(() => {
-  //   if (branches) {
-  //     setBranch(branches)
-  //   }
-  // }, [branches])
-
-  // useEffect(() => {
-  //   if (isFirstRender.current) {
-  //     isFirstRender.current = false
-  //     return // Prevent initial API call
-  //   }
-  //   const fetchExpiryRegisterList = async () => {
-  //     try {
-  //       const endpoint = isToggled
-  //         ? `/customer/getallExpiryregisterCustomer?nextmonthReport=${isToggled}`
-  //         : `/customer/getallExpiryregisterCustomer?startDate=${dates.startDate}&endDate=${dates.endDate}`
-
-  //       const response = await api.get(endpoint)
-  //       const data = response.data.data
-  //       if (user.role === "Admin") {
-  //         setexpiryRegisterList(data)
-  //       } else {
-  //         const userBranchName = new Set(
-  //           user?.selected?.map((branch) => branch.branchName)
-  //         )
-
-  //         const branchNamesArray = Array.from(userBranchName)
-
-  //         const filtered = data.filter((customer) =>
-  //           customer.selected.some((selection) =>
-  //             branchNamesArray.includes(selection.branchName)
-  //           )
-  //         )
-  //         setexpiryRegisterList(filtered)
-  //       }
-  //       const expiredCustomerIds = data.map((customer) => customer._id)
-  //       setExpiredCustomerId(expiredCustomerIds)
-
-  //       setTimeout(() => setLoading(false), 0)
-  //     } catch (error) {
-  //       console.error("Error fetching user list:", error)
-  //     }
-  //   }
-  //   if (dates && dates.startDate && dates.endDate) {
-  //     fetchExpiryRegisterList()
-  //   }
-  // }, [isToggled, dates])
 
   useEffect(() => {
     if (callList && callList.length > 0) {
@@ -348,6 +271,7 @@ console.log(filteredselectedCategory)
         if (isCallsToggled) {
           setExpiredCustomerCalls(filtered)
         } else {
+          console.log("hhh")
           setexpiryRegisterList(filtered)
         }
         setSearchList(filtered)
@@ -358,14 +282,17 @@ console.log(filteredselectedCategory)
       if (isCallsToggled) {
         setExpiredCustomerCalls(cachedcallsummary)
       } else {
+        console.log("h")
+        console.log(cachedcustomerSummary)
         setexpiryRegisterList(cachedcustomerSummary)
       }
     }
   }, [searchTerm])
 
   useEffect(() => {
+    console.log(hasMounted)
     if (!hasMounted) return
-
+    console.log("hhhh")
     const fetchExpiryRegisterList = async () => {
       try {
         let endpoint = ""
@@ -387,8 +314,8 @@ console.log(filteredselectedCategory)
         } else {
           console.log("dd")
           endpoint = isToggled
-            ? `/customer/getallExpiryregisterCustomer?nextmonthReport=${isToggled}`
-            : `/customer/getallExpiryregisterCustomer?startDate=${dates.startDate}&endDate=${dates.endDate}`
+            ? `/customer/getallExpiryregisterCustomer?nextmonthReport=${isToggled}&filterType=${expiryFilterType}`
+            : `/customer/getallExpiryregisterCustomer?startDate=${dates.startDate}&endDate=${dates.endDate}&filterType=${expiryFilterType}`
           // When calls are not toggled, use GET request without a payload
           // endpoint = "/customer/getallExpiryregisterCustomer"
         }
@@ -412,43 +339,15 @@ console.log(filteredselectedCategory)
               setCallList(filteredCalls)
               setcachedcallsummary(data.calls)
             }
-
-            // else {
-            //               const userBranchName = new Set(
-            //                 user?.selected?.map((branch) => branch.branchName)
-            //               )
-
-            //               const branchNamesArray = Array.from(userBranchName)
-
-            //               const filtered = data.calls.filter(
-            //                 (call) =>
-            //                   Array.isArray(call?.callregistration) && // Check if callregistration is an array
-            //                   call.callregistration.some((registration) => {
-            //                     const hasMatchingBranch =
-            //                       Array.isArray(registration?.branchName) && // Check if branchName is an array
-            //                       registration.branchName.some(
-            //                         (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
-            //                       )
-
-            //                     // If user has only one branch, ensure it matches exactly and no extra branches
-            //                     if (branchNamesArray.length === 1) {
-            //                       return (
-            //                         hasMatchingBranch &&
-            //                         registration.branchName.length === 1 &&
-            //                         registration.branchName[0] === branchNamesArray[0]
-            //                       )
-            //                     }
-
-            //                     // If user has more than one branch, just check for any match
-            //                     return hasMatchingBranch
-            //                   })
-            //               )
-
-            //               setCallList(filtered)
-            //             }
           } else {
             setcachedcustomerSummary(data.data)
             if (selectedBranch === "All") {
+              console.log("hh")
+              console.log(data.data)
+              const fil = data.data.filter(
+                (itm) => itm.customerName === "JAWA POLYMERS"
+              )
+              console.log(fil)
               setexpiryRegisterList(data.data)
             } else {
               const filtered = data.data.filter((customer) =>
@@ -459,21 +358,6 @@ console.log(filteredselectedCategory)
               setexpiryRegisterList(filtered)
             }
 
-            // else {
-            //               const userBranchName = new Set(
-            //                 user?.selected?.map((branch) => branch.branchName)
-            //               )
-
-            //               const branchNamesArray = Array.from(userBranchName)
-
-            //               const filtered = data.data.filter((customer) =>
-            //                 customer.selected.some((selection) =>
-            //                   branchNamesArray.includes(selection.branchName)
-            //                 )
-            //               )
-            //               setcachedcustomerSummary(filtered)
-            //               setexpiryRegisterList(filtered)
-            //             }
             const expiredCustomerIds = data.data.map((customer) => customer._id)
             setExpiredCustomerId(expiredCustomerIds)
           }
@@ -491,7 +375,7 @@ console.log(filteredselectedCategory)
       setCallList([])
       setexpiryRegisterList([])
     }
-  }, [isCallsToggled, isToggled, dates, userBranchId])
+  }, [isCallsToggled, isToggled, dates, userBranchId, expiryFilterType])
   useEffect(() => {
     if (isModalOpen && selectedCustomer) {
       const selectedCustomerData = expiredCustomerList.find(
@@ -636,7 +520,7 @@ console.log(filteredselectedCategory)
     }
   }
   const handleSelectedUser = (category, userId, userName) => {
-setActiveUserId(userId)
+    setActiveUserId(userId)
     setselecteduserName(userName)
     setselectedCategory({
       Id: category.Id,
@@ -661,13 +545,7 @@ setActiveUserId(userId)
 
     setselectedDataPopup(summary)
     if (filteredselectedCategory && filteredselectedCategory.length) {
-      // setacheivedProducts(
-      //   filteredselectedCategory[0]?.products?.map((product) => ({
-      //     productname: product.name,
-      //     amount: product.achieved
-      //   })) || []
-      // )
-setacheivedProducts(
+      setacheivedProducts(
         filteredselectedCategory.flatMap((item) =>
           (item.products || []).map((product) => ({
             productname: product.name,
@@ -684,8 +562,8 @@ setacheivedProducts(
     console.log(id)
     console.log(name)
     console.log("hh")
-console.log("abhi")
-console.log(branchProduct)
+    console.log("abhi")
+    console.log(branchProduct)
     const filteredList = branchProduct
       .filter(
         (item) =>
@@ -700,7 +578,7 @@ console.log(branchProduct)
     console.log("J")
     console.log(targetData)
     console.log(user?._id)
-  
+
     const filteredselectedCategory = Datas.flatMap(
       (user) => user.categories || []
     ).filter((item) => item.categoryId === id)
@@ -757,6 +635,16 @@ console.log(branchProduct)
     setIsModalOpen(false)
     setSelectedCustomer(null)
   }
+  const EXPIRY_FILTER_OPTIONS = [
+    { value: "all", label: "All Expiry Types", hint: "Show every date column" },
+    { value: "amc", label: "AMC Expiry", hint: "Filter by AMC end date" },
+    { value: "tuv", label: "TUV Expiry", hint: "Filter by TUV expiry date" },
+    {
+      value: "license",
+      label: "License Expiry",
+      hint: "Filter by license expiry date"
+    }
+  ]
   const calculateRemainingDays = (expiryDate) => {
     if (!expiryDate) return "N/A"
     const expiry = parseISO(expiryDate) // Parse the expiry date
@@ -787,6 +675,9 @@ console.log(branchProduct)
       ? `${address?.slice(0, maxLength)}...`
       : address
   }
+  const hasData = isCallsToggled
+    ? expiredCustomerCalls?.length > 0
+    : expiredCustomerList?.length > 0
   return (
     <div className="h-full bg-[#ADD8E6] overflow-hidden">
       <div className="flex h-full flex-row">
@@ -861,17 +752,17 @@ console.log(branchProduct)
             <div className="">
               <div className="w-full   sticky top-0 z-20 shadow-sm pb-3">
                 {/* Page Heading */}
-          
-                  <h1 className="text-sm md:text-xl font-semibold  bg-clip-text text-black ml-2">
-                    {isToggled
-                      ? isCallsToggled
-                        ? "Upcoming Month Expired Customer Calls"
-                        : "Upcoming Month Expired Customer's"
-                      : isCallsToggled
-                        ? "Expired Customer Calls"
-                        : "Expired Customer's"}
-                  </h1>
-                
+
+                <h1 className="text-sm md:text-xl font-semibold  bg-clip-text text-black ml-2">
+                  {isToggled
+                    ? isCallsToggled
+                      ? "Upcoming Month Expired Customer Calls"
+                      : "Upcoming Month Expired Customer's"
+                    : isCallsToggled
+                      ? "Expired Customer Calls"
+                      : "Expired Customer's"}
+                </h1>
+
                 <div className="mx-3">
                   <span className="text-blue-500">
                     Count:{" "}
@@ -926,11 +817,11 @@ console.log(branchProduct)
                   </div>
 
                   {/* Right: Toggles */}
-                  <div className="relative" ref={filterRef}>
-                    {/* Filter Icon Button */}
+                  {/* <div className="relative" ref={filterRef}>
+                  
                     <button
                       onClick={toggleFilter}
-                      className="p-2 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-sm flex items-center gap-1 text-gray-700 hover:text-gray-900"
+                      className="p-1 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 shadow-sm flex items-center gap-1 text-gray-700 hover:text-gray-900"
                     >
                       <svg
                         className="w-5 h-5"
@@ -950,10 +841,10 @@ console.log(branchProduct)
                       </span>
                     </button>
 
-                    {/* Dropdown Panel */}
+                  
                     {isFilterOpen && (
                       <div className="absolute top-full right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-200 py-4 px-6 z-50 animate-in slide-in-from-top-2 duration-200">
-                        {/* Header */}
+                      
                         <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
                           <h3 className="text-sm font-semibold text-gray-900">
                             Filters
@@ -978,7 +869,7 @@ console.log(branchProduct)
                           </button>
                         </div>
 
-                        {/* Upcoming Toggle */}
+                      
                         <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
                           <span className="text-sm font-medium text-gray-700">
                             {isToggled
@@ -999,7 +890,7 @@ console.log(branchProduct)
                           </button>
                         </div>
 
-                        {/* Calls Toggle */}
+                    
                         <div className="flex items-center justify-between py-3">
                           <span className="text-sm font-medium text-gray-700">
                             Expired Customer Calls
@@ -1021,11 +912,301 @@ console.log(branchProduct)
                         </div>
                       </div>
                     )}
+                  </div> */}
+                  {/* <div className="relative" ref={filterRef}>
+  
+  <button
+    onClick={toggleFilter}
+    className="p-1.5 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 shadow-sm flex items-center gap-1 text-gray-700 hover:text-gray-900 transition-colors"
+  >
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-3 3v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+      />
+    </svg>
+    <span className="text-xs font-medium hidden sm:inline">Filters</span>
+    {expiryFilterType !== "all" && (
+      <span className="ml-0.5 inline-flex items-center justify-center w-1.5 h-1.5 rounded-full bg-teal-500" />
+    )}
+  </button>
+
+  
+  {isFilterOpen && (
+    <div className="absolute top-full right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-gray-200 py-4 z-50 animate-in slide-in-from-top-2 duration-200">
+      
+      <div className="flex items-center justify-between px-6 pb-3 mb-1 border-b border-gray-100">
+        <h3 className="text-sm font-semibold text-gray-900">Filters</h3>
+        <button
+          onClick={toggleFilter}
+          className="text-gray-400 hover:text-gray-600 p-1 -m-1 rounded-lg transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+    
+      <div className="flex items-center justify-between px-6 py-3 border-b border-gray-100">
+        <span className="text-sm font-medium text-gray-700">
+          {isToggled ? "Upcoming Month Expired Customer" : "Expired Customer"}
+        </span>
+        <button
+          onClick={toggle}
+          className={`w-11 h-6 ${
+            isToggled ? "bg-teal-500" : "bg-gray-300"
+          } rounded-full relative focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition-colors duration-300`}
+        >
+          <div
+            className={`w-5 h-5 bg-white rounded-full shadow-md absolute top-0.5 left-0.5 transform transition-transform duration-300 ${
+              isToggled ? "translate-x-5" : "translate-x-0"
+            }`}
+          />
+        </button>
+      </div>
+
+    
+      <div className="flex items-center justify-between px-6 py-3 border-b border-gray-100">
+        <span className="text-sm font-medium text-gray-700">Expired Customer Calls</span>
+        <button
+          onClick={callstoggle}
+          className={`w-11 h-6 ${
+            isCallsToggled ? "bg-teal-500" : "bg-gray-300"
+          } rounded-full relative focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition-colors duration-300`}
+        >
+          <div
+            className={`w-5 h-5 bg-white rounded-full shadow-md absolute top-0.5 left-0.5 transform transition-transform duration-300 ${
+              isCallsToggled ? "translate-x-5" : "translate-x-0"
+            }`}
+          />
+        </button>
+      </div>
+
+
+      <fieldset className="px-3 pt-2">
+        <legend className="px-3 pb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+          Filter By Expiry Type
+        </legend>
+        <div className="space-y-1">
+          {EXPIRY_FILTER_OPTIONS.map((opt) => {
+            const selected = expiryFilterType === opt.value;
+            return (
+              <label
+                key={opt.value}
+                className={`flex items-start gap-3 rounded-xl px-3 py-2.5 cursor-pointer transition-colors ${
+                  selected ? "bg-teal-50 ring-1 ring-teal-200" : "hover:bg-gray-50"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="expiryFilterType"
+                  value={opt.value}
+                  checked={selected}
+                  onChange={() => setExpiryFilterType(opt.value)}
+                  className="sr-only"
+                />
+                <span
+                  className={`mt-0.5 flex items-center justify-center w-4 h-4 shrink-0 rounded-full border-2 transition-colors ${
+                    selected ? "border-teal-600" : "border-gray-300"
+                  }`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full bg-teal-600 transition-transform duration-150 ${
+                      selected ? "scale-100" : "scale-0"
+                    }`}
+                  />
+                </span>
+                <span className="flex flex-col">
+                  <span className={`text-sm font-medium ${selected ? "text-teal-700" : "text-gray-700"}`}>
+                    {opt.label}
+                  </span>
+                  <span className="text-xs text-gray-400">{opt.hint}</span>
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      </fieldset>
+
+  
+      <div className="flex items-center justify-between gap-2 px-6 pt-3 mt-2 border-t border-gray-100">
+        <button
+          onClick={() => setExpiryFilterType("all")}
+          className="text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
+        >
+          Reset
+        </button>
+        <button
+          onClick={toggleFilter}
+          className="text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg px-3.5 py-1.5 transition-colors"
+        >
+          Apply
+        </button>
+      </div>
+    </div>
+  )}
+</div> */}
+                  <div className="relative" ref={filterRef}>
+                    {/* Filter Icon Button */}
+                    <button
+                      onClick={toggleFilter}
+                      className="p-1.5 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 shadow-sm flex items-center gap-1 text-gray-700 hover:text-gray-900 transition-colors"
+                    >
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-3 3v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                        />
+                      </svg>
+                      <span className="text-xs font-medium hidden sm:inline">
+                        Filters
+                      </span>
+                      {expiryFilterType !== "all" && (
+                        <span className="ml-0.5 inline-flex items-center justify-center w-1.5 h-1.5 rounded-full bg-teal-500" />
+                      )}
+                    </button>
+
+                    {/* Dropdown Panel */}
+                    {isFilterOpen && (
+                      <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-2.5 z-50 animate-in slide-in-from-top-2 duration-200">
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-4 pb-2 mb-1 border-b border-gray-100">
+                          <h3 className="text-xs font-semibold text-gray-900">
+                            Filters
+                          </h3>
+                          <button
+                            onClick={toggleFilter}
+                            className="text-gray-400 hover:text-gray-600 p-0.5 -m-0.5 rounded-md transition-colors"
+                          >
+                            <svg
+                              className="w-3.5 h-3.5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+
+                        {/* Upcoming Toggle */}
+                        <div className="flex items-center justify-between px-4 py-1.5 border-b border-gray-100">
+                          <span className="text-xs font-medium text-gray-700 leading-tight pr-2">
+                            {isToggled
+                              ? "Upcoming Month Expired"
+                              : "Expired Customer"}
+                          </span>
+                          <button
+                            onClick={toggle}
+                            className={`w-9 h-[18px] ${
+                              isToggled ? "bg-teal-500" : "bg-gray-300"
+                            } rounded-full relative shrink-0 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-1 transition-colors duration-300`}
+                          >
+                            <div
+                              className={`w-3.5 h-3.5 bg-white rounded-full shadow-md absolute top-[2px] left-[2px] transform transition-transform duration-300 ${
+                                isToggled
+                                  ? "translate-x-[18px]"
+                                  : "translate-x-0"
+                              }`}
+                            />
+                          </button>
+                        </div>
+
+                        {/* Calls Toggle */}
+                        <div className="flex items-center justify-between px-4 py-1.5 border-b border-gray-100">
+                          <span className="text-xs font-medium text-gray-700">
+                            Customer Calls
+                          </span>
+                          <button
+                            onClick={callstoggle}
+                            className={`w-9 h-[18px] ${
+                              isCallsToggled ? "bg-teal-500" : "bg-gray-300"
+                            } rounded-full relative shrink-0 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-1 transition-colors duration-300`}
+                          >
+                            <div
+                              className={`w-3.5 h-3.5 bg-white rounded-full shadow-md absolute top-[2px] left-[2px] transform transition-transform duration-300 ${
+                                isCallsToggled
+                                  ? "translate-x-[18px]"
+                                  : "translate-x-0"
+                              }`}
+                            />
+                          </button>
+                        </div>
+
+                        {/* Expiry Type — compact segmented chips */}
+                        <div className="px-4 pt-2">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1.5">
+                            Expiry Type
+                          </p>
+                          <div
+                            role="radiogroup"
+                            className="flex flex-wrap gap-1.5"
+                          >
+                            {EXPIRY_FILTER_OPTIONS.map((opt) => {
+                              const selected = expiryFilterType === opt.value
+                              return (
+                                <label
+                                  key={opt.value}
+                                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium cursor-pointer border transition-colors ${
+                                    selected
+                                      ? "bg-teal-600 border-teal-600 text-white"
+                                      : "bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
+                                  }`}
+                                >
+                                  <input
+                                    type="radio"
+                                    name="expiryFilterType"
+                                    value={opt.value}
+                                    checked={selected}
+                                    onChange={() =>
+                                      setExpiryFilterType(opt.value)
+                                    }
+                                    className="sr-only"
+                                  />
+                                  {opt.label}
+                                </label>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Footer actions */}
+                        <div className="flex items-center justify-between gap-2 px-4 pt-2 mt-2 border-t border-gray-100">
+                          <button
+                            onClick={() => setExpiryFilterType("all")}
+                            className="text-[11px] font-medium text-gray-500 hover:text-gray-700 transition-colors"
+                          >
+                            Reset
+                          </button>
+                          <button
+                            onClick={toggleFilter}
+                            className="text-[11px] font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-md px-3 py-1 transition-colors"
+                          >
+                            Apply
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
-
-              <div className="w-full shadow-lg mt-6 rounded-lg overflow-hidden px-3">
+              {/* <ExpiryRegisterTable/> */}
+              {/* <div className="w-full shadow-lg mt-6 rounded-lg overflow-hidden px-3">
                 <div className="overflow-x-auto lg:max-h-[440px] md:max-h-[390px] overflow-y-auto rounded-xl">
                   <table className="min-w-full table-auto text-sm text-left border-collapse">
                     <thead className="sticky top-0 bg-purple-300">
@@ -1138,10 +1319,10 @@ console.log(branchProduct)
                                     )}
                                   </span>
                                 )}
-                                {/* {isToggled ? item.name : item.customerName} */}
+                                
                               </td>
                               <td className="px-4 py-2 border-b">
-                                {/* {item.mobileNumbers?.join(", ") ||"N/A"} */}
+                            
                                 {item.mobileNumbers &&
                                 item.mobileNumbers.length > 0 ? (
                                   <div className="flex flex-col">
@@ -1168,7 +1349,7 @@ console.log(branchProduct)
                                 ) : (
                                   "N/A"
                                 )}
-                                {/* {item.serialNumbers?.join(", ")} */}
+                                
                               </td>
                               <td className="px-4 py-2 border-b text-center">
                                 {item.callstatus?.totalCall ||
@@ -1299,7 +1480,301 @@ console.log(branchProduct)
                     </tbody>
                   </table>
                 </div>
-              </div>
+              </div> */}
+              <div className="w-full mt-6 px-3">
+{!hasData?(
+<NoDataAvailable/>):(
+<div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="overflow-x-auto lg:max-h-[440px] md:max-h-[390px] overflow-y-auto">
+        <table className="min-w-full text-sm text-left border-collapse">
+          <thead className="sticky top-0 z-10">
+            {isCallsToggled&& expiredCustomerCalls?.length > 0  ? (
+              <tr className="bg-slate-50/95 backdrop-blur supports-[backdrop-filter]:bg-slate-50/80">
+                <th className="px-5 py-3.5 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wide">
+                  Customer Name
+                </th>
+                <th className="px-5 py-3.5 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wide">
+                  Mobile No
+                </th>
+                <th className="px-5 py-3.5 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wide">
+                  License No
+                </th>
+                <th className="px-5 py-3.5 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wide text-center">
+                  Total Calls
+                </th>
+                <th className="px-5 py-3.5 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wide text-center">
+                  Solved
+                </th>
+                <th className="px-5 py-3.5 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wide text-center">
+                  Pending
+                </th>
+                <th className="px-5 py-3.5 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wide text-center">
+                  Today
+                </th>
+                <th className="px-5 py-3.5 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wide text-center">
+                  View
+                </th>
+              </tr>
+            ) : (
+
+              <tr className="bg-slate-50/95 backdrop-blur supports-[backdrop-filter]:bg-slate-50/80 whitespace-nowrap">
+                <th className="px-5 py-3.5 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wide">
+                  Customer Name
+                </th>
+                <th className="px-5 py-3.5 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wide text-center">
+                  Mobile/Phn
+                </th>
+                <th className="px-5 py-3.5 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wide text-center ">
+                  Product Name
+                </th>
+                <th className="px-5 py-3.5 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wide text-center whitespace-nowrap">
+                  License No
+                </th>
+{(expiryFilterType==="amc"||expiryFilterType==="all")&&( <th className="px-5 py-3.5 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wide text-center">
+                  AMC End
+                </th>)}
+
+               
+{(expiryFilterType==="all"||expiryFilterType==="tuv")&&(
+ <th className="px-5 py-3.5 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wide text-center">
+                  TUV Expiry
+                </th>
+)}
+        {(expiryFilterType==="all"||expiryFilterType==="license")&&(<th className="px-5 py-3.5 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wide text-center">
+                  License Expiry
+                </th>)}       
+                
+                <th className="px-5 py-3.5 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wide text-center">
+                  Status
+                </th>
+                <th className="px-5 py-3.5 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wide text-center">
+                  Edit
+                </th>
+                <th className="px-5 py-3.5 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wide text-center">
+                  View
+                </th>
+              </tr>
+            )}
+          </thead>
+
+          <tbody className="divide-y divide-slate-100">
+            {isCallsToggled ? (
+              expiredCustomerCalls?.length > 0 ? (
+                expiredCustomerCalls.map((item) => (
+                  <tr
+                    key={item._id || item.customerId}
+                    className="bg-white hover:bg-slate-50 transition-colors duration-150"
+                  >
+                    <td className="px-5 py-3 text-slate-800 font-medium">
+                      {showFullAddress[item?.id || item?.customerId] ? (
+                        <span>
+                          {item?.name || item?.customerName}
+                          <button
+                            onClick={() =>
+                              handleShowMore(item?.id || item?.customerId)
+                            }
+                            className="ml-1.5 text-indigo-600 hover:text-indigo-800 font-medium text-xs"
+                          >
+                            Show less
+                          </button>
+                        </span>
+                      ) : (
+                        <span>
+                          {truncateAddress(item?.name || item?.customerName)}
+                          {(item?.name || item?.customerName)?.length > 20 && (
+                            <button
+                              onClick={() =>
+                                handleShowMore(item?.id || item?.customerId)
+                              }
+                              className="ml-1.5 text-indigo-600 hover:text-indigo-800 font-medium text-xs"
+                            >
+                              ...more
+                            </button>
+                          )}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3 text-slate-600">
+                      {item.mobileNumbers && item.mobileNumbers.length > 0 ? (
+                        <div className="flex flex-col gap-0.5">
+                          {item.mobileNumbers.map((num, idx) => (
+                            <span key={idx} className="block tabular-nums">
+                              {num}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-slate-400">N/A</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3 text-slate-600">
+                      {item.serialNumbers && item.serialNumbers.length > 0 ? (
+                        <div className="flex flex-col gap-0.5">
+                          {item.serialNumbers.map((num, idx) => (
+                            <span key={idx} className="block">
+                              {num}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-slate-400">N/A</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3 text-center text-slate-700 font-semibold tabular-nums">
+                      {item.callstatus?.totalCall || item.totalCalls || "0"}
+                    </td>
+                    <td className="px-5 py-3 text-center">
+                      <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold tabular-nums">
+                        {item.callstatus?.solvedCalls || item.solvedCalls || "0"}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 text-center">
+                      <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-xs font-semibold tabular-nums">
+                        {item.callstatus?.pendingCalls || item.pendingCalls || "0"}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 text-center text-slate-700 tabular-nums">
+                      {item.todaysCalls || "0"}
+                    </td>
+                    <td className="px-5 py-3 text-center">
+                      <button
+                        onClick={() =>
+                          openModal(isToggled ? item.name : item.customerId)
+                        }
+                        className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition-colors"
+                      >
+                        View Calls
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="8" className="text-center py-10 text-slate-400">
+                    No data available
+                  </td>
+                </tr>
+              )
+            ) : (
+              expiredCustomerList?.map((customer) =>
+                customer.selected?.length > 0 ? (
+                  customer.selected.map((item, index) => (
+                    <tr
+                      key={`${customer._id}-${index}`}
+                      className="bg-white hover:bg-slate-50 transition-colors duration-150"
+                    >
+                      <td className="px-5 py-3 text-slate-800 font-medium">
+                        {customer.customerName || "N/A"}
+                      </td>
+                      <td className="px-5 py-3 text-center text-slate-600 tabular-nums">
+                        {customer.mobile || "N/A"}
+                      </td>
+                      <td className="px-5 py-3 text-center text-slate-600">
+                        {item.productName || "N/A"}
+                      </td>
+                      <td className="px-5 py-3 text-center text-slate-600">
+                        {item.licensenumber || "N/A"}
+                      </td>
+{(expiryFilterType==="all"||expiryFilterType==="amc")&&(
+ <td className="px-5 py-3 text-center min-w-40 text-slate-600 tabular-nums">
+                        {item.amcendDate
+                          ? new Date(item.amcendDate).toLocaleDateString("en-GB")
+                          : "N/A"}
+                      </td>
+)}
+
+                     {(expiryFilterType==="all"||expiryFilterType==="tuv")&&(
+ <td className="px-5 py-3 text-center min-w-40 text-slate-600 tabular-nums">
+                        {item.tvuexpiryDate
+                          ? new Date(item.tvuexpiryDate).toLocaleDateString("en-GB")
+                          : "N/A"}
+                      </td>
+)}
+                     {(expiryFilterType==="all"||expiryFilterType==="license")&&(
+<td className="px-5 py-3 text-center min-w-48 text-slate-600 tabular-nums">
+                        {item.licenseExpiryDate
+                          ? new Date(item.licenseExpiryDate).toLocaleDateString("en-GB")
+                          : "N/A"}
+                      </td>
+)}
+                      
+                      <td className="px-5 py-3 text-center">
+                        {customer.isActive ? (
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                              customer.isActive === "Active" ||
+                              customer.isActive === true
+                                ? "bg-emerald-50 text-emerald-700"
+                                : "bg-rose-50 text-rose-700"
+                            }`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                customer.isActive === "Active" ||
+                                customer.isActive === true
+                                  ? "bg-emerald-500"
+                                  : "bg-rose-500"
+                              }`}
+                            />
+                            {customer.isActive === true
+                              ? "Active"
+                              : customer.isActive}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">N/A</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-3 text-center">
+                        <button
+                          onClick={() =>
+                            navigate(
+                              user.role === "Admin"
+                                ? "/admin/masters/customerEdit"
+                                : "/staff/masters/customerEdit",
+                              {
+                                state: {
+                                  customerId: customer._id,
+                                  index,
+                                  navigatebackto:
+                                    user.role === "Admin"
+                                      ? "/admin/reports/expiry-register"
+                                      : "/staff/reports/expiry-register"
+                                }
+                              }
+                            )
+                          }
+                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                          aria-label="Edit customer"
+                        >
+                          <CiEdit className="text-lg" />
+                        </button>
+                      </td>
+                      <td className="px-5 py-3 text-center">
+                        <button
+                          onClick={() => openModal(customer._id)}
+                          className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition-colors"
+                        >
+                          View Details
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr key={customer._id}>
+                    <td colSpan="11" className="text-center py-10 text-slate-400">
+                      No Products Selected
+                    </td>
+                  </tr>
+                )
+              )
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+)}
+    
+  </div>
             </div>
           </div>
         </div>
@@ -1792,56 +2267,54 @@ console.log(branchProduct)
           </div>
         </div>
       )}
-  <PerformanceModal
-          modalOpen={performanceopenModal}
-          splitType={targetData?.selectedMeasurementType}
-          selectedperiod={selectedPeriod}
-          allperiods={targetData?.periods}
-          onselectedPeriodChange={(val, val2) => {
-            setSelectedMonth(val2)
-            setselectedPeriod(val)
-          }}
-          onMonthChange={(val) => {
-            setacheivedProducts([])
-            setselectedDataPopup([])
-            setperiodMode(val)
- setselecteduserName(null)
-
-          }}
-          onYearChange={(val) => {
-            setacheivedProducts([])
-            setselectedDataPopup([])
-            setSelectedYear(val)
- setselecteduserName(null)
-          }}
-          productlist={productlist}
-          onClose={() => {
-            setselecteduserName(null)
-            setacheivedProducts([])
-            setperformanceOpenModal(false)
- setActiveUserId(null)
-          }}
-          selectedMonth={periodMode}
-          selectedYear={selectedYear}
-          summary={{
-            target: selectedDatapopup?.target,
-            achieved: selectedDatapopup?.achieved,
-            balance:
-              selectedDatapopup?.achieved > selectedDatapopup?.target
-                ? 0
-                : selectedDatapopup?.balance
-          }}
-          products={achievedproducts}
-          targetData={targetData?.userWiseResults}
-          loggedUser={user}
-          selectedUser={selectedUserName}
-          category={selectedCategory}
-          handleSelectedUser={handleSelectedUser}
-  activeUserId={activeUserId}
-        />
+      <PerformanceModal
+        modalOpen={performanceopenModal}
+        splitType={targetData?.selectedMeasurementType}
+        selectedperiod={selectedPeriod}
+        allperiods={targetData?.periods}
+        onselectedPeriodChange={(val, val2) => {
+          setSelectedMonth(val2)
+          setselectedPeriod(val)
+        }}
+        onMonthChange={(val) => {
+          setacheivedProducts([])
+          setselectedDataPopup([])
+          setperiodMode(val)
+          setselecteduserName(null)
+        }}
+        onYearChange={(val) => {
+          setacheivedProducts([])
+          setselectedDataPopup([])
+          setSelectedYear(val)
+          setselecteduserName(null)
+        }}
+        productlist={productlist}
+        onClose={() => {
+          setselecteduserName(null)
+          setacheivedProducts([])
+          setperformanceOpenModal(false)
+          setActiveUserId(null)
+        }}
+        selectedMonth={periodMode}
+        selectedYear={selectedYear}
+        summary={{
+          target: selectedDatapopup?.target,
+          achieved: selectedDatapopup?.achieved,
+          balance:
+            selectedDatapopup?.achieved > selectedDatapopup?.target
+              ? 0
+              : selectedDatapopup?.balance
+        }}
+        products={achievedproducts}
+        targetData={targetData?.userWiseResults}
+        loggedUser={user}
+        selectedUser={selectedUserName}
+        category={selectedCategory}
+        handleSelectedUser={handleSelectedUser}
+        activeUserId={activeUserId}
+      />
     </div>
   )
 }
 
 export default ExpiredCustomer
-

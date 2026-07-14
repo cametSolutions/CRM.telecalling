@@ -6017,60 +6017,207 @@ console.log("callid",callId)
     res.status(500).json({ message: "internal server error" })
   }
 }
-
 export const GetAllExpiryRegister = async (req, res) => {
-  const { nextmonthReport, startDate, endDate } = req.query
+  const { nextmonthReport, startDate, endDate, filterType = "all" } = req.query
 
   try {
     let startOfNextMonth
     let endOfNextMonth
+
     const today = new Date()
     today.setHours(0, 0, 0, 0)
+
     if (nextmonthReport) {
-      // Calculate the start and end of the next month
-      startOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1)
-      endOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 2, 0)
-      endOfNextMonth.setHours(23, 59, 59, 999) // End of the day
+      startOfNextMonth = new Date(
+        today.getFullYear(),
+        today.getMonth() + 1,
+        1
+      )
+
+      endOfNextMonth = new Date(
+        today.getFullYear(),
+        today.getMonth() + 2,
+        0
+      )
+
+      endOfNextMonth.setHours(23, 59, 59, 999)
     }
 
-    const expiredCustomers = await Customer.find({
-      selected: {
-        $elemMatch: {
+    const dateFilter = nextmonthReport
+      ? { $gte: startOfNextMonth, $lte: endOfNextMonth }
+      : { $gte: new Date(startDate), $lte: new Date(endDate) }
+
+    let elemMatch = {}
+
+    switch (filterType) {
+      case "amc":
+        elemMatch = {
+          amcendDate: dateFilter
+        }
+        break
+
+      case "tuv":
+        elemMatch = {
+          tvuexpiryDate: dateFilter
+        }
+        break
+
+      case "license":
+        elemMatch = {
+          licenseExpiryDate: dateFilter
+        }
+        break
+
+      default:
+        elemMatch = {
           $or: [
-            {
-              licenseExpiryDate: nextmonthReport
-                ? { $gte: startOfNextMonth, $lte: endOfNextMonth }
-                : { $gte: startDate, $lte: endDate }
-            }, // License expiry in the past
-            {
-              tvuexpiryDate: nextmonthReport
-                ? { $gte: startOfNextMonth, $lte: endOfNextMonth }
-                : { $gte: startDate, $lte: endDate }
-            }, // TVU expiry in the past
-            {
-              amcendDate: nextmonthReport
-                ? { $gte: startOfNextMonth, $lte: endOfNextMonth }
-                : { $gte: startDate, $lte: endDate }
-            } // AMC end in the past
+            { licenseExpiryDate: dateFilter },
+            { tvuexpiryDate: dateFilter },
+            { amcendDate: dateFilter }
           ]
         }
+    }
+
+    const customers = await Customer.find({
+      selected: {
+        $elemMatch: elemMatch
       }
     })
+
+    const expiredCustomers = customers.map((customer) => {
+      const selected = customer.selected
+        .filter((item) => {
+          switch (filterType) {
+            case "amc":
+              return (
+                item.amcendDate &&
+                item.amcendDate >= dateFilter.$gte &&
+                item.amcendDate <= dateFilter.$lte
+              )
+
+            case "tuv":
+              return (
+                item.tvuexpiryDate &&
+                item.tvuexpiryDate >= dateFilter.$gte &&
+                item.tvuexpiryDate <= dateFilter.$lte
+              )
+
+            case "license":
+              return (
+                item.licenseExpiryDate &&
+                item.licenseExpiryDate >= dateFilter.$gte &&
+                item.licenseExpiryDate <= dateFilter.$lte
+              )
+
+            default:
+              return (
+                (item.licenseExpiryDate &&
+                  item.licenseExpiryDate >= dateFilter.$gte &&
+                  item.licenseExpiryDate <= dateFilter.$lte) ||
+                (item.tvuexpiryDate &&
+                  item.tvuexpiryDate >= dateFilter.$gte &&
+                  item.tvuexpiryDate <= dateFilter.$lte) ||
+                (item.amcendDate &&
+                  item.amcendDate >= dateFilter.$gte &&
+                  item.amcendDate <= dateFilter.$lte)
+              )
+          }
+        })
+        .map((item) => {
+          const obj = item.toObject ? item.toObject() : { ...item }
+
+          if (filterType === "amc") {
+            delete obj.licenseExpiryDate
+            delete obj.tvuexpiryDate
+          } else if (filterType === "tuv") {
+            delete obj.licenseExpiryDate
+            delete obj.amcendDate
+          } else if (filterType === "license") {
+            delete obj.tvuexpiryDate
+            delete obj.amcendDate
+          }
+
+          return obj
+        })
+
+      return {
+        ...customer.toObject(),
+        selected
+      }
+    })
+
     if (expiredCustomers.length > 0) {
       return res.status(200).json({
         message: "Customers found with expiry",
         data: expiredCustomers
       })
-    } else {
-      return res
-        .status(404)
-        .json({ message: "No customers with expired Dates", data: [] })
     }
+
+    return res.status(404).json({
+      message: "No customers with expired Dates",
+      data: []
+    })
   } catch (error) {
     console.log("error:", error.message)
-    return res.status(500).json({ message: "Internal server error" })
+    return res.status(500).json({
+      message: "Internal server error"
+    })
   }
 }
+
+// export const GetAllExpiryRegister = async (req, res) => {
+//   const { nextmonthReport, startDate, endDate } = req.query
+
+//   try {
+//     let startOfNextMonth
+//     let endOfNextMonth
+//     const today = new Date()
+//     today.setHours(0, 0, 0, 0)
+//     if (nextmonthReport) {
+//       // Calculate the start and end of the next month
+//       startOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1)
+//       endOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 2, 0)
+//       endOfNextMonth.setHours(23, 59, 59, 999) // End of the day
+//     }
+
+//     const expiredCustomers = await Customer.find({
+//       selected: {
+//         $elemMatch: {
+//           $or: [
+//             {
+//               licenseExpiryDate: nextmonthReport
+//                 ? { $gte: startOfNextMonth, $lte: endOfNextMonth }
+//                 : { $gte: startDate, $lte: endDate }
+//             }, // License expiry in the past
+//             {
+//               tvuexpiryDate: nextmonthReport
+//                 ? { $gte: startOfNextMonth, $lte: endOfNextMonth }
+//                 : { $gte: startDate, $lte: endDate }
+//             }, // TVU expiry in the past
+//             {
+//               amcendDate: nextmonthReport
+//                 ? { $gte: startOfNextMonth, $lte: endOfNextMonth }
+//                 : { $gte: startDate, $lte: endDate }
+//             } // AMC end in the past
+//           ]
+//         }
+//       }
+//     })
+//     if (expiredCustomers.length > 0) {
+//       return res.status(200).json({
+//         message: "Customers found with expiry",
+//         data: expiredCustomers
+//       })
+//     } else {
+//       return res
+//         .status(404)
+//         .json({ message: "No customers with expired Dates", data: [] })
+//     }
+//   } catch (error) {
+//     console.log("error:", error.message)
+//     return res.status(500).json({ message: "Internal server error" })
+//   }
+// }
 export const getallExpiredCustomerCalls = async (req, res) => {
   try {
     const { startDate, endDate, isAdmin, userBranchId } = req.body

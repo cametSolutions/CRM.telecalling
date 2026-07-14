@@ -7,6 +7,7 @@ import { Provider } from "react-redux"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
 import "./tailwind.css"
+import "./index.css"
 import Layout from "./layouts/Layout"
 // import { UnsavedChangesProvider } from "./context/UnsavedChangesContext"
 import { UnsavedChangesProvider } from "./context/UnsavedChangesContext"

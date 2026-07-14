@@ -1,6 +1,8 @@
 import {
   Mail,
   MessageSquareText,
+  Bell,
+  X,
   Settings,
   User,
   Users,
@@ -8,8 +10,10 @@ import {
   TrendingUp,
   Menu,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+ChevronDown, ChevronUp
 } from "lucide-react"
+import { IndianRupee, Wallet, CalendarDays, CalendarRange, PiggyBank } from "lucide-react";
 import StaffHeader from "../../header/StaffHeader"
 import Sidebar from "./Sidebar"
 import AdminHeader from "../../header/AdminHeader"
@@ -17,7 +21,7 @@ import { BranchSelect } from "./BranchSelect"
 import { toast } from "react-toastify"
 import { useEffect, useState } from "react"
 import UseFetch from "../../hooks/useFetch"
-
+import AnnouncementBanner from "./AnnouncementBanner"
 import {
   getLocalStorageItem,
   setLocalStorageItem
@@ -85,7 +89,7 @@ const MarketingDashboard = () => {
   const [selectedDatapopup, setselectedDataPopup] = useState({})
   const [achievedproducts, setacheivedProducts] = useState([])
   const [selectedPeriod, setselectedPeriod] = useState("")
-
+  const [showNotification, setShowNotification] = useState(false)
   const [cardDisplay, setcardDisplay] = useState([])
   const [selectedBranch, setselectedBranch] = useState(null)
   console.log(selectedBranch)
@@ -100,11 +104,14 @@ const MarketingDashboard = () => {
     String(now.getMonth() + 1).padStart(2, "0")
   )
   const [showUserMenu, setShowUserMenu] = useState(false)
+  console.log(showUserMenu)
   const [periodMode, setperiodMode] = useState("all")
   const [loggedusedTarget, setloggeduserTarget] = useState([])
   const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
-  const { data: followup } = UseFetch(`/lead/getfollowupsummaryReport?branchId=${selectedBranch}`)
-console.log(selectedBranch)
+  const { data: followup } = UseFetch(
+    `/lead/getfollowupsummaryReport?branchId=${selectedBranch}`
+  )
+  console.log(selectedBranch)
   const { data, loading: targetLoading } = UseFetch(
     selectedBranch &&
       selectedMonth &&
@@ -116,18 +123,33 @@ console.log(selectedBranch)
   const { data: branchProduct } = UseFetch(
     `/product/getallbranchProduct?branch=${selectedBranch}`
   )
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (!e.target.closest(".user-menu-container")) {
-        setShowUserMenu(false)
-      }
+const {data:pendingTask}=UseFetch(`/lead//branchwise-marketing-pending-tasks?branchId=${selectedBranch}`)
+console.log(pendingTask)
+useEffect(() => {
+  const handleClickOutside = (e) => {
+    if (!e.target.closest(".user-menu-container")) {
+      setShowUserMenu(false)
     }
+  }
 
-    document.addEventListener("mousedown", handleClickOutside)
+  document.addEventListener("mousedown", handleClickOutside)
 
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside)
+  }
+}, [])
+
+  // useEffect(() => {
+  //   const handleClickOutside = (e) => {
+  //     if (!e.target.closest(".user-menu-container")) {
+  //       setShowUserMenu(false)
+  //     }
+  //   }
+
+  //   document.addEventListener("mousedown", handleClickOutside)
+
+  //   return () => document.removeEventListener("mousedown", handleClickOutside)
+  // }, [])
   useEffect(() => {
     if (followup && followup.length && user) {
       const filteredleadcounts = followup.filter(
@@ -271,7 +293,6 @@ console.log(selectedBranch)
       console.log(uniqueCategories)
       console.log(data?.userWiseResults)
       const updatedCategories = uniqueCategories.map((cat) => {
-       
         const matchedCategories =
           data?.userWiseResults
             ?.flatMap((user) => user.categories || [])
@@ -295,7 +316,7 @@ console.log(selectedBranch)
       })
       console.log(data?.userWiseResults)
       console.log(updatedCategories)
-console.log(updatedCategories)
+      console.log(updatedCategories)
       setcategorylist(updatedCategories)
     }
   }, [data])
@@ -377,9 +398,23 @@ console.log(updatedCategories)
     ).toLocaleDateString("en-CA")
     setdate({ startDate, endDate })
   }, [])
+  const pendingTasks = [
+    {
+      staffName: "Arun",
+      taskName: "Customer Follow-up",
+      completionDate: "2026-07-15"
+    },
+    {
+      staffName: "Rahul",
+      taskName: "Generate Report",
+      completionDate: "2026-07-18"
+    }
+  ]
   const handleLogout = async () => {
     try {
+      console.log("hhh")
       const res = await api.post("/auth/logout")
+      console.log(res)
       if (
         res.status === 200 &&
         res.data?.message === "Logged out successfully"
@@ -409,7 +444,7 @@ console.log(updatedCategories)
         state: {
           staffId: user?._id,
           dueToday: true,
-ownlead:true,
+          ownlead: true,
           branchId: selectedBranch,
           viewMode: "dueToday",
           from: "followupReport",
@@ -422,7 +457,7 @@ ownlead:true,
         state: {
           staffId: user?._id,
           overdue: true,
-ownlead:true,
+          ownlead: true,
           branchId: selectedBranch,
           viewMode: "overDue",
           from: "followupReport",
@@ -435,7 +470,7 @@ ownlead:true,
         state: {
           staffId: user?._id,
           future: true,
-ownlead:true,
+          ownlead: true,
 
           branchId: selectedBranch,
           viewMode: "future",
@@ -452,7 +487,7 @@ ownlead:true,
           branchId: selectedBranch,
           viewMode: "converted",
           from: "followupReport",
-ownlead:true,
+          ownlead: true,
 
           istotal: true,
           filterRange: date
@@ -466,7 +501,7 @@ ownlead:true,
           branchId: selectedBranch,
           viewMode: "neverfollowup",
           from: "followupReport",
-ownlead:true,
+          ownlead: true,
 
           istotal: true,
           filterRange: date
@@ -481,7 +516,7 @@ ownlead:true,
           viewMode: "followup",
           istotal: true,
           header: "Total Leads",
-ownlead:true,
+          ownlead: true,
 
           branchId: selectedBranch
         }
@@ -543,6 +578,15 @@ ownlead:true,
     } else {
       setacheivedProducts([])
     }
+  }
+const formatDateToDDMMYYYY = (dateValue) => {
+    if (!dateValue) return ""
+    const date = new Date(dateValue)
+    if (Number.isNaN(date.getTime())) return ""
+    const day = String(date.getDate()).padStart(2, "0")
+    const month = String(date.getMonth() + 1).padStart(2, "0")
+    const year = date.getFullYear()
+    return `${day}-${month}-${year}`
   }
   const formatAmount = (value) => Number(value || 0).toLocaleString("en-IN") //amount shown like 12,000 with commmas
   const handleMoreClick = (id, name) => {
@@ -612,7 +656,8 @@ ownlead:true,
       return `${item.color} ${start}deg ${cumulative}deg`
     })
     .join(", ")
-
+console.log(selectedBranch)
+// console.log(BranchSelect)
   return (
     <div
       className="h-full overflow-hidden bg-[#ADD8E6] text-slate-800"
@@ -645,50 +690,106 @@ ownlead:true,
             )}
 
             <div className="flex items-center gap-1.5 text-slate-700 mr-3">
-              <button className="rounded-full p-1.5 transition bg-slate-100">
+              {/* <button className="rounded-full p-1.5 transition bg-slate-100">
                 <Mail size={15} strokeWidth={2.2} />
-              </button>
+              </button> */}
               <div className="relative">
-                <button className="rounded-full p-1.5 transition bg-slate-100">
+                <button
+                  onClick={() => setShowNotification(true)}
+                  className="rounded-full p-1.5 transition bg-slate-100"
+                >
                   <MessageSquareText size={15} strokeWidth={2.2} />
                 </button>
                 <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />
               </div>
-              <button className="rounded-full p-1.5 transition bg-slate-100">
+              {/* <button className="rounded-full p-1.5 transition bg-slate-100">
                 <Settings size={15} strokeWidth={2.2} />
-              </button>
+              </button> */}
               {/* <button className="rounded-full p-1.5 transition bg-slate-100">
                 <User size={15} strokeWidth={2.2} />
               </button> */}
 
-              <div className="relative">
+              {/* <div className="relative">
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setShowUserMenu((prev) => !prev)
-                  }}
+                  type="button"
+                  onClick={(e) => setShowUserMenu((prev) => !prev)}
                   className="rounded-full p-1.5 transition bg-slate-100"
                 >
                   <User size={15} strokeWidth={2.2} />
                 </button>
 
-                {/* {showUserMenu && (
-                  <div
-                    onClick={(e) => e.stopPropagation()} 
-                    className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
-                  >
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50">
                     <button
-                      onClick={handleLogout}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        console.log("logout clicked")
+                        handleLogout()
+                      }}
                       className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
                     >
                       Logout
                     </button>
                   </div>
-                )} */}
-              </div>
+                )}
+              </div> */}
+<div className="relative user-menu-container">
+  <button
+    type="button"
+    onClick={(e) => {
+      e.stopPropagation()
+      setShowUserMenu((prev) => !prev)
+    }}
+    className="rounded-full p-1.5 transition bg-slate-100"
+  >
+    <User size={15} strokeWidth={2.2} />
+  </button>
+
+  {showUserMenu && (
+    <div
+      className="
+        absolute right-0 mt-2
+        w-32
+        bg-white
+        border border-slate-200
+        rounded-md
+        shadow-lg
+        z-[9999]
+      "
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation()
+          console.log("logout clicked")
+          handleLogout()
+        }}
+        className="
+          w-full
+          text-left
+          px-3
+          py-2
+          text-sm
+          text-slate-700
+          hover:bg-slate-100
+          rounded-md
+        "
+      >
+        Logout
+      </button>
+    </div>
+  )}
+</div>
             </div>
           </header>
-
+          {showNotification && (
+            <NotificationPopup onClose={() => setShowNotification(false)} />
+          )}
+          {/* <div className="px-4">
+            <AnnouncementBanner />
+          </div> */}
           <main className="min-h-0 flex-1 overflow-y-auto">
             <section className="p-3 sm:p-4 lg:p-4">
               <div className="grid grid-cols-6 gap-2">
@@ -937,140 +1038,167 @@ text-[clamp(9px,0.75vw,11px)]
                   </div>
                 </div>
 
-                {/* Product Performance */}
+              
                 <div
                   className="
-      rounded-xl border border-slate-200/90 bg-white
-      p-2.5 sm:p-3
-    "
+    rounded-xl border border-slate-200/90 bg-white
+    p-2.5 sm:p-3
+  "
                   style={{
                     boxShadow:
                       "0 4px 12px rgba(15,23,42,0.05), inset 0 1px 0 rgba(255,255,255,0.85)"
                   }}
                 >
-                  <div className="mb-2.5 flex items-center justify-between">
+                  {/* Header */}
+                  <div className="mb-3 flex items-center justify-between">
                     <h2
                       className="
-          font-semibold leading-4 text-slate-900
-          [font-size:clamp(11px,1.5vw,13px)]
-        "
+        font-semibold leading-4 text-slate-900
+        [font-size:clamp(11px,1.5vw,13px)]
+      "
                     >
-                      Product Performance
+                      Task Pending
                     </h2>
+
                     <p
                       className="
-          font-medium text-slate-600
-          [font-size:clamp(10px,1.4vw,12px)]
-        "
+        font-medium text-slate-600
+        [font-size:clamp(10px,1.4vw,12px)]
+      "
                     >
-                      Total:{" "}
-                      <span className="font-semibold text-slate-900">
-                        $88,500
+                      Pending Tasks:
+                      <span className="ml-1 font-semibold text-slate-900">
+                        {pendingTask?.length || 0}
                       </span>
                     </p>
                   </div>
 
-                  <div className="flex flex-col items-center gap-3 sm:flex-row xl:flex-col xl:items-start">
-                    <div className="flex w-full justify-center">
-                      <div
+                  {/* Table Wrapper */}
+                  <div
+                    className="
+      max-h-[260px]
+      overflow-auto
+      rounded-lg
+      border border-slate-200
+    "
+                  >
+                    <table className="w-full border-collapse text-left">
+                      {/* Table Header */}
+                      <thead
                         className="
-            relative h-[110px] w-[110px]
-            sm:h-[124px] sm:w-[124px]
-            rounded-full
-          "
-                        style={{
-                          background: `conic-gradient(${conicStops})`,
-                          boxShadow:
-                            "inset 0 10px 12px rgba(255,255,255,0.35), inset 0 -10px 14px rgba(0,0,0,0.18), 0 10px 18px rgba(15,23,42,0.14)"
-                        }}
+          sticky top-0 z-10
+          bg-slate-50
+          backdrop-blur
+        "
                       >
-                        <div
-                          className="absolute inset-[15px] rounded-full bg-white"
-                          style={{
-                            boxShadow:
-                              "inset 0 5px 10px rgba(255,255,255,0.95), inset 0 -6px 12px rgba(15,23,42,0.08)"
-                          }}
-                        />
-                        <div
-                          className="absolute left-[14%] top-[16%] h-[20%] w-[36%] rounded-full"
-                          style={{
-                            background:
-                              "linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0.04))",
-                            filter: "blur(2px)",
-                            transform: "rotate(-24deg)"
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="w-full space-y-2">
-                      {productData.map((item) => (
-                        <div
-                          key={item.label}
-                          className="flex items-center justify-between gap-2"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="h-3 w-3 rounded-sm"
-                              style={{
-                                background: `linear-gradient(180deg, ${item.color} 0%, ${item.dark} 100%)`,
-                                boxShadow:
-                                  "inset 0 1px 0 rgba(255,255,255,0.35), 0 1px 2px rgba(15,23,42,0.15)"
-                              }}
-                            />
-                            <span
-                              className="
-                  font-medium text-slate-700
-                  [font-size:clamp(10px,1.4vw,12px)]
-                "
-                            >
-                              {item.label}
-                            </span>
-                          </div>
-                          <span
-                            className="
-                font-semibold text-slate-800
+                        <tr>
+                          {["Staff Name", "Task Name", "Completion Date"].map(
+                            (header) => (
+                              <th
+                                key={header}
+                                className="
+                whitespace-nowrap
+                border-b border-slate-200
+                px-3 py-2
+                font-semibold
+                text-slate-700
                 [font-size:clamp(10px,1.4vw,12px)]
               "
-                          >
-                            {item.value}%{" "}
-                            <span className="text-emerald-600">↗</span>
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                              >
+                                {header}
+                              </th>
+                            )
+                          )}
+                        </tr>
+                      </thead>
 
-                  <p
-                    className="
-        mt-2.5 font-medium text-slate-600
-        [font-size:clamp(10px,1.4vw,12px)]
-      "
-                  >
-                    Total Revenue:{" "}
-                    <span className="font-semibold text-slate-900">
-                      $88,500
-                    </span>
-                  </p>
+                      {/* Table Body */}
+                      <tbody>
+                        {pendingTask&&pendingTask?.length > 0 ? (
+                          pendingTask.map((task, index) => (
+                            <tr
+                              key={index}
+                              className="
+                transition
+                hover:bg-slate-50
+              "
+                            >
+                              {/* Staff Name */}
+                              <td
+                                className="
+                  border-b border-slate-100
+                  px-3 py-2
+                  text-slate-700
+                  [font-size:clamp(10px,1.4vw,12px)]
+                "
+                              >
+                                <div className="flex items-center gap-2">
+                                 
+
+                                  <span className="font-medium">
+                                    {task?.staffName.toUpperCase()}
+                                  </span>
+                                </div>
+                              </td>
+
+                              {/* Task Name */}
+                              <td
+                                className="
+                  border-b border-slate-100
+                  px-3 py-2
+                  font-medium
+                  text-slate-800
+                  [font-size:clamp(10px,1.4vw,12px)]
+                "
+                              >
+                                {task.taskName}
+                              </td>
+
+                              {/* Completion Date */}
+                              <td
+                                className="
+                  border-b border-slate-100
+                  px-3 py-2
+                "
+                              >
+                                <span
+                                  className="
+                    rounded-full
+                    bg-amber-100
+                    px-2 py-1
+                    font-medium
+                    text-amber-700
+                    [font-size:clamp(9px,1.3vw,11px)]
+                  "
+                                >
+                                  {formatDateToDDMMYYYY(task.completionDate)}
+                                </span>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td
+                              colSpan="3"
+                              className="
+                py-8
+                text-center
+                text-slate-500
+                [font-size:clamp(10px,1.4vw,12px)]
+              "
+                            >
+                              No pending tasks found
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
+  {/* <CollectionDetails/> */}
+
               </div>
-              {/*bottom div*/}
-              {/* <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
-                <div
-                  className="min-h-[140px] rounded-xl border border-slate-200/90 bg-white"
-                  style={{
-                    boxShadow:
-                      "0 4px 12px rgba(15,23,42,0.05), inset 0 1px 0 rgba(255,255,255,0.85)"
-                  }}
-                />
-                <div
-                  className="min-h-[140px] rounded-xl border border-slate-200/90 bg-white"
-                  style={{
-                    boxShadow:
-                      "0 4px 12px rgba(15,23,42,0.05), inset 0 1px 0 rgba(255,255,255,0.85)"
-                  }}
-                />
-              </div> */}
+           
             </section>
           </main>
         </div>
@@ -1129,3 +1257,531 @@ text-[clamp(9px,0.75vw,11px)]
 }
 
 export default MarketingDashboard
+function NotificationPopup({ onClose }) {
+
+const [showTasks, setShowTasks] = useState(false);
+const [showFollowups, setShowFollowups] = useState(false);
+  const notifications = [
+    {
+      type: "news",
+      title: "New Notification",
+      unread: true,
+      
+
+
+ data: {
+    tasks: [
+      {
+        taskName: "System and study",
+        remark: "Make it clear vision about the system",
+        dueDate: "14 Jul 2026"
+      },
+      {
+        taskName: "Coding",
+        remark: "Customized coding needed",
+        dueDate: "15 Jul 2026"
+      }
+    ],
+    followups: [
+      {
+        customerName: "ABC Traders",
+        lastRemark: "Requested demo next week"
+      },
+      {
+        customerName: "XYZ Industries",
+        lastRemark: "Waiting for quotation approval"
+      }
+    ]
+  }
+    },
+    {
+      type: "leave",
+      title: "Today's Leave",
+      unread: true,
+      data: [{ name: "Rahul" }, { name: "Arun" }, { name: "Sneha" }]
+    },
+    {
+      type: "birthday",
+      title: "Today's Birthdays",
+      unread: false,
+      data: [
+        { name: "Rahul", dob: "11 Jul" },
+        { name: "Anu", dob: "11 Jul" }
+      ]
+    },
+    {
+      type: "holiday",
+      title: "Monthly Holidays",
+      unread: false,
+      data: [
+        { holiday: "Bakrid", date: "12 Jul" },
+        { holiday: "Independence Day", date: "15 Aug" }
+      ]
+    },
+    {
+      type: "quarterly",
+      title: "Quarterly Achievers",
+      unread: false,
+      data: [
+        {
+          name: "Rahul",
+          photo: "https://i.pravatar.cc/100?img=1"
+        },
+        {
+          name: "Arun",
+          photo: "https://i.pravatar.cc/100?img=2"
+        }
+      ]
+    },
+    {
+      type: "yearly",
+      title: "Yearly Achievers",
+      unread: false,
+      data: [
+        {
+          name: "Sneha",
+          photo: "https://i.pravatar.cc/100?img=3"
+        }
+      ]
+    }
+  ]
+  
+  return (
+    <div className="fixed bottom-3 right-3 z-50 flex w-72 max-h-[calc(100vh-24px)] flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-slate-700 bg-slate-800 px-4 py-3">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/15">
+            <Bell size={16} className="text-blue-400" />
+          </div>
+
+          <span className="text-sm font-semibold text-white">
+            Notifications
+          </span>
+        </div>
+
+        <button
+          onClick={onClose}
+          className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-700 hover:text-white"
+        >
+          <X size={16} />
+        </button>
+      </div>
+
+      {/* Notification List */}
+      <div className="flex-1 overflow-y-auto bg-slate-900 p-3 space-y-3">
+        {/* Read Notifications */}
+        {/* {Array.from({ length: 3 }).map((_, index) => (
+          <div
+            key={index}
+            className="rounded-xl border border-slate-700 bg-slate-800 p-3 transition-all duration-200 hover:bg-slate-700"
+          >
+            <p className="text-sm font-semibold text-white">
+              Task Assigned
+            </p>
+
+            <p className="mt-1 text-xs leading-5 text-slate-300">
+              A new support ticket has been assigned to you.
+            </p>
+
+            <p className="mt-2 text-[11px] text-slate-500">
+              {index + 1} hour ago
+            </p>
+          </div>
+        ))} */}
+        <div className="flex-1 space-y-3 overflow-y-auto bg-slate-900 ">
+          <div className="flex-1 space-y-3 overflow-y-auto bg-slate-900 ">
+            {notifications.map((item, index) => (
+              <div
+                key={index}
+                className={`rounded-lg border p-2 transition-colors ${
+                  item.unread
+                    ? "border-blue-500/20 bg-slate-800"
+                    : "border-slate-700 bg-slate-800"
+                }`}
+              >
+                {/* Header */}
+                <div className="mb-2 flex items-center justify-between">
+                  <h3 className="text-xs font-semibold tracking-wide text-white">
+                    {item.title}
+                  </h3>
+
+
+                  {item.unread && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-blue-500"></span>
+                  )}
+                </div>
+{item.type === "news" && (
+  <div className="space-y-2">
+
+   
+
+    {/* Pending Tasks */}
+    <div className="rounded-md border border-orange-500/20 bg-slate-700/40">
+      <button
+        onClick={() => setShowTasks(!showTasks)}
+        className="flex w-full items-center justify-between px-3 py-2"
+      >
+        <div className="flex items-center gap-2">
+          <span>📋</span>
+
+          <span className="text-[11px] font-semibold text-orange-300">
+            Pending Tasks
+          </span>
+
+          <span className="rounded bg-orange-500/20 px-1.5 py-0.5 text-[10px] text-orange-300">
+            {item.data.tasks.length}
+          </span>
+        </div>
+
+        {showTasks ? (
+          <ChevronUp size={15} className="text-slate-400" />
+        ) : (
+          <ChevronDown size={15} className="text-slate-400" />
+        )}
+      </button>
+
+      {showTasks && (
+        <div className="space-y-1 border-t border-slate-600 px-2 py-2">
+          {item.data.tasks.map((task, i) => (
+            <div
+              key={i}
+              className="rounded bg-slate-800 px-2 py-1.5"
+            >
+              <div className="flex items-center justify-between">
+                <p className="truncate text-[11px] font-medium text-white">
+                  {task.taskName}
+                </p>
+
+                <span className="text-[10px] font-medium text-red-400">
+                  {task.dueDate}
+                </span>
+              </div>
+
+              <p className="mt-0.5 truncate text-[10px] text-slate-400">
+                {task.remark}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+
+    {/* Pending Follow-ups */}
+    <div className="rounded-md border border-blue-500/20 bg-slate-700/40">
+      <button
+        onClick={() => setShowFollowups(!showFollowups)}
+        className="flex w-full items-center justify-between px-3 py-2"
+      >
+        <div className="flex items-center gap-2">
+          <span>📞</span>
+
+          <span className="text-[11px] font-semibold text-blue-300">
+            Pending Follow-ups
+          </span>
+
+          <span className="rounded bg-blue-500/20 px-1.5 py-0.5 text-[10px] text-blue-300">
+            {item.data.followups.length}
+          </span>
+        </div>
+
+        {showFollowups ? (
+          <ChevronUp size={15} className="text-slate-400" />
+        ) : (
+          <ChevronDown size={15} className="text-slate-400" />
+        )}
+      </button>
+
+      {showFollowups && (
+        <div className="space-y-1 border-t border-slate-600 px-2 py-2">
+          {item.data.followups.map((followup, i) => (
+            <div
+              key={i}
+              className="rounded bg-slate-800 px-2 py-1.5"
+            >
+              <p className="truncate text-[11px] font-medium text-white">
+                {followup.customerName}
+              </p>
+
+              <p className="mt-0.5 truncate text-[10px] text-slate-400">
+                {followup.lastRemark}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+)}
+{/* {item.type === "news" && (
+  <div className="space-y-2">
+
+  
+    <div className="rounded-md border border-orange-500/20 bg-slate-700/40 p-2">
+      <div className="mb-1 flex items-center justify-between">
+        <p className="text-[11px] font-semibold text-orange-300">
+          📋 Pending Tasks
+        </p>
+        <span className="rounded bg-orange-500/20 px-1.5 py-0.5 text-[10px] text-orange-300">
+          {item.data.tasks.length}
+        </span>
+      </div>
+
+      <div className="space-y-1">
+        {item.data.tasks.map((task, i) => (
+          <div
+            key={i}
+            className="flex items-start justify-between rounded bg-slate-800 px-2 py-1"
+          >
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[11px] font-medium text-white">
+                {task.taskName}
+              </p>
+
+              <p className="truncate text-[10px] text-slate-400">
+                {task.remark}
+              </p>
+            </div>
+
+            <span className="ml-2 whitespace-nowrap text-[10px] text-red-400">
+              {task.dueDate}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    
+    <div className="rounded-md border border-blue-500/20 bg-slate-700/40 p-2">
+      <div className="mb-1 flex items-center justify-between">
+        <p className="text-[11px] font-semibold text-blue-300">
+          📞 Pending Follow-ups
+        </p>
+
+        <span className="rounded bg-blue-500/20 px-1.5 py-0.5 text-[10px] text-blue-300">
+          {item.data.followups.length}
+        </span>
+      </div>
+
+      <div className="space-y-1">
+        {item.data.followups.map((followup, i) => (
+          <div
+            key={i}
+            className="rounded bg-slate-800 px-2 py-1"
+          >
+            <p className="truncate text-[11px] font-medium text-white">
+              {followup.customerName}
+            </p>
+
+            <p className="truncate text-[10px] text-slate-400">
+              {followup.lastRemark}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+
+  </div>
+)} */}
+
+                {/* Leave */}
+                {item.type === "leave" && (
+                  <div className="space-y-1">
+                    {item.data.map((staff, i) => (
+                      <div
+                        key={i}
+                        className="rounded-md bg-slate-700 px-2 py-1 text-xs text-slate-200"
+                      >
+                        {staff.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Birthday */}
+                {item.type === "birthday" && (
+                  <div className="space-y-1">
+                    {item.data.map((staff, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between rounded-md bg-slate-700 px-2 py-1"
+                      >
+                        <span className="text-xs text-white">
+                          🎂 {staff.name}
+                        </span>
+
+                        <span className="text-[10px] text-slate-300">
+                          {staff.dob}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Holidays */}
+                {item.type === "holiday" && (
+                  <div className="space-y-1">
+                    {item.data.map((holiday, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between rounded-md bg-slate-700 px-2 py-1"
+                      >
+                        <span className="text-xs text-white">
+                          📅 {holiday.holiday}
+                        </span>
+
+                        <span className="text-[10px] text-slate-300">
+                          {holiday.date}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Quarterly & Yearly */}
+                {(item.type === "quarterly" || item.type === "yearly") && (
+                  <div className="space-y-1">
+                    {item.data.map((staff, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-2 rounded-md bg-slate-700 px-2 py-1"
+                      >
+                        <img
+                          src={staff.photo}
+                          alt={staff.name}
+                          className="h-8 w-8 rounded-full border border-yellow-400 object-cover"
+                        />
+
+                        <div className="min-w-0">
+                          <p className="truncate text-xs font-medium text-white">
+                            {staff.name}
+                          </p>
+
+                          <p className="text-[10px] text-yellow-400">
+                            🏆 Achiever
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Swap this mock data with your API response — shape: { key, label, subtext, amount, count, icon, accent }
+const DEFAULT_COLLECTIONS = [
+  {
+    key: "today",
+    label: "Today's Collection",
+    subtext: "Payments verified today",
+    amount: 18450,
+    count: 6,
+    icon: CalendarDays,
+    accent: "teal",
+  },
+  // {
+  //   key: "week",
+  //   label: "This Week",
+  //   subtext: "Collections since Monday",
+  //   amount: 86230,
+  //   count: 24,
+  //   icon: CalendarRange,
+  //   accent: "indigo",
+  // },
+  // {
+  //   key: "month",
+  //   label: "This Month",
+  //   subtext: "Total collected in July",
+  //   amount: 160173,
+  //   count: 71,
+  //   icon: Wallet,
+  //   accent: "violet",
+  // },
+  // {
+  //   key: "pending",
+  //   label: "Pending Collection",
+  //   subtext: "Balance yet to be collected",
+  //   amount: 42300,
+  //   count: 9,
+  //   icon: PiggyBank,
+  //   accent: "amber",
+  // },
+];
+
+const ACCENTS = {
+  teal: { icon: "bg-teal-50 text-teal-600", btn: "bg-teal-50 text-teal-700 hover:bg-teal-100" },
+  indigo: { icon: "bg-indigo-50 text-indigo-600", btn: "bg-indigo-50 text-indigo-700 hover:bg-indigo-100" },
+  violet: { icon: "bg-violet-50 text-violet-600", btn: "bg-violet-50 text-violet-700 hover:bg-violet-100" },
+  amber: { icon: "bg-amber-50 text-amber-600", btn: "bg-amber-50 text-amber-700 hover:bg-amber-100" },
+};
+
+function formatINR(value) {
+  return new Intl.NumberFormat("en-IN").format(value);
+}
+
+function CollectionDetails({
+  collections = DEFAULT_COLLECTIONS,
+  basePath = "/staff/reports/collection-details",
+}) {
+  const navigate = useNavigate();
+
+  function handleNavigate(item) {
+    navigate(basePath, { state: { period: item.key, label: item.label } });
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className="text-base font-bold text-slate-900">Collection Details</h3>
+          <p className="text-xs text-slate-400 mt-0.5">Tap an amount to view the full breakdown</p>
+        </div>
+      </div>
+
+      <div className=" gap-4">
+        {collections.map((item) => {
+          const Icon = item.icon;
+          const accent = ACCENTS[item.accent] || ACCENTS.teal;
+          return (
+            <div
+              key={item.key}
+              className="rounded-xl border border-slate-100 p-4 flex flex-col gap-3 hover:shadow-md hover:border-slate-200 transition-all"
+            >
+              <div className="flex items-center justify-between gap-2.5">
+                <span className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${accent.icon}`}>
+                  <Icon className="w-4.5 h-4.5" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-800 truncate">{item.label}</p>
+                  <p className="text-[11px] text-slate-400 truncate">{item.subtext}</p>
+                </div>
+ <button
+                onClick={() => handleNavigate(item)}
+                className={`group inline-flex items-center justify-between gap-2 rounded-lg px-3 py-2 font-semibold text-sm transition-colors ${accent.btn}`}
+              >
+                <span className="inline-flex items-center gap-1 tabular-nums">
+                  <IndianRupee className="w-3.5 h-3.5" />
+                  {formatINR(item.amount)}
+                </span>
+                <span className="inline-flex items-center gap-0.5 text-[11px] font-medium opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all">
+                  {item.count} {item.count === 1 ? "entry" : "entries"}
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </span>
+              </button>
+              </div>
+
+             
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
