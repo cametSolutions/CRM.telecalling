@@ -16,7 +16,7 @@ import License from "../../model/secondaryUser/licenseSchema.js";
 
 ////
 
-import ExcelJS from "exceljs";
+
 import Branch from "../../model/primaryUser/branchSchema.js";
 import CallRegistration from "../../model/secondaryUser/CallRegistrationSchema.js";
 export const exportBranchWiseProductUsage = async (req, res) => {
