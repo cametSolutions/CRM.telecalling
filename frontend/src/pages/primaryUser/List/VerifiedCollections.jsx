@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from "react"
 import UseFetch from "../../../hooks/useFetch"
 import { useNavigate } from "react-router-dom"
+import { useLocation } from "react-router-dom"
 import { PaymentHistoryModal } from "../../../components/primaryUser/PaymentHistoryModal"
 import { LeadhistoryModal } from "../../../components/primaryUser/LeadhistoryModal"
 import { CollectionupdateModal } from "../../../components/primaryUser/CollectionupdateModal"
 import api from "../../../api/api"
 import SkeletonTable from "../../../components/loader/SkeletonTable"
+import DatePeriod from "../../../components/common/DatePeriod"
+import DateRangePicker from "../../../components/common/Daterangepicker"
+
 import {
   Eye,
   Phone,
@@ -33,9 +37,13 @@ import { PerformanceModal } from "../../../components/primaryUser/PerformanceMod
 import { PropagateLoader } from "react-spinners"
 import { toast } from "react-toastify"
 
-export default function CollectionUpdate() {
+export default function VerifiedCollections() {
   console.log("hh")
   const [showFullName, setShowFullName] = useState(false)
+const location=useLocation()
+console.log(location.state)
+  const [startDate, setStartDate] = useState(location?.state?.startDate)
+  const [endDate, setEndDate] = useState(location?.state?.endDate)
   const [tableData, setTableData] = useState([])
   console.log(tableData)
   console.log(tableData)
@@ -81,6 +89,8 @@ export default function CollectionUpdate() {
   const [selectedPeriod, setselectedPeriod] = useState("")
   const navigate = useNavigate()
   const { data: companybranches } = UseFetch("/branch/getBranch")
+
+
   // const {data}=UseFetch("/lead/fix-leadverified")
   const {
     data: collectionlead,
@@ -91,6 +101,19 @@ export default function CollectionUpdate() {
       loggedUser &&
       `/lead/collectionLeads?selectedBranch=${selectedCompanyBranch}&verified=${verifiedLead}&isAccountant=${isdepartmentisAccountant}&loggeduserby=${loggedUser._id}`
   )
+console.log(collectionlead)
+const {
+    data: verifiedcollectionlead,
+    loading:leadloading,
+    refreshHook:leadHook
+  } = UseFetch(
+    selectedCompanyBranch &&
+      loggedUser &&
+      `/lead/verifiedcollectionLeads?selectedBranch=${selectedCompanyBranch}&verified=${true}&startDate=${startDate}&endDate=${endDate}`
+  )
+console.log(startDate)
+console.log(endDate)
+console.log(verifiedcollectionlead)
   const { data: branchProduct } = UseFetch(
     `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
   )
@@ -206,9 +229,9 @@ export default function CollectionUpdate() {
     }
   }, [targetData])
   useEffect(() => {
-    if (paymenthistoryModal && collectionlead && selectedLeadId) {
+    if (paymenthistoryModal && verifiedcollectionlead && selectedLeadId) {
       console.log("hh")
-      const updatedhistorylist = collectionlead.filter(
+      const updatedhistorylist = verifiedcollectionlead.filter(
         (item) => item.leadId === selectedLeadId
       )
       console.log(updatedhistorylist)
@@ -226,49 +249,21 @@ export default function CollectionUpdate() {
   console.log("Hh")
   useEffect(() => {
     if (
-      collectionlead &&
-      collectionlead.length > 0 &&
+      verifiedcollectionlead &&
+      verifiedcollectionlead.length > 0 &&
       partners &&
       partners.length > 0 &&
       loggedUser
     ) {
       console.log(loggedUser?.department)
-      if (
-        loggedUser?.department?._id === "670c863652847bbebbd35743" ||
-        loggedUser?.department?.department === "Accounts"
-      ) {
-        const filteredforcefullyleads = collectionlead.filter(
-          (item) => item.forcefullyClosedTarget
-        )
-        if (filteredforcefullyleads.length) {
-          setforcefullyClosedLeads(normalizeTableData(filteredforcefullyleads))
-          console.log("Hhh")
-        }
-        const filteredCollectionleads = collectionlead.filter(
-          (item) =>
-            item.paymentHistory?.length > 0 && !item.forcefullyClosedTarget
-        )
-        console.log(collectionlead)
-        const sortedLeads = filteredCollectionleads.sort((a, b) => {
-          const getOldest = (lead) =>
-            lead.paymentHistory?.length
-              ? Math.min(
-                  ...lead.paymentHistory.map((p) => new Date(p.paymentDate))
-                )
-              : Date.now()
-
-          return getOldest(a) - getOldest(b)
-        })
-        console.log(sortedLeads)
-        setTableData(normalizeTableData(sortedLeads))
-      } else {
-        console.log(collectionlead)
-        setTableData(normalizeTableData(collectionlead))
-      }
+     
+        setTableData(normalizeTableData(verifiedcollectionlead))
+      
 
       setPartner(partners)
     }
-  }, [collectionlead, partners, loggedUser])
+  }, [verifiedcollectionlead, partners, loggedUser])
+console.log(tableData)
   const normalizeTableData = (data) => {
     if (Array.isArray(data)) {
       return [{ staffName: null, leads: data }]
@@ -336,7 +331,7 @@ export default function CollectionUpdate() {
 
     console.log("h")
     return (item || [])
-      .filter((history) => history?.paymentVerified === false)
+      .filter((history) => history?.paymentVerified === true)
       .reduce((sum, history) => sum + Number(history?.receivedAmount || 0), 0)
   }
   const handleCollectionUpdate = async (
@@ -383,10 +378,6 @@ export default function CollectionUpdate() {
     console.log(targetData)
     console.log(loggedUser?._id)
 
-    // const filteredselectedCategory =
-    //   filteredloggedUserItem[0].categories.filter(
-    //     (item) => item.categoryId === id
-    //   )
     const filteredselectedCategory = Datas.flatMap(
       (user) => user.categories || []
     ).filter((item) => item.categoryId === id)
@@ -444,13 +435,7 @@ export default function CollectionUpdate() {
 
     setselectedDataPopup(summary)
     if (filteredselectedCategory && filteredselectedCategory.length) {
-      // setacheivedProducts(
-      //   filteredselectedCategory[0]?.products?.map((product) => ({
-      //     productname: product.name,
-      //     amount: product.achieved
-      //   })) || []
-      // )
-      setacheivedProducts(
+      eivedProducts(
         filteredselectedCategory.flatMap((item) =>
           (item.products || []).map((product) => ({
             productname: product.name,
@@ -492,14 +477,7 @@ export default function CollectionUpdate() {
                 <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
               )}
             </td>
-            {/* <td className="px-3 py-2 font-semibold text-gray-900 text-sm border border-gray-300 whitespace-nowrap uppercase truncate">
-              {item?.customerName?.customerName}
-            </td> */}
-            {/* <td className="px-3 py-2 border border-gray-300">
-              <div className="font-semibold text-gray-900 text-sm uppercase max-w-[200px] truncate">
-                {item?.customerName?.customerName}
-              </div>
-            </td> */}
+
             <td className="px-3 py-2 font-semibold text-gray-900 text-sm border border-gray-300 whitespace-nowrap">
               <div className="relative group w-[180px]">
                 <span
@@ -568,19 +546,6 @@ export default function CollectionUpdate() {
                 <CreditCard className="w-3.5 h-3.5" />
               </button>
             </td>
-            {!verifiedLead && (
-              <td
-                className="px-2 py-2 border border-gray-300"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button
-                  onClick={() => handleCollection(item)}
-                  className="inline-flex items-center gap-1  py-1 text-xs font-semibold text-white bg-green-500 rounded hover:bg-green-600 transition-colors w-full justify-center"
-                >
-                  <ClipboardCheck className="w-3.5 h-3.5" />
-                </button>
-              </td>
-            )}
 
             <td className="px-3 py-2 text-sm font-semibold text-green-700 border border-gray-300 whitespace-nowrap text-right">
               <span className="inline-flex items-center gap-0.5 justify-end">
@@ -692,9 +657,6 @@ export default function CollectionUpdate() {
                     item?.leadFor[0]?.productorServiceId?.productName ||
                     "-"}
                 </td>
-                {/* <td className="px-3 py-1.5 border border-gray-300 text-gray-700">
-                  {item?.phone || "-"}
-                </td> */}
               </tr>
             </>
           )}
@@ -704,7 +666,7 @@ export default function CollectionUpdate() {
 
     return (
       <table className="border-collapse border border-gray-300 w-full text-sm">
-        <thead className="whitespace-nowrap bg-gradient-to-r from-blue-600 to-blue-700 text-white sticky top-0 z-30 text-xs">
+        <thead className="whitespace-nowrap bg-gradient-to-r from-blue-600 to-blue-700 text-white sticky top-0 z-10 text-xs">
           <tr>
             <th className="border border-gray-300 w-5" />
             <th className="border border-gray-300 px-3 py-1 text-left">
@@ -734,16 +696,11 @@ export default function CollectionUpdate() {
             <th className="border border-gray-300 px-3 py-1 text-center">
               Payment History
             </th>
-            {!verifiedLead && (
-              <th className="border border-gray-300 px-3 py-1 text-center">
-                Collection Update
-              </th>
-            )}
 
             <th className="border border-gray-300 px-3 py-1 text-right">
               <div className="flex items-center gap-1.5 justify-end">
                 <IndianRupee className="w-3 h-3" />
-                <span>Net Amount</span>
+                <span>Collection Amount</span>
               </div>
             </th>
           </tr>
@@ -803,9 +760,6 @@ export default function CollectionUpdate() {
               <button className="rounded-full p-1.5 transition bg-slate-100">
                 <Settings size={15} strokeWidth={2.2} />
               </button>
-              {/* <button className="rounded-full p-1.5 transition bg-slate-100">
-                <User size={15} strokeWidth={2.2} />
-              </button> */}
 
               <div className="relative">
                 <button
@@ -834,99 +788,17 @@ export default function CollectionUpdate() {
               </div>
             </div>
           </header>
-          <div className="flex justify-between items-center p-3 md:p-5 md:pb-2 sticky top-0 z-30">
-            <h2 className="text-lg font-bold">
-              {isdepartmentisAccountant
-                ? verifiedLead
-                  ? "All Verified Payment Leads"
-                  : forcefullyclosedLeads.length > 0 && isforcefullyclosed
-                    ? "Forcefully Closed amount Leads"
-                    : "Pending Verified Collections"
-                : "Pending Collection Leads"}
-            </h2>
 
-            <div className="flex justify-end items-center">
-              {isdepartmentisAccountant && (
-                <>
-                  {!verifiedLead && (
-                    <div className="mr-3 flex">
-                      <span className="text-sm whitespace-nowrap font-semibold">
-                        Forcefully closed Leads
-                      </span>
-                      <div className="">
-                        <button
-                          onClick={() => {
-                            // setTableData([])
-                            setisforcefullyclosed(!isforcefullyclosed)
-                            // setverifiedLead(!verifiedLead)
-                          }}
-                          className={`${
-                            isforcefullyclosed ? "bg-green-500" : "bg-gray-300"
-                          } w-11 h-6 flex items-center rounded-full transition-colors duration-300 mx-2`}
-                        >
-                          <div
-                            className={`${
-                              isforcefullyclosed
-                                ? "translate-x-5"
-                                : "translate-x-0"
-                            } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-                          ></div>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex">
-                    <span className="text-sm whitespace-nowrap font-semibold">
-                      {verifiedLead ? "Payment Verified" : "Pending Verified"}
-                    </span>
-                    <div className="">
-                      {" "}
-                      <button
-                        onClick={() => {
-                          setTableData([])
-                          setverifiedLead(!verifiedLead)
-                        }}
-                        className={`${
-                          verifiedLead ? "bg-green-500" : "bg-gray-300"
-                        } w-11 h-6 flex items-center rounded-full transition-colors duration-300 mx-2`}
-                      >
-                        <div
-                          className={`${
-                            verifiedLead ? "translate-x-5" : "translate-x-0"
-                          } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-                        ></div>
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-              {/* <select
-                value={selectedCompanyBranch || ""}
-                onChange={(e) => {
-                  setTableData([])
-                  setselectedCompanyBranch(e.target.value)
-                }}
-                className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[150px] mx-2 cursor-pointer "
-              >
-                {loggedUserBranches?.map((branch) => (
-                  <option key={branch.value} value={branch.value}>
-                    {branch.label}
-                  </option>
-                ))}
-              </select> */}
-
-              <button
-                onClick={() =>
-                  loggedUser?.role === "Admin"
-                    ? navigate("/admin/transaction/lead")
-                    : navigate("/staff/transaction/lead")
-                }
-                className="bg-black text-white py-1 px-3 rounded-lg shadow-lg hover:bg-gray-600"
-              >
-                New Lead
-              </button>
-            </div>
+          <div className="flex justify-start items-center p-3 md:p-5 md:pb-2 sticky top-0 z-30 gap-3">
+            <h2 className="text-lg font-bold">Verified Collections</h2>
+<DateRangePicker
+                startDate={startDate}
+                endDate={endDate}
+                setStartDate={setStartDate}
+                setEndDate={setEndDate}
+              />
+              
+           
           </div>
           {/* Responsive Table Container this is the newest design*/}
           <div className="h-auto overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3 bg-white">
@@ -967,12 +839,7 @@ export default function CollectionUpdate() {
                     )}
 
                     {/* only render table if there are leads */}
- {loading? (
- <SkeletonTable/>
-                    
-                    ) : (
-                       renderTable(leads)
-                    )}
+                    {loading ? <SkeletonTable /> : renderTable(leads)}
                     {/* {leads.length > 0 ? (
                       renderTable(leads)
                     ) : (
@@ -1011,6 +878,7 @@ export default function CollectionUpdate() {
       {paymenthistoryModal && (
         <PaymentHistoryModal
           data={paymentHistoryList}
+showAction={false}
           isChecked={isChecked}
           isforcefullyclosed={isforcefullyclosed}
           balanceAmount={balanceAmount}

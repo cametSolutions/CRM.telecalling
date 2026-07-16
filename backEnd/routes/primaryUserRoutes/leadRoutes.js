@@ -47,11 +47,15 @@ ApprovedforcefullyClosedTarget,
 Leadclosing,
 Checkduplicatecustomer,
 // exportBranchWiseProductUsage,
-getBranchwiseMarketingPendingTasks
+getBranchwiseMarketingPendingTasks,
+getTodayVerifiedCollection,
+getverifiedCollectionLeads,
+getNotificationData
 } from "../../controller/primaryUserController/leadController.js";
 const router = express.Router();
 // router.get("/export-branch-wise-product-usage",exportBranchWiseProductUsage)
 router.get("/getstaffdailyreports", authMiddleware, Getdailystaffreport)
+router.get("/getnotificationData",authMiddleware,getNotificationData)
 router.post("/approveforcefullyclosetarget",authMiddleware,ApprovedforcefullyClosedTarget)
 router.get("/getsalesfunnels", authMiddleware, Getallsalesfunnels)
 router.get(
@@ -59,6 +63,8 @@ router.get(
   authMiddleware,
   getBranchwiseMarketingPendingTasks
 )
+router.get("/verifiedcollectionLeads",authMiddleware,getverifiedCollectionLeads)
+router.get("/getTodayVerifiedCollection",authMiddleware,getTodayVerifiedCollection)
 router.get("/getallproductwisereport", authMiddleware, GetallproductwiseReport);
 router.get("/getfollowupsummaryReport", authMiddleware, GetfollowupsummaryReport)
 router.post("/leadRegister", authMiddleware, LeadRegister);

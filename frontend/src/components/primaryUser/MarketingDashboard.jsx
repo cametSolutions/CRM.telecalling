@@ -11,9 +11,16 @@ import {
   Menu,
   ChevronLeft,
   ChevronRight,
-ChevronDown, ChevronUp
+  ChevronDown,
+  ChevronUp
 } from "lucide-react"
-import { IndianRupee, Wallet, CalendarDays, CalendarRange, PiggyBank } from "lucide-react";
+import {
+  IndianRupee,
+  Wallet,
+  CalendarDays,
+  CalendarRange,
+  PiggyBank
+} from "lucide-react"
 import StaffHeader from "../../header/StaffHeader"
 import Sidebar from "./Sidebar"
 import AdminHeader from "../../header/AdminHeader"
@@ -76,6 +83,8 @@ const getBarStyle = (value, colorA, colorB) => ({
 
 const MarketingDashboard = () => {
   const [user, setUser] = useState(null)
+const [openannoucementpopup, setopenannoucementpopup] = useState(false);
+console.logO(openannoucementpopup)
   const [branchOptions, setbranchOptions] = useState([])
   const [selectedUserName, setselecteduserName] = useState(null)
   const [selectedCategory, setselectedCategory] = useState(null)
@@ -94,6 +103,7 @@ const MarketingDashboard = () => {
   const [selectedBranch, setselectedBranch] = useState(null)
   console.log(selectedBranch)
   const [achievedPoints, setachievedPoints] = useState(0)
+  const [todaysCollection, settodaysCollection] = useState([])
   const now = new Date()
   const navigate = useNavigate()
   const [date, setdate] = useState({
@@ -111,7 +121,20 @@ const MarketingDashboard = () => {
   const { data: followup } = UseFetch(
     `/lead/getfollowupsummaryReport?branchId=${selectedBranch}`
   )
+  const { data: collectiondata, loading: collectionloader } = UseFetch(
+    "/lead/getTodayVerifiedCollection"
+  )
+  const { data: notificationData } = UseFetch(
+    `/lead/getnotificationData?loggedUser=${user?._id}&branchSelected=${selectedBranch}`
+  )
+ const { data: announcementlist } = UseFetch(
+    "/dashboard/getcurrentAnnouncement"
+  )
+console.log(announcementlist)
+  console.log(notificationData)
+  console.log(collectiondata)
   console.log(selectedBranch)
+
   const { data, loading: targetLoading } = UseFetch(
     selectedBranch &&
       selectedMonth &&
@@ -123,21 +146,40 @@ const MarketingDashboard = () => {
   const { data: branchProduct } = UseFetch(
     `/product/getallbranchProduct?branch=${selectedBranch}`
   )
-const {data:pendingTask}=UseFetch(`/lead//branchwise-marketing-pending-tasks?branchId=${selectedBranch}`)
-console.log(pendingTask)
-useEffect(() => {
-  const handleClickOutside = (e) => {
-    if (!e.target.closest(".user-menu-container")) {
-      setShowUserMenu(false)
+  const { data: pendingTask } = UseFetch(
+    `/lead//branchwise-marketing-pending-tasks?branchId=${selectedBranch}`
+  )
+  console.log(pendingTask)
+  useEffect(() => {
+    if (collectiondata) {
+      settodaysCollection([
+        {
+          key: "today",
+          startDate: new Date(),
+          endDate: new Date(),
+          label: "Today's Collection",
+          subtext: "Payments verified today",
+          amount: collectiondata,
+          count: 6,
+          icon: CalendarDays,
+          accent: "teal"
+        }
+      ])
     }
-  }
+  }, [collectiondata])
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest(".user-menu-container")) {
+        setShowUserMenu(false)
+      }
+    }
 
-  document.addEventListener("mousedown", handleClickOutside)
+    document.addEventListener("mousedown", handleClickOutside)
 
-  return () => {
-    document.removeEventListener("mousedown", handleClickOutside)
-  }
-}, [])
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [])
 
   // useEffect(() => {
   //   const handleClickOutside = (e) => {
@@ -579,7 +621,7 @@ useEffect(() => {
       setacheivedProducts([])
     }
   }
-const formatDateToDDMMYYYY = (dateValue) => {
+  const formatDateToDDMMYYYY = (dateValue) => {
     if (!dateValue) return ""
     const date = new Date(dateValue)
     if (Number.isNaN(date.getTime())) return ""
@@ -656,8 +698,8 @@ const formatDateToDDMMYYYY = (dateValue) => {
       return `${item.color} ${start}deg ${cumulative}deg`
     })
     .join(", ")
-console.log(selectedBranch)
-// console.log(BranchSelect)
+  console.log(selectedBranch)
+  // console.log(BranchSelect)
   return (
     <div
       className="h-full overflow-hidden bg-[#ADD8E6] text-slate-800"
@@ -734,21 +776,21 @@ console.log(selectedBranch)
                   </div>
                 )}
               </div> */}
-<div className="relative user-menu-container">
-  <button
-    type="button"
-    onClick={(e) => {
-      e.stopPropagation()
-      setShowUserMenu((prev) => !prev)
-    }}
-    className="rounded-full p-1.5 transition bg-slate-100"
-  >
-    <User size={15} strokeWidth={2.2} />
-  </button>
+              <div className="relative user-menu-container">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowUserMenu((prev) => !prev)
+                  }}
+                  className="rounded-full p-1.5 transition bg-slate-100"
+                >
+                  <User size={15} strokeWidth={2.2} />
+                </button>
 
-  {showUserMenu && (
-    <div
-      className="
+                {showUserMenu && (
+                  <div
+                    className="
         absolute right-0 mt-2
         w-32
         bg-white
@@ -757,16 +799,16 @@ console.log(selectedBranch)
         shadow-lg
         z-[9999]
       "
-      onMouseDown={(e) => e.stopPropagation()}
-    >
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation()
-          console.log("logout clicked")
-          handleLogout()
-        }}
-        className="
+                    onMouseDown={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        console.log("logout clicked")
+                        handleLogout()
+                      }}
+                      className="
           w-full
           text-left
           px-3
@@ -776,20 +818,26 @@ console.log(selectedBranch)
           hover:bg-slate-100
           rounded-md
         "
-      >
-        Logout
-      </button>
-    </div>
-  )}
-</div>
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </header>
           {showNotification && (
-            <NotificationPopup onClose={() => setShowNotification(false)} />
+            <NotificationPopup
+              onClose={() => setShowNotification(false)}
+              notificationData={notificationData}
+            />
           )}
-          {/* <div className="px-4">
-            <AnnouncementBanner />
-          </div> */}
+          <div className="px-4">
+{announcementlist&&announcementlist.length&&(
+ <AnnouncementBanner announcementlist={announcementlist} setopenannoucementpopup={setopenannoucementpopup}/>
+)}
+           
+          </div>
           <main className="min-h-0 flex-1 overflow-y-auto">
             <section className="p-3 sm:p-4 lg:p-4">
               <div className="grid grid-cols-6 gap-2">
@@ -1038,7 +1086,6 @@ text-[clamp(9px,0.75vw,11px)]
                   </div>
                 </div>
 
-              
                 <div
                   className="
     rounded-xl border border-slate-200/90 bg-white
@@ -1114,7 +1161,7 @@ text-[clamp(9px,0.75vw,11px)]
 
                       {/* Table Body */}
                       <tbody>
-                        {pendingTask&&pendingTask?.length > 0 ? (
+                        {pendingTask && pendingTask?.length > 0 ? (
                           pendingTask.map((task, index) => (
                             <tr
                               key={index}
@@ -1133,8 +1180,6 @@ text-[clamp(9px,0.75vw,11px)]
                 "
                               >
                                 <div className="flex items-center gap-2">
-                                 
-
                                   <span className="font-medium">
                                     {task?.staffName.toUpperCase()}
                                   </span>
@@ -1195,10 +1240,8 @@ text-[clamp(9px,0.75vw,11px)]
                     </table>
                   </div>
                 </div>
-  {/* <CollectionDetails/> */}
-
+                <CollectionDetails collections={todaysCollection} />
               </div>
-           
             </section>
           </main>
         </div>
@@ -1257,95 +1300,143 @@ text-[clamp(9px,0.75vw,11px)]
 }
 
 export default MarketingDashboard
-function NotificationPopup({ onClose }) {
+function NotificationPopup({ onClose, notificationData }) {
+  const [showTasks, setShowTasks] = useState(false)
+  const [showFollowups, setShowFollowups] = useState(false)
+  // const notifications = [
+  //   {
+  //     type: "news",
+  //     title: "New Notification",
+  //     unread: true,
 
-const [showTasks, setShowTasks] = useState(false);
-const [showFollowups, setShowFollowups] = useState(false);
+  //     data: {
+  //       tasks: [
+  //         {
+  //           taskName: "System and study",
+  //           remark: "Make it clear vision about the system",
+  //           dueDate: "14 Jul 2026"
+  //         },
+  //         {
+  //           taskName: "Coding",
+  //           remark: "Customized coding needed",
+  //           dueDate: "15 Jul 2026"
+  //         }
+  //       ],
+  //       followups: [
+  //         {
+  //           customerName: "ABC Traders",
+  //           lastRemark: "Requested demo next week"
+  //         },
+  //         {
+  //           customerName: "XYZ Industries",
+  //           lastRemark: "Waiting for quotation approval"
+  //         }
+  //       ]
+  //     }
+  //   },
+  //   {
+  //     type: "leave",
+  //     title: "Today's Leave",
+  //     unread: true,
+  //     data: [{ name: "Rahul" }, { name: "Arun" }, { name: "Sneha" }]
+  //   },
+  //   {
+  //     type: "birthday",
+  //     title: "Today's Birthdays",
+  //     unread: false,
+  //     data: [
+  //       { name: "Rahul", dob: "11 Jul" },
+  //       { name: "Anu", dob: "11 Jul" }
+  //     ]
+  //   },
+  //   {
+  //     type: "holiday",
+  //     title: "Monthly Holidays",
+  //     unread: false,
+  //     data: [
+  //       { holiday: "Bakrid", date: "12 Jul" },
+  //       { holiday: "Independence Day", date: "15 Aug" }
+  //     ]
+  //   },
+  //   {
+  //     type: "quarterly",
+  //     title: "Quarterly Achievers",
+  //     unread: false,
+  //     data: [
+  //       {
+  //         name: "Rahul",
+  //         photo: "https://i.pravatar.cc/100?img=1"
+  //       },
+  //       {
+  //         name: "Arun",
+  //         photo: "https://i.pravatar.cc/100?img=2"
+  //       }
+  //     ]
+  //   },
+  //   {
+  //     type: "yearly",
+  //     title: "Yearly Achievers",
+  //     unread: false,
+  //     data: [
+  //       {
+  //         name: "Sneha",
+  //         photo: "https://i.pravatar.cc/100?img=3"
+  //       }
+  //     ]
+  //   }
+  // ]
   const notifications = [
     {
       type: "news",
       title: "New Notification",
       unread: true,
-      
-
-
- data: {
-    tasks: [
-      {
-        taskName: "System and study",
-        remark: "Make it clear vision about the system",
-        dueDate: "14 Jul 2026"
-      },
-      {
-        taskName: "Coding",
-        remark: "Customized coding needed",
-        dueDate: "15 Jul 2026"
+      data: {
+        tasks: notificationData.pendingTasks ?? [],
+        followups: notificationData.pendingFollowups ?? []
       }
-    ],
-    followups: [
-      {
-        customerName: "ABC Traders",
-        lastRemark: "Requested demo next week"
-      },
-      {
-        customerName: "XYZ Industries",
-        lastRemark: "Waiting for quotation approval"
-      }
-    ]
-  }
     },
     {
       type: "leave",
       title: "Today's Leave",
       unread: true,
-      data: [{ name: "Rahul" }, { name: "Arun" }, { name: "Sneha" }]
+      data: notificationData.leaves ?? []
     },
     {
       type: "birthday",
-      title: "Today's Birthdays",
+      title: "Birthdays",
       unread: false,
-      data: [
-        { name: "Rahul", dob: "11 Jul" },
-        { name: "Anu", dob: "11 Jul" }
-      ]
+      data: notificationData.birthdays ?? []
     },
     {
       type: "holiday",
       title: "Monthly Holidays",
       unread: false,
-      data: [
-        { holiday: "Bakrid", date: "12 Jul" },
-        { holiday: "Independence Day", date: "15 Aug" }
-      ]
+      data: notificationData.holidays ?? []
     },
     {
       type: "quarterly",
       title: "Quarterly Achievers",
       unread: false,
-      data: [
-        {
-          name: "Rahul",
-          photo: "https://i.pravatar.cc/100?img=1"
-        },
-        {
-          name: "Arun",
-          photo: "https://i.pravatar.cc/100?img=2"
-        }
-      ]
+      data: notificationData.quarterlyAchievers ?? []
     },
     {
       type: "yearly",
       title: "Yearly Achievers",
       unread: false,
-      data: [
-        {
-          name: "Sneha",
-          photo: "https://i.pravatar.cc/100?img=3"
-        }
-      ]
+      data: notificationData.yearlyAchievers ?? []
     }
   ]
-  
+ const formatDateToDDMMYYYY = (dateValue) => {
+    if (!dateValue) return ""
+    const date = new Date(dateValue)
+    if (Number.isNaN(date.getTime())) return ""
+    const day = String(date.getDate()).padStart(2, "0")
+    const month = String(date.getMonth() + 1).padStart(2, "0")
+    const year = date.getFullYear()
+    return `${day}-${month}-${year}`
+  }
+console.log(notifications)
+
   return (
     <div className="fixed bottom-3 right-3 z-50 flex w-72 max-h-[calc(100vh-24px)] flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
       {/* Header */}
@@ -1406,114 +1497,110 @@ const [showFollowups, setShowFollowups] = useState(false);
                     {item.title}
                   </h3>
 
-
                   {item.unread && (
                     <span className="h-1.5 w-1.5 rounded-full bg-blue-500"></span>
                   )}
                 </div>
-{item.type === "news" && (
-  <div className="space-y-2">
+                {item.type === "news" && (
+                  <div className="space-y-2">
+                    {/* Pending Tasks */}
+                    <div className="rounded-md border border-orange-500/20 bg-slate-700/40">
+                      <button
+                        onClick={() => setShowTasks(!showTasks)}
+                        className="flex w-full items-center justify-between px-3 py-2"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span>📋</span>
 
-   
+                          <span className="text-[11px] font-semibold text-orange-300">
+                            Pending Tasks
+                          </span>
 
-    {/* Pending Tasks */}
-    <div className="rounded-md border border-orange-500/20 bg-slate-700/40">
-      <button
-        onClick={() => setShowTasks(!showTasks)}
-        className="flex w-full items-center justify-between px-3 py-2"
-      >
-        <div className="flex items-center gap-2">
-          <span>📋</span>
+                          <span className="rounded bg-orange-500/20 px-1.5 py-0.5 text-[10px] text-orange-300">
+                            {item.data.tasks.length}
+                          </span>
+                        </div>
 
-          <span className="text-[11px] font-semibold text-orange-300">
-            Pending Tasks
-          </span>
+                        {showTasks ? (
+                          <ChevronUp size={15} className="text-slate-400" />
+                        ) : (
+                          <ChevronDown size={15} className="text-slate-400" />
+                        )}
+                      </button>
 
-          <span className="rounded bg-orange-500/20 px-1.5 py-0.5 text-[10px] text-orange-300">
-            {item.data.tasks.length}
-          </span>
-        </div>
+                      {showTasks && (
+                        <div className="space-y-1 border-t border-slate-600 px-2 py-2">
+                          {item.data.tasks.map((task, i) => (
+                            <div
+                              key={i}
+                              className="rounded bg-slate-800 px-2 py-1.5"
+                            >
+                              <div className="flex items-center justify-between">
+                                <p className="truncate text-[11px] font-medium text-white">
+                                  {task?.pendingTask?.taskName}
+                                </p>
 
-        {showTasks ? (
-          <ChevronUp size={15} className="text-slate-400" />
-        ) : (
-          <ChevronDown size={15} className="text-slate-400" />
-        )}
-      </button>
+                                <span className="text-[10px] font-medium text-red-400">
+                                  {formatDateToDDMMYYYY(task.dueDate)}
+                                </span>
+                              </div>
 
-      {showTasks && (
-        <div className="space-y-1 border-t border-slate-600 px-2 py-2">
-          {item.data.tasks.map((task, i) => (
-            <div
-              key={i}
-              className="rounded bg-slate-800 px-2 py-1.5"
-            >
-              <div className="flex items-center justify-between">
-                <p className="truncate text-[11px] font-medium text-white">
-                  {task.taskName}
-                </p>
+                              <p className="mt-0.5 truncate text-[10px] text-slate-400">
+                                {task.remark}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
 
-                <span className="text-[10px] font-medium text-red-400">
-                  {task.dueDate}
-                </span>
-              </div>
+                    {/* Pending Follow-ups */}
+                    <div className="rounded-md border border-blue-500/20 bg-slate-700/40">
+                      <button
+                        onClick={() => setShowFollowups(!showFollowups)}
+                        className="flex w-full items-center justify-between px-3 py-2"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span>📞</span>
 
-              <p className="mt-0.5 truncate text-[10px] text-slate-400">
-                {task.remark}
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+                          <span className="text-[11px] font-semibold text-blue-300">
+                            Pending Follow-ups
+                          </span>
 
-    {/* Pending Follow-ups */}
-    <div className="rounded-md border border-blue-500/20 bg-slate-700/40">
-      <button
-        onClick={() => setShowFollowups(!showFollowups)}
-        className="flex w-full items-center justify-between px-3 py-2"
-      >
-        <div className="flex items-center gap-2">
-          <span>📞</span>
+                          <span className="rounded bg-blue-500/20 px-1.5 py-0.5 text-[10px] text-blue-300">
+                            {item.data.followups.length}
+                          </span>
+                        </div>
 
-          <span className="text-[11px] font-semibold text-blue-300">
-            Pending Follow-ups
-          </span>
+                        {showFollowups ? (
+                          <ChevronUp size={15} className="text-slate-400" />
+                        ) : (
+                          <ChevronDown size={15} className="text-slate-400" />
+                        )}
+                      </button>
 
-          <span className="rounded bg-blue-500/20 px-1.5 py-0.5 text-[10px] text-blue-300">
-            {item.data.followups.length}
-          </span>
-        </div>
+                      {showFollowups && (
+                        <div className="space-y-1 border-t border-slate-600 px-2 py-2">
+                          {item.data.followups.map((followup, i) => (
+                            <div
+                              key={i}
+                              className="rounded bg-slate-800 px-2 py-1.5"
+                            >
+                              <p className="truncate text-[11px] font-medium text-white">
+                                {followup.customerName?.customerName.toUpperCase()}
+                              </p>
 
-        {showFollowups ? (
-          <ChevronUp size={15} className="text-slate-400" />
-        ) : (
-          <ChevronDown size={15} className="text-slate-400" />
-        )}
-      </button>
-
-      {showFollowups && (
-        <div className="space-y-1 border-t border-slate-600 px-2 py-2">
-          {item.data.followups.map((followup, i) => (
-            <div
-              key={i}
-              className="rounded bg-slate-800 px-2 py-1.5"
-            >
-              <p className="truncate text-[11px] font-medium text-white">
-                {followup.customerName}
-              </p>
-
-              <p className="mt-0.5 truncate text-[10px] text-slate-400">
-                {followup.lastRemark}
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  </div>
-)}
-{/* {item.type === "news" && (
+                              <p className="mt-0.5 truncate text-[10px] text-slate-400">
+                                {followup.lastRemark}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {/* {item.type === "news" && (
   <div className="space-y-2">
 
   
@@ -1592,7 +1679,7 @@ const [showFollowups, setShowFollowups] = useState(false);
                         key={i}
                         className="rounded-md bg-slate-700 px-2 py-1 text-xs text-slate-200"
                       >
-                        {staff.name}
+                        {staff.name.toUpperCase()}
                       </div>
                     ))}
                   </div>
@@ -1607,7 +1694,7 @@ const [showFollowups, setShowFollowups] = useState(false);
                         className="flex items-center justify-between rounded-md bg-slate-700 px-2 py-1"
                       >
                         <span className="text-xs text-white">
-                          🎂 {staff.name}
+                          🎂 {staff.name.toUpperCase()}
                         </span>
 
                         <span className="text-[10px] text-slate-300">
@@ -1678,13 +1765,15 @@ const [showFollowups, setShowFollowups] = useState(false);
 const DEFAULT_COLLECTIONS = [
   {
     key: "today",
+    startDate: new Date(),
+    endDate: new Date(),
     label: "Today's Collection",
     subtext: "Payments verified today",
     amount: 18450,
     count: 6,
     icon: CalendarDays,
-    accent: "teal",
-  },
+    accent: "teal"
+  }
   // {
   //   key: "week",
   //   label: "This Week",
@@ -1712,76 +1801,103 @@ const DEFAULT_COLLECTIONS = [
   //   icon: PiggyBank,
   //   accent: "amber",
   // },
-];
+]
+console.log(DEFAULT_COLLECTIONS)
 
 const ACCENTS = {
-  teal: { icon: "bg-teal-50 text-teal-600", btn: "bg-teal-50 text-teal-700 hover:bg-teal-100" },
-  indigo: { icon: "bg-indigo-50 text-indigo-600", btn: "bg-indigo-50 text-indigo-700 hover:bg-indigo-100" },
-  violet: { icon: "bg-violet-50 text-violet-600", btn: "bg-violet-50 text-violet-700 hover:bg-violet-100" },
-  amber: { icon: "bg-amber-50 text-amber-600", btn: "bg-amber-50 text-amber-700 hover:bg-amber-100" },
-};
+  teal: {
+    icon: "bg-teal-50 text-teal-600",
+    btn: "bg-teal-50 text-teal-700 hover:bg-teal-100"
+  },
+  indigo: {
+    icon: "bg-indigo-50 text-indigo-600",
+    btn: "bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
+  },
+  violet: {
+    icon: "bg-violet-50 text-violet-600",
+    btn: "bg-violet-50 text-violet-700 hover:bg-violet-100"
+  },
+  amber: {
+    icon: "bg-amber-50 text-amber-600",
+    btn: "bg-amber-50 text-amber-700 hover:bg-amber-100"
+  }
+}
 
 function formatINR(value) {
-  return new Intl.NumberFormat("en-IN").format(value);
+  return new Intl.NumberFormat("en-IN").format(value)
 }
 
 function CollectionDetails({
   collections = DEFAULT_COLLECTIONS,
-  basePath = "/staff/reports/collection-details",
+  basePath = "/staff/transaction/lead/verifiedCollections"
 }) {
-  const navigate = useNavigate();
+  console.log(collections)
+  const navigate = useNavigate()
 
   function handleNavigate(item) {
-    navigate(basePath, { state: { period: item.key, label: item.label } });
+    console.log(item)
+
+    navigate(basePath, {
+      state: {
+        startDate: item?.startDate,
+        endDate: item?.endDate,
+        label: item.label
+      }
+    })
   }
 
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-base font-bold text-slate-900">Collection Details</h3>
-          <p className="text-xs text-slate-400 mt-0.5">Tap an amount to view the full breakdown</p>
+          <h3 className="text-base font-bold text-slate-900">
+            Collection Details
+          </h3>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Tap an amount to view the full breakdown
+          </p>
         </div>
       </div>
 
       <div className=" gap-4">
         {collections.map((item) => {
-          const Icon = item.icon;
-          const accent = ACCENTS[item.accent] || ACCENTS.teal;
+          const Icon = item.icon
+          const accent = ACCENTS[item.accent] || ACCENTS.teal
           return (
             <div
               key={item.key}
               className="rounded-xl border border-slate-100 p-4 flex flex-col gap-3 hover:shadow-md hover:border-slate-200 transition-all"
             >
               <div className="flex items-center justify-between gap-2.5">
-                <span className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${accent.icon}`}>
+                <span
+                  className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${accent.icon}`}
+                >
                   <Icon className="w-4.5 h-4.5" />
                 </span>
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-slate-800 truncate">{item.label}</p>
-                  <p className="text-[11px] text-slate-400 truncate">{item.subtext}</p>
+                  <p className="text-sm font-semibold text-slate-800 truncate">
+                    {item.label}
+                  </p>
+                  <p className="text-[11px] text-slate-400 truncate">
+                    {item.subtext}
+                  </p>
                 </div>
- <button
-                onClick={() => handleNavigate(item)}
-                className={`group inline-flex items-center justify-between gap-2 rounded-lg px-3 py-2 font-semibold text-sm transition-colors ${accent.btn}`}
-              >
-                <span className="inline-flex items-center gap-1 tabular-nums">
-                  <IndianRupee className="w-3.5 h-3.5" />
-                  {formatINR(item.amount)}
-                </span>
-                <span className="inline-flex items-center gap-0.5 text-[11px] font-medium opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all">
-                  {item.count} {item.count === 1 ? "entry" : "entries"}
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </span>
-              </button>
-              </div>
+                <button
+                  onClick={() => handleNavigate(item)}
+                  className={`group inline-flex items-center justify-between gap-2 rounded-lg px-3 py-2 font-semibold text-sm transition-colors ${accent.btn}`}
+                >
+                  <span className="inline-flex items-center gap-1 tabular-nums">
+                    <IndianRupee className="w-3.5 h-3.5" />
+                    {formatINR(item.amount)}
+                  </span>
 
-             
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
-          );
+          )
         })}
       </div>
     </div>
-  );
+  )
 }
-

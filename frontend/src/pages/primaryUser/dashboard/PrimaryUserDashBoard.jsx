@@ -767,8 +767,6 @@
 //   )
 // }
 
-
-
 import { useEffect, useState, useRef } from "react"
 import {
   MdSupportAgent,
@@ -783,7 +781,8 @@ import { Link } from "react-router-dom"
 import UseFetch from "../../../hooks/useFetch"
 import { getLocalStorageItem } from "../../../helper/localstorage"
 import api from "../../../api/api"
-
+import AnnouncementModal from "../../../components/primaryUser/AnnouncementModal"
+import AnnouncementBanner from "../../../components/primaryUser/AnnouncementBanner"
 export default function PrimaryUserDashBoard() {
   const [leaveList, setTodayLeaveList] = useState([])
   const [announcement, setAnnouncementText] = useState("")
@@ -803,14 +802,15 @@ export default function PrimaryUserDashBoard() {
   const [birthdayPerson, setBirthdayPerson] = useState(null)
   const [currentyearholydays, setcurrentyearHoliday] = useState([])
   const headerRef = useRef(null)
-
+  const [openannoucementpopup, setopenannoucementpopup] = useState(false)
+  console.log(openannoucementpopup)
   const { data: todayleavelist } = UseFetch("/auth/getallUsersLeave?today=true")
   const { data: currrentMonthBirthDays } = UseFetch(
     "/auth/getallcurrentmonthBirthdays"
   )
 
-console.log(currentyearholydays)
-console.log(currrentMonthBirthDays)
+  console.log(currentyearholydays)
+  console.log(currrentMonthBirthDays)
   const { data: todayOnsite } = UseFetch("/auth/getallUsersOnsite?today=true")
   const { data: staffs } = UseFetch("/auth/getallStaffs")
   const { data: acheivementlist, refreshHook } = UseFetch(
@@ -943,7 +943,10 @@ console.log(currrentMonthBirthDays)
   const cards = [
     {
       label: "support department",
-      to: user?.role==="Admin"?"/admin/support&department":"/staff/support&department",
+      to:
+        user?.role === "Admin"
+          ? "/admin/support&department"
+          : "/staff/support&department",
       icon: MdSupportAgent,
       show: true
     },
@@ -1095,6 +1098,24 @@ console.log(currrentMonthBirthDays)
               </button>
             </div>
           </div>
+        </div>
+      )}
+{openannoucementpopup&&(
+<AnnouncementModal
+open={openannoucementpopup}
+    onClose={() => setopenannoucementpopup(false)}
+    onSuccess={(saved) => {
+      // e.g. refetch announcementlist here, or push `saved` into it
+      setopenannoucementpopup(false);
+    }}
+
+/>)}
+      {announcementlist && announcementlist.length && (
+        <div className="mb-2 mx-2">
+          <AnnouncementBanner
+            announcementlist={announcementlist}
+            setopenannoucementpopup={setopenannoucementpopup}
+          />
         </div>
       )}
 
