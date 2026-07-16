@@ -1,4 +1,3 @@
-
 import React, { useEffect, useMemo, useState, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import Select from "react-select"
@@ -86,8 +85,8 @@ const CustomerAdd = ({
   )
 
   const [detailsData, setdetailsData] = useState({})
-const [isSaved, setIsSaved] = useState(false);
-console.log(isSaved)
+  const [isSaved, setIsSaved] = useState(false)
+  console.log(isSaved)
   const [duplicatelicense, setduplicatelicense] = useState(null)
   const debounceTimersRef = useRef({})
   const [submissionloader, setsubmissionloader] = useState(false)
@@ -98,7 +97,7 @@ console.log(isSaved)
   const [partner, setPartner] = useState([])
   const [license, setLicense] = useState([])
   const [tableData, setTableData] = useState([])
-console.log(tableData)
+  console.log(tableData)
   const [initialTableData, setInitialTableData] = useState([])
   const [licenseAvailable, setLicenseAvailable] = useState(true)
   const [showProductPopup, setShowProductPopup] = useState(false)
@@ -292,8 +291,8 @@ console.log(tableData)
   }
 
   useEffect(() => {
-    if (customer&&process==="edit"&&!isSaved) {
-console.log("hhhh")
+    if (customer && process === "edit" && !isSaved) {
+      console.log("hhhh")
       reset({
         customerName: customer?.customerName || "",
         address1: customer?.address1 || "",
@@ -368,12 +367,12 @@ console.log("hhhh")
       setTableData(selectedData)
       setInitialTableData(selectedData)
     } else {
-console.log("hhhh")
+      console.log("hhhh")
       setInitialTableData([])
     }
   }, [customer, reset])
-console.log(tableData)
-console.log(initialTableData)
+  console.log(tableData)
+  console.log(initialTableData)
   useEffect(() => {
     if (!debouncedLicenseNo || !String(debouncedLicenseNo).trim()) return
 
@@ -596,7 +595,7 @@ console.log(initialTableData)
       item?.taggeddata?.map((entry) => String(entry?.licensenumber)) ||
       item?.taggedLicenses ||
       []
-console.log(item.taggeddata)
+    console.log(item.taggeddata)
     const taggedLicenseDueDatesFromData =
       item?.taggeddata?.reduce((acc, entry) => {
         if (entry?.licensenumber) {
@@ -606,10 +605,10 @@ console.log(item.taggeddata)
             taxexclusiveAmount: entry?.taxexclusiveAmount ?? 0,
             taxinclusiveamount: entry?.taxinclusiveamount ?? 0,
             hsn: entry?.hsn ?? 0,
-nextDueTax:entry?.nextDueTax??0,
-originalHsn:entry?.originalHsn??0,
-serialNumber:entry?.serialNumber??"",
-noofusers:entry?.noofusers??0
+            nextDueTax: entry?.nextDueTax ?? 0,
+            originalHsn: entry?.originalHsn ?? 0,
+            serialNumber: entry?.serialNumber ?? "",
+            noofusers: entry?.noofusers ?? 0
           }
         }
         return acc
@@ -813,7 +812,7 @@ noofusers:entry?.noofusers??0
         return
       }
     }
-console.log(dueMap)
+    console.log(dueMap)
     const taggeddata =
       popupType === "Additionalservice" && selectedTaggedLicenses.length > 0
         ? selectedTaggedLicenses.map((licenseNo) => ({
@@ -825,15 +824,13 @@ console.log(dueMap)
             taxexclusiveAmount: Number(
               dueMap[String(licenseNo)]?.taxexclusiveAmount || 0
             ),
-noofusers:Number( dueMap[String(licenseNo)]?.noofusers || 0),
-nextDueTax:Number( dueMap[String(licenseNo)]?.nextDueTax || 0),
-actualHsn:Number( dueMap[String(licenseNo)]?.originalHsn || 0),
-originalHsn:Number( dueMap[String(licenseNo)]?.originalHsn || 0),
-leadTax:Number( dueMap[String(licenseNo)]?.nextDueTax || 0),
-serialNumber: dueMap[String(licenseNo)]?.serialNumber ,
-hsn: Number(
-              dueMap[String(licenseNo)]?.hsn || 0
-            ),
+            noofusers: Number(dueMap[String(licenseNo)]?.noofusers || 0),
+            nextDueTax: Number(dueMap[String(licenseNo)]?.nextDueTax || 0),
+            actualHsn: Number(dueMap[String(licenseNo)]?.originalHsn || 0),
+            originalHsn: Number(dueMap[String(licenseNo)]?.originalHsn || 0),
+            leadTax: Number(dueMap[String(licenseNo)]?.nextDueTax || 0),
+            serialNumber: dueMap[String(licenseNo)]?.serialNumber,
+            hsn: Number(dueMap[String(licenseNo)]?.hsn || 0),
 
             taxinclusiveamount: Number(
               dueMap[String(licenseNo)]?.taxinclusiveamount || 0
@@ -1035,51 +1032,50 @@ hsn: Number(
         await handleCustomerData(data, tableData)
         reset()
         setTableData([])
-setIsSaved(true)
+        setIsSaved(true)
         setInitialTableData([])
-console.log("")
+        console.log("")
       } else if (process === "edit") {
-console.log(data)
-console.log(tableData)
-console.log(customer?.index)
+        console.log(data)
+        console.log(tableData)
+        console.log(customer?.index)
         await handleEditedData(data, tableData, customer?.index)
-       
- reset({
-        customerName: "",
-        address1:  "",
-        address2:  "",
-        country: "",
-        state: "",
-        city:"",
-        pincode:  "",
-        contactPerson: "",
-        email:  "",
-        mobile: "",
-        landline:  "",
-        partner: "",
-        industry: "",
-        registrationType:"",
-        gstNo: "",
-        productName: null,
-        companyName: null,
-        branchName: null,
-        licensenumber: "",
-        softwareTrade: "",
-        applicationDate: "",
-        nextDue: "",
-        noofusers: "",
-        productAmount: "",
-        isActive: "Running",
-        taggedLicenses: [],
-        taggedLicenseDueDates: {}
-      })
-console.log(
-"hhh")
- setTableData([])
+
+        reset({
+          customerName: "",
+          address1: "",
+          address2: "",
+          country: "",
+          state: "",
+          city: "",
+          pincode: "",
+          contactPerson: "",
+          email: "",
+          mobile: "",
+          landline: "",
+          partner: "",
+          industry: "",
+          registrationType: "",
+          gstNo: "",
+          productName: null,
+          companyName: null,
+          branchName: null,
+          licensenumber: "",
+          softwareTrade: "",
+          applicationDate: "",
+          nextDue: "",
+          noofusers: "",
+          productAmount: "",
+          isActive: "Running",
+          taggedLicenses: [],
+          taggedLicenseDueDates: {}
+        })
+        console.log("hhh")
+        setTableData([])
         setInitialTableData([])
-setIsSaved(true)
-navigate(-1)
-console.log("hhh")
+        setIsSaved(true)
+        // navigate(-1)
+        console.log("hhh")
       }
     } catch (error) {
       toast.error("Failed to save customer!")
@@ -1652,551 +1648,685 @@ console.log("hhh")
         title="Leave without saving?"
         description="You have unsaved customer details. If you continue, the entered data will be lost."
       />
-     {showProductPopup && (
-  <div className="fixed inset-0 z-50 bg-black/30 p-2 sm:p-3">
-    <div className="flex min-h-full items-center justify-center">
-      <div
-        className={`flex max-h-[92vh] w-full flex-col overflow-hidden rounded-[14px] bg-white shadow-2xl transition-all ${
-          popupType === "Additionalservice" && hasTaggedLicenses
-            ? "max-w-4xl"
-            : "max-w-3xl"
-        }`}
-      >
-        <div className="flex shrink-0 items-center justify-between border-b border-[#edf1f7] px-3 py-2.5">
-          <div>
-            <h3 className="text-[14px] font-semibold text-[#162033]">
-              {popupType === "Primaryproduct" ? "Primary Product" : "Additional Service"}
-            </h3>
-            <p className="text-[10px] text-[#7f8aa3]">Add product or service details</p>
-          </div>
+      {showProductPopup && (
+        <div className="fixed inset-0 z-50 bg-black/30 p-2 sm:p-3">
+          <div className="flex min-h-full items-center justify-center">
+            <div
+              className={`flex max-h-[92vh] w-full flex-col overflow-hidden rounded-[14px] bg-white shadow-2xl transition-all ${
+                popupType === "Additionalservice" && hasTaggedLicenses
+                  ? "max-w-4xl"
+                  : "max-w-3xl"
+              }`}
+            >
+              <div className="flex shrink-0 items-center justify-between border-b border-[#edf1f7] px-3 py-2.5">
+                <div>
+                  <h3 className="text-[14px] font-semibold text-[#162033]">
+                    {popupType === "Primaryproduct"
+                      ? "Primary Product"
+                      : "Additional Service"}
+                  </h3>
+                  <p className="text-[10px] text-[#7f8aa3]">
+                    Add product or service details
+                  </p>
+                </div>
 
-          <button
-            type="button"
-            onClick={closePopup}
-            className="rounded-full p-1 text-[#7f8aa3] hover:bg-[#f4f7fb]"
-          >
-            <FaTimes size={14} />
-          </button>
-        </div>
+                <button
+                  type="button"
+                  onClick={closePopup}
+                  className="rounded-full p-1 text-[#7f8aa3] hover:bg-[#f4f7fb]"
+                >
+                  <FaTimes size={14} />
+                </button>
+              </div>
 
-        <div className="flex-1 overflow-y-auto px-3 py-2.5">
-          <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-[11px] font-medium text-[#5d6983]">
-                Product / Service
-              </label>
-              <Controller
-                name="productName"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    {...field}
-                    options={filteredOptionsByType}
-                    value={field.value}
-                    onChange={(option) => {
-                      field.onChange(option)
-                      handleProductChange(option)
-                    }}
-                    placeholder="Select name"
-                    styles={compactSelectStyles}
-                  />
-                )}
-              />
-            </div>
+              <div className="flex-1 overflow-y-auto px-3 py-2.5">
+                <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-[11px] font-medium text-[#5d6983]">
+                      Product / Service
+                    </label>
+                    <Controller
+                      name="productName"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          {...field}
+                          options={filteredOptionsByType}
+                          value={field.value}
+                          onChange={(option) => {
+                            field.onChange(option)
+                            handleProductChange(option)
+                          }}
+                          placeholder="Select name"
+                          styles={compactSelectStyles}
+                        />
+                      )}
+                    />
+                  </div>
 
-            <PopupField label="Short Name" error={errors.shortName?.message}>
-              <input
-                readOnly
-                {...register("shortName")}
-                className="w-full cursor-not-allowed rounded-[8px] border border-[#dfe5ee] bg-[#f3f6fb] px-2.5 py-1.5 text-[12px] text-[#1f2a3d] outline-none"
-                placeholder="Enter Short Name"
-              />
-            </PopupField>
+                  <PopupField
+                    label="Short Name"
+                    error={errors.shortName?.message}
+                  >
+                    <input
+                      readOnly
+                      {...register("shortName")}
+                      className="w-full cursor-not-allowed rounded-[8px] border border-[#dfe5ee] bg-[#f3f6fb] px-2.5 py-1.5 text-[12px] text-[#1f2a3d] outline-none"
+                      placeholder="Enter Short Name"
+                    />
+                  </PopupField>
 
-            {popupType === "Primaryproduct" && (
-              <PopupField
-                label="License Number"
-                error={
-                  errors.licensenumber?.message ||
-                  (!licenseAvailable && watchedLicense ? "License number already exists" : "")
-                }
-              >
-                <input
-                  {...register("licensenumber")}
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  readOnly={hasTaggedLicenses}
-                  className={`${compactPopupInputClass} ${
-                    hasTaggedLicenses ? "cursor-not-allowed bg-[#f3f6fb]" : ""
-                  }`}
-                  placeholder="Enter license number"
-                  onKeyDown={(e) => {
-                    if (hasTaggedLicenses) return
+                  {popupType === "Primaryproduct" && (
+                    <PopupField
+                      label="License Number"
+                      error={
+                        errors.licensenumber?.message ||
+                        (!licenseAvailable && watchedLicense
+                          ? "License number already exists"
+                          : "")
+                      }
+                    >
+                      <input
+                        {...register("licensenumber")}
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        readOnly={hasTaggedLicenses}
+                        className={`${compactPopupInputClass} ${
+                          hasTaggedLicenses
+                            ? "cursor-not-allowed bg-[#f3f6fb]"
+                            : ""
+                        }`}
+                        placeholder="Enter license number"
+                        onKeyDown={(e) => {
+                          if (hasTaggedLicenses) return
 
-                    const allowedKeys = [
-                      "Backspace",
-                      "Delete",
-                      "Tab",
-                      "ArrowLeft",
-                      "ArrowRight",
-                      "Home",
-                      "End",
-"Control",
-    "Meta"
-                    ]
-// allow shortcuts like Ctrl+C, Ctrl+V, Ctrl+A
-  if (
-    (e.ctrlKey || e.metaKey) &&
-    ["a", "c", "v", "x"].includes(e.key.toLowerCase())
-  ) {
-    return
-  }
+                          const allowedKeys = [
+                            "Backspace",
+                            "Delete",
+                            "Tab",
+                            "ArrowLeft",
+                            "ArrowRight",
+                            "Home",
+                            "End",
+                            "Control",
+                            "Meta"
+                          ]
+                          // allow shortcuts like Ctrl+C, Ctrl+V, Ctrl+A
+                          if (
+                            (e.ctrlKey || e.metaKey) &&
+                            ["a", "c", "v", "x"].includes(e.key.toLowerCase())
+                          ) {
+                            return
+                          }
 
-                    if (allowedKeys.includes(e.key)) return
+                          if (allowedKeys.includes(e.key)) return
 
-                    if (!/^\d$/.test(e.key)) {
-                      e.preventDefault()
-                    }
-                  }}
-                  onChange={(e) => {
-                    if (hasTaggedLicenses) return
+                          if (!/^\d$/.test(e.key)) {
+                            e.preventDefault()
+                          }
+                        }}
+                        onChange={(e) => {
+                          if (hasTaggedLicenses) return
 
-                    const numericValue = e.target.value.replace(/\D/g, "")
-                    setValue("licensenumber", numericValue, {
-                      shouldValidate: true,
-                      shouldDirty: true
-                    })
+                          const numericValue = e.target.value.replace(/\D/g, "")
+                          setValue("licensenumber", numericValue, {
+                            shouldValidate: true,
+                            shouldDirty: true
+                          })
 
-                    let index = 0
-                    if (popupType === "Primaryproduct") {
-                      if (primaryProducts.length > 0) index++
-                    } else if (popupType === "Additionalservice") {
-                      if (additionalServices.length > 0) index++
-                    }
+                          let index = 0
+                          if (popupType === "Primaryproduct") {
+                            if (primaryProducts.length > 0) index++
+                          } else if (popupType === "Additionalservice") {
+                            if (additionalServices.length > 0) index++
+                          }
 
-                    if (debounceTimersRef.current[index]) {
-                      clearTimeout(debounceTimersRef.current[index])
-                    }
+                          if (debounceTimersRef.current[index]) {
+                            clearTimeout(debounceTimersRef.current[index])
+                          }
 
-                    debounceTimersRef.current[index] = setTimeout(() => {
-                      handleLicenseBlur(numericValue)
-                      delete debounceTimersRef.current[index]
-                    }, 1000)
+                          debounceTimersRef.current[index] = setTimeout(() => {
+                            handleLicenseBlur(numericValue)
+                            delete debounceTimersRef.current[index]
+                          }, 1000)
 
-                    clearErrors("licensenumber")
-                  }}
-                />
-              </PopupField>
-            )}
+                          clearErrors("licensenumber")
+                        }}
+                      />
+                    </PopupField>
+                  )}
 
-            {popupType === "Primaryproduct" && (
-              <PopupField label="Software Trade">
-                <select {...register("softwareTrade")} className={compactPopupInputClass}>
-                  <option value="">Select Software Trade</option>
-                  {softwareTrades.map((trade, index) => (
-                    <option key={index} value={trade}>
-                      {trade}
-                    </option>
-                  ))}
-                </select>
-              </PopupField>
-            )}
+                  {popupType === "Primaryproduct" && (
+                    <PopupField label="Software Trade">
+                      <select
+                        {...register("softwareTrade")}
+                        className={compactPopupInputClass}
+                      >
+                        <option value="">Select Software Trade</option>
+                        {softwareTrades.map((trade, index) => (
+                          <option key={index} value={trade}>
+                            {trade}
+                          </option>
+                        ))}
+                      </select>
+                    </PopupField>
+                  )}
 
-            {popupType === "Primaryproduct" && (
-              <PopupField label="Application Date">
-                <input type="date" {...register("applicationDate")} className={compactPopupInputClass} />
-              </PopupField>
-            )}
+                  {popupType === "Primaryproduct" && (
+                    <PopupField label="Application Date">
+                      <input
+                        type="date"
+                        {...register("applicationDate")}
+                        className={compactPopupInputClass}
+                      />
+                    </PopupField>
+                  )}
 
-            {popupType === "Additionalservice" && (
-              <PopupField label="No of Quantity / Users">
-                <input
-                  type="number"
-                  {...register("noofusers")}
-                  onWheel={(e) => e.currentTarget.blur()}
-                  className={`${compactPopupInputClass} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0`}
-                />
-              </PopupField>
-            )}
+                  {popupType === "Additionalservice" && (
+                    <PopupField label="No of Quantity / Users">
+                      <input
+                        type="number"
+                        {...register("noofusers")}
+                        onWheel={(e) => e.currentTarget.blur()}
+                        className={`${compactPopupInputClass} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0`}
+                      />
+                    </PopupField>
+                  )}
 
-            {popupType === "Primaryproduct" && (
-              <PopupField label="Amount">
-                <input
-                  type="number"
-                  {...register("productAmount")}
-                  className={`${compactPopupInputClass} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0`}
-                />
-              </PopupField>
-            )}
+                  {popupType === "Primaryproduct" && (
+                    <PopupField label="Amount">
+                      <input
+                        type="number"
+                        {...register("productAmount")}
+                        className={`${compactPopupInputClass} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0`}
+                      />
+                    </PopupField>
+                  )}
 
-            <PopupField label="Status">
-              <select {...register("isActive")} className={compactPopupInputClass}>
-                <option value="Running">Active</option>
-                <option value="Deactive">Deactive</option>
-              </select>
-            </PopupField>
+                  <PopupField label="Status">
+                    <select
+                      {...register("isActive")}
+                      className={compactPopupInputClass}
+                    >
+                      <option value="Running">Active</option>
+                      <option value="Deactive">Deactive</option>
+                    </select>
+                  </PopupField>
 
-            {popupType === "Additionalservice" && (
-              <div className="md:col-span-2">
-                <label className="mb-1 block text-[11px] font-medium text-[#5d6983]">
-                  Tagged License Numbers
-                </label>
+                  {popupType === "Additionalservice" && (
+                    <div className="md:col-span-2">
+                      <label className="mb-1 block text-[11px] font-medium text-[#5d6983]">
+                        Tagged License Numbers
+                      </label>
 
-                <div className="max-h-28 overflow-y-auto rounded-[8px] border border-[#e7ebf4] bg-[#fafcff] p-2">
-                  {primaryLicenseOptions.length > 0 ? (
-                    <div className="grid grid-cols-1 gap-1.5 md:grid-cols-2">
-                      {primaryLicenseOptions.map((option) => {
-                        const selectedTaggedLicenses = watch("taggedLicenses") || []
-                        const checked = selectedTaggedLicenses.includes(String(option.licenseNo))
+                      <div className="max-h-28 overflow-y-auto rounded-[8px] border border-[#e7ebf4] bg-[#fafcff] p-2">
+                        {primaryLicenseOptions.length > 0 ? (
+                          <div className="grid grid-cols-1 gap-1.5 md:grid-cols-2">
+                            {primaryLicenseOptions.map((option) => {
+                              const selectedTaggedLicenses =
+                                watch("taggedLicenses") || []
+                              const checked = selectedTaggedLicenses.includes(
+                                String(option.licenseNo)
+                              )
 
-                        return (
-                          <label
-                            key={option.licenseNo}
-                            className="flex items-center gap-2 rounded-md border border-[#edf1f7] bg-white px-2 py-1.5 text-[11px] text-[#4f5d78]"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={(e) => {
-                                const licenseNo = String(option.licenseNo)
-                                const prev = watch("taggedLicenses") || []
-                                const dueMap = watch("taggedLicenseDueDates") || {}
-console.log(dueMap)
-                                if (e.target.checked) {
-                                  setValue("taggedLicenses", [...prev, licenseNo], {
-                                    shouldDirty: true
-                                  })
-                                  setValue("licensenumber", "", { shouldDirty: true })
-                                  setValue(
-                                    "taggedLicenseDueDates",
-                                    {
-                                      ...dueMap,
-                                      [licenseNo]: dueMap[licenseNo] || ""
-                                    },
-                                    { shouldDirty: true }
-                                  )
-console.log(detailsData.taggeddata)
-                                  const matched = detailsData?.taggeddata?.find(
-                                    (item) => String(item.licensenumber) === licenseNo
-                                  )
-console.log(matched)
+                              return (
+                                <label
+                                  key={option.licenseNo}
+                                  className="flex items-center gap-2 rounded-md border border-[#edf1f7] bg-white px-2 py-1.5 text-[11px] text-[#4f5d78]"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={(e) => {
+                                      const licenseNo = String(option.licenseNo)
+                                      const prev = watch("taggedLicenses") || []
+                                      const dueMap =
+                                        watch("taggedLicenseDueDates") || {}
+                                      console.log(dueMap)
+                                      if (e.target.checked) {
+                                        setValue(
+                                          "taggedLicenses",
+                                          [...prev, licenseNo],
+                                          {
+                                            shouldDirty: true
+                                          }
+                                        )
+                                        setValue("licensenumber", "", {
+                                          shouldDirty: true
+                                        })
+                                        setValue(
+                                          "taggedLicenseDueDates",
+                                          {
+                                            ...dueMap,
+                                            [licenseNo]: dueMap[licenseNo] || ""
+                                          },
+                                          { shouldDirty: true }
+                                        )
+                                        console.log(detailsData.taggeddata)
+                                        const matched =
+                                          detailsData?.taggeddata?.find(
+                                            (item) =>
+                                              String(item.licensenumber) ===
+                                              licenseNo
+                                          )
+                                        console.log(matched)
 
-                                  if (matched) {
-console.log("hh")
-                                    const currentValues = getValues()
+                                        if (matched) {
+                                          console.log("hh")
+                                          const currentValues = getValues()
 
-                                    reset({
-                                      ...currentValues,
-                                      taggedLicenseDueDates: {
-                                        ...currentValues.taggedLicenseDueDates,
-                                        [licenseNo]: {
-                                          nextDue: matched.nextDue || "",
-                                          productAmount: matched.productAmount ?? "",
-                                          taxexclusiveAmount: matched.taxexclusiveAmount ?? "",
-                                          taxinclusiveamount: matched.taxinclusiveamount ?? "",
-                                          hsn: matched.hsn ?? ""
+                                          reset({
+                                            ...currentValues,
+                                            taggedLicenseDueDates: {
+                                              ...currentValues.taggedLicenseDueDates,
+                                              [licenseNo]: {
+                                                nextDue: matched.nextDue || "",
+                                                productAmount:
+                                                  matched.productAmount ?? "",
+                                                taxexclusiveAmount:
+                                                  matched.taxexclusiveAmount ??
+                                                  "",
+                                                taxinclusiveamount:
+                                                  matched.taxinclusiveamount ??
+                                                  "",
+                                                hsn: matched.hsn ?? ""
+                                              }
+                                            }
+                                          })
+                                        } else {
+                                          const currentValues = getValues()
+                                          const filteredproduct =
+                                            productOptions.filter(
+                                              (item) =>
+                                                item.value ===
+                                                currentValues?.productName
+                                                  ?.value
+                                            )
+
+                                          reset({
+                                            ...currentValues,
+                                            taggedLicenseDueDates: {
+                                              ...currentValues.taggedLicenseDueDates,
+                                              [licenseNo]: {
+                                                nextDue: "",
+                                                productAmount: "",
+                                                taxexclusiveAmount:
+                                                  filteredproduct[0]
+                                                    ?.basePrice || 0,
+                                                taxinclusiveamount:
+                                                  filteredproduct[0]
+                                                    ?.productprice || 0,
+                                                hsn:
+                                                  filteredproduct[0]
+                                                    ?.igstRate || 0,
+                                                nextDueTax:
+                                                  filteredproduct[0]
+                                                    ?.igstRate || 0
+                                              }
+                                            }
+                                          })
+                                        }
+                                      } else {
+                                        const updatedLicenses = prev.filter(
+                                          (item) => String(item) !== licenseNo
+                                        )
+
+                                        const updatedDueMap = { ...dueMap }
+                                        delete updatedDueMap[licenseNo]
+
+                                        setValue(
+                                          "taggedLicenses",
+                                          updatedLicenses,
+                                          { shouldDirty: true }
+                                        )
+                                        setValue(
+                                          "taggedLicenseDueDates",
+                                          updatedDueMap,
+                                          {
+                                            shouldDirty: true
+                                          }
+                                        )
+
+                                        if (updatedLicenses.length === 0) {
+                                          setValue("licensenumber", "", {
+                                            shouldDirty: true
+                                          })
                                         }
                                       }
-                                    })
-                                  } else {
-                                    const currentValues = getValues()
-                                    const filteredproduct = productOptions.filter(
-                                      (item) => item.value === currentValues?.productName?.value
-                                    )
+                                    }}
+                                  />
 
-                                    reset({
-                                      ...currentValues,
-                                      taggedLicenseDueDates: {
-                                        ...currentValues.taggedLicenseDueDates,
-                                        [licenseNo]: {
-                                          nextDue: "",
-                                          productAmount: "",
-                                          taxexclusiveAmount: filteredproduct[0]?.basePrice || 0,
-                                          taxinclusiveamount: filteredproduct[0]?.productprice || 0,
-                                          hsn: filteredproduct[0]?.igstRate || 0,
-nextDueTax:filteredproduct[0]?.igstRate ||0
-                                        }
-                                      }
-                                    })
-                                  }
-                                } else {
-                                  const updatedLicenses = prev.filter(
-                                    (item) => String(item) !== licenseNo
-                                  )
-
-                                  const updatedDueMap = { ...dueMap }
-                                  delete updatedDueMap[licenseNo]
-
-                                  setValue("taggedLicenses", updatedLicenses, { shouldDirty: true })
-                                  setValue("taggedLicenseDueDates", updatedDueMap, {
-                                    shouldDirty: true
-                                  })
-
-                                  if (updatedLicenses.length === 0) {
-                                    setValue("licensenumber", "", { shouldDirty: true })
-                                  }
-                                }
-                              }}
-                            />
-
-                            <span>{option.licenseNo}</span>
-                            <span className="text-[#7b879c]">- {option.productName}</span>
-                          </label>
-                        )
-                      })}
+                                  <span>{option.licenseNo}</span>
+                                  <span className="text-[#7b879c]">
+                                    - {option.productName}
+                                  </span>
+                                </label>
+                              )
+                            })}
+                          </div>
+                        ) : (
+                          <p className="text-[11px] italic text-[#96a0b5]">
+                            No primary product license numbers available.
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  ) : (
-                    <p className="text-[11px] italic text-[#96a0b5]">
-                      No primary product license numbers available.
-                    </p>
+                  )}
+
+                  {popupType === "Additionalservice" && hasTaggedLicenses && (
+                    <div className="md:col-span-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                      <div className="border-b border-slate-200 px-4 py-3">
+                        <h3 className="text-sm font-semibold text-slate-800">
+                          Tagged License Due Details
+                        </h3>
+                        <p className="mt-0.5 text-[11px] text-slate-500">
+                          {watchedTaggedLicenses.length} license
+                          {watchedTaggedLicenses.length > 1 ? "s" : ""} tagged
+                          to this service
+                        </p>
+                      </div>
+
+                      <div className="w-full">
+                        <table className="w-full table-fixed border-collapse">
+                          <colgroup>
+                            <col style={{ width: "22%" }} /> {/* License No */}
+                            <col style={{ width: "12%" }} /> {/* Users */}
+                            <col style={{ width: "16%" }} /> {/* Serial No */}
+                            <col style={{ width: "20%" }} /> {/* Next Due */}
+                            <col style={{ width: "20%" }} />{" "}
+                            {/* Next Due Amt */}
+                            <col style={{ width: "10%" }} /> {/* Due Tax */}
+                          </colgroup>
+
+                          <thead className="bg-slate-100">
+                            <tr className="text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500">
+                              <th className="border-b border-slate-200 px-2 py-2.5 text-left">
+                                License No.
+                              </th>
+                              <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">
+                                Users
+                              </th>
+                              <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">
+                                Serial No
+                              </th>
+                              <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">
+                                Next Due
+                              </th>
+                              <th className="border-b border-slate-200 px-1.5 py-2.5 text-right">
+                                Next Due Amt
+                              </th>
+                              <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">
+                                Tax
+                              </th>
+                            </tr>
+                          </thead>
+
+                          <tbody className="divide-y divide-slate-100">
+                            {watchedTaggedLicenses.map((licenseNo) => (
+                              <tr
+                                key={licenseNo}
+                                className="align-top odd:bg-white even:bg-slate-50/60"
+                              >
+                                {/* License No */}
+                                <td className="px-2 py-2">
+                                  <input
+                                    value={licenseNo}
+                                    readOnly
+                                    title={licenseNo}
+                                    className="h-7 w-full cursor-not-allowed truncate rounded-md border border-slate-200 bg-slate-100 px-2 text-[11px] text-slate-500 outline-none"
+                                  />
+                                </td>
+
+                                {/* Users */}
+                                <td className="px-1.5 py-2">
+                                  <input
+                                    type="number"
+                                    value={
+                                      watchedTaggedLicenseDueDates?.[licenseNo]
+                                        ?.noofusers ?? ""
+                                    }
+                                    onChange={(e) => {
+                                      const dueMap =
+                                        watch("taggedLicenseDueDates") || {}
+
+                                      setValue(
+                                        "taggedLicenseDueDates",
+                                        {
+                                          ...dueMap,
+                                          [licenseNo]: {
+                                            ...dueMap[licenseNo],
+                                            noofusers: e.target.value
+                                          }
+                                        },
+                                        { shouldDirty: true }
+                                      )
+                                    }}
+                                    onWheel={(e) => e.currentTarget.blur()}
+                                    className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-center text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                  />
+                                </td>
+
+                                {/* Serial No */}
+                                <td className="px-1.5 py-2">
+                                  <input
+                                    type="text"
+                                    value={
+                                      watchedTaggedLicenseDueDates?.[licenseNo]
+                                        ?.serialNumber ?? ""
+                                    }
+                                    onChange={(e) => {
+                                      const dueMap =
+                                        watch("taggedLicenseDueDates") || {}
+
+                                      setValue(
+                                        "taggedLicenseDueDates",
+                                        {
+                                          ...dueMap,
+                                          [licenseNo]: {
+                                            ...dueMap[licenseNo],
+                                            serialNumber: e.target.value
+                                          }
+                                        },
+                                        { shouldDirty: true }
+                                      )
+                                    }}
+                                    className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-center text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10"
+                                  />
+                                </td>
+
+                                {/* Next Due (date) */}
+                                <td className="px-1.5 py-2">
+                                  <input
+                                    type="date"
+                                    value={formatDateForInput(
+                                      watchedTaggedLicenseDueDates?.[licenseNo]
+                                        ?.nextDue
+                                    )}
+                                    onChange={(e) => {
+                                      const dueMap =
+                                        watch("taggedLicenseDueDates") || {}
+
+                                      setValue(
+                                        "taggedLicenseDueDates",
+                                        {
+                                          ...dueMap,
+                                          [licenseNo]: {
+                                            ...dueMap[licenseNo],
+                                            nextDue: e.target.value
+                                          }
+                                        },
+                                        { shouldDirty: true }
+                                      )
+                                    }}
+                                    className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-center text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10"
+                                  />
+                                </td>
+
+                                {/* Next Due Amount (+ inclusive total underneath) — old tax-calc logic, no handleTaggedDueChange */}
+                                <td className="px-1.5 py-2">
+                                  <div className="space-y-0.5">
+                                    <input
+                                      type="number"
+                                      value={
+                                        watchedTaggedLicenseDueDates?.[
+                                          licenseNo
+                                        ]?.taxexclusiveAmount ?? ""
+                                      }
+                                      onWheel={(e) => e.currentTarget.blur()}
+                                      onKeyDown={(e) => {
+                                        if (
+                                          ["-", "+", "e", "E"].includes(e.key)
+                                        ) {
+                                          e.preventDefault()
+                                        }
+                                      }}
+                                      onChange={(e) => {
+                                        const inputValue = e.target.value
+                                        const dueMap =
+                                          watch("taggedLicenseDueDates") || {}
+                                        const matchedData = dueMap[licenseNo]
+
+                                        const isTaxApplied =
+                                          Number(matchedData?.nextDueTax || 0) >
+                                          0
+                                        const taxAmount = isTaxApplied
+                                          ? (Number(
+                                              matchedData?.hsn ||
+                                                matchedData?.originalHsn ||
+                                                0
+                                            ) /
+                                              100) *
+                                            Number(inputValue || 0)
+                                          : 0
+                                        const total = Math.round(
+                                          Number(inputValue || 0) + taxAmount
+                                        )
+
+                                        setValue(
+                                          "taggedLicenseDueDates",
+                                          {
+                                            ...dueMap,
+                                            [licenseNo]: {
+                                              ...matchedData,
+                                              taxexclusiveAmount: inputValue,
+                                              taxinclusiveamount: total,
+                                              productAmount: total
+                                            }
+                                          },
+                                          { shouldDirty: true }
+                                        )
+                                      }}
+                                      className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    />
+                                    <p className="truncate text-right text-[12px] text-slate-600">
+                                      {Number(
+                                        watchedTaggedLicenseDueDates?.[
+                                          licenseNo
+                                        ]?.taxinclusiveamount || 0
+                                      ).toFixed(2)}
+                                    </p>
+                                  </div>
+                                </td>
+
+                                {/* Due Tax — same watch/setValue pattern, recalculates the amount fields when toggled */}
+                                <td className="px-1.5 py-2">
+                                  <div className="flex justify-center pt-1">
+                                    <label className="inline-flex cursor-pointer items-center justify-center">
+                                      <input
+                                        type="checkbox"
+                                        checked={
+                                          Number(
+                                            watchedTaggedLicenseDueDates?.[
+                                              licenseNo
+                                            ]?.nextDueTax || 0
+                                          ) > 0
+                                        }
+                                        onChange={(e) => {
+                                          const checked = e.target.checked
+                                          console.log(checked)
+                                          const dueMap =
+                                            watch("taggedLicenseDueDates") || {}
+                                          const matchedData = dueMap[licenseNo]
+                                          const hsn = Number(
+                                            matchedData?.hsn ||
+                                              matchedData?.originalHsn ||
+                                              0
+                                          )
+                                          console.log(hsn)
+                                          const exclusiveAmount = Number(
+                                            matchedData?.taxexclusiveAmount || 0
+                                          )
+
+                                          const taxAmount = checked
+                                            ? (hsn / 100) * exclusiveAmount
+                                            : 0
+                                          const total = Math.round(
+                                            exclusiveAmount + taxAmount
+                                          )
+
+                                          setValue(
+                                            "taggedLicenseDueDates",
+                                            {
+                                              ...dueMap,
+                                              [licenseNo]: {
+                                                ...matchedData,
+                                                nextDueTax: checked ? hsn : 0,
+                                                taxinclusiveamount: total,
+                                                productAmount: total
+                                              }
+                                            },
+                                            { shouldDirty: true }
+                                          )
+                                        }}
+                                        className="sr-only"
+                                      />
+                                      <span
+                                        className={`flex h-5 w-5 items-center justify-center rounded border text-[11px] shadow-sm transition-all duration-200 ${
+                                          Number(
+                                            watchedTaggedLicenseDueDates?.[
+                                              licenseNo
+                                            ]?.nextDueTax || 0
+                                          ) > 0
+                                            ? "border-[#1B2A4A] bg-[#1B2A4A] text-white"
+                                            : "border-slate-300 bg-white text-transparent"
+                                        }`}
+                                      >
+                                        ✓
+                                      </span>
+                                    </label>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
-            )}
 
-            {popupType === "Additionalservice" && hasTaggedLicenses && (
-             
-<div className="md:col-span-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-  <div className="border-b border-slate-200 px-4 py-3">
-    <h3 className="text-sm font-semibold text-slate-800">Tagged License Due Details</h3>
-    <p className="mt-0.5 text-[11px] text-slate-500">
-      {watchedTaggedLicenses.length} license{watchedTaggedLicenses.length > 1 ? "s" : ""} tagged to this service
-    </p>
-  </div>
-
-  <div className="w-full">
-    <table className="w-full table-fixed border-collapse">
-      <colgroup>
-        <col style={{ width: "22%" }} /> {/* License No */}
-        <col style={{ width: "12%" }} /> {/* Users */}
-        <col style={{ width: "16%" }} /> {/* Serial No */}
-        <col style={{ width: "20%" }} /> {/* Next Due */}
-        <col style={{ width: "20%" }} /> {/* Next Due Amt */}
-        <col style={{ width: "10%" }} /> {/* Due Tax */}
-      </colgroup>
-
-      <thead className="bg-slate-100">
-        <tr className="text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500">
-          <th className="border-b border-slate-200 px-2 py-2.5 text-left">License No.</th>
-          <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Users</th>
-          <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Serial No</th>
-          <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Next Due</th>
-          <th className="border-b border-slate-200 px-1.5 py-2.5 text-right">Next Due Amt</th>
-          <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Tax</th>
-        </tr>
-      </thead>
-
-      <tbody className="divide-y divide-slate-100">
-        {watchedTaggedLicenses.map((licenseNo) => (
-          <tr key={licenseNo} className="align-top odd:bg-white even:bg-slate-50/60">
-            {/* License No */}
-            <td className="px-2 py-2">
-              <input
-                value={licenseNo}
-                readOnly
-                title={licenseNo}
-                className="h-7 w-full cursor-not-allowed truncate rounded-md border border-slate-200 bg-slate-100 px-2 text-[11px] text-slate-500 outline-none"
-              />
-            </td>
-
-            {/* Users */}
-            <td className="px-1.5 py-2">
-              <input
-                type="number"
-                value={watchedTaggedLicenseDueDates?.[licenseNo]?.noofusers ?? ""}
-                onChange={(e) => {
-                  const dueMap = watch("taggedLicenseDueDates") || {}
-
-                  setValue(
-                    "taggedLicenseDueDates",
-                    {
-                      ...dueMap,
-                      [licenseNo]: {
-                        ...dueMap[licenseNo],
-                        noofusers: e.target.value
-                      }
-                    },
-                    { shouldDirty: true }
-                  )
-                }}
-                onWheel={(e) => e.currentTarget.blur()}
-                className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-center text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-              />
-            </td>
-
-            {/* Serial No */}
-            <td className="px-1.5 py-2">
-              <input
-                type="text"
-                value={watchedTaggedLicenseDueDates?.[licenseNo]?.serialNumber ?? ""}
-                onChange={(e) => {
-                  const dueMap = watch("taggedLicenseDueDates") || {}
-
-                  setValue(
-                    "taggedLicenseDueDates",
-                    {
-                      ...dueMap,
-                      [licenseNo]: {
-                        ...dueMap[licenseNo],
-                        serialNumber: e.target.value
-                      }
-                    },
-                    { shouldDirty: true }
-                  )
-                }}
-                className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-center text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10"
-              />
-            </td>
-
-            {/* Next Due (date) */}
-            <td className="px-1.5 py-2">
-              <input
-                type="date"
-                value={formatDateForInput(watchedTaggedLicenseDueDates?.[licenseNo]?.nextDue)}
-                onChange={(e) => {
-                  const dueMap = watch("taggedLicenseDueDates") || {}
-
-                  setValue(
-                    "taggedLicenseDueDates",
-                    {
-                      ...dueMap,
-                      [licenseNo]: {
-                        ...dueMap[licenseNo],
-                        nextDue: e.target.value
-                      }
-                    },
-                    { shouldDirty: true }
-                  )
-                }}
-                className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-center text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10"
-              />
-            </td>
-
-            {/* Next Due Amount (+ inclusive total underneath) — old tax-calc logic, no handleTaggedDueChange */}
-            <td className="px-1.5 py-2">
-              <div className="space-y-0.5">
-                <input
-                  type="number"
-                  value={watchedTaggedLicenseDueDates?.[licenseNo]?.taxexclusiveAmount ?? ""}
-                  onWheel={(e) => e.currentTarget.blur()}
-                  onKeyDown={(e) => {
-                    if (["-", "+", "e", "E"].includes(e.key)) {
-                      e.preventDefault()
-                    }
-                  }}
-                  onChange={(e) => {
-                    const inputValue = e.target.value
-                    const dueMap = watch("taggedLicenseDueDates") || {}
-                    const matchedData = dueMap[licenseNo]
-
-                    const isTaxApplied = Number(matchedData?.nextDueTax || 0) > 0
-                    const taxAmount = isTaxApplied
-                      ? (Number(matchedData?.hsn || matchedData?.originalHsn || 0) / 100) *
-                        Number(inputValue || 0)
-                      : 0
-                    const total = Math.round(Number(inputValue || 0) + taxAmount)
-
-                    setValue(
-                      "taggedLicenseDueDates",
-                      {
-                        ...dueMap,
-                        [licenseNo]: {
-                          ...matchedData,
-                          taxexclusiveAmount: inputValue,
-                          taxinclusiveamount: total,
-                          productAmount: total
-                        }
-                      },
-                      { shouldDirty: true }
-                    )
-                  }}
-                  className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                />
-                <p className="truncate text-right text-[12px] text-slate-600">
-                  {Number(watchedTaggedLicenseDueDates?.[licenseNo]?.taxinclusiveamount || 0).toFixed(2)}
-                </p>
+              <div className="flex shrink-0 justify-end gap-2 border-t border-[#edf1f7] bg-white px-3 py-2.5">
+                <button
+                  type="button"
+                  onClick={closePopup}
+                  className="rounded-md border border-[#e4e9f2] px-3 py-1.5 text-[12px] text-[#5c6981] hover:bg-[#f8fafc]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={savePopupData}
+                  className="rounded-md bg-[#2f80ed] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#246cd0]"
+                >
+                  Save Details
+                </button>
               </div>
-            </td>
-
-            {/* Due Tax — same watch/setValue pattern, recalculates the amount fields when toggled */}
-            <td className="px-1.5 py-2">
-              <div className="flex justify-center pt-1">
-                <label className="inline-flex cursor-pointer items-center justify-center">
-                  <input
-                    type="checkbox"
-                    checked={Number(watchedTaggedLicenseDueDates?.[licenseNo]?.nextDueTax || 0) > 0}
-                    onChange={(e) => {
-                      const checked = e.target.checked
-console.log(checked)
-                      const dueMap = watch("taggedLicenseDueDates") || {}
-                      const matchedData = dueMap[licenseNo]
-                      const hsn = Number(matchedData?.hsn || matchedData?.originalHsn || 0)
-console.log(hsn)
-                      const exclusiveAmount = Number(matchedData?.taxexclusiveAmount || 0)
-
-                      const taxAmount = checked ? (hsn / 100) * exclusiveAmount : 0
-                      const total = Math.round(exclusiveAmount + taxAmount)
-
-                      setValue(
-                        "taggedLicenseDueDates",
-                        {
-                          ...dueMap,
-                          [licenseNo]: {
-                            ...matchedData,
-                            nextDueTax: checked ? hsn : 0,
-                            taxinclusiveamount: total,
-                            productAmount: total
-                          }
-                        },
-                        { shouldDirty: true }
-                      )
-                    }}
-                    className="sr-only"
-                  />
-                  <span
-                    className={`flex h-5 w-5 items-center justify-center rounded border text-[11px] shadow-sm transition-all duration-200 ${
-                      Number(watchedTaggedLicenseDueDates?.[licenseNo]?.nextDueTax || 0) > 0
-                        ? "border-[#1B2A4A] bg-[#1B2A4A] text-white"
-                        : "border-slate-300 bg-white text-transparent"
-                    }`}
-                  >
-                    ✓
-                  </span>
-                </label>
-              </div>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-</div>
-            )}
+            </div>
           </div>
         </div>
-
-        <div className="flex shrink-0 justify-end gap-2 border-t border-[#edf1f7] bg-white px-3 py-2.5">
-          <button
-            type="button"
-            onClick={closePopup}
-            className="rounded-md border border-[#e4e9f2] px-3 py-1.5 text-[12px] text-[#5c6981] hover:bg-[#f8fafc]"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={savePopupData}
-            className="rounded-md bg-[#2f80ed] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#246cd0]"
-          >
-            Save Details
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
-
+      )}
     </div>
   )
 }
