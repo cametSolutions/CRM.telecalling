@@ -435,8 +435,11 @@ async function fetchAnnouncement() {
 
 export default function AnnouncementBanner({
   announcementlist: announcementProp,
-setopenannoucementpopup
+setopenannoucementpopup,
+action=true
+
 }) {
+console.log(action)
   console.log(announcementProp)
   const [announcement, setAnnouncement] = useState(announcementProp ?? null)
   console.log(announcement)
@@ -477,9 +480,13 @@ setopenannoucementpopup
 
   return (
     <div
-onClick={setopenannoucementpopup(true)}
+onClick={()=>{
+console.log(action)
+if(!action)return
+console.log(action)
+setopenannoucementpopup(true)}}
       role="status"
-      className={`relative flex h-11 w-full items-stretch overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-all duration-300 ease-out ${
+      className={`relative flex h-11 w-full items-stretch overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-all duration-300 ease-out cursor-pointer ${
         mounted ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0"
       }`}
     >

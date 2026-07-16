@@ -160,6 +160,11 @@ export default function AdminHeader({ hide = false }) {
     () => [
       { to: "/admin/transaction/call-registration", label: "Call Registration" },
       { to: "/admin/transaction/leave-application", label: "Leave Application" },
+ {
+        to: "/admin/support&department",
+        label: "Support Department",
+        
+      },
  { to: "/admin/transaction/lead", label: "New Lead" },
       { to: "/admin/transaction/lead/collectionUpdate", label: "Collection Update" }
     ],
