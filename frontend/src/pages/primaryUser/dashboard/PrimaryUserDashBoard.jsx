@@ -820,6 +820,7 @@ export default function PrimaryUserDashBoard() {
   const { data: announcementlist } = UseFetch(
     "/dashboard/getcurrentAnnouncement"
   )
+console.log(announcementlist)
 
   useEffect(() => {
     const userData = getLocalStorageItem("user")
@@ -1110,7 +1111,7 @@ export default function PrimaryUserDashBoard() {
           }}
         />
       )}
-      {announcementlist && announcementlist.length && (
+      {announcementlist && announcementlist.length &&announcementlist?.announcement&& (
         <div className="mb-2 mx-2">
           <AnnouncementBanner
             announcementlist={announcementlist}

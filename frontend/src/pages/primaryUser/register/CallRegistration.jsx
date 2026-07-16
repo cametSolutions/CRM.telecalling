@@ -2063,7 +2063,7 @@ const ProductCircleCard = ({
                           >
                             <input
                               type="tel"
-                              value={selectedCustomer?.landline}
+                              value={selectedCustomer?.mobile}
                               className={tileInputClass}
                             />
                           </InfoInputCard>

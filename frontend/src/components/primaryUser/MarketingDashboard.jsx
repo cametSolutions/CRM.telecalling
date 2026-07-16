@@ -833,7 +833,7 @@ console.log(announcementlist)
             />
           )}
           <div className="px-4">
-{announcementlist&&announcementlist.length&&(
+{announcementlist&&announcementlist.length&&announcementlist?.announcement&&(
  <AnnouncementBanner announcementlist={announcementlist} setopenannoucementpopup={setopenannoucementpopup}/>
 )}
            
