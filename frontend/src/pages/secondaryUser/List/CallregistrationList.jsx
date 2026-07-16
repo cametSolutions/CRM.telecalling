@@ -90,6 +90,7 @@ console.log(users)
   const { data: announcementlist } = UseFetch(
     "/dashboard/getcurrentAnnouncement"
   )
+console.log("ddddddddddddddddddd",announcementlist)
 
   const socketRef = useRef(null)
 
@@ -676,7 +677,7 @@ const handleAnnouncementSubmit = async (e) => {
           )}
           <div className="px-4">
             {announcementlist &&
-              announcementlist.length&&(
+              announcementlist.length&&announcementlist?.announcement&&(
                 <AnnouncementBanner
                   announcementlist={announcementlist}
                   setopenannoucementpopup={setopenannoucementpopup}
