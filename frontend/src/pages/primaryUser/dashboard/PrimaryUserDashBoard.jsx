@@ -1100,21 +1100,22 @@ export default function PrimaryUserDashBoard() {
           </div>
         </div>
       )}
-{openannoucementpopup&&(
-<AnnouncementModal
-open={openannoucementpopup}
-    onClose={() => setopenannoucementpopup(false)}
-    onSuccess={(saved) => {
-      // e.g. refetch announcementlist here, or push `saved` into it
-      setopenannoucementpopup(false);
-    }}
-
-/>)}
+      {openannoucementpopup && (
+        <AnnouncementModal
+          open={openannoucementpopup}
+          onClose={() => setopenannoucementpopup(false)}
+          onSuccess={(saved) => {
+            // e.g. refetch announcementlist here, or push `saved` into it
+            setopenannoucementpopup(false)
+          }}
+        />
+      )}
       {announcementlist && announcementlist.length && (
         <div className="mb-2 mx-2">
           <AnnouncementBanner
             announcementlist={announcementlist}
             setopenannoucementpopup={setopenannoucementpopup}
+action={false}
           />
         </div>
       )}

@@ -84,7 +84,7 @@ const getBarStyle = (value, colorA, colorB) => ({
 const MarketingDashboard = () => {
   const [user, setUser] = useState(null)
 const [openannoucementpopup, setopenannoucementpopup] = useState(false);
-console.logO(openannoucementpopup)
+console.log(openannoucementpopup)
   const [branchOptions, setbranchOptions] = useState([])
   const [selectedUserName, setselecteduserName] = useState(null)
   const [selectedCategory, setselectedCategory] = useState(null)
