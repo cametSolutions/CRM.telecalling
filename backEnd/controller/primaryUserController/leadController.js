@@ -714,7 +714,6 @@ export const LeadRegister = async (req, res) => {
       leadBy,
       leadBranch,
     } = leadData
-    console.log("allcationtype", allocationType)
     const leadDate = new Date()
     const lastLead = await LeadId.findOne().sort({ leadId: -1 }).session(session)
 
@@ -916,7 +915,6 @@ export const Checkexistinglead = async (req, res) => {
     );
 
     if (duplicateProducts.length > 0) {
-      console.log("duplicate found")
       // Same customer + same product
       return res.status(200).json({
         message: "This customer already has a lead with the same product.",
@@ -924,7 +922,6 @@ export const Checkexistinglead = async (req, res) => {
         eligible: false,
       });
     } else if (anyLeads) {
-      console.log("have lead with different produts")
       // Same customer + different products
       return res.status(200).json({
         message:
@@ -960,7 +957,6 @@ export const getAlltasktoTarget = async (req, res) => {
 export const GetallTask = async (req, res) => {
   try {
     const { istaskregistration = false, removefollowup = false } = req.query
-    console.log("removefollup", removefollowup)
     let query = {}
     if (istaskregistration === "false" || istaskregistration === false) {
       query = { listed: true }
@@ -1782,7 +1778,6 @@ export const getNotificationData = async (req, res) => {
       const adminbirthdays = await Admin.find({
         dateofbirth: { $regex: `^\\d{4}-${currentMonth}-\\d{2}$` }
       })
-      console.log("admin", adminbirthdays)
 
       const currentmonthBirthDays = [...staffbirthdays, ...adminbirthdays].map(
         (item) => ({
@@ -1817,7 +1812,6 @@ export const getNotificationData = async (req, res) => {
         quarterlyAchievers: data?.quarterlyachiever || [],
         yearlyAchievers: data?.yearlyachiever || [],
       };
-      console.log("notificationdata", notificationData)
       return res.status(200).json({
         success: true,
         message: "Notification data fetched successfully",
@@ -2101,24 +2095,30 @@ export const getBranchwiseMarketingPendingTasks = async (req, res) => {
 };
 export const getTodayVerifiedCollection = async (req, res) => {
   try {
+const {selectedBranch}=req.query
     const startDate = new Date();
     startDate.setHours(0, 0, 0, 0);
 
     const endDate = new Date();
     endDate.setHours(23, 59, 59, 999);
+const matchQuery = {
+  "paymentHistory.paymentVerified": true,
+  "paymentHistory.verifiedAt": {
+    $gte: startDate,
+    $lte: endDate,
+  },
+};
 
+if (selectedBranch) {
+  matchQuery.leadBranch = new mongoose.Types.ObjectId(selectedBranch);
+}
+console.log("matchauery",matchQuery)
     const result = await LeadMaster.aggregate([
       {
         $unwind: "$paymentHistory",
       },
       {
-        $match: {
-          "paymentHistory.paymentVerified": true,
-          "paymentHistory.verifiedAt": {
-            $gte: startDate,
-            $lte: endDate,
-          },
-        },
+        $match: matchQuery
       },
       {
         $group: {
@@ -2129,6 +2129,7 @@ export const getTodayVerifiedCollection = async (req, res) => {
         },
       },
     ]);
+console.log("resut",result)
 
     return res.status(200).json({
       success: true,
@@ -2900,9 +2901,7 @@ export const Leadclosing = async (req, res) => {
       const nextDueAmount = round2(
         tag?.nextDueAmount ?? tag?.taxexclusiveAmount ?? 0
       );
-      console.log(tag?.nextDueAmount)
-      console.log(tag?.taxexclusiveAmount)
-      console.log("nextdueamount", nextDueAmount)
+   
       const nextDueTax = toNum(tag?.nextDueTax ?? 0, 0);
 
       return {
@@ -2981,8 +2980,7 @@ export const Leadclosing = async (req, res) => {
     const merged = [
       ...(Array.isArray(existingTagged) ? existingTagged : []),
     ].map((item) => (item?.toObject ? item.toObject() : item));
-    console.log("merged", merged)
-    console.log("incomingtag", incomingTagged)
+
     for (const tag of Array.isArray(incomingTagged) ? incomingTagged : []) {
       const normalizedTag = {
         ...(tag?.toObject ? tag.toObject() : tag),
@@ -4777,9 +4775,7 @@ export const GetallselectedproductFollowup = async (req, res) => {
         !lastAlloc.taskallocatedByModel ||
         !mongoose.models[lastAlloc.taskallocatedByModel]
       ) {
-        console.log("leadby", lead.leadByModel)
-        console.log("taskallocatedtomodel", lastAlloc.taskallocatedToModel)
-        console.log("taskallocatedby", lastAlloc.taskallocatedByModel)
+      
         console.error(
           `Model missing for lead ${lead._id}:`,
           lead.leadByModel,
@@ -5335,19 +5331,13 @@ export const GetallfollowupList = async (req, res) => {
     const isViewMode = viewmode === "true";
     // Check for valid header and date params
     const hasValidHeader = header && header !== "null" && header !== "undefined";
-    console.log("headerrrr", header)
     const hasValidDates = startDate && endDate &&
       startDate !== "null" && endDate !== "null" &&
       startDate !== "undefined" && endDate !== "undefined";
-    console.log("startdtaae", startDate)
-    console.log("endatae", endDate)
+ 
 
     const isNewMode = isViewMode || hasValidHeader || hasValidDates;
-    // console.log("hasvalidhaeader", hasValidHeader)
-    // console.log("hasvaliddate", hasValidDates)
-    // console.log("isnewmodeeee", isNewMode)
-    // console.log("isviewmode", isViewMode)
-    console.log("pendingfoloopup", pendingfollowup)
+   
     let query;
 
     // ✅ VIEW MODE
@@ -5412,7 +5402,6 @@ export const GetallfollowupList = async (req, res) => {
           };
         }
       } else if (pendingfollowup === "false") {
-        console.log("adddddddminnnnnnnn")
         if (role === "Admin") {
           query = {
             activityLog: {
@@ -5763,7 +5752,6 @@ export const GetallfollowupList = async (req, res) => {
         item.allocatedBy?._id?.toString() === userObjectId.toString()
     );
 
-    console.log("MODE:", isNewMode ? "NEW" : "OLD");
 
     if (followupLeads.length > 0) {
       return res.status(201).json({
@@ -6666,7 +6654,6 @@ export const GetallLead = async (req, res) => {
     if (!Status && !role) {
       return res.status(400).json({ message: "Status or role is missing " });
     }
-    console.log("status", Status)
     if (Status === "Pending") {
       //for getting pending leads means leads not to be allocated to someone
       const query = { leadBranch: branchObjectId, activityLog: { $size: 1 } };
@@ -6698,7 +6685,6 @@ export const GetallLead = async (req, res) => {
         });
       }
     } else if (Status === "Approved") {
-      console.log("apppoved", Status)
       const query = {
         leadBranch: branchObjectId,
         reallocatedTo: false,
@@ -7176,8 +7162,7 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
         taskName: "Followup"
       }).lean();
     }
-    console.log("allocationtask", allocationTask)
-    console.log("formdataaaaaaaaaaaaaaaaaaaa", formData.followupType)
+  
 
     const activityEntry = {
       submissionDate: formData.followUpDate,
@@ -7611,8 +7596,7 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
       selectedbranch,
       allocationtypeId,
     } = req.query;
-    console.log("allcatedby", allocatedBy)
-    console.log("allcationtpeiddd", allocationtypeId)
+   
     const allocatedbyObjectid = new mongoose.Types.ObjectId(allocatedBy);
     const branchObjectId = new mongoose.Types.ObjectId(selectedbranch);
     const { selectedItem, cleanedData } = req.body;
@@ -7623,7 +7607,7 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
       typeof selectedItem?.allocatedTo === "object"
         ? selectedItem?.allocatedTo?._id || selectedItem?.allocatedTo?.id
         : selectedItem?.allocatedTo
-    console.log("allocatedToId", allocatedToId)
+
 
     const isStaffallocatedtomodel = await Staff.findOne({
       _id: allocatedToId,
@@ -7651,8 +7635,7 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
         allocatedByModel = "Admin";
       }
     }
-    console.log("allocatedmodel", allocatedToModel)
-    console.log("allcatedbymodel", allocatedByModel)
+  
     if (!allocatedToModel || !allocatedByModel) {
       return res
         .status(400)
@@ -7716,8 +7699,7 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
       );
 
       const task = matchLead.activityLog[matchingIndex]?.taskId;
-      console.log("taskkk", task)
-      console.log("alocationtupeid", allocationtypeId)
+      
       if (!task?.equals(allocationtypeId)) {
         return res.status(409).json({
           message:
@@ -7766,8 +7748,7 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
     }
 
     if (allocationpending === "true") {
-      console.log(
-        "oooooooooooooooooo")
+     
       const pendingLeads = await LeadMaster.find({
         leadBranch: branchObjectId,
         activityLog: { $size: 1 },
@@ -7795,13 +7776,11 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
         .status(201)
         .json({ message: "Allocate successfully", data: populatedLeads });
     } else if (allocationpending === "false") {
-      console.log("ddddddddddddd")
       const allocatedLeads = await LeadMaster.find({
         allocatedTo: { $ne: null },
       })
         .populate({ path: "customerName", select: "customerName" })
         .lean();
-      console.log("allocatedleadsss", allocatedLeads)
       const populatedLeads = await Promise.all(
         allocatedLeads.map(async (lead) => {
           if (!lead.leadByModel || !mongoose.models[lead.leadByModel]) {
@@ -7900,11 +7879,9 @@ export const UpdateLeadTask = async (req, res) => {
 export const GetrespectedleadTask = async (req, res) => {
   try {
     const { userid, branchSelected, role, ownTask } = req.query;
-    console.log("useriid", userid)
     const userObjectId = new mongoose.Types.ObjectId(userid);
     const branchObjectId = new mongoose.Types.ObjectId(branchSelected);
     const isAdminOrManager = role === "Admin" || role === "Manager";
-    console.log("isadminnn", isAdminOrManager)
     const query = {
       leadBranch: branchObjectId,
       activityLog: {
@@ -7921,7 +7898,6 @@ export const GetrespectedleadTask = async (req, res) => {
     const selectedfollowup = await LeadMaster.find(query)
       .populate({ path: "customerName", select: "customerName" })
       .lean();
-    // console.log("leaddddddddddd", selectedfollowup)
 
     const taskLeads = [];
     if (ownTask === "false") {
@@ -9513,7 +9489,6 @@ export const Getdailystaffreport = async (req, res) => {
     const reportEnd = new Date(endDate);
     reportEnd.setHours(23, 59, 59, 999);
 
-    console.log(`Full range: ${startDate} to ${endDate}`);
 
     // **DAILY LOOP** - Process each day between startDate & endDate
     const dailyReports = [];
@@ -9640,12 +9615,9 @@ export const getverifiedCollectionLeads = async (req, res) => {
             // console.log("taskbjyuyyyyyyyyyyyyy",activity?.taskBy)
             if (activity?.taskBy) {
               populatedActivity.taskBy = await Task.findById(activity?.taskBy).select("taskName").lean()
-              console.log("populatedd", populatedActivity?.taskBy)
             }
             if (activity?.taskTo) {
-              console.log("tasktoooo", activity?.taskId)
               populatedActivity.taskId = await Task.findById(activity?.taskId).select("taskName").lean()
-              console.log("poplatedtaktooo", populatedActivity.taskId)
             }
 
             if (activity.taskallocatedByModel && activity.taskallocatedBy) {
@@ -9720,7 +9692,6 @@ export const getverifiedCollectionLeads = async (req, res) => {
         //   });
         // }
         let filteredPaymentHistory = paymentHistoryWithIndex;
-        console.log("verifiedbooll", verifiedBool)
         if (verifiedBool) {
           filteredPaymentHistory = filteredPaymentHistory.filter((history) => {
             if (!history.paymentVerified) return false;
@@ -9924,12 +9895,9 @@ export const GetcollectionLeads = async (req, res) => {
             // console.log("taskbjyuyyyyyyyyyyyyy",activity?.taskBy)
             if (activity?.taskBy) {
               populatedActivity.taskBy = await Task.findById(activity?.taskBy).select("taskName").lean()
-              console.log("populatedd", populatedActivity?.taskBy)
             }
             if (activity?.taskTo) {
-              console.log("tasktoooo", activity?.taskId)
               populatedActivity.taskId = await Task.findById(activity?.taskId).select("taskName").lean()
-              console.log("poplatedtaktooo", populatedActivity.taskId)
             }
 
             if (activity.taskallocatedByModel && activity.taskallocatedBy) {
@@ -10639,14 +10607,11 @@ export const GetlostLeads = async (req, res) => {
 
 export const GetallproductwiseReport = async (req, res) => {
   try {
-    console.log("calledddddddddddddddddddddddd")
     const { startDate, endDate } = req.query;
 
     const start = new Date(startDate);
     const end = new Date(endDate);
-    console.log("called")
-    console.log("startdate", start)
-    console.log('enddataee', end)
+ 
     ///for productwise report
     // const result = await LeadMaster.aggregate([
 
@@ -11736,8 +11701,7 @@ export const GetallproductwiseReport = async (req, res) => {
       totalPendingAmount: item.totalPendingAmount,
       lostNetAmount: item.lostNetAmount
     }))
-    console.log("mappedata", mappeddata)
-    console.log("reeeeeeeee", re)
+   
 
     if (result && result.length > 0) {
       return res.status(200).json({ message: "lead found", data: { mappeddata, re } })
@@ -11752,8 +11716,7 @@ export const GetallproductwiseReport = async (req, res) => {
 export const GetownLeadList = async (req, res) => {
   try {
     const { userId, selectedBranch, role, ownlead, startDate, endDate } = req.query;
-    console.log("stardate", startDate)
-    console.log("endatae", endDate)
+  
     const objectId = new mongoose.Types.ObjectId(userId);
 
     let query
@@ -11769,7 +11732,6 @@ export const GetownLeadList = async (req, res) => {
         leadBranch: new mongoose.Types.ObjectId(selectedBranch)
       };
     }
-    console.log('dddddddddddddddddd', query)
     const parsedStart = startDate ? new Date(startDate) : null
     const parsedEnd = endDate ? new Date(endDate) : null
 
@@ -11786,7 +11748,6 @@ export const GetownLeadList = async (req, res) => {
     const matchedLead = await LeadMaster.find(query)
       .populate({ path: "customerName", select: "customerName mobile email" })
       .lean();
-    console.log("mathced", matchedLead)
 
     const populatedOwnLeads = await Promise.all(
       matchedLead.map(async (lead) => {
@@ -11854,7 +11815,6 @@ export const GetownLeadList = async (req, res) => {
           })
         );
         let populatedProduct
-        console.log("leaforrrrrrrl", lead?.leadFor)
         const populateleadFor = await Promise.all(
           (lead.leadFor || []).map(async (item) => {
             const populatedItem = { ...item }

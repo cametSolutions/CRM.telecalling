@@ -180,6 +180,7 @@ export default function AnnouncementModal({
   onSubmit,
   onSuccess
 }) {
+console.log(open)
   const [title, setTitle] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState("")

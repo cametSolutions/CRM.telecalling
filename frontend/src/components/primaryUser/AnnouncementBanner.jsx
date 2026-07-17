@@ -456,7 +456,7 @@ console.log(action)
       type: "general",
       // title: "Scheduled Maintenance",
       postedBy: "IT Team",
-      detail: announcementProp[0]?.announcement,
+      detail: announcementProp?.announcement,
       badge: "Sun, 10:00 PM – 11:30 PM",
       postedBy: "IT Team"
     })

@@ -13,6 +13,7 @@ import { getLocalStorageItem } from "../../../helper/localstorage"
 import { StaticSidebar } from "../../../components/primaryUser/StaticSidebar"
 import AdminHeader from "../../../header/AdminHeader"
 import StaffHeader from "../../../header/StaffHeader"
+import api from "../../../api/api"
 import { PerformanceModal } from "../../../components/primaryUser/PerformanceModal"
 import {
   Eye,
@@ -78,6 +79,7 @@ const [annoucementsubmitloader,setannouncementLoader]=useState(false)
   const [selectedPeriod, setselectedPeriod] = useState("")
   const [activeFilter, setActiveFilter] = useState("All")
   const [openannoucementpopup, setopenannoucementpopup] = useState(false)
+console.log(openannoucementpopup)
   const { data: branches } = UseFetch("/branch/getbranch")
   const { data: callscount, loading: loadingcounts } = UseFetch(
     "/customer/getcallregistrationlist"
@@ -87,7 +89,7 @@ console.log(users)
     selectedcompanybranchId &&
       `/product/getallbranchProduct?branch=${selectedcompanybranchId}`
   )
-  const { data: announcementlist } = UseFetch(
+  const { data: announcementlist,refreshHook:announcementrefresh } = UseFetch(
     "/dashboard/getcurrentAnnouncement"
   )
 console.log("ddddddddddddddddddd",announcementlist)
@@ -571,15 +573,18 @@ console.log("ddddddddddddddddddd",announcementlist)
   const applyFilter = (filterName) => {
     setActiveFilter(filterName)
   }
-const handleAnnouncementSubmit = async (e) => {
-    e.preventDefault()
+const handleAnnouncementSubmit = async (annoucementtext) => {
+console.log(annoucementtext)
+console.log(announcement)
     setannouncementLoader(true)
     try {
       const response = await api.post("/dashboard/updateAnnouncement", {
-        announcement
+        annoucementtext
       })
+console.log(response.data)
       // setAnnouncementText(response.data.data.announcement)
       toast.success(response.data.message)
+announcementrefresh()
     } catch (error) {
       console.log("error:", error.message)
     } finally {
@@ -609,7 +614,18 @@ const handleAnnouncementSubmit = async (e) => {
         return endTimeB - endTimeA || startTimeB - startTimeA
       })
   }
+const DEFAULT_ANNOUNCEMENT = {
+  announcementTitle: "Announcements",
+  announcement: "There are no announcements at the moment.",
+  announcementType: "general",
+  badge: "",
+  postedBy: "CAMET CRM",
+};
 
+const announcement =
+  announcementlist?.[0]?.announcement
+    ? announcementlist[0]
+    : DEFAULT_ANNOUNCEMENT;
   return (
     <div className="h-screen overflow-hidden bg-[#ADD8E6]">
       <div className="flex h-full w-full overflow-hidden">
@@ -676,14 +692,13 @@ const handleAnnouncementSubmit = async (e) => {
             <NotificationPopup onClose={() => setShowNotification(false)} />
           )}
           <div className="px-4">
-            {announcementlist &&
-              announcementlist.length&&announcementlist?.announcement&&(
+            
                 <AnnouncementBanner
-                  announcementlist={announcementlist}
+                  announcementlist={announcement}
                   setopenannoucementpopup={setopenannoucementpopup}
                   action={users?.role === "Admin"}
                 />
-              )}
+              
           </div>
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-2 md:p-3">
             <div className="flex min-h-0 flex-1 flex-col rounded-xl bg-neutral-50 px-3 py-2 shadow-lg md:px-4">

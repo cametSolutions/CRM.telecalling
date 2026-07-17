@@ -104,6 +104,7 @@ console.log(openannoucementpopup)
   console.log(selectedBranch)
   const [achievedPoints, setachievedPoints] = useState(0)
   const [todaysCollection, settodaysCollection] = useState([])
+console.log(todaysCollection)
   const now = new Date()
   const navigate = useNavigate()
   const [date, setdate] = useState({
@@ -122,8 +123,11 @@ console.log(openannoucementpopup)
     `/lead/getfollowupsummaryReport?branchId=${selectedBranch}`
   )
   const { data: collectiondata, loading: collectionloader } = UseFetch(
-    "/lead/getTodayVerifiedCollection"
+selectedBranch&&
+    `/lead/getTodayVerifiedCollection?selectedBranch=${selectedBranch}`
   )
+console.log(selectedBranch)
+console.log(collectiondata)
   const { data: notificationData } = UseFetch(
     `/lead/getnotificationData?loggedUser=${user?._id}&branchSelected=${selectedBranch}`
   )
@@ -151,7 +155,9 @@ console.log(announcementlist)
   )
   console.log(pendingTask)
   useEffect(() => {
-    if (collectiondata) {
+console.log(collectiondata)
+    
+console.log(collectiondata)
       settodaysCollection([
         {
           key: "today",
@@ -165,7 +171,7 @@ console.log(announcementlist)
           accent: "teal"
         }
       ])
-    }
+    
   }, [collectiondata])
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -700,6 +706,20 @@ console.log(announcementlist)
     .join(", ")
   console.log(selectedBranch)
   // console.log(BranchSelect)
+
+const DEFAULT_ANNOUNCEMENT = {
+  announcementTitle: "Announcements",
+  announcement: "There are no announcements at the moment.",
+  announcementType: "general",
+  badge: "",
+  postedBy: "CAMET CRM",
+};
+
+const announcement =
+  announcementlist?.[0]?.announcement
+    ? announcementlist[0]
+    : DEFAULT_ANNOUNCEMENT;
+console.log(announcement)
   return (
     <div
       className="h-full overflow-hidden bg-[#ADD8E6] text-slate-800"
@@ -833,9 +853,9 @@ console.log(announcementlist)
             />
           )}
           <div className="px-4">
-{announcementlist&&announcementlist.length&&announcementlist?.announcement&&(
- <AnnouncementBanner announcementlist={announcementlist} setopenannoucementpopup={setopenannoucementpopup}/>
-)}
+
+ <AnnouncementBanner announcementlist={announcement} setopenannoucementpopup={setopenannoucementpopup}/>
+
            
           </div>
           <main className="min-h-0 flex-1 overflow-y-auto">
