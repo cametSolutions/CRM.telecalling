@@ -198,6 +198,7 @@
 
 import React, { useEffect, useMemo, useState } from "react"
 import UseFetch from "../../hooks/useFetch"
+import useMediaQuery from "@mui/material/useMediaQuery"
 import { BranchSelect } from "./BranchSelect"
 import {
   getLocalStorageItem,
@@ -228,11 +229,12 @@ export const StaticSidebar = ({
   const [selectedBranch, setselectedBranch] = useState(null)
   const [periodMode, setperiodMode] = useState(parentperiodmode)
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024)
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
+  // const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
   const [branchOptions, setbranchOptions] = useState([])
   const [selectedMonth, setSelectedMonth] = useState(
     String(now.getMonth() + 1).padStart(2, "0")
   )
+const isMobile = useMediaQuery("(max-width:768px)");
   const [loggedusedTarget, setloggeduserTarget] = useState([])
   const [selectedYear, setSelectedYear] = useState(parentyear)
   const [achievedPoints, setachievedPoints] = useState(0)
@@ -247,16 +249,36 @@ export const StaticSidebar = ({
 
   const { data: branchlist } = UseFetch("/branch/getBranch")
 
-  useEffect(() => {
-    const handleResize = () => {
-      const mobile = window.innerWidth < 1024
-      setIsMobile(mobile)
-      setSidebarOpen(!mobile)
-    }
+  // useEffect(() => {
+  //   const handleResize = () => {
+  //     const mobile = window.innerWidth < 1024
+  //     setIsMobile(mobile)
+  //     setSidebarOpen(!mobile)
+  //   }
 
-    window.addEventListener("resize", handleResize)
-    return () => window.removeEventListener("resize", handleResize)
-  }, [])
+  //   window.addEventListener("resize", handleResize)
+  //   return () => window.removeEventListener("resize", handleResize)
+  // }, [])
+useEffect(() => {
+  const handleResize = () => {
+    const mobile = window.innerWidth < 1024;
+
+    if (mobile !== isMobile) {
+      setIsMobile(mobile);
+
+      if (mobile) {
+        setSidebarOpen(false);
+      } else {
+        setSidebarOpen(true);
+      }
+    }
+  };
+
+  window.addEventListener("resize", handleResize);
+
+  return () =>
+    window.removeEventListener("resize", handleResize);
+}, [isMobile]);
 
   useEffect(() => {
     setperiodMode(parentperiodmode)

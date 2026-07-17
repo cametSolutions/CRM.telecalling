@@ -518,7 +518,7 @@ setActiveUserId(userId)
   return (
     <div className=" h-full  bg-[#ADD8E6]">
       <div className="flex h-full flex-row">
-        <StaticSidebar
+        {/* <StaticSidebar
           handleMoreClick={handleMoreClick}
           selectedCompanyBranch={selectedCompanyBranch}
           setselectedCompanyBranch={setselectedCompanyBranch}
@@ -526,7 +526,7 @@ setActiveUserId(userId)
           parentperiodmode={periodMode}
           parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
-        />
+        /> */}
 
         <div className="flex flex-1 flex-col overflow-hidden">
           <header className="flex items-center justify-between bg-[#ADD8E6]">

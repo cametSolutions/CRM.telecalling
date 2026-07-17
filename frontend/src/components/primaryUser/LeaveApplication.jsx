@@ -2439,7 +2439,7 @@ console.log(filteredcurrentmonthlyOnsites)
   return (
     <div className="h-full bg-[#ADD8E6] overflow-hidden">
       <div className="flex h-full flex-row">
-        <StaticSidebar
+        {/* <StaticSidebar
           handleMoreClick={handleMoreClick}
           selectedCompanyBranch={selectedcompanyBranch}
           setselectedCompanyBranch={setselectedcompanyBranch}
@@ -2447,59 +2447,9 @@ console.log(filteredcurrentmonthlyOnsites)
           parentperiodmode={periodMode}
           parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
-        />
+        /> */}
         <div className="flex flex-1 flex-col overflow-hidden">
-          <header className="flex items-center justify-between bg-[#ADD8E6]">
-            {user?.role?.toLowerCase() === "admin" ? (
-              <AdminHeader hide={true} />
-            ) : (
-              <StaffHeader hide={true} />
-            )}
-
-            <div className="flex items-center gap-1.5  bg-[#ADD8E6] pr-3 h-full">
-              <button className="rounded-full p-1.5 transition bg-slate-100">
-                <Mail size={15} strokeWidth={2.2} />
-              </button>
-              <div className="relative">
-                <button className="rounded-full p-1.5 transition bg-slate-100">
-                  <MessageSquareText size={15} strokeWidth={2.2} />
-                </button>
-                <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />
-              </div>
-              <button className="rounded-full p-1.5 transition bg-slate-100">
-                <Settings size={15} strokeWidth={2.2} />
-              </button>
-              {/* <button className="rounded-full p-1.5 transition bg-slate-100">
-                <User size={15} strokeWidth={2.2} />
-              </button> */}
-
-              <div className="relative">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setShowUserMenu((prev) => !prev)
-                  }}
-                  className="rounded-full p-1.5 transition bg-slate-100"
-                >
-                  <User size={15} strokeWidth={2.2} />
-                </button>
-
-                {/* {showUserMenu && (
-                  <div
-                    onClick={(e) => e.stopPropagation()} 
-                    className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
-                  >
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                )} */}
-              </div>
-            </div>
-          </header>
+         
           <div className="sticky top-0 z-30 flex items-center justify-between px-4 py-3">
             <h2 className="text-xl font-semibold">{visibleMonth}</h2>
 

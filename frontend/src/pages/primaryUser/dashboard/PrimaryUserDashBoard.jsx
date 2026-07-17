@@ -1020,7 +1020,7 @@ console.log(announcementlist)
   }
 
   return (
-    <div className="min-h-screen bg-[#ADD8E6]">
+    <div className="h-full bg-[#ADD8E6]">
       {/* Birthday popup */}
       {showBirthdayPopup && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/40">

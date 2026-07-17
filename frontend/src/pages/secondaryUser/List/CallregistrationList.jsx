@@ -613,7 +613,7 @@ const handleAnnouncementSubmit = async (e) => {
   return (
     <div className="h-screen overflow-hidden bg-[#ADD8E6]">
       <div className="flex h-full w-full overflow-hidden">
-        <StaticSidebar
+        {/* <StaticSidebar
           handleMoreClick={handleMoreClick}
           selectedCompanyBranch={selectedcompanybranchId}
           setselectedCompanyBranch={setselectedcompanybranchId}
@@ -621,17 +621,17 @@ const handleAnnouncementSubmit = async (e) => {
           parentperiodmode={periodMode}
           parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
-        />
+        /> */}
 
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <header className="flex shrink-0 items-center justify-between ">
-            {users?.role?.toLowerCase() === "admin" ? (
+            {/* {users?.role?.toLowerCase() === "admin" ? (
               <AdminHeader hide={true} />
             ) : (
               <StaffHeader hide={true} />
-            )}
+            )} */}
 
-            <div className="flex h-full items-center gap-1.5 pr-3">
+            {/* <div className="flex h-full items-center gap-1.5 pr-3">
               <button className="rounded-full bg-slate-100 p-1.5 transition">
                 <Mail size={15} strokeWidth={2.2} />
               </button>
@@ -660,7 +660,7 @@ const handleAnnouncementSubmit = async (e) => {
                   <User size={15} strokeWidth={2.2} />
                 </button>
               </div>
-            </div>
+            </div> */}
           </header>
  {openannoucementpopup && (
         <AnnouncementModal
