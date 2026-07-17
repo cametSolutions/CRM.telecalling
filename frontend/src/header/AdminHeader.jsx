@@ -1,6 +1,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
+import ReportBugButton from "../components/developer/ReportBugButton"
 import {
   FiLogOut,
   FiMenu,
@@ -481,7 +482,7 @@ export default function AdminHeader({ hide = false }) {
             </div>
           </div>
 
-          {!hide && (
+          
             <div className="ml-auto flex items-center gap-2">
               <div
                 className="relative hidden md:block"
@@ -555,7 +556,7 @@ export default function AdminHeader({ hide = false }) {
                 <span className="hidden sm:inline">Logout</span>
               </button>
             </div>
-          )}
+          <ReportBugButton/>
         </div>
       </header>
 
