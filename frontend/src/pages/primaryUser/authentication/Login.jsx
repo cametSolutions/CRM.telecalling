@@ -8,6 +8,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons"
 import { toast } from "react-toastify"
 import { setLocalStorageItem } from "../../../helper/localstorage"
+import { loginSuccess } from "../../../../slices/authSlice.js"
 import {
   setBranches,
   loggeduserBranches
@@ -29,9 +30,10 @@ const Login = () => {
     try {
       setLoading(true)
       const response = await api.post(`/auth/login`, data)
-      const datas = await response.data
+      const datas = response.data
       const { token, User, passwordExpiryWarning } = datas
       if (response.status === 200) {
+        const selectedCompany = User.selected[0]
         const res = await api.get("/branch/getBranch")
         if (res.status === 200) {
           const allcompanybranches = res.data?.data?.map((b) => b._id) || []
@@ -41,6 +43,18 @@ const Login = () => {
           setLocalStorageItem("companybranches", allcompanybranches)
           dispatch(loggeduserBranches(loggeduserbranches))
           dispatch(setBranches(allcompanybranches))
+          dispatch(
+            loginSuccess({
+              token,
+              user: User,
+              activeCompany: {
+                company_id: selectedCompany.company_id,
+                branch_id: selectedCompany.branch_id
+              }
+            })
+          )
+
+          localStorage.setItem("activeCompany", JSON.stringify(selectedCompany))
           console.log("hh")
           toast.success(response.data.message, {
             icon: "🚀",
@@ -59,15 +73,39 @@ const Login = () => {
           }
           localStorage.setItem("authToken", token)
           localStorage.setItem("user", JSON.stringify(User))
-          setTimeout(() => {
-            if (User.role === "Admin") {
-              setLoading(false)
-              navigate("/admin/dashBoard")
-            } else if (User.role === "Staff" || User.role === "Manager") {
-              setLoading(false)
-              navigate("/staff/dashBoard")
+          //           setTimeout(() => {
+          // console.log(User)
+          //             if (User.role === "Admin") {
+          //               setLoading(false)
+          //               navigate("/admin/dashBoard")
+          //             } else if (User.role === "Staff" || User.role === "Manager") {
+          //               setLoading(false)
+          //               navigate("/staff/dashBoard")
+          //             }
+          //           }, 1000)
+          if (User.role === "Admin") {
+            navigate("/admin/dashboard")
+          } else {
+            switch (User.department?.code) {
+              case "DEPARTMENT1":
+                navigate("/staff/dashboard")
+                break
+
+              case "DEPARTMENT2":
+                navigate("/staff/dashboard")
+                break
+
+              case "DEPARTMENT3":
+                navigate("/staff/reports/markettingdashboard")
+                break
+              case "DEPARTMENT4":
+                navigate("/staff/support&department")
+                break
+
+              default:
+                navigate("/staff/dashboard")
             }
-          }, 1000)
+          }
         }
       }
     } catch (error) {

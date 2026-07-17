@@ -199,7 +199,6 @@ const Sidebar = ({
   user,
   selectedBranch,
   setselectedBranch,
-  setselectedParentBranch,
   branchOptions,
   categorylist,
   targetLoading,
@@ -208,6 +207,8 @@ const Sidebar = ({
   setAvatarOpen,
   onPasswordChange
 }) => {
+console.log(selectedBranch)
+
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState(null)
 
@@ -479,8 +480,12 @@ console.log(payload)
               <BranchSelect
                 value={selectedBranch}
                 onChange={(value) => {
-                  setselectedParentBranch(value)
+console.log(
+"hhh")
+console.log(value)
+console.log(value)
                   setselectedBranch(value)
+console.log(value)
                 }}
                 options={branchOptions}
               />

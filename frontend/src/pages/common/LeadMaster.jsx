@@ -4876,6 +4876,71 @@ item?.actualNetAmount??
   const tableRows = selectedleadlist || []
   console.log(tableRows)
   console.log(selectedCustomer)
+
+const handledownloadexcel = async () => {
+  try {
+    const companyId = "66f7b0b7ecbbc22fa88a9126";
+
+    const response = await api.get(
+      "lead/export-branch-wise-product-usage",
+      {
+        params: { companyId },
+        responseType: "blob",
+      }
+    );
+
+    const blob = new Blob([response.data], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+
+    const fileName = "Branch_Wise_Product_Usage_Report.xlsx";
+
+    const url = window.URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+
+    document.body.appendChild(link);
+    link.click();
+
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error(error);
+
+    toast.error("Failed to download Excel report.");
+  }
+};
+// const handledownloadexcel = async () => {
+//   try {
+//     const companyId = "66f7b0b7ecbbc22fa88a9126"; // pass dynamically if needed
+
+//     const response = await api.get(
+//       "lead/export-branch-wise-product-usage",
+//       {
+//         params: { companyId },
+//         responseType: "blob",
+//       }
+//     );
+// console.log(response.data)
+//     const blob = new Blob([response.data], {
+//       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+//     });
+
+//     const url = window.URL.createObjectURL(blob);
+//     const link = document.createElement("a");
+//     link.href = url;
+//     link.setAttribute("download", "branch_product_usage_report.xlsx");
+
+//     document.body.appendChild(link);
+//     link.click();
+//     link.remove();
+//     window.URL.revokeObjectURL(url);
+//   } catch (error) {
+//     console.error("Excel download failed:", error);
+//   }
+// };
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#ADD8E6]">
       {(modalloader ||
@@ -4927,6 +4992,12 @@ item?.actualNetAmount??
                 <div className="text-sm font-bold px-4 py-1 rounded border-2 text-red-600 border-red-500 bg-white">
                   {process === "Registration" ? "New Lead" : "Edit Lead"}
                 </div>
+{/* <button
+type="button"
+onClick={handledownloadexcel}
+>
+convertexcel
+</button> */}
               </div>
 
               <div className="p-3 md:p-4 space-y-3">

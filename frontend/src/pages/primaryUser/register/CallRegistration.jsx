@@ -407,6 +407,7 @@ export default function CallRegistration() {
     const handler = setTimeout(() => {
       if (search && !selectedCustomer) {
         console.log("H")
+console.log(search)
         fetchCustomerData(search)
         setloading(true)
       } else {
@@ -1185,6 +1186,7 @@ Problem:    \t${selectedText}
       if (response.ok) {
         const result = await response.json()
         setCustomerData(result.data)
+console.log(result.data)
         if (result.data.length > 0) {
           setMessage("")
         } else {
@@ -1485,104 +1487,193 @@ Problem:    \t${selectedText}
       </div>
     )
   }
-  const ProductCircleCard = ({
-    item,
-    actualIndex,
-    productType,
-    variant,
-    line1,
-    line2,
-    line3,
-    line4,
-    line5,
-    onEdit,
-    onDelete,
-    isSelected,
-    onSelect,
-    isreadonly = false
-  }) => {
-    console.log(line5)
-    console.log(isSelected)
-    const variantClass =
-      variant === "danger"
-        ? "bg-[#ffdedd] border-[#f4c6c2]"
-        : variant === "service"
-          ? "bg-[#fff3c9] border-[#f0e1a2]"
-          : "bg-[#dff3d2] border-[#cce6bc]"
+  // const ProductCircleCard = ({
+  //   item,
+  //   actualIndex,
+  //   productType,
+  //   variant,
+  //   line1,
+  //   line2,
+  //   line3,
+  //   line4,
+  //   line5,
+  //   onEdit,
+  //   onDelete,
+  //   isSelected,
+  //   onSelect,
+  //   isreadonly = false
+  // }) => {
+  //   console.log(line5)
+  //   console.log(isSelected)
+  //   const variantClass =
+  //     variant === "danger"
+  //       ? "bg-[#ffdedd] border-[#f4c6c2]"
+  //       : variant === "service"
+  //         ? "bg-[#fff3c9] border-[#f0e1a2]"
+  //         : "bg-[#dff3d2] border-[#cce6bc]"
 
-    return (
-      <div className="group relative inline-block">
-        {isSelected && (
-          <div className="absolute -right-1 -top-1 z-20 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-emerald-500 text-white shadow-md">
-            <Check size={15} strokeWidth={3} />
-          </div>
-        )}
+  //   return (
+  //     <div className="group relative inline-block">
+  //       {isSelected && (
+  //         <div className="absolute -right-1 -top-1 z-20 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-emerald-500 text-white shadow-md">
+  //           <Check size={15} strokeWidth={3} />
+  //         </div>
+  //       )}
 
-        <button
-          type="button"
-          onClick={() => {
-            console.log(callupdate)
-            if (callupdate) return
-            onSelect(item, actualIndex)
-          }}
-          className={`relative flex h-[120px] w-[124px] flex-col items-center justify-center rounded-full border text-center shadow-sm transition hover:scale-[1.02] ${variantClass} ${
-            isSelected ? "ring-2 ring-emerald-500 ring-offset-2" : ""
-          }`}
-        >
-          <div className="flex w-[90px] flex-col items-center justify-center">
-            <p className="w-full break-words text-center text-[10px] font-medium leading-[12px] text-[#1e293b] line-clamp-2">
-              {line1}
+  //       <button
+  //         type="button"
+  //         onClick={() => {
+  //           console.log(callupdate)
+  //           if (callupdate) return
+  //           onSelect(item, actualIndex)
+  //         }}
+  //         className={`relative flex h-[120px] w-[124px] flex-col items-center justify-center rounded-full border text-center shadow-sm transition hover:scale-[1.02] ${variantClass} ${
+  //           isSelected ? "ring-2 ring-emerald-500 ring-offset-2" : ""
+  //         }`}
+  //       >
+  //         <div className="flex w-[90px] flex-col items-center justify-center">
+  //           <p className="w-full break-words text-center text-[10px] font-medium leading-[12px] text-[#1e293b] line-clamp-2">
+  //             {line1}
+  //           </p>
+
+  //           {line2 ? (
+  //             <p className="mt-1 w-full truncate text-center text-[10px] font-medium leading-[12px] text-[#4b5563]">
+  //               {line2}
+  //             </p>
+  //           ) : null}
+
+  //           {line3 ? (
+  //             <p className="mt-1 w-full whitespace-nowrap text-center text-[10px] font-semibold leading-[10px] text-[#d35c5c]">
+  //               {productType === "Primaryproduct" ? "Date" : "Due"} : {line3}
+  //             </p>
+  //           ) : null}
+
+  //           {line4 ? (
+  //             <p
+  //               className={`mt-1 w-full truncate text-center text-[9px] font-bold leading-[11px] ${
+  //                 line4 === "Active" ? "text-green-600" : "text-orange-500"
+  //               }`}
+  //             >
+  //               {line4}
+  //             </p>
+  //           ) : null}
+
+  //           {line5 ? (
+  //             <p className="mt-1 w-full truncate text-center text-[9px] font-bold leading-[11px] text-[#0b66e6]">
+  //               Amount : {line5}
+  //             </p>
+  //           ) : null}
+  //         </div>
+  //       </button>
+
+  //       <div className="absolute -right-2 -top-2 z-30 hidden gap-1 group-hover:flex">
+  //         <button
+  //           type="button"
+  //           onClick={() => onEdit(item, actualIndex)}
+  //           className="rounded-full bg-white p-2 text-green-600 shadow"
+  //         >
+  //           <FaEdit size={10} />
+  //         </button>
+         
+  //       </div>
+  //     </div>
+  //   )
+  // }
+const ProductCircleCard = ({
+  item,
+  actualIndex,
+  productType,
+  variant,
+  line1,
+  line2,
+  line3,
+  line4,
+  line5,
+  onEdit,
+  onDelete,
+  isSelected,
+  onSelect,
+  isreadonly = false
+}) => {
+  const variantClass =
+    variant === "danger"
+      ? "bg-[#ffdedd] border-[#f4c6c2]"
+      : variant === "service"
+      ? "bg-[#fff3c9] border-[#f0e1a2]"
+      : "bg-[#dff3d2] border-[#cce6bc]";
+
+  return (
+    <div className="group relative inline-block">
+      {/* Selected Tick */}
+      {isSelected && (
+        <div className="absolute -left-1 -top-1 z-20 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-emerald-500 text-white shadow-lg">
+          <Check size={15} strokeWidth={3} />
+        </div>
+      )}
+
+      {/* Card */}
+      <button
+        type="button"
+        onClick={() => {
+          if (callupdate) return;
+          onSelect(item, actualIndex);
+        }}
+        className={`relative flex h-[120px] w-[124px] flex-col items-center justify-center rounded-full border text-center shadow-sm transition duration-200 hover:scale-[1.02] ${variantClass} ${
+          isSelected ? "ring-2 ring-emerald-500 ring-offset-2" : ""
+        }`}
+      >
+        <div className="flex w-[90px] flex-col items-center justify-center">
+          <p className="w-full break-words text-center text-[10px] font-medium leading-[12px] text-[#1e293b] line-clamp-2">
+            {line1}
+          </p>
+
+          {line2 && (
+            <p className="mt-1 w-full truncate text-center text-[10px] font-medium leading-[12px] text-[#4b5563]">
+              {line2}
             </p>
+          )}
 
-            {line2 ? (
-              <p className="mt-1 w-full truncate text-center text-[10px] font-medium leading-[12px] text-[#4b5563]">
-                {line2}
-              </p>
-            ) : null}
+          {line3 && (
+            <p className="mt-1 w-full whitespace-nowrap text-center text-[10px] font-semibold leading-[10px] text-[#d35c5c]">
+              {productType === "Primaryproduct" ? "Date" : "Due"} : {line3}
+            </p>
+          )}
 
-            {line3 ? (
-              <p className="mt-1 w-full whitespace-nowrap text-center text-[10px] font-semibold leading-[10px] text-[#d35c5c]">
-                {productType === "Primaryproduct" ? "Date" : "Due"} : {line3}
-              </p>
-            ) : null}
+          {line4 && (
+            <p
+              className={`mt-1 w-full truncate text-center text-[9px] font-bold leading-[11px] ${
+                line4 === "Active"
+                  ? "text-green-600"
+                  : "text-orange-500"
+              }`}
+            >
+              {line4}
+            </p>
+          )}
 
-            {line4 ? (
-              <p
-                className={`mt-1 w-full truncate text-center text-[9px] font-bold leading-[11px] ${
-                  line4 === "Active" ? "text-green-600" : "text-orange-500"
-                }`}
-              >
-                {line4}
-              </p>
-            ) : null}
+          {line5 && (
+            <p className="mt-1 w-full truncate text-center text-[9px] font-bold leading-[11px] text-[#0b66e6]">
+              Amount : {line5}
+            </p>
+          )}
+        </div>
+      </button>
 
-            {line5 ? (
-              <p className="mt-1 w-full truncate text-center text-[9px] font-bold leading-[11px] text-[#0b66e6]">
-                Amount : {line5}
-              </p>
-            ) : null}
-          </div>
-        </button>
-
-        <div className="absolute -right-2 -top-2 z-30 hidden gap-1 group-hover:flex">
+      {/* Edit Button */}
+      {isreadonly && (
+        <div className="absolute -bottom-2 -right-2 z-30 hidden group-hover:flex">
           <button
             type="button"
             onClick={() => onEdit(item, actualIndex)}
-            className="rounded-full bg-white p-2 text-green-600 shadow"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-green-600 shadow-lg transition hover:scale-110 hover:bg-green-50"
           >
-            <FaEdit size={10} />
+            <Eye size={11} />
           </button>
-          {/* <button
-            type="button"
-            onClick={() => onDelete(actualIndex)}
-            className="rounded-full bg-white p-2 text-red-600 shadow"
-          >
-            <FaTrash size={10} />
-          </button> */}
         </div>
-      </div>
-    )
-  }
+      )}
+    </div>
+  );
+};
 
   const filteredOptionsByType = useMemo(() => {
     return productOptions.filter(
@@ -1975,7 +2066,7 @@ Problem:    \t${selectedText}
                           >
                             <input
                               type="tel"
-                              value={selectedCustomer?.landline}
+                              value={selectedCustomer?.mobile}
                               className={tileInputClass}
                             />
                           </InfoInputCard>
