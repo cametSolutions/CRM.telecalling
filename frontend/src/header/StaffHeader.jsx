@@ -1,9 +1,9 @@
-
-
-import { useEffect, useMemo, useState } from "react"
+import { act, useEffect, useMemo, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
+import { useSelector } from "react-redux"
 import api from "../api/api"
+import ReportBugButton from "../components/developer/ReportBugButton"
 import { useUnsavedChanges } from "../context/UnsavedChangesContext"
 import {
   FiMenu,
@@ -27,6 +27,7 @@ import { FaUserCircle } from "react-icons/fa"
 
 export default function StaffHeader({ hide = false }) {
   const [user, setUser] = useState(null)
+  console.log(user)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [mobileMenu, setMobileMenu] = useState(null)
   const [mobileChildMenu, setMobileChildMenu] = useState(null)
@@ -34,14 +35,16 @@ export default function StaffHeader({ hide = false }) {
   const navigate = useNavigate()
   const location = useLocation()
   const { requestNavigation } = useUnsavedChanges()
+  const activeCompany = useSelector((state) => state.auth.activeCompany)
 
+  console.log(activeCompany)
   useEffect(() => {
     const storedUser = localStorage.getItem("user")
     if (storedUser) setUser(JSON.parse(storedUser))
   }, [])
 
   const permissions = user?.permissions?.[0] || {}
-
+  console.log(permissions)
   const masters = useMemo(
     () => [
       {
@@ -193,6 +196,12 @@ export default function StaffHeader({ hide = false }) {
         control: permissions.CallRegistration ?? false
       },
       {
+        to: "/staff/support&department",
+        label: "Support Department",
+        control: permissions.SupportDepartment ?? false
+      },
+
+      {
         to: "/staff/transaction/leave-application",
         label: "Leave Application",
         control: permissions.LeaveApplication ?? false
@@ -246,7 +255,7 @@ export default function StaffHeader({ hide = false }) {
     ],
     [permissions]
   )
-console.log(permissions)
+  console.log(permissions)
   // Reports is now split into labeled groups (Marketing / Service / My Activities),
   // matching the Admin header. Each group renders inline in the same dropdown panel
   // with a highlighted section header instead of a flyout submenu. Every item still
@@ -367,6 +376,8 @@ console.log(permissions)
     reports.flatMap((groupItem) => groupItem.items).filter((i) => i.control)
 
   const handleSafeNavigate = (path, options = {}) => {
+    console.log(path)
+    console.log(options)
     requestNavigation(() => {
       setMobileOpen(false)
       setMobileMenu(null)
@@ -503,7 +514,9 @@ console.log(permissions)
                   {ChildIcon && (
                     <ChildIcon
                       className={`h-4 w-4 shrink-0 ${
-                        isPathActive(child.to) ? "text-sky-400" : "text-slate-400"
+                        isPathActive(child.to)
+                          ? "text-sky-400"
+                          : "text-slate-400"
                       }`}
                     />
                   )}
@@ -516,7 +529,7 @@ console.log(permissions)
       })}
     </div>
   )
-
+  console.log(hide)
   return (
     <>
       <header
@@ -559,14 +572,41 @@ console.log(permissions)
             <div className="flex items-center gap-1 rounded-2xl border border-white/10 bg-[#162033] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
               <button
                 type="button"
-                onClick={() => handleSafeNavigate("/staff/dashBoard")}
+                onClick={() => {
+                  let userwisepath = null
+                  if (user.role === "Admin") {
+                    userwisepath = "/admin/dashboard"
+                  } else {
+                    switch (user.department?.code) {
+                      case "DEPARTMENT1":
+                        userwisepath = "/staff/dashboard"
+                        break
+
+                      case "DEPARTMENT2":
+                        userwisepath = "/staff/dashboard"
+                        break
+
+                      case "DEPARTMENT3":
+                        userwisepath = "/staff/reports/markettingdashboard"
+                        break
+                      case "DEPARTMENT4":
+                        userwisepath = "/staff/support&department"
+                        break
+
+                      default:
+                        userwisepath = "/staff/dashboard"
+                    }
+                  }
+
+                  handleSafeNavigate(userwisepath)
+                }}
                 className={`px-3.5 py-2 rounded-xl text-[13px] font-medium transition-all duration-200 ${
                   isPathActive("/staff/dashBoard")
                     ? "bg-[#243145] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
                     : "text-slate-300 hover:text-white hover:bg-[#1E293B]"
                 }`}
               >
-                Dashboard
+                Dashboards
               </button>
 
               {menuGroups.map((group) => {
@@ -605,47 +645,48 @@ console.log(permissions)
             </div>
           </div>
 
-          {!hide && (
-            <div className="ml-auto flex items-center gap-2">
-              <div className="hidden md:flex items-center gap-3 rounded-2xl border border-white/10 bg-[#162033] px-2.5 py-1.5">
-                <div className="flex min-w-0 items-center gap-2">
-                  {user?.profileUrl ? (
-                    <img
-                      src={user.profileUrl}
-                      alt="Profile"
-                      className="h-9 w-9 rounded-xl object-cover ring-1 ring-white/10"
-                    />
-                  ) : (
-                    <FaUserCircle className="text-[30px] text-slate-400" />
-                  )}
+          <div className="ml-auto flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-3 rounded-2xl border border-white/10 bg-[#162033] px-2.5 py-1.5">
+              <div className="flex min-w-0 items-center gap-2">
+                {user?.profileUrl ? (
+                  <img
+                    src={user.profileUrl}
+                    alt="Profile"
+                    className="h-9 w-9 rounded-xl object-cover ring-1 ring-white/10"
+                  />
+                ) : (
+                  <FaUserCircle className="text-[30px] text-slate-400" />
+                )}
 
-                  <div className="min-w-0">
-                    <div className="truncate text-[13px] font-semibold text-white">
-                      {user?.name || "Staff User"}
-                    </div>
-                    <div className="flex items-center gap-2 text-[11px] text-slate-400">
-                      <span className="truncate">
-                        {user?.selected?.[0]?.branchName || "Branch"}
-                      </span>
-                      <span className="h-1 w-1 rounded-full bg-slate-500" />
-                      <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-emerald-400">
-                        {user?.role || "Staff"}
-                      </span>
-                    </div>
+                <div className="min-w-0">
+                  <div className="truncate text-[13px] font-semibold text-white">
+                    {user?.name || "Staff User"}
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                    <span className="truncate">
+                      {user?.selected?.[0]?.branchName || "Branch"}
+                    </span>
+                    <span className="h-1 w-1 rounded-full bg-slate-500" />
+                    <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-emerald-400">
+                      {user?.role || "Staff"}
+                    </span>
                   </div>
                 </div>
               </div>
-
-              <button
-                onClick={logout}
-                className="flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-[#162033] px-3 text-[13px] font-medium text-slate-300 transition hover:bg-rose-500/10 hover:text-rose-300"
-              >
-                <FiLogOut size={15} />
-                <span className="hidden sm:inline">Logout</span>
-              </button>
             </div>
-          )}
+
+            <button
+              onClick={logout}
+              className="flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-[#162033] px-3 text-[13px] font-medium text-slate-300 transition hover:bg-rose-500/10 hover:text-rose-300"
+            >
+              <FiLogOut size={15} />
+              <span className="hidden sm:inline">Logout</span>
+            </button>
+           
+          </div>
+ <ReportBugButton />
         </div>
+
       </header>
 
       {mobileOpen && (
@@ -881,4 +922,3 @@ console.log(permissions)
     </>
   )
 }
-

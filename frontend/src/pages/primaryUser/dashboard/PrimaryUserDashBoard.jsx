@@ -767,8 +767,6 @@
 //   )
 // }
 
-
-
 import { useEffect, useState, useRef } from "react"
 import {
   MdSupportAgent,
@@ -783,7 +781,8 @@ import { Link } from "react-router-dom"
 import UseFetch from "../../../hooks/useFetch"
 import { getLocalStorageItem } from "../../../helper/localstorage"
 import api from "../../../api/api"
-
+import AnnouncementModal from "../../../components/primaryUser/AnnouncementModal"
+import AnnouncementBanner from "../../../components/primaryUser/AnnouncementBanner"
 export default function PrimaryUserDashBoard() {
   const [leaveList, setTodayLeaveList] = useState([])
   const [announcement, setAnnouncementText] = useState("")
@@ -803,14 +802,15 @@ export default function PrimaryUserDashBoard() {
   const [birthdayPerson, setBirthdayPerson] = useState(null)
   const [currentyearholydays, setcurrentyearHoliday] = useState([])
   const headerRef = useRef(null)
-
+  const [openannoucementpopup, setopenannoucementpopup] = useState(false)
+  console.log(openannoucementpopup)
   const { data: todayleavelist } = UseFetch("/auth/getallUsersLeave?today=true")
   const { data: currrentMonthBirthDays } = UseFetch(
     "/auth/getallcurrentmonthBirthdays"
   )
 
-console.log(currentyearholydays)
-console.log(currrentMonthBirthDays)
+  console.log(currentyearholydays)
+  console.log(currrentMonthBirthDays)
   const { data: todayOnsite } = UseFetch("/auth/getallUsersOnsite?today=true")
   const { data: staffs } = UseFetch("/auth/getallStaffs")
   const { data: acheivementlist, refreshHook } = UseFetch(
@@ -820,6 +820,7 @@ console.log(currrentMonthBirthDays)
   const { data: announcementlist } = UseFetch(
     "/dashboard/getcurrentAnnouncement"
   )
+console.log(announcementlist)
 
   useEffect(() => {
     const userData = getLocalStorageItem("user")
@@ -943,7 +944,10 @@ console.log(currrentMonthBirthDays)
   const cards = [
     {
       label: "support department",
-      to: user?.role==="Admin"?"/admin/support&department":"/staff/support&department",
+      to:
+        user?.role === "Admin"
+          ? "/admin/support&department"
+          : "/staff/support&department",
       icon: MdSupportAgent,
       show: true
     },
@@ -998,7 +1002,7 @@ console.log(currrentMonthBirthDays)
     setannouncementLoader(true)
     try {
       const response = await api.post("/dashboard/updateAnnouncement", {
-        announcement
+        annoucementtext:announcement
       })
       setAnnouncementText(response.data.data.announcement)
       toast.success(response.data.message)
@@ -1014,7 +1018,18 @@ console.log(currrentMonthBirthDays)
     const wish = true
     localStorage.setItem("wish", JSON.stringify(wish))
   }
+const DEFAULT_ANNOUNCEMENT = {
+  announcementTitle: "Announcements",
+  announcement: "There are no announcements at the moment.",
+  announcementType: "general",
+  badge: "",
+  postedBy: "CAMET CRM",
+};
 
+const announcements =
+  announcementlist?.[0]?.announcement
+    ? announcementlist[0]
+    : DEFAULT_ANNOUNCEMENT;
   return (
     <div className="min-h-screen bg-[#ADD8E6]">
       {/* Birthday popup */}
@@ -1097,6 +1112,25 @@ console.log(currrentMonthBirthDays)
           </div>
         </div>
       )}
+      {openannoucementpopup && (
+        <AnnouncementModal
+          open={openannoucementpopup}
+          onClose={() => setopenannoucementpopup(false)}
+          onSuccess={(saved) => {
+            // e.g. refetch announcementlist here, or push `saved` into it
+            setopenannoucementpopup(false)
+          }}
+        />
+      )}
+
+        <div className="mb-2 mx-2">
+          <AnnouncementBanner
+            announcementlist={announcements}
+            setopenannoucementpopup={setopenannoucementpopup}
+action={false}
+          />
+        </div>
+      
 
       {/* Navigation Cards – assume header above is green, so keep this dark-green/navy band */}
       <div

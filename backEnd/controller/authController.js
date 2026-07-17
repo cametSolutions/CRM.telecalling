@@ -7550,22 +7550,22 @@ export const Login = async (req, res) => {
 
     if (emailRegex.test(trimmedLogin)) {
       user = await Admin.findOne({ email: trimmedLogin })
-        .populate({ path: "department", select: "department" })
+        .populate({ path: "department", select: "department code" })
         .lean()
 
       if (!user) {
         user = await Staff.findOne({ email: trimmedLogin })
-          .populate({ path: "department", select: "department" })
+          .populate({ path: "department", select: "department code" })
           .lean()
       }
     } else {
       user = await Admin.findOne({ mobile: trimmedLogin })
-        .populate({ path: "department", select: "department" })
+        .populate({ path: "department", select: "department code" })
         .lean()
 
       if (!user) {
         user = await Staff.findOne({ mobile: trimmedLogin })
-          .populate({ path: "department", select: "department" })
+          .populate({ path: "department", select: "department code" })
           .lean()
       }
     }
@@ -10772,6 +10772,7 @@ export const GetallOnsite = async (req, res) => {
 export const GetallUsersLeave = async (req, res) => {
   try {
     const { today } = req.query
+
 
     let leavelist
     if (today === "true") {

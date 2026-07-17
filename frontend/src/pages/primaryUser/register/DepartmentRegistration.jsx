@@ -3,7 +3,7 @@ import { IoReorderThreeSharp } from "react-icons/io5"
 import api from "../../../api/api"
 import DeleteAlert from "../../../components/common/DeleteAlert"
 import Edit from "../../../components/common/Edit"
-
+import { useSelector } from "react-redux"
 import { toast } from "react-toastify"
 import UseFetch from "../../../hooks/useFetch"
 export default function DepartmentRegistration() {
@@ -12,6 +12,11 @@ export default function DepartmentRegistration() {
   const [items, setItems] = useState([])
   const [editId, setEditId] = useState("")
   const { data, loading, error, refreshHook } = UseFetch(`/master/getDepartmentList`)
+const activeCompany = useSelector(
+  state => state.auth.activeCompany
+);
+console.log(activeCompany)
+
   useEffect(() => {
     if (data) {
       setItems(data)
@@ -61,7 +66,7 @@ export default function DepartmentRegistration() {
       } else {
         // Create a new item
 
-        await api.post("/master/departmentRegistration", formData)
+        await api.post(`/master/departmentRegistration?cmpid=${activeCompany.company_id}`, formData)
 
         toast.success("Department created successfully")
       }

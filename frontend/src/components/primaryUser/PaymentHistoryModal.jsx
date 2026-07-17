@@ -5,6 +5,7 @@ import { toast } from "react-toastify"
 import api from "../../api/api"
 export const PaymentHistoryModal = ({
   data,
+showAction=true,
   balanceAmount,
   isforcefullyclosed,
   isChecked,
@@ -264,7 +265,7 @@ export const PaymentHistoryModal = ({
                   <th className="px-3 sm:px-4 py-3 text-center text-xs sm:text-sm font-semibold whitespace-nowrap">
                     Bank Remarks
                   </th>
-                  {!verifiedLead && (
+                  {!verifiedLead &&showAction&& (
                     <th className="px-3 sm:px-4 py-3 text-center text-xs sm:text-sm font-semibold  whitespace-nowrap">
                       Actions
                     </th>
@@ -333,7 +334,7 @@ export const PaymentHistoryModal = ({
                           </span>
                         )}
                       </td>
-                      {!verifiedLead && (
+                      {!verifiedLead &&showAction&& (
                         <td className="px-3 sm:px-4 py-3  whitespace-nowrap text-center">
                           {isEditing ? (
                             <div className="flex items-center justify-center gap-2">

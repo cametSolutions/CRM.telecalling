@@ -416,7 +416,7 @@ function UsersLeaveApplicationSummary() {
         //   { formData, tableRows }
         // )
         const response = await api.post(
-          `https://www.crmtest.camet.in/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+          `https://www.crm.camet.in/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
           { formData, tableRows }
         )
 

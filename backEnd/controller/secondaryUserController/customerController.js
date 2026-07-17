@@ -57,7 +57,6 @@ export const duplicate = async (req, res) => {
     }
   ]);
 
-  console.log(duplicateCustomers);
   return res.status(200).json({ message: "found duplicate", data: duplicateCustomers })
 }
 
@@ -824,7 +823,6 @@ export const GetscrollCustomer = async (req, res) => {
     ];
 
     const result = await Customer.aggregate(pipeline);
-    console.log("resuttttt", result)
     const responseData = result[0] || {
       selectedbranchCustomercount: 0,
       customers: []
@@ -1739,7 +1737,6 @@ export const CustomereditonLead = async (req, res) => {
   try {
     const { customerData } = req.body;
 
-    console.log("customerData", customerData);
 
     if (!customerData?.customerid) {
       return res.status(400).json({ message: "Customerid is required" });
@@ -1870,65 +1867,415 @@ export const CustomereditonLead = async (req, res) => {
 //     res.status(500).json({ message: "Internal server error" })
 //   }
 // }
+// export const CustomerEdit = async (req, res) => {
+//   const { customerData, tableData = [] } = req.body
+//   const { customerid, index } = req.query
+
+//   const parsedIndex = parseInt(index, 10)
+
+//   if (!customerid || !customerData) {
+//     return res
+//       .status(400)
+//       .json({ message: "Customer ID and data are required" })
+//   }
+
+//   try {
+//     const objectId = new mongoose.Types.ObjectId(customerid)
+
+//     const existingCustomer = await Customer.findById(objectId)
+//     if (!existingCustomer) {
+//       return res.status(404).json({ message: "Customer not found" })
+//     }
+// console.log("exissssss",existingCustomer)
+
+//     Object.assign(existingCustomer, customerData)
+//     // existingCustomer.selected = tableData
+// const updatedSelected = existingCustomer.selected.map((existingItem) => {
+//   const incomingItem = tableData.find(
+//     (item) =>
+//       String(item.productid || item.product_id) ===
+//       String(existingItem.productid || existingItem.product_id)
+//   );
+
+//   if (!incomingItem) return existingItem;
+
+//   // Merge taggeddata
+//   const mergedTaggedData = [...(existingItem.taggeddata || [])];
+
+//   (incomingItem.taggeddata || []).forEach((incomingTag) => {
+//     const index = mergedTaggedData.findIndex(
+//       (tag) => String(tag.licensenumber) === String(incomingTag.licensenumber)
+//     );
+
+//     if (index >= 0) {
+//       mergedTaggedData[index] = {
+//         ...mergedTaggedData[index],
+//         ...incomingTag
+//       };
+//     } else {
+//       mergedTaggedData.push(incomingTag);
+//     }
+//   });
+
+//   return {
+//     ...existingItem,
+//     ...incomingItem,
+//     taggeddata: mergedTaggedData
+//   };
+// });
+
+// existingCustomer.selected = updatedSelected;
+
+//     await existingCustomer.save()
+
+//     const directLicenseNumbers = tableData
+//       .filter(
+//         (item) =>
+//           item?.licensenumber !== null &&
+//           item?.licensenumber !== undefined &&
+//           String(item?.licensenumber).trim() !== ""
+//       )
+//       .map((item) => ({
+//         licensenumber: Number(item.licensenumber),
+//         productid: item?.productid || item?.product_id || null
+//       }))
+
+//     const taggedLicenseNumbers = tableData.flatMap((item) =>
+//       Array.isArray(item?.taggeddata)
+//         ? item.taggeddata
+//           .filter(
+//             (tag) =>
+//               tag?.licensenumber !== null &&
+//               tag?.licensenumber !== undefined &&
+//               String(tag?.licensenumber).trim() !== ""
+//           )
+//           .map((tag) => ({
+//             licensenumber: Number(tag.licensenumber),
+//             productid: item?.productid || item?.product_id || null
+//           }))
+//         : []
+//     )
+
+//     const allLicenses = [...directLicenseNumbers]
+
+//     const uniqueLicenseMap = new Map()
+//     for (const item of allLicenses) {
+//       if (!uniqueLicenseMap.has(String(item.licensenumber))) {
+//         uniqueLicenseMap.set(String(item.licensenumber), item)
+//       }
+//     }
+
+//     const uniqueLicenses = Array.from(uniqueLicenseMap.values())
+//     const licenseNumbers = uniqueLicenses.map((item) => item.licensenumber)
+
+//     if (licenseNumbers.length > 0) {
+//       const existingLicenses = await License.find({
+//         customerName: existingCustomer._id,
+//         licensenumber: { $in: licenseNumbers }
+//       }).select("licensenumber")
+
+//       const existingLicenseSet = new Set(
+//         existingLicenses.map((item) => String(item.licensenumber))
+//       )
+
+//       const newLicenses = uniqueLicenses.filter(
+//         (item) => !existingLicenseSet.has(String(item.licensenumber))
+//       )
+
+//       if (newLicenses.length > 0) {
+//         const licenseDocs = newLicenses.map((item) => ({
+//           products: item.productid,
+//           customerName: existingCustomer._id,
+//           licensenumber: item.licensenumber
+//         }))
+
+//         await License.insertMany(licenseDocs)
+//       }
+//     }
+
+//     return res.status(200).json({
+//       message: "Customer updated successfully"
+//     })
+//   } catch (error) {
+//     console.error("Error updating customer:", error.message)
+//     return res.status(500).json({ message: "Internal server error" })
+//   }
+// }
+
+/**
+ * Lightweight typed error so the catch block can distinguish
+ * "expected" failures (bad input, not found) from real server errors
+ * and respond with the right status code instead of a blanket 500.
+ */
+// class AppError extends Error {
+//   constructor(message, statusCode = 500) {
+//     super(message)
+//     this.statusCode = statusCode
+//   }
+// }
+
+// export const CustomerEdit = async (req, res) => {
+//   const { customerData, tableData = [] } = req.body
+// console.log("tabledata",tableData)
+//   const { customerid } = req.query
+
+//   // ---- Fast-fail validation before we ever open a session ----
+//   if (!customerid || !customerData) {
+//     return res
+//       .status(400)
+//       .json({ message: "Customer ID and data are required" })
+//   }
+
+//   if (!mongoose.Types.ObjectId.isValid(customerid)) {
+//     return res.status(400).json({ message: "Invalid customer ID" })
+//   }
+
+//   const session = await mongoose.startSession()
+
+//   try {
+//     session.startTransaction()
+
+//     const objectId = new mongoose.Types.ObjectId(customerid)
+
+//     const existingCustomer = await Customer.findById(objectId).session(session)
+//     if (!existingCustomer) {
+//       throw new AppError("Customer not found", 404)
+//     }
+
+//     Object.assign(existingCustomer, customerData)
+
+//     const updatedSelected = existingCustomer.selected.map((existingItem) => {
+//       const incomingItem = tableData.find(
+//         (item) =>
+//           String(item.productid || item.product_id) ===
+//           String(existingItem.productid || existingItem.product_id)
+//       )
+
+//       if (!incomingItem) return existingItem
+
+//       // Merge taggeddata
+//       const mergedTaggedData = [...(existingItem.taggeddata || [])]
+
+//       ;(incomingItem.taggeddata || []).forEach((incomingTag) => {
+//         const tagIndex = mergedTaggedData.findIndex(
+//           (tag) =>
+//             String(tag.licensenumber) === String(incomingTag.licensenumber)
+//         )
+
+//         if (tagIndex >= 0) {
+//           mergedTaggedData[tagIndex] = {
+//             ...mergedTaggedData[tagIndex],
+//             ...incomingTag
+//           }
+//         } else {
+//           mergedTaggedData.push(incomingTag)
+//         }
+//       })
+
+//       return {
+//         ...existingItem,
+//         ...incomingItem,
+//         taggeddata: mergedTaggedData
+//       }
+//     })
+
+//     existingCustomer.selected = updatedSelected
+
+//     await existingCustomer.save({ session })
+
+//     const directLicenseNumbers = tableData
+//       .filter(
+//         (item) =>
+//           item?.licensenumber !== null &&
+//           item?.licensenumber !== undefined &&
+//           String(item?.licensenumber).trim() !== ""
+//       )
+//       .map((item) => ({
+//         licensenumber: Number(item.licensenumber),
+//         productid: item?.productid || item?.product_id || null
+//       }))
+
+//     // NOTE: kept from the original — tagged license numbers are computed
+//     // but not currently merged into `allLicenses`. Left as-is since I
+//     // don't know if that's intentional; flip the line below if you want
+//     // tagged licenses included too:
+//     // const allLicenses = [...directLicenseNumbers, ...taggedLicenseNumbers]
+//     const taggedLicenseNumbers = tableData.flatMap((item) =>
+//       Array.isArray(item?.taggeddata)
+//         ? item.taggeddata
+//             .filter(
+//               (tag) =>
+//                 tag?.licensenumber !== null &&
+//                 tag?.licensenumber !== undefined &&
+//                 String(tag?.licensenumber).trim() !== ""
+//             )
+//             .map((tag) => ({
+//               licensenumber: Number(tag.licensenumber),
+//               productid: item?.productid || item?.product_id || null
+//             }))
+//         : []
+//     )
+
+//     const allLicenses = [...directLicenseNumbers]
+
+//     const uniqueLicenseMap = new Map()
+//     for (const item of allLicenses) {
+//       if (!uniqueLicenseMap.has(String(item.licensenumber))) {
+//         uniqueLicenseMap.set(String(item.licensenumber), item)
+//       }
+//     }
+
+//     const uniqueLicenses = Array.from(uniqueLicenseMap.values())
+//     const licenseNumbers = uniqueLicenses.map((item) => item.licensenumber)
+
+//     if (licenseNumbers.length > 0) {
+//       const existingLicenses = await License.find({
+//         customerName: existingCustomer._id,
+//         licensenumber: { $in: licenseNumbers }
+//       })
+//         .session(session)
+//         .select("licensenumber")
+
+//       const existingLicenseSet = new Set(
+//         existingLicenses.map((item) => String(item.licensenumber))
+//       )
+
+//       const newLicenses = uniqueLicenses.filter(
+//         (item) => !existingLicenseSet.has(String(item.licensenumber))
+//       )
+
+//       if (newLicenses.length > 0) {
+//         const licenseDocs = newLicenses.map((item) => ({
+//           products: item.productid,
+//           customerName: existingCustomer._id,
+//           licensenumber: item.licensenumber
+//         }))
+
+//         await License.insertMany(licenseDocs, { session })
+//       }
+//     }
+
+//     await session.commitTransaction()
+
+//     return res.status(200).json({ message: "Customer updated successfully" })
+//   } catch (error) {
+//     // Roll back every write made in this session (customer save +
+//     // license inserts) so a failure never leaves partial data behind.
+//     await session.abortTransaction()
+
+//     console.error("Error updating customer:", error.message)
+
+//     if (error instanceof AppError) {
+//       return res.status(error.statusCode).json({ message: error.message })
+//     }
+
+//     // Mongoose validation errors -> 400 instead of a generic 500
+//     if (error.name === "ValidationError") {
+//       return res.status(400).json({ message: error.message })
+//     }
+
+//     // Invalid ObjectId thrown further down the pipeline -> 400
+//     if (error.name === "CastError") {
+//       return res.status(400).json({ message: "Invalid ID format" })
+//     }
+
+//     return res.status(500).json({ message: "Internal server error" })
+//   } finally {
+//     session.endSession()
+//   }
+// }
+/**
+ * Lightweight typed error so the catch block can distinguish
+ * "expected" failures (bad input, not found) from real server errors
+ * and respond with the right status code instead of a blanket 500.
+ */
+class AppError extends Error {
+  constructor(message, statusCode = 500) {
+    super(message)
+    this.statusCode = statusCode
+  }
+}
+
 export const CustomerEdit = async (req, res) => {
   const { customerData, tableData = [] } = req.body
-  const { customerid, index } = req.query
+  const { customerid } = req.query
 
-  const parsedIndex = parseInt(index, 10)
 
+  // ---- Fast-fail validation before we ever open a session ----
   if (!customerid || !customerData) {
     return res
       .status(400)
       .json({ message: "Customer ID and data are required" })
   }
 
+  if (!mongoose.Types.ObjectId.isValid(customerid)) {
+    return res.status(400).json({ message: "Invalid customer ID" })
+  }
+
+  const session = await mongoose.startSession()
+
   try {
+    session.startTransaction()
+
     const objectId = new mongoose.Types.ObjectId(customerid)
 
-    const existingCustomer = await Customer.findById(objectId)
+    const existingCustomer = await Customer.findById(objectId).session(session)
     if (!existingCustomer) {
-      return res.status(404).json({ message: "Customer not found" })
+      throw new AppError("Customer not found", 404)
     }
 
     Object.assign(existingCustomer, customerData)
-    // existingCustomer.selected = tableData
-const updatedSelected = existingCustomer.selected.map((existingItem) => {
-  const incomingItem = tableData.find(
-    (item) =>
-      String(item.productid || item.product_id) ===
-      String(existingItem.productid || existingItem.product_id)
-  );
 
-  if (!incomingItem) return existingItem;
+    const keyOf = (item) => String(item?.productid || item?.product_id)
 
-  // Merge taggeddata
-  const mergedTaggedData = [...(existingItem.taggeddata || [])];
+    const existingMap = new Map(
+      existingCustomer.selected.map((item) => [keyOf(item), item])
+    )
 
-  (incomingItem.taggeddata || []).forEach((incomingTag) => {
-    const index = mergedTaggedData.findIndex(
-      (tag) => String(tag.licensenumber) === String(incomingTag.licensenumber)
-    );
+    const incomingKeys = new Set(tableData.map((item) => keyOf(item)))
 
-    if (index >= 0) {
-      mergedTaggedData[index] = {
-        ...mergedTaggedData[index],
-        ...incomingTag
-      };
-    } else {
-      mergedTaggedData.push(incomingTag);
-    }
-  });
+    // Anything already selected that this payload didn't touch — keep as-is.
+    const untouchedExisting = existingCustomer.selected.filter(
+      (item) => !incomingKeys.has(keyOf(item))
+    )
 
-  return {
-    ...existingItem,
-    ...incomingItem,
-    taggeddata: mergedTaggedData
-  };
-});
+    // Every item in the incoming payload: merge taggeddata if it already
+    // existed, or add it outright if it's a brand-new selection (this is
+    // the case that was silently getting dropped before — a product with
+    // no matching existingItem never got visited by the old .map()).
+    const mergedOrNew = tableData.map((incomingItem) => {
+      const existingItem = existingMap.get(keyOf(incomingItem))
 
-existingCustomer.selected = updatedSelected;
+      if (!existingItem) return incomingItem
 
-    await existingCustomer.save()
+      const mergedTaggedData = [...(existingItem.taggeddata || [])]
+
+      ;(incomingItem.taggeddata || []).forEach((incomingTag) => {
+        const tagIndex = mergedTaggedData.findIndex(
+          (tag) =>
+            String(tag.licensenumber) === String(incomingTag.licensenumber)
+        )
+
+        if (tagIndex >= 0) {
+          mergedTaggedData[tagIndex] = {
+            ...mergedTaggedData[tagIndex],
+            ...incomingTag
+          }
+        } else {
+          mergedTaggedData.push(incomingTag)
+        }
+      })
+
+      return {
+        ...existingItem,
+        ...incomingItem,
+        taggeddata: mergedTaggedData
+      }
+    })
+
+    existingCustomer.selected = [...untouchedExisting, ...mergedOrNew]
+
+    await existingCustomer.save({ session })
 
     const directLicenseNumbers = tableData
       .filter(
@@ -1942,19 +2289,24 @@ existingCustomer.selected = updatedSelected;
         productid: item?.productid || item?.product_id || null
       }))
 
+    // NOTE: kept from the original — tagged license numbers are computed
+    // but not currently merged into `allLicenses`. Left as-is since I
+    // don't know if that's intentional; flip the line below if you want
+    // tagged licenses included too:
+    // const allLicenses = [...directLicenseNumbers, ...taggedLicenseNumbers]
     const taggedLicenseNumbers = tableData.flatMap((item) =>
       Array.isArray(item?.taggeddata)
         ? item.taggeddata
-          .filter(
-            (tag) =>
-              tag?.licensenumber !== null &&
-              tag?.licensenumber !== undefined &&
-              String(tag?.licensenumber).trim() !== ""
-          )
-          .map((tag) => ({
-            licensenumber: Number(tag.licensenumber),
-            productid: item?.productid || item?.product_id || null
-          }))
+            .filter(
+              (tag) =>
+                tag?.licensenumber !== null &&
+                tag?.licensenumber !== undefined &&
+                String(tag?.licensenumber).trim() !== ""
+            )
+            .map((tag) => ({
+              licensenumber: Number(tag.licensenumber),
+              productid: item?.productid || item?.product_id || null
+            }))
         : []
     )
 
@@ -1974,7 +2326,9 @@ existingCustomer.selected = updatedSelected;
       const existingLicenses = await License.find({
         customerName: existingCustomer._id,
         licensenumber: { $in: licenseNumbers }
-      }).select("licensenumber")
+      })
+        .session(session)
+        .select("licensenumber")
 
       const existingLicenseSet = new Set(
         existingLicenses.map((item) => String(item.licensenumber))
@@ -1991,16 +2345,37 @@ existingCustomer.selected = updatedSelected;
           licensenumber: item.licensenumber
         }))
 
-        await License.insertMany(licenseDocs)
+        await License.insertMany(licenseDocs, { session })
       }
     }
 
-    return res.status(200).json({
-      message: "Customer updated successfully"
-    })
+    await session.commitTransaction()
+
+    return res.status(200).json({ message: "Customer updated successfully" })
   } catch (error) {
+    // Roll back every write made in this session (customer save +
+    // license inserts) so a failure never leaves partial data behind.
+    await session.abortTransaction()
+
     console.error("Error updating customer:", error.message)
+
+    if (error instanceof AppError) {
+      return res.status(error.statusCode).json({ message: error.message })
+    }
+
+    // Mongoose validation errors -> 400 instead of a generic 500
+    if (error.name === "ValidationError") {
+      return res.status(400).json({ message: error.message })
+    }
+
+    // Invalid ObjectId thrown further down the pipeline -> 400
+    if (error.name === "CastError") {
+      return res.status(400).json({ message: "Invalid ID format" })
+    }
+
     return res.status(500).json({ message: "Internal server error" })
+  } finally {
+    session.endSession()
   }
 }
 export const DeleteCustomer = async (req, res) => {
@@ -2211,7 +2586,7 @@ export const GetAllCustomer = async (req, res) => {
 export const GetselectedCustomerForCall = async (req, res) => {
   try {
     const customerId = req.params.id;
-    console.log("ciddddd", customerId);
+    // console.log("ciddddd", customerId);
 
     const customer = await Customer.aggregate([
       { $match: { _id: new mongoose.Types.ObjectId(customerId) } },
@@ -4683,7 +5058,7 @@ export const ChecklicenseForlead = async (req, res) => {
     }
 
     const licenseNo = Number(licenseNumber);
-    console.log("licneseno,licenseNo", licenseNo)
+    // console.log("licneseno,licenseNo", licenseNo)
 
     const [leadExists, licenseExists] = await Promise.all([
       Lead.findOne({
@@ -4715,8 +5090,8 @@ export const customerCallRegistration = async (req, res) => {
 
     const calldata = req.body // Assuming calldata is sent in the body
     const emailsend = calldata.formdata.emailSend
-    console.log("emailsenddd", emailsend)
-    console.log("branhname", branchName)
+    // console.log("emailsenddd", emailsend)
+    // console.log("branhname", branchName)
 
     // Convert attendedBy.callerId to ObjectId
     const addTimes = (time1, time2) => {
@@ -5153,7 +5528,7 @@ export const customerCallRegistration = async (req, res) => {
 
 
         }
-        console.log("calldata", calldata)
+        // console.log("calldata", calldata)
         user.callregistration.push(calldata)
         const updatedCall = await user.save()
         const Id = calldata.formdata.attendedBy.callerId
@@ -5668,7 +6043,7 @@ export const GetCallRegister = async (req, res) => {
 // console.log("callidddddddddddddddddddddddd",callId)
 // console.log("customerid",customerid)
     if (customerid !== "null" && customerid) {
-console.log("Hhhhhhhhhhhhhhhhhhhhhhhhhhhh")
+// console.log("Hhhhhhhhhhhhhhhhhhhhhhhhhhhh")
       const customerId = new mongoose.Types.ObjectId(customerid)
       const registeredCall = await CallRegistration.findOne({
         customerid: customerId
@@ -5827,7 +6202,7 @@ console.log("Hhhhhhhhhhhhhhhhhhhhhhhhhhhh")
         return res.status(404).json({ message: "No registered Calls" })
       }
     } else if (callId) {
-console.log("callid",callId)
+// console.log("callid",callId)
       const callDetails = await CallRegistration.findById(callId)
 .populate({
     path: "customerid",
@@ -5854,7 +6229,7 @@ console.log("callid",callId)
           model: "Product"
         })
         .populate({ path: "callregistration.formdata.callnote" })
-      console.log("calldetails", callDetails)
+      // console.log("calldetails", callDetails)
 
       const attendedByIds = new Set()
       const completedByIds = new Set()
@@ -6017,60 +6392,207 @@ console.log("callid",callId)
     res.status(500).json({ message: "internal server error" })
   }
 }
-
 export const GetAllExpiryRegister = async (req, res) => {
-  const { nextmonthReport, startDate, endDate } = req.query
+  const { nextmonthReport, startDate, endDate, filterType = "all" } = req.query
 
   try {
     let startOfNextMonth
     let endOfNextMonth
+
     const today = new Date()
     today.setHours(0, 0, 0, 0)
+
     if (nextmonthReport) {
-      // Calculate the start and end of the next month
-      startOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1)
-      endOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 2, 0)
-      endOfNextMonth.setHours(23, 59, 59, 999) // End of the day
+      startOfNextMonth = new Date(
+        today.getFullYear(),
+        today.getMonth() + 1,
+        1
+      )
+
+      endOfNextMonth = new Date(
+        today.getFullYear(),
+        today.getMonth() + 2,
+        0
+      )
+
+      endOfNextMonth.setHours(23, 59, 59, 999)
     }
 
-    const expiredCustomers = await Customer.find({
-      selected: {
-        $elemMatch: {
+    const dateFilter = nextmonthReport
+      ? { $gte: startOfNextMonth, $lte: endOfNextMonth }
+      : { $gte: new Date(startDate), $lte: new Date(endDate) }
+
+    let elemMatch = {}
+
+    switch (filterType) {
+      case "amc":
+        elemMatch = {
+          amcendDate: dateFilter
+        }
+        break
+
+      case "tuv":
+        elemMatch = {
+          tvuexpiryDate: dateFilter
+        }
+        break
+
+      case "license":
+        elemMatch = {
+          licenseExpiryDate: dateFilter
+        }
+        break
+
+      default:
+        elemMatch = {
           $or: [
-            {
-              licenseExpiryDate: nextmonthReport
-                ? { $gte: startOfNextMonth, $lte: endOfNextMonth }
-                : { $gte: startDate, $lte: endDate }
-            }, // License expiry in the past
-            {
-              tvuexpiryDate: nextmonthReport
-                ? { $gte: startOfNextMonth, $lte: endOfNextMonth }
-                : { $gte: startDate, $lte: endDate }
-            }, // TVU expiry in the past
-            {
-              amcendDate: nextmonthReport
-                ? { $gte: startOfNextMonth, $lte: endOfNextMonth }
-                : { $gte: startDate, $lte: endDate }
-            } // AMC end in the past
+            { licenseExpiryDate: dateFilter },
+            { tvuexpiryDate: dateFilter },
+            { amcendDate: dateFilter }
           ]
         }
+    }
+
+    const customers = await Customer.find({
+      selected: {
+        $elemMatch: elemMatch
       }
     })
+
+    const expiredCustomers = customers.map((customer) => {
+      const selected = customer.selected
+        .filter((item) => {
+          switch (filterType) {
+            case "amc":
+              return (
+                item.amcendDate &&
+                item.amcendDate >= dateFilter.$gte &&
+                item.amcendDate <= dateFilter.$lte
+              )
+
+            case "tuv":
+              return (
+                item.tvuexpiryDate &&
+                item.tvuexpiryDate >= dateFilter.$gte &&
+                item.tvuexpiryDate <= dateFilter.$lte
+              )
+
+            case "license":
+              return (
+                item.licenseExpiryDate &&
+                item.licenseExpiryDate >= dateFilter.$gte &&
+                item.licenseExpiryDate <= dateFilter.$lte
+              )
+
+            default:
+              return (
+                (item.licenseExpiryDate &&
+                  item.licenseExpiryDate >= dateFilter.$gte &&
+                  item.licenseExpiryDate <= dateFilter.$lte) ||
+                (item.tvuexpiryDate &&
+                  item.tvuexpiryDate >= dateFilter.$gte &&
+                  item.tvuexpiryDate <= dateFilter.$lte) ||
+                (item.amcendDate &&
+                  item.amcendDate >= dateFilter.$gte &&
+                  item.amcendDate <= dateFilter.$lte)
+              )
+          }
+        })
+        .map((item) => {
+          const obj = item.toObject ? item.toObject() : { ...item }
+
+          if (filterType === "amc") {
+            delete obj.licenseExpiryDate
+            delete obj.tvuexpiryDate
+          } else if (filterType === "tuv") {
+            delete obj.licenseExpiryDate
+            delete obj.amcendDate
+          } else if (filterType === "license") {
+            delete obj.tvuexpiryDate
+            delete obj.amcendDate
+          }
+
+          return obj
+        })
+
+      return {
+        ...customer.toObject(),
+        selected
+      }
+    })
+
     if (expiredCustomers.length > 0) {
       return res.status(200).json({
         message: "Customers found with expiry",
         data: expiredCustomers
       })
-    } else {
-      return res
-        .status(404)
-        .json({ message: "No customers with expired Dates", data: [] })
     }
+
+    return res.status(404).json({
+      message: "No customers with expired Dates",
+      data: []
+    })
   } catch (error) {
     console.log("error:", error.message)
-    return res.status(500).json({ message: "Internal server error" })
+    return res.status(500).json({
+      message: "Internal server error"
+    })
   }
 }
+
+// export const GetAllExpiryRegister = async (req, res) => {
+//   const { nextmonthReport, startDate, endDate } = req.query
+
+//   try {
+//     let startOfNextMonth
+//     let endOfNextMonth
+//     const today = new Date()
+//     today.setHours(0, 0, 0, 0)
+//     if (nextmonthReport) {
+//       // Calculate the start and end of the next month
+//       startOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1)
+//       endOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 2, 0)
+//       endOfNextMonth.setHours(23, 59, 59, 999) // End of the day
+//     }
+
+//     const expiredCustomers = await Customer.find({
+//       selected: {
+//         $elemMatch: {
+//           $or: [
+//             {
+//               licenseExpiryDate: nextmonthReport
+//                 ? { $gte: startOfNextMonth, $lte: endOfNextMonth }
+//                 : { $gte: startDate, $lte: endDate }
+//             }, // License expiry in the past
+//             {
+//               tvuexpiryDate: nextmonthReport
+//                 ? { $gte: startOfNextMonth, $lte: endOfNextMonth }
+//                 : { $gte: startDate, $lte: endDate }
+//             }, // TVU expiry in the past
+//             {
+//               amcendDate: nextmonthReport
+//                 ? { $gte: startOfNextMonth, $lte: endOfNextMonth }
+//                 : { $gte: startDate, $lte: endDate }
+//             } // AMC end in the past
+//           ]
+//         }
+//       }
+//     })
+//     if (expiredCustomers.length > 0) {
+//       return res.status(200).json({
+//         message: "Customers found with expiry",
+//         data: expiredCustomers
+//       })
+//     } else {
+//       return res
+//         .status(404)
+//         .json({ message: "No customers with expired Dates", data: [] })
+//     }
+//   } catch (error) {
+//     console.log("error:", error.message)
+//     return res.status(500).json({ message: "Internal server error" })
+//   }
+// }
 export const getallExpiredCustomerCalls = async (req, res) => {
   try {
     const { startDate, endDate, isAdmin, userBranchId } = req.body
@@ -6095,7 +6617,7 @@ export const getallExpiredCustomerCalls = async (req, res) => {
         }
       }
     })
-    console.log("expiredcustomere", expiredCustomers.length)
+    // console.log("expiredcustomere", expiredCustomers.length)
     const expiredCustomerIds = expiredCustomers.map((customer) => customer._id)
     const calls = await CallRegistration.find({
       customerid: { $in: expiredCustomerIds } // Assuming 'customerId' field in CallRegistration matches customer IDs
@@ -7245,9 +7767,9 @@ export const existsameCallnote = async (req, res) => {
   try {
     const { customerId, callNoteId } = req.query
     const customerObjectId = new mongoose.Types.ObjectId(customerId)
-    console.log("customerobjectid", customerObjectId)
+    // console.log("customerobjectid", customerObjectId)
     const callnoteObjectId = new mongoose.Types.ObjectId(callNoteId)
-    console.log('callnoteid', callnoteObjectId)
+    // console.log('callnoteid', callnoteObjectId)
 
     // Pure existence check - FASTEST method
     const pendingCount = await CallRegistration.countDocuments({
