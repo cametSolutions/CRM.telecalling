@@ -534,6 +534,7 @@ import { fileURLToPath } from "url"
 import mongoose from "mongoose"
 
 /* ROUTES */
+
 import departmentRoutes from "./routes/primaryUserRoutes/masterRoutes/departmentRoutes.js"
 import companyRoutes from "./routes/primaryUserRoutes/companyRoutes.js"
 import dashBoardRoutes from "./routes/primaryUserRoutes/dashBoardRoutes.js"
@@ -545,7 +546,7 @@ import authRoutes from "./routes/authRoutes.js"
 import excelRoutes from "./routes/primaryUserRoutes/excelRoutes.js"
 import secondaryUserRoutes from "./routes/secondaryUserRoutes/secondaryUserRoutes.js"
 import productRoutes from "./routes/primaryUserRoutes/productRoutes.js"
-
+import bugroutes from "./routes/developer/bugroutes.js"
 /* SOCKET CONTROLLERS */
 import { ExceltoJson, ExceltoJsonProduct } from "./controller/primaryUserController/excelController.js"
 import { AttendanceExceltoJson } from "./controller/primaryUserController/attendanceExcelController.js"
@@ -611,7 +612,7 @@ app.use("/api/customer", secondaryUserRoutes)
 app.use("/api/master", departmentRoutes)
 app.use("/api/dashboard", dashBoardRoutes)
 app.use("/api/target", targetRoutes)
-
+app.use("/api/bugreport",bugroutes)
 /* ===============================
    STATIC FILES
 ================================ */
