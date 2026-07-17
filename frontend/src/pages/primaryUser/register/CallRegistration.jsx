@@ -407,6 +407,7 @@ export default function CallRegistration() {
     const handler = setTimeout(() => {
       if (search && !selectedCustomer) {
         console.log("H")
+console.log(search)
         fetchCustomerData(search)
         setloading(true)
       } else {
@@ -1184,6 +1185,7 @@ Problem:    \t${selectedText}
       if (response.ok) {
         const result = await response.json()
         setCustomerData(result.data)
+console.log(result.data)
         if (result.data.length > 0) {
           setMessage("")
         } else {

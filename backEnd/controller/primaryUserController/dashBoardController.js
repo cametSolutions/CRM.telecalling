@@ -23,22 +23,32 @@ export const GetcurrentAchiever = async (req, res) => {
 }
 export const UpdateAnnouncement = async (req, res) => {
   try {
-    const { announcement } = req.body
-    console.log("an", announcement)
+    const { annoucementtext } = req.body
+    console.log("an", annoucementtext)
 
-    const updatedAnnouncement = await DashboardAnnouncement.findOneAndUpdate(
+    const result = await DashboardAnnouncement.findOneAndUpdate(
       {}, // empty filter: only one doc exists
-      { announcement }, // new announcement content
+      { announcement:annoucementtext }, // new announcement content
       {
         new: true, // return the updated doc
-        upsert: true // create a new doc if none exists
+        upsert: true ,// create a new doc if none exists
+    
+    includeResultMetadata: true, // Mongoose 8+
       }
     )
+const announcement = result.value;
+const wasCreated = !result.lastErrorObject.updatedExisting;
 
-    return res.status(200).json({
-      message: "Dashboard announcement updated Successfully",
-      data: updatedAnnouncement
-    })
+return res.status(200).json({
+  success: true,
+  message: wasCreated
+    ? "Dashboard announcement created successfully"
+    : "Dashboard announcement updated successfully",
+  updated: !wasCreated,
+  created: wasCreated,
+  data: announcement,
+});
+    
   } catch (error) {
     console.log("error:", error.message)
     return res.status(500).json({ message: "Internal server error" })

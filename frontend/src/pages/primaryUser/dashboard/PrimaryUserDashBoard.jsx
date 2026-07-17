@@ -1002,7 +1002,7 @@ console.log(announcementlist)
     setannouncementLoader(true)
     try {
       const response = await api.post("/dashboard/updateAnnouncement", {
-        announcement
+        annoucementtext:announcement
       })
       setAnnouncementText(response.data.data.announcement)
       toast.success(response.data.message)
@@ -1018,7 +1018,18 @@ console.log(announcementlist)
     const wish = true
     localStorage.setItem("wish", JSON.stringify(wish))
   }
+const DEFAULT_ANNOUNCEMENT = {
+  announcementTitle: "Announcements",
+  announcement: "There are no announcements at the moment.",
+  announcementType: "general",
+  badge: "",
+  postedBy: "CAMET CRM",
+};
 
+const announcements =
+  announcementlist?.[0]?.announcement
+    ? announcementlist[0]
+    : DEFAULT_ANNOUNCEMENT;
   return (
     <div className="min-h-screen bg-[#ADD8E6]">
       {/* Birthday popup */}
@@ -1111,15 +1122,15 @@ console.log(announcementlist)
           }}
         />
       )}
-      {announcementlist && announcementlist.length &&announcementlist?.announcement&& (
+
         <div className="mb-2 mx-2">
           <AnnouncementBanner
-            announcementlist={announcementlist}
+            announcementlist={announcements}
             setopenannoucementpopup={setopenannoucementpopup}
 action={false}
           />
         </div>
-      )}
+      
 
       {/* Navigation Cards – assume header above is green, so keep this dark-green/navy band */}
       <div
