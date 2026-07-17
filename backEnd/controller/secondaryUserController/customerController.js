@@ -2199,15 +2199,7 @@ class AppError extends Error {
 export const CustomerEdit = async (req, res) => {
   const { customerData, tableData = [] } = req.body
   const { customerid } = req.query
-// console.log("tabldata",tableData)
-console.log(
-  "taggeddata",
-  JSON.stringify(
-    tableData.map((item) => item.taggeddata),
-    null,
-    2
-  )
-)
+
 
   // ---- Fast-fail validation before we ever open a session ----
   if (!customerid || !customerData) {
