@@ -143,7 +143,7 @@ import { useSelector } from "react-redux"
 import { useLocation, matchPath } from "react-router-dom"
 import AdminHeader from "../header/AdminHeader"
 import StaffHeader from "../header/StaffHeader"
-
+import ChangePasswordModal from "../components/common/ChangePasswordModal"
 import { StaticSidebar } from "../components/primaryUser/StaticSidebar"
 import { NotificationPopup } from "../components/primaryUser/NotificationPopup"
 import GlobalUnsavedChangesModal from "../components/common/GlobalUnsavedChangesModal"
@@ -163,7 +163,7 @@ const Layout = () => {
   const [headerHeight, setHeaderHeight] = useState(0)
   const [notificationPopup, setNotificationPopup] = useState(false)
   const [loggedUser, setLoggedUser] = useState(null)
-
+  const [changepasswordOpen, setchangepasswordOpen] = useState(false)
   const isAuthPage = location.pathname === "/"
 
   useAutoLogout(!isAuthPage)
@@ -257,47 +257,11 @@ const Layout = () => {
 
   return (
     <>
-      {/* <div className="h-screen flex flex-col bg-[#ADD8E6] overflow-hidden">
-
-        <div ref={headerRef} className="flex-shrink-0 z-50">
-          {isAdmin && (
-            <AdminHeader
-              onNotificationClick={() =>
-                setNotificationPopup(true)
-              }
-            />
-          )}
-
-          {isStaff && (
-            <StaffHeader
-              onNotificationClick={() =>
-                setNotificationPopup(true)
-              }
-            />
-          )}
-        </div>
-
-
-        <div className="flex flex-1 overflow-hidden">
-
-{shouldHideHeader&&(
- <StaticSidebar />
-)}
-         
-
-
-          <main className="flex-1 overflow-auto">
-            <Mainrouter headerHeight={headerHeight} />
-          </main>
-
-        </div>
-      </div> */}
       <div className="h-screen flex overflow-hidden">
         {/* Sidebar */}
-{shouldshowSidebar&&(
- <StaticSidebar />
-)}
-       
+        {shouldshowSidebar && (
+          <StaticSidebar onpasswordClick={()=>setchangepasswordOpen(true)} />
+        )}
 
         {/* Right Side */}
 
@@ -305,12 +269,14 @@ const Layout = () => {
           <div ref={headerRef} className="flex-shrink-0 z-50">
             {isAdmin && (
               <AdminHeader
+                sidebarHasProfile={shouldshowSidebar}
                 onNotificationClick={() => setNotificationPopup(true)}
               />
             )}
 
             {isStaff && (
               <StaffHeader
+                sidebarHasProfile={shouldshowSidebar}
                 onNotificationClick={() => setNotificationPopup(true)}
               />
             )}
@@ -326,6 +292,10 @@ const Layout = () => {
         open={notificationPopup}
         onClose={() => setNotificationPopup(false)}
         notificationData={notificationData}
+      />
+      <ChangePasswordModal
+        open={changepasswordOpen}
+        onClose={() => setchangepasswordOpen(false)}
       />
 
       <GlobalUnsavedChangesModal />

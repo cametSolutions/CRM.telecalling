@@ -681,7 +681,7 @@ const ExpiredCustomer = () => {
   return (
     <div className="h-full bg-[#ADD8E6] overflow-hidden">
       <div className="flex h-full flex-row">
-        <StaticSidebar
+        {/* <StaticSidebar
           handleMoreClick={handleMoreClick}
           selectedCompanyBranch={selectedCompanyBranch}
           setselectedCompanyBranch={setselectedCompanyBranch}
@@ -689,9 +689,9 @@ const ExpiredCustomer = () => {
           parentperiodmode={periodMode}
           parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
-        />
+        /> */}
         <div className="flex flex-1 flex-col overflow-hidden">
-          <header className="flex items-center justify-between bg-[#ADD8E6]">
+          {/* <header className="flex items-center justify-between bg-[#ADD8E6]">
             {user?.role?.toLowerCase() === "admin" ? (
               <AdminHeader hide={true} />
             ) : (
@@ -711,9 +711,9 @@ const ExpiredCustomer = () => {
               <button className="rounded-full p-1.5 transition bg-slate-100">
                 <Settings size={15} strokeWidth={2.2} />
               </button>
-              {/* <button className="rounded-full p-1.5 transition bg-slate-100">
+              <button className="rounded-full p-1.5 transition bg-slate-100">
                 <User size={15} strokeWidth={2.2} />
-              </button> */}
+              </button>
 
               <div className="relative">
                 <button
@@ -726,7 +726,7 @@ const ExpiredCustomer = () => {
                   <User size={15} strokeWidth={2.2} />
                 </button>
 
-                {/* {showUserMenu && (
+                {showUserMenu && (
                   <div
                     onClick={(e) => e.stopPropagation()} 
                     className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
@@ -738,10 +738,10 @@ const ExpiredCustomer = () => {
                       Logout
                     </button>
                   </div>
-                )} */}
+                )}
               </div>
             </div>
-          </header>
+          </header> */}
           {loading && (
             <BarLoader
               cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`

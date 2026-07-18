@@ -730,7 +730,7 @@ console.log(tableData)
   return (
     <div className="h-full  bg-[#ADD8E6]">
       <div className="flex h-full flex-row">
-        <StaticSidebar
+        {/* <StaticSidebar
           handleMoreClick={handleMoreClick}
           selectedCompanyBranch={selectedCompanyBranch}
           setselectedCompanyBranch={setselectedCompanyBranch}
@@ -738,9 +738,9 @@ console.log(tableData)
           parentperiodmode={periodMode}
           parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
-        />
+        /> */}
         <div className="flex flex-1 flex-col overflow-hidden">
-          <header className="flex items-center justify-between bg-[#ADD8E6]">
+          {/* <header className="flex items-center justify-between bg-[#ADD8E6]">
             {loggedUser?.role?.toLowerCase() === "admin" ? (
               <AdminHeader hide={true} />
             ) : (
@@ -772,7 +772,7 @@ console.log(tableData)
                   <User size={15} strokeWidth={2.2} />
                 </button>
 
-                {/* {showUserMenu && (
+                {showUserMenu && (
                   <div
                     onClick={(e) => e.stopPropagation()} 
                     className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
@@ -784,10 +784,10 @@ console.log(tableData)
                       Logout
                     </button>
                   </div>
-                )} */}
+                )}
               </div>
             </div>
-          </header>
+          </header> */}
 
           <div className="flex justify-start items-center p-3 md:p-5 md:pb-2 sticky top-0 z-30 gap-3">
             <h2 className="text-lg font-bold">Verified Collections</h2>

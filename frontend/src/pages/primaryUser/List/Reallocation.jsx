@@ -399,7 +399,7 @@ const Reallocation = () => {
   return (
     <div className=" h-full bg-[#ADD8E6] overflow-hidden">
       <div className="flex h-full flex-row">
-        <StaticSidebar
+        {/* <StaticSidebar
           handleMoreClick={handleMoreClick}
           selectedCompanyBranch={selectedCompanyBranch}
           setselectedCompanyBranch={setSelectedCompanyBranch}
@@ -407,9 +407,9 @@ const Reallocation = () => {
           parentperiodmode={periodMode}
           parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
-        />
+        /> */}
         <div className="flex flex-1 flex-col overflow-hidden">
-          <header className="flex items-center justify-between bg-[#ADD8E6]">
+          {/* <header className="flex items-center justify-between bg-[#ADD8E6]">
             {loggedUser?.role?.toLowerCase() === "admin" ? (
               <AdminHeader hide={true} />
             ) : (
@@ -428,9 +428,9 @@ const Reallocation = () => {
               <button className="rounded-full p-1.5 transition bg-slate-100">
                 <Settings size={15} strokeWidth={2.2} />
               </button>
-              {/* <button className="rounded-full p-1.5 transition bg-slate-100">
+              <button className="rounded-full p-1.5 transition bg-slate-100">
                 <User size={15} strokeWidth={2.2} />
-              </button> */}
+              </button>
 
               <div className="relative">
                 <button
@@ -443,7 +443,7 @@ const Reallocation = () => {
                   <User size={15} strokeWidth={2.2} />
                 </button>
 
-                {/* {showUserMenu && (
+                {showUserMenu && (
                   <div
                     onClick={(e) => e.stopPropagation()} 
                     className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
@@ -455,10 +455,10 @@ const Reallocation = () => {
                       Logout
                     </button>
                   </div>
-                )} */}
+                )}
               </div>
             </div>
-          </header>
+          </header> */}
           {(submitLoading || loading) && (
             <BarLoader
               cssOverride={{ width: "100%", height: "4px" }}

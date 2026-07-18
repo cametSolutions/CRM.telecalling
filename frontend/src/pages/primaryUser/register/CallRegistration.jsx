@@ -1744,7 +1744,7 @@ const ProductCircleCard = ({
   return (
     <div className="h-full bg-[#ADD8E6] overflow-hidden">
       <div className="flex h-full flex-row overflow-hidden">
-        <StaticSidebar
+        {/* <StaticSidebar
           handleMoreClick={handleMoreClick}
           selectedCompanyBranch={selectedcompanyBranch}
           setselectedCompanyBranch={setselectedcompanyBranch}
@@ -1752,10 +1752,10 @@ const ProductCircleCard = ({
           parentperiodmode={periodMode}
           parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
-        />
+        /> */}
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-          <header className="flex shrink-0 items-center justify-between bg-[#ADD8E6]">
+          {/* <header className="flex shrink-0 items-center justify-between bg-[#ADD8E6]">
             {user?.role?.toLowerCase() === "admin" ? (
               <AdminHeader hide={true} />
             ) : (
@@ -1790,7 +1790,7 @@ const ProductCircleCard = ({
                 </button>
               </div>
             </div>
-          </header>
+          </header> */}
 
           {loader && (
             <BarLoader

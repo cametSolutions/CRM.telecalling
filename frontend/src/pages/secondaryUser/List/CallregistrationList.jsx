@@ -611,7 +611,7 @@ const handleAnnouncementSubmit = async (e) => {
   }
 
   return (
-    <div className="h-screen overflow-hidden bg-[#ADD8E6]">
+    <div className="h-full overflow-hidden bg-[#ADD8E6]">
       <div className="flex h-full w-full overflow-hidden">
         {/* <StaticSidebar
           handleMoreClick={handleMoreClick}
@@ -651,7 +651,7 @@ const handleAnnouncementSubmit = async (e) => {
               </button>
 
               <div className="relative">
-                <button
+                <button                     
                   onClick={(e) => {
                     e.stopPropagation()
                   }}
