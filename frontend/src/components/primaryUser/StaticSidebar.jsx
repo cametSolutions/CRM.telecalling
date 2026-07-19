@@ -259,6 +259,8 @@ import {
   getLocalStorageItem,
   setLocalStorageItem
 } from "../../helper/localstorage"
+import {setsliceselectedBranch} from "../../../slices/companyBranchSlice.js"
+// import {setselected}
 import { useSelector } from "react-redux"
 import AvatarEditor from "../common/AvatarEditor"
 import { PerformanceModal } from "./PerformanceModal"
@@ -266,7 +268,7 @@ import api from "../../api/api"
 import SkeletonTable from "../loader/SkeletonTable"
 import Sidebar from "./Sidebar"
 import { toast } from "react-toastify"
-
+import { useDispatch } from "react-redux"
 export const StaticSidebar = ({
   selectedCompanyBranch,
   setselectedPeriod,
@@ -280,7 +282,7 @@ onpasswordClick
 console.log("hh")
 // console.log(onpasswordClick)
   const now = new Date()
-
+ const dispatch = useDispatch()
   const [categorylist, setcategorylist] = useState([])
   const [avatarOpen, setAvatarOpen] = useState(false)
   const [user, setUser] = useState(null)
@@ -440,14 +442,38 @@ console.log(a)
     }
   }
 
-  const handleBranchChange = (branch) => {
-    setselectedBranch(branch)
-    setselectedCompanyBranch(branch)
+//   const handleBranchChange = (branch) => {
+// console.log(branch)
+//     setselectedBranch(branch)
+//     // setselectedCompanyBranch(branch)
+// setLocalStorageItem("selectedBranch",branch)
+// console.log("bbbb")
+//  dispatch(selectedBranch(branch))
+// console.log('vvvv')
+//     if (isMobile) {
+//       setSidebarOpen(false)
+//     }
+//   }
+const handleBranchChange = (branch) => {
+  try {
+    console.log(branch);
 
-    if (isMobile) {
-      setSidebarOpen(false)
-    }
+    setselectedBranch(branch);
+
+    setLocalStorageItem("selectedBranch", branch);
+
+    console.log("bbbb");
+
+    // console.log("dispatch", dispatch);
+    console.log("selectedBranch action", selectedBranch);
+
+    dispatch(setsliceselectedBranch(branch));
+
+    console.log("vvvv");
+  } catch (err) {
+    console.error("Dispatch error:", err);
   }
+};
 
   return (
     <>
@@ -480,7 +506,7 @@ onpasswordClick={onpasswordClick}
               toggleSidebar={toggleSidebar}
               user={user}
               selectedBranch={selectedBranch}
-              setselectedParentBranch={setselectedCompanyBranch}
+              // setselectedParentBranch={setselectedCompanyBranch}
               setselectedBranch={handleBranchChange}
               branchOptions={branchOptions}
               categorylist={categorylist}

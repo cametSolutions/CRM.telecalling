@@ -27,6 +27,7 @@ import AdminHeader from "../../header/AdminHeader"
 import { BranchSelect } from "./BranchSelect"
 import { toast } from "react-toastify"
 import { useEffect, useState } from "react"
+import { useSelector } from "react-redux"
 import UseFetch from "../../hooks/useFetch"
 import AnnouncementBanner from "./AnnouncementBanner"
 import {
@@ -82,6 +83,8 @@ const getBarStyle = (value, colorA, colorB) => ({
 })
 
 const MarketingDashboard = () => {
+const reduxselectedBranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
+console.log(reduxselectedBranch)
   const [user, setUser] = useState(null)
 const [openannoucementpopup, setopenannoucementpopup] = useState(false);
 console.log(openannoucementpopup)
@@ -119,13 +122,13 @@ console.log(openannoucementpopup)
   const [loggedusedTarget, setloggeduserTarget] = useState([])
   const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   const { data: followup } = UseFetch(
-    `/lead/getfollowupsummaryReport?branchId=${selectedBranch}`
+    `/lead/getfollowupsummaryReport?branchId=${reduxselectedBranch}`
   )
   const { data: collectiondata, loading: collectionloader } = UseFetch(
     "/lead/getTodayVerifiedCollection"
   )
   const { data: notificationData } = UseFetch(
-    `/lead/getnotificationData?loggedUser=${user?._id}&branchSelected=${selectedBranch}`
+    `/lead/getnotificationData?loggedUser=${user?._id}&branchSelected=${reduxselectedBranch}`
   )
  const { data: announcementlist } = UseFetch(
     "/dashboard/getcurrentAnnouncement"
@@ -133,21 +136,21 @@ console.log(openannoucementpopup)
 console.log(announcementlist)
   console.log(notificationData)
   console.log(collectiondata)
-  console.log(selectedBranch)
+  console.log(reduxselectedBranch)
 
   const { data, loading: targetLoading } = UseFetch(
-    selectedBranch &&
+    reduxselectedBranch &&
       selectedMonth &&
       selectedYear &&
       periodMode &&
-      `/target/gettargetresult?month=${selectedMonth}&year=${selectedYear}&periodMode=${periodMode}&selectedBranch=${selectedBranch}`
+      `/target/gettargetresult?month=${selectedMonth}&year=${selectedYear}&periodMode=${periodMode}&selectedBranch=${reduxselectedBranch}`
   )
   console.log(data)
   const { data: branchProduct } = UseFetch(
-    `/product/getallbranchProduct?branch=${selectedBranch}`
+    `/product/getallbranchProduct?branch=${reduxselectedBranch}`
   )
   const { data: pendingTask } = UseFetch(
-    `/lead//branchwise-marketing-pending-tasks?branchId=${selectedBranch}`
+    `/lead//branchwise-marketing-pending-tasks?branchId=${reduxselectedBranch}`
   )
   console.log(pendingTask)
   useEffect(() => {
@@ -487,7 +490,7 @@ console.log(announcementlist)
           staffId: user?._id,
           dueToday: true,
           ownlead: true,
-          branchId: selectedBranch,
+          branchId: reduxselectedBranch,
           viewMode: "dueToday",
           from: "followupReport",
           istotal: true,
@@ -500,7 +503,7 @@ console.log(announcementlist)
           staffId: user?._id,
           overdue: true,
           ownlead: true,
-          branchId: selectedBranch,
+          branchId: reduxselectedBranch,
           viewMode: "overDue",
           from: "followupReport",
           istotal: true,
@@ -514,7 +517,7 @@ console.log(announcementlist)
           future: true,
           ownlead: true,
 
-          branchId: selectedBranch,
+          branchId: reduxselectedBranch,
           viewMode: "future",
           from: "followupReport",
           istotal: true,
@@ -526,7 +529,7 @@ console.log(announcementlist)
         state: {
           staffId: user?._id,
           converted: true,
-          branchId: selectedBranch,
+          branchId: reduxselectedBranch,
           viewMode: "converted",
           from: "followupReport",
           ownlead: true,
@@ -540,7 +543,7 @@ console.log(announcementlist)
         state: {
           staffId: user?._id,
           neverfollowup: true,
-          branchId: selectedBranch,
+          branchId: reduxselectedBranch,
           viewMode: "neverfollowup",
           from: "followupReport",
           ownlead: true,
@@ -560,7 +563,7 @@ console.log(announcementlist)
           header: "Total Leads",
           ownlead: true,
 
-          branchId: selectedBranch
+          branchId: reduxselectedBranch
         }
       })
     }
@@ -698,7 +701,7 @@ console.log(announcementlist)
       return `${item.color} ${start}deg ${cumulative}deg`
     })
     .join(", ")
-  console.log(selectedBranch)
+  console.log(reduxselectedBranch)
   // console.log(BranchSelect)
   return (
     <div

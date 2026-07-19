@@ -346,13 +346,14 @@ export default function AccountSearch() {
         // )
 
         const branch = JSON.stringify(branches)
-        // const url = `http://localhost:9000/api/customer/getCustomer?search=${value}&role=${
-        //   user.role
-        // }&userBranch=${encodeURIComponent(branch)}`
-
-        const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${value}&role=${
+console.log(branch)
+        const url = `http://localhost:9000/api/customer/getCustomer?search=${value}&role=${
           user.role
         }&userBranch=${encodeURIComponent(branch)}`
+
+        // const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${value}&role=${
+        //   user.role
+        // }&userBranch=${encodeURIComponent(branch)}`
 
         const customerdata = await api.get(url)
 

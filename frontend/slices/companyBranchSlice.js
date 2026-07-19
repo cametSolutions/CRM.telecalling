@@ -25,7 +25,7 @@ const companyBranchSlice = createSlice({
         selectedCompany(state, action) {
             state.selectedCompany = action.payload;
         },
-        selectedBranch(state, action) {
+        setsliceselectedBranch(state, action) {
             state.selectedBranch = action.payload;
         },
         setBranches(state, action) {
@@ -41,7 +41,7 @@ const companyBranchSlice = createSlice({
     }
 });
 
-export const { selectedCompany, selectedBranch, setBranches, resetSelection,loggeduserBranches } =
+export const { selectedCompany, setsliceselectedBranch, setBranches, resetSelection,loggeduserBranches } =
     companyBranchSlice.actions;
 
 export default companyBranchSlice.reducer;

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { Pencil } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom"
+import { useSelector } from "react-redux"
 import Breadcrumb from "../../../components/common/Breadcrumb"
 import { formatDate } from "../../../utils/dateUtils"
 import MyDatePicker from "../../../components/common/MyDatePicker"
@@ -43,7 +44,8 @@ import React from "react"
 const LeadFollowUp = () => {
   const location = useLocation()
   const navigate = useNavigate()
-
+const reduxselectedBranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
+console.log(reduxselectedBranch)
   const safeState = location?.state || {}
   console.log(location?.state)
   const nav = [
@@ -1340,9 +1342,10 @@ console.log(ishavePayment)
   //   loggedUser &&
   //   selectedCompanyBranch
   // console.log(safeState.istotal)
+console.log(safeState)
   const shouldFetch =
     !!loggedUser &&
-    !!selectedCompanyBranch &&
+    !!reduxselectedBranch &&
     ((safeState?.viewMode !== "product" &&
       safeState?.istotal &&
       !!safeState?.staffId) ||
@@ -1367,8 +1370,9 @@ console.log(ishavePayment)
   //       `&header=${safeState?.header}` +
   //       `&from=${safeState?.from ?? null}`
   //     : null;
+console.log(shouldFetch)
   const followupUrl = shouldFetch
-    ? `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}` +
+    ? `/lead/getallLeadFollowUp?branchSelected=${reduxselectedBranch}` +
       `&loggeduserid=${safeState.istotal ? safeState.staffId : loggedUser._id}` +
       `&role=${safeState.istotal ? safeState.staffRole : loggedUser.role}` +
       `&pendingfollowup=${finalPending}` +
@@ -1387,7 +1391,7 @@ console.log(ishavePayment)
   } = useQuery({
     queryKey: [
       "followups",
-      selectedCompanyBranch,
+      reduxselectedBranch,
       safeState?.staffId || "",
       finalPending,
       dates.startDate || "",

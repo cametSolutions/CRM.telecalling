@@ -5,6 +5,7 @@ import { PaymentHistoryModal } from "../../../components/primaryUser/PaymentHist
 import { LeadhistoryModal } from "../../../components/primaryUser/LeadhistoryModal"
 import { CollectionupdateModal } from "../../../components/primaryUser/CollectionupdateModal"
 import api from "../../../api/api"
+import { useSelector } from "react-redux"
 import SkeletonTable from "../../../components/loader/SkeletonTable"
 import {
   Eye,
@@ -82,6 +83,8 @@ export default function CollectionUpdate() {
   const navigate = useNavigate()
   const { data: companybranches } = UseFetch("/branch/getBranch")
   // const {data}=UseFetch("/lead/fix-leadverified")
+const selectedreduxbranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
+console.log(selectedreduxbranch)
   const {
     data: collectionlead,
     loading,
@@ -89,8 +92,10 @@ export default function CollectionUpdate() {
   } = UseFetch(
     selectedCompanyBranch &&
       loggedUser &&
-      `/lead/collectionLeads?selectedBranch=${selectedCompanyBranch}&verified=${verifiedLead}&isAccountant=${isdepartmentisAccountant}&loggeduserby=${loggedUser._id}`
+      `/lead/collectionLeads?selectedBranch=${selectedreduxbranch}&verified=${verifiedLead}&isAccountant=${isdepartmentisAccountant}&loggeduserby=${loggedUser._id}`
   )
+console.log(selectedreduxbranch)
+console.log(collectionlead)
   const { data: branchProduct } = UseFetch(
     `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
   )

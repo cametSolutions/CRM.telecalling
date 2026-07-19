@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom"
 import { useLocation } from "react-router-dom"
 import { LeadhistoryModal } from "../../components/primaryUser/LeadhistoryModal"
 import { PropagateLoader } from "react-spinners"
+import { useSelector } from "react-redux"
+import SkeletonTable from "../../components/loader/SkeletonTable"
 import {
   Eye,
   MessageSquareText,
@@ -40,6 +42,7 @@ export default function LostLeads() {
   const [ownLead, setownLead] = useState(true)
   const [companyBranches, setcompanyBranches] = useState(null)
   const [selectedCompanyBranch, setselectedCompanyBranch] = useState(null)
+console.log(selectedCompanyBranch)
   const [showhistoryModal, sethistoryModal] = useState(false)
   const [historyList, setHistoryList] = useState([])
   const [selectedUserName, setselecteduserName] = useState(null)
@@ -56,6 +59,11 @@ const now=new Date()
   const [achievedproducts, setacheivedProducts] = useState([])
   const [selectedPeriod, setselectedPeriod] = useState("")
   const navigate = useNavigate()
+const selbranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
+console.log(selbranch)
+const combranches=useSelector((branch)=>branch.companyBranch.branches)
+console.log(combranches)
+console.log(selbranch)
   const { data: companybranches } = UseFetch("/branch/getBranch")
   const { data: branchProduct } = UseFetch(
     `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
@@ -140,7 +148,7 @@ console.log(filteredselectedCategory)
   }, [targetData])
 
   useEffect(() => {
-    if (companybranches && companybranches.length > 0) {
+    if (selbranch &&companybranches&& companybranches.length > 0) {
       const userData = getLocalStorageItem("user")
       const branch = companybranches?.map((branch) => {
         return {
@@ -149,10 +157,10 @@ console.log(filteredselectedCategory)
         }
       })
       setcompanyBranches(branch)
-      setselectedCompanyBranch(branch[0].value)
+      setselectedCompanyBranch(selbranch)
       setLoggedUser(userData)
     }
-  }, [companybranches])
+  }, [selbranch,companybranches])
   useEffect(() => {
     if (lostlead && lostlead.length > 0) {
       console.log(lostlead)
@@ -620,7 +628,7 @@ setActiveUserId(userId)
           {/* Responsive Table Container this is the newest design*/}
           <div className="flex-1 overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3 bg-white">
             <>
-              {(() => {
+              {/* {(() => {
                 const hasLeads =
                   Array.isArray(tableData) &&
                   tableData.some(
@@ -647,7 +655,7 @@ setActiveUserId(userId)
                       </h3>
                     )}
 
-                    {/* only render table if there are leads */}
+                  
                     {leads.length > 0 ? (
                       renderTable(leads)
                     ) : (
@@ -657,7 +665,54 @@ setActiveUserId(userId)
                     )}
                   </div>
                 ))
-              })()}
+              })()} */}
+{(() => {
+  // 1. Loading
+  if (loading) {
+    return <SkeletonTable />;
+  }
+
+  // 2. Check if there is at least one lead
+  const hasLeads =
+    Array.isArray(tableData) &&
+    tableData.some(
+      ({ leads }) => Array.isArray(leads) && leads.length > 0
+    );
+
+  // 3. Empty state
+  if (!hasLeads) {
+    return (
+      <div className="text-center text-gray-500 py-6">
+        No Lost Leads Available
+      </div>
+    );
+  }
+
+  // 4. Render grouped data
+  return tableData.map(({ staffName, leads = [] }, index) => (
+    <div
+      key={staffName || `group-${index}`}
+      className="mb-6"
+    >
+      {staffName && (
+        <h3 className="ml-1 mb-2 text-base font-semibold text-gray-800">
+          {staffName}{" "}
+          <span className="text-sm font-normal text-gray-500">
+            ({leads.length} Leads)
+          </span>
+        </h3>
+      )}
+
+      {leads.length > 0 ? (
+        renderTable(leads)
+      ) : (
+        <div className="py-3 text-center text-sm text-gray-400">
+          No Leads under {staffName || "this group"}.
+        </div>
+      )}
+    </div>
+  ));
+})()}
             </>
           </div>
         </div>

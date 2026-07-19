@@ -707,7 +707,7 @@ onpasswordClick,
   user,
   selectedBranch,
   setselectedBranch,
-  setselectedParentBranch,
+  // setselectedParentBranch,
   branchOptions,
   categorylist,
   targetLoading,
@@ -717,6 +717,7 @@ onpasswordClick,
   onPasswordChange,
   isMobile
 }) => {
+console.log(selectedBranch)
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState(null)
 
@@ -1034,7 +1035,7 @@ onpasswordClick,
                 <BranchSelect
                   value={selectedBranch}
                   onChange={(value) => {
-                    setselectedParentBranch(value)
+                    // setselectedParentBranch(value)
                     setselectedBranch(value)
                   }}
                   options={branchOptions}
