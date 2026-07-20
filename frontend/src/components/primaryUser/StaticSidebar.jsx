@@ -251,6 +251,7 @@
 //     </>
 //   )
 // }
+
 import React, { useEffect, useState } from "react"
 import UseFetch from "../../hooks/useFetch"
 import useMediaQuery from "@mui/material/useMediaQuery"
@@ -488,78 +489,134 @@ const handleBranchChange = (branch) => {
 };
 
   return (
-    <>
-      <div
-        className={`${
-          isMobile ? "fixed left-0 top-0 z-40 h-screen" : "relative h-full"
-        }`}
-      >
-        <div
-          className={`h-full transition-transform duration-300 ease-in-out ${
-            isMobile
-              ? sidebarOpen
-                ? "translate-x-0"
-                : "-translate-x-full"
-              : "translate-x-0"
-          }`}
-        >
-          <div
-            className={`h-full ${
-              isMobile
-                ? "w-[74vw] max-w-[280px] bg-white shadow-2xl"
-                : "w-auto"
-            }`}
-          >
-            <Sidebar
-              handleMoreClick={handleMoreClick}
-onpasswordClick={onpasswordClick}
-onperformanceModalClick={onperformanceModalClick}
-              achievedPoints={achievedPoints}
-              sidebarOpen={sidebarOpen}
-              toggleSidebar={toggleSidebar}
-              user={user}
-              selectedBranch={selectedBranch}
-              // setselectedParentBranch={setselectedCompanyBranch}
-              setselectedBranch={handleBranchChange}
-              branchOptions={branchOptions}
-              categorylist={categorylist}
-              targetLoading={targetLoading}
-              BranchSelect={BranchSelect}
-              SkeletonTable={SkeletonTable}
-              setAvatarOpen={setAvatarOpen}
-              onPasswordChange={handlepasswordChange}
-              isMobile={isMobile}
-            />
-          </div>
-        </div>
-      </div>
+//     <>
+//       <div
+//         className={`${
+//           isMobile ? "fixed left-0 top-0 z-40 h-screen" : "relative h-full"
+//         }`}
+//       >
+//         <div
+//           className={`h-full transition-transform duration-300 ease-in-out ${
+//             isMobile
+//               ? sidebarOpen
+//                 ? "translate-x-0"
+//                 : "-translate-x-full"
+//               : "translate-x-0"
+//           }`}
+//         >
+//           <div
+//             className={`h-full ${
+//               isMobile
+//                 ? "w-[74vw] max-w-[280px] bg-white shadow-2xl"
+//                 : "w-auto"
+//             }`}
+//           >
+//             <Sidebar
+//               handleMoreClick={handleMoreClick}
+// onpasswordClick={onpasswordClick}
+// onperformanceModalClick={onperformanceModalClick}
+//               achievedPoints={achievedPoints}
+//               sidebarOpen={sidebarOpen}
+//               toggleSidebar={toggleSidebar}
+//               user={user}
+//               selectedBranch={selectedBranch}
+//               // setselectedParentBranch={setselectedCompanyBranch}
+//               setselectedBranch={handleBranchChange}
+//               branchOptions={branchOptions}
+//               categorylist={categorylist}
+//               targetLoading={targetLoading}
+//               BranchSelect={BranchSelect}
+//               SkeletonTable={SkeletonTable}
+//               setAvatarOpen={setAvatarOpen}
+//               onPasswordChange={handlepasswordChange}
+//               isMobile={isMobile}
+//             />
+//           </div>
+//         </div>
+//       </div>
 
-      {isMobile && sidebarOpen && (
-        <button
-          type="button"
-          aria-label="Close sidebar overlay"
-          onClick={() => setSidebarOpen(false)}
-          className="fixed inset-0 z-30 bg-black/40"
-        />
-      )}
+//       {isMobile && sidebarOpen && (
+//         <button
+//           type="button"
+//           aria-label="Close sidebar overlay"
+//           onClick={() => setSidebarOpen(false)}
+//           className="fixed inset-0 z-30 bg-black/40"
+//         />
+//       )}
 
-      {avatarOpen && (
-        <AvatarEditor
-          open={avatarOpen}
-          onClose={() => setAvatarOpen(false)}
-          user={user}
-          onSave={handleAvatarSave}
-        />
-      )}
+//       {avatarOpen && (
+//         <AvatarEditor
+//           open={avatarOpen}
+//           onClose={() => setAvatarOpen(false)}
+//           user={user}
+//           onSave={handleAvatarSave}
+//         />
+//       )}
 
-      {loggedusedTarget && (
-        <PerformanceModal
-          open={false}
-          onClose={() => {}}
-          targetData={loggedusedTarget}
-        />
-      )}
-    </>
+//       {loggedusedTarget && (
+//         <PerformanceModal
+//           open={false}
+//           onClose={() => {}}
+//           targetData={loggedusedTarget}
+//         />
+//       )}
+//     </>
+<>
+<div
+  className={`${
+    isMobile
+      ? `fixed left-0 top-0 z-40 h-screen ${
+          sidebarOpen ? "" : "pointer-events-none"
+        }`
+      : "relative h-full"
+  }`}
+>
+  <div
+    className={`h-full transition-transform duration-300 ease-in-out ${
+      isMobile
+        ? sidebarOpen
+          ? "translate-x-0 pointer-events-auto"
+          : "-translate-x-full pointer-events-none"
+        : "translate-x-0"
+    }`}
+  >
+    <div
+      className={`h-full ${
+        isMobile ? "w-[74vw] max-w-[280px] bg-white shadow-2xl" : "w-auto"
+      }`}
+    >
+      <Sidebar
+        handleMoreClick={handleMoreClick}
+        onpasswordClick={onpasswordClick}
+        onperformanceModalClick={onperformanceModalClick}
+        achievedPoints={achievedPoints}
+        sidebarOpen={sidebarOpen}
+        toggleSidebar={toggleSidebar}
+        user={user}
+        selectedBranch={selectedBranch}
+        setselectedBranch={handleBranchChange}
+        branchOptions={branchOptions}
+        categorylist={categorylist}
+        targetLoading={targetLoading}
+        BranchSelect={BranchSelect}
+        SkeletonTable={SkeletonTable}
+        setAvatarOpen={setAvatarOpen}
+        onPasswordChange={handlepasswordChange}
+        isMobile={isMobile}
+      />
+    </div>
+  </div>
+</div>
+
+{isMobile && sidebarOpen && (
+  <button
+    type="button"
+    aria-label="Close sidebar overlay"
+    onClick={() => setSidebarOpen(false)}
+    className="fixed inset-0 z-30 bg-black/40"
+  />
+)}
+</>
   )
 }
 
