@@ -2133,7 +2133,7 @@ export const gettargetResult = async (req, res) => {
             })
         }
 
-        const closingTask = await Task.findOne({ taskName: "Closing" }).select("_id taskName")
+        const closingTask = await Task.findOne({ taskName: "Follow-Up Closing" }).select("_id taskName")
 
         if (!closingTask) {
             return res.status(404).json({
