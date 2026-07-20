@@ -2146,11 +2146,11 @@ console.log("resut",result)
 };
 export const Getallsalesfunnels = async (req, res) => {
   try {
-    const { startDate, endDate } = req.query;
+    const { startDate, endDate, selectedBranch } = req.query;
 
     const start = new Date(startDate);
     const end = new Date(endDate);
-
+const branchObjectId=new mongoose.Types.ObjectId(selectedBranch)
 
     // 1️⃣ Aggregation Pipeline
     const result = await LeadMaster.aggregate([
@@ -2163,7 +2163,8 @@ export const Getallsalesfunnels = async (req, res) => {
           "activityLog.submissionDate": {
             $gte: start,
             $lte: end
-          }
+          },
+          leadBranch: branchObjectId
         }
       },
 
@@ -2901,7 +2902,7 @@ export const Leadclosing = async (req, res) => {
       const nextDueAmount = round2(
         tag?.nextDueAmount ?? tag?.taxexclusiveAmount ?? 0
       );
-   
+    
       const nextDueTax = toNum(tag?.nextDueTax ?? 0, 0);
 
       return {
@@ -2980,7 +2981,7 @@ export const Leadclosing = async (req, res) => {
     const merged = [
       ...(Array.isArray(existingTagged) ? existingTagged : []),
     ].map((item) => (item?.toObject ? item.toObject() : item));
-
+   
     for (const tag of Array.isArray(incomingTagged) ? incomingTagged : []) {
       const normalizedTag = {
         ...(tag?.toObject ? tag.toObject() : tag),
@@ -5334,10 +5335,13 @@ export const GetallfollowupList = async (req, res) => {
     const hasValidDates = startDate && endDate &&
       startDate !== "null" && endDate !== "null" &&
       startDate !== "undefined" && endDate !== "undefined";
- 
+
 
     const isNewMode = isViewMode || hasValidHeader || hasValidDates;
-   
+    // console.log("hasvalidhaeader", hasValidHeader)
+    // console.log("hasvaliddate", hasValidDates)
+    // console.log("isnewmodeeee", isNewMode)
+    // console.log("isviewmode", isViewMode)
     let query;
 
     // ✅ VIEW MODE
@@ -7699,7 +7703,7 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
       );
 
       const task = matchLead.activityLog[matchingIndex]?.taskId;
-      
+  
       if (!task?.equals(allocationtypeId)) {
         return res.status(409).json({
           message:
@@ -9895,9 +9899,12 @@ export const GetcollectionLeads = async (req, res) => {
             // console.log("taskbjyuyyyyyyyyyyyyy",activity?.taskBy)
             if (activity?.taskBy) {
               populatedActivity.taskBy = await Task.findById(activity?.taskBy).select("taskName").lean()
+              // console.log("populatedd", populatedActivity?.taskBy)
             }
             if (activity?.taskTo) {
+              // console.log("tasktoooo", activity?.taskId)
               populatedActivity.taskId = await Task.findById(activity?.taskId).select("taskName").lean()
+              // console.log("poplatedtaktooo", populatedActivity.taskId)
             }
 
             if (activity.taskallocatedByModel && activity.taskallocatedBy) {

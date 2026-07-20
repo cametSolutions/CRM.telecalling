@@ -27,6 +27,7 @@ import AdminHeader from "../../header/AdminHeader"
 import { BranchSelect } from "./BranchSelect"
 import { toast } from "react-toastify"
 import { useEffect, useState } from "react"
+import { useSelector } from "react-redux"
 import UseFetch from "../../hooks/useFetch"
 import AnnouncementBanner from "./AnnouncementBanner"
 import {
@@ -82,6 +83,8 @@ const getBarStyle = (value, colorA, colorB) => ({
 })
 
 const MarketingDashboard = () => {
+const reduxselectedBranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
+console.log(reduxselectedBranch)
   const [user, setUser] = useState(null)
 const [openannoucementpopup, setopenannoucementpopup] = useState(false);
 console.log(openannoucementpopup)
@@ -120,7 +123,7 @@ console.log(todaysCollection)
   const [loggedusedTarget, setloggeduserTarget] = useState([])
   const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   const { data: followup } = UseFetch(
-    `/lead/getfollowupsummaryReport?branchId=${selectedBranch}`
+    `/lead/getfollowupsummaryReport?branchId=${reduxselectedBranch}`
   )
   const { data: collectiondata, loading: collectionloader } = UseFetch(
 selectedBranch&&
@@ -129,7 +132,7 @@ selectedBranch&&
 console.log(selectedBranch)
 console.log(collectiondata)
   const { data: notificationData } = UseFetch(
-    `/lead/getnotificationData?loggedUser=${user?._id}&branchSelected=${selectedBranch}`
+    `/lead/getnotificationData?loggedUser=${user?._id}&branchSelected=${reduxselectedBranch}`
   )
  const { data: announcementlist } = UseFetch(
     "/dashboard/getcurrentAnnouncement"
@@ -137,21 +140,21 @@ console.log(collectiondata)
 console.log(announcementlist)
   console.log(notificationData)
   console.log(collectiondata)
-  console.log(selectedBranch)
+  console.log(reduxselectedBranch)
 
   const { data, loading: targetLoading } = UseFetch(
-    selectedBranch &&
+    reduxselectedBranch &&
       selectedMonth &&
       selectedYear &&
       periodMode &&
-      `/target/gettargetresult?month=${selectedMonth}&year=${selectedYear}&periodMode=${periodMode}&selectedBranch=${selectedBranch}`
+      `/target/gettargetresult?month=${selectedMonth}&year=${selectedYear}&periodMode=${periodMode}&selectedBranch=${reduxselectedBranch}`
   )
   console.log(data)
   const { data: branchProduct } = UseFetch(
-    `/product/getallbranchProduct?branch=${selectedBranch}`
+    `/product/getallbranchProduct?branch=${reduxselectedBranch}`
   )
   const { data: pendingTask } = UseFetch(
-    `/lead//branchwise-marketing-pending-tasks?branchId=${selectedBranch}`
+    `/lead//branchwise-marketing-pending-tasks?branchId=${reduxselectedBranch}`
   )
   console.log(pendingTask)
   useEffect(() => {
@@ -251,7 +254,7 @@ console.log(collectiondata)
 
           {
             title: "Converted",
-            detail: "Leads successfully closed",
+            detail: "Leads successfully converted",
             value: item.converted,
             right: formatAmount(item.convertedAmount),
             icon: (
@@ -493,7 +496,7 @@ console.log(collectiondata)
           staffId: user?._id,
           dueToday: true,
           ownlead: true,
-          branchId: selectedBranch,
+          branchId: reduxselectedBranch,
           viewMode: "dueToday",
           from: "followupReport",
           istotal: true,
@@ -506,7 +509,7 @@ console.log(collectiondata)
           staffId: user?._id,
           overdue: true,
           ownlead: true,
-          branchId: selectedBranch,
+          branchId: reduxselectedBranch,
           viewMode: "overDue",
           from: "followupReport",
           istotal: true,
@@ -520,7 +523,7 @@ console.log(collectiondata)
           future: true,
           ownlead: true,
 
-          branchId: selectedBranch,
+          branchId: reduxselectedBranch,
           viewMode: "future",
           from: "followupReport",
           istotal: true,
@@ -532,7 +535,7 @@ console.log(collectiondata)
         state: {
           staffId: user?._id,
           converted: true,
-          branchId: selectedBranch,
+          branchId: reduxselectedBranch,
           viewMode: "converted",
           from: "followupReport",
           ownlead: true,
@@ -546,7 +549,7 @@ console.log(collectiondata)
         state: {
           staffId: user?._id,
           neverfollowup: true,
-          branchId: selectedBranch,
+          branchId: reduxselectedBranch,
           viewMode: "neverfollowup",
           from: "followupReport",
           ownlead: true,
@@ -566,7 +569,7 @@ console.log(collectiondata)
           header: "Total Leads",
           ownlead: true,
 
-          branchId: selectedBranch
+          branchId: reduxselectedBranch
         }
       })
     }
@@ -704,7 +707,7 @@ console.log(collectiondata)
       return `${item.color} ${start}deg ${cumulative}deg`
     })
     .join(", ")
-  console.log(selectedBranch)
+  console.log(reduxselectedBranch)
   // console.log(BranchSelect)
 
 const DEFAULT_ANNOUNCEMENT = {
@@ -726,7 +729,7 @@ console.log(announcement)
       style={appTextStyle}
     >
       <div className="flex h-full flex-col lg:flex-row">
-        <Sidebar
+        {/* <Sidebar
           handleMoreClick={handleMoreClick}
           achievedPoints={achievedPoints}
           sidebarOpen={sidebarOpen}
@@ -740,11 +743,11 @@ console.log(announcement)
           BranchSelect={BranchSelect}
           SkeletonTable={SkeletonTable}
           setAvatarOpen={setAvatarOpen}
-        />
+        /> */}
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           {/* TOP NAVBAR */}
 
-          <header className="flex items-center justify-between bg-[#ADD8E6] py-0.5 ">
+          {/* <header className="flex items-center justify-between bg-[#ADD8E6] py-0.5 ">
             {user?.role?.toLowerCase() === "admin" ? (
               <AdminHeader />
             ) : (
@@ -752,9 +755,7 @@ console.log(announcement)
             )}
 
             <div className="flex items-center gap-1.5 text-slate-700 mr-3">
-              {/* <button className="rounded-full p-1.5 transition bg-slate-100">
-                <Mail size={15} strokeWidth={2.2} />
-              </button> */}
+              
               <div className="relative">
                 <button
                   onClick={() => setShowNotification(true)}
@@ -764,14 +765,14 @@ console.log(announcement)
                 </button>
                 <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />
               </div>
-              {/* <button className="rounded-full p-1.5 transition bg-slate-100">
+              <button className="rounded-full p-1.5 transition bg-slate-100">
                 <Settings size={15} strokeWidth={2.2} />
-              </button> */}
-              {/* <button className="rounded-full p-1.5 transition bg-slate-100">
+              </button>
+              <button className="rounded-full p-1.5 transition bg-slate-100">
                 <User size={15} strokeWidth={2.2} />
-              </button> */}
+              </button>
 
-              {/* <div className="relative">
+              <div className="relative">
                 <button
                   type="button"
                   onClick={(e) => setShowUserMenu((prev) => !prev)}
@@ -795,7 +796,7 @@ console.log(announcement)
                     </button>
                   </div>
                 )}
-              </div> */}
+              </div>
               <div className="relative user-menu-container">
                 <button
                   type="button"
@@ -845,7 +846,7 @@ console.log(announcement)
                 )}
               </div>
             </div>
-          </header>
+          </header> */}
           {showNotification && (
             <NotificationPopup
               onClose={() => setShowNotification(false)}
@@ -860,7 +861,7 @@ console.log(announcement)
           </div>
           <main className="min-h-0 flex-1 overflow-y-auto">
             <section className="p-3 sm:p-4 lg:p-4">
-              <div className="grid grid-cols-6 gap-2">
+              {/* <div className="grid grid-cols-6 gap-2">
                 {cardDisplay.slice(0, 6).map((card) => (
                   <div
                     key={card.title}
@@ -948,8 +949,41 @@ text-[clamp(9px,0.75vw,11px)]
                     </p>
                   </div>
                 ))}
-              </div>
+              </div> */}
 
+<div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
+  {cardDisplay.slice(0, 6).map((card) => (
+    <div
+      key={card.title}
+      onClick={() => handleFollowupCellClick(card.title, card.value)}
+      className="min-w-0 cursor-pointer rounded-lg border border-slate-200/90 bg-white px-2.5 py-2 shadow-sm transition hover:shadow-md"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-50">
+            {card.icon}
+          </div>
+
+          <h3 className="text-[22px] font-bold leading-none text-slate-900">
+            {card.value}
+          </h3>
+        </div>
+
+        <div className="text-right text-[12px] font-semibold leading-4 text-slate-900 tabular-nums whitespace-nowrap">
+          {card.right}
+        </div>
+      </div>
+
+      <p className="mt-2 text-[13px] font-semibold leading-4 text-slate-700">
+        {card.title}
+      </p>
+
+      <p className="mt-0.5 line-clamp-2 text-[10px] leading-3.5 text-slate-500">
+        {card.detail}
+      </p>
+    </div>
+  ))}
+</div>
               <div
                 className="
     mt-4 grid gap-4
