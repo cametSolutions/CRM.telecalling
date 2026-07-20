@@ -271,31 +271,39 @@ import { toast } from "react-toastify"
 import { useDispatch } from "react-redux"
 export const StaticSidebar = ({
   selectedCompanyBranch,
-  setselectedPeriod,
+  // setselectedPeriod,
   handleMoreClick,
   setselectedCompanyBranch,
   parenttargetData,
   parentyear,
   parentperiodmode,
-onpasswordClick
+onpasswordClick,
+onperformanceModalClick,
+setTargetData,targetData
 }) => {
 console.log("hh")
 // console.log(onpasswordClick)
   const now = new Date()
  const dispatch = useDispatch()
   const [categorylist, setcategorylist] = useState([])
+  // const now = new Date()
+  const [selectedPeriod, setselectedPeriod] = useState("")
+  const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
+console.log(selectedYear)
+  const [periodMode, setperiodMode] = useState("all")
   const [avatarOpen, setAvatarOpen] = useState(false)
   const [user, setUser] = useState(null)
   const [selectedBranch, setselectedBranch] = useState(null)
 console.log(selectedBranch)
-  const [periodMode, setperiodMode] = useState(parentperiodmode)
+  // const [periodMode, setperiodMode] = useState(parentperiodmode)
   const [branchOptions, setbranchOptions] = useState([])
   const [selectedMonth] = useState(
     String(now.getMonth() + 1).padStart(2, "0")
   )
+//  const [targetData, settargetData] = useState([])
   const isMobile = useMediaQuery("(max-width:1023px)")
   const [loggedusedTarget, setloggeduserTarget] = useState([])
-  const [selectedYear, setSelectedYear] = useState(parentyear)
+  // const [selectedYear, setSelectedYear] = useState(parentyear)
   const [achievedPoints, setachievedPoints] = useState(0)
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile)
 const brand=useSelector((branch)=>branch.companyBranch.branches)
@@ -309,20 +317,23 @@ console.log(brand)
       periodMode &&
       `/target/gettargetresult?month=${selectedMonth}&year=${selectedYear}&periodMode=${periodMode}&selectedBranch=${selectedBranch}`
   )
-
+console.log(selectedBranch)
+console.log(selectedYear)
+console.log(periodMode)
+console.log(data)
   const { data: branchlist } = UseFetch("/branch/getBranch")
 
   useEffect(() => {
     setSidebarOpen(!isMobile)
   }, [isMobile])
 
-  useEffect(() => {
-    setperiodMode(parentperiodmode)
-  }, [parentperiodmode])
+  // useEffect(() => {
+  //   setperiodMode(parentperiodmode)
+  // }, [parentperiodmode])
 
-  useEffect(() => {
-    setSelectedYear(parentyear)
-  }, [parentyear])
+  // useEffect(() => {
+  //   setSelectedYear(parentyear)
+  // }, [parentyear])
 
   useEffect(() => {
     if (a) {
@@ -349,7 +360,8 @@ console.log(a)
 
   useEffect(() => {
     if (data?.userWiseResults && data?.userWiseResults.length && user?._id) {
-      parenttargetData(data)
+      // parenttargetData(data)
+ setTargetData(data)
       setselectedPeriod(data?.selectedPeriodName)
 
       const uniqueCategories = [
@@ -501,6 +513,7 @@ const handleBranchChange = (branch) => {
             <Sidebar
               handleMoreClick={handleMoreClick}
 onpasswordClick={onpasswordClick}
+onperformanceModalClick={onperformanceModalClick}
               achievedPoints={achievedPoints}
               sidebarOpen={sidebarOpen}
               toggleSidebar={toggleSidebar}

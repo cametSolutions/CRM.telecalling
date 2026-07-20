@@ -149,7 +149,7 @@ import { NotificationPopup } from "../components/primaryUser/NotificationPopup"
 import GlobalUnsavedChangesModal from "../components/common/GlobalUnsavedChangesModal"
 
 import Mainrouter from "../router/Mainrouter"
-
+import { PerformanceModal } from "../components/primaryUser/PerformanceModal"
 import useAutoLogout from "../hooks/useAutoLogout"
 import UseFetch from "../hooks/useFetch"
 
@@ -164,8 +164,10 @@ const Layout = () => {
   const [notificationPopup, setNotificationPopup] = useState(false)
   const [loggedUser, setLoggedUser] = useState(null)
   const [changepasswordOpen, setchangepasswordOpen] = useState(false)
+const [performanceModalOpen,setperformanceModalOpen]=useState(false)
+console.log(performanceModalOpen)
   const isAuthPage = location.pathname === "/"
-
+const [targetData,setTargetData]=useState([])
   useAutoLogout(!isAuthPage)
 
   const isAdmin = location.pathname.startsWith("/admin")
@@ -260,7 +262,7 @@ const Layout = () => {
       <div className="h-screen flex overflow-hidden">
         {/* Sidebar */}
         {shouldshowSidebar && (
-          <StaticSidebar onpasswordClick={()=>setchangepasswordOpen(true)} />
+          <StaticSidebar onpasswordClick={()=>setchangepasswordOpen(true)} onperformanceModalClick={()=>setperformanceModalOpen(true)} setTargetData={setTargetData} targetData={targetData}/>
         )}
 
         {/* Right Side */}
@@ -293,6 +295,11 @@ const Layout = () => {
         onClose={() => setNotificationPopup(false)}
         notificationData={notificationData}
       />
+<PerformanceModal
+open={performanceModalOpen}
+onClose={()=>setperformanceModalOpen(false)}
+/>
+
       <ChangePasswordModal
         open={changepasswordOpen}
         onClose={() => setchangepasswordOpen(false)}

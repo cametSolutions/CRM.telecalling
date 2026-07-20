@@ -815,6 +815,7 @@ export default function StaffHeader({
 console.log(sidebarHasProfile)
   const [user, setUser] = useState(null)
   const [mobileOpen, setMobileOpen] = useState(false)
+console.log(mobileOpen)
   const [mobileMenu, setMobileMenu] = useState(null)
   const [mobileChildMenu, setMobileChildMenu] = useState(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
@@ -1130,7 +1131,7 @@ console.log("hhh")
     <>
       <header className="sticky top-0 z-50 bg-[#0B1220] text-white shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
         <div className="relative mx-auto flex h-16 w-full items-center gap-3 px-3 sm:px-4 lg:px-6">
-{!sidebarHasProfile&&(
+
  <div className="flex min-w-0 items-center gap-3">
             <button
               onClick={() => setMobileOpen(true)}
@@ -1139,8 +1140,8 @@ console.log("hhh")
             >
               <FiMenu size={18} />
             </button>
-
-            <button
+{!sidebarHasProfile&&(
+ <button
               type="button"
               onClick={() => handleSafeNavigate(getDashboardPath())}
               className="flex items-center gap-2.5"
@@ -1153,8 +1154,9 @@ console.log("hhh")
                 <div className="text-[10px] font-medium leading-4 text-slate-400">CRM</div>
               </div>
             </button>
-          </div>
 )}
+           
+          </div>
          
 
           <nav className="absolute left-1/2 top-0 hidden h-full -translate-x-1/2 items-center gap-1 xl:flex">
@@ -1384,7 +1386,7 @@ console.log("hhh")
                     : "text-slate-200 hover:bg-[#1E293B]"
                 }`}
               >
-                Dashboard
+                Dashboards
               </button>
 
               {menuGroups.map((group) => {

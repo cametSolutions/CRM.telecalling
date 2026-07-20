@@ -1087,8 +1087,7 @@ sidebarHasProfile=true,
     <>
       <header className="sticky top-0 z-50 bg-[#0B1220] text-white shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
         <div className="relative mx-auto flex h-16 w-full items-center gap-3 px-3 sm:px-4 lg:px-6">
-          {!sidebarHasProfile && (
-            <div className="flex min-w-0 items-center gap-3">
+ <div className="flex min-w-0 items-center gap-3">
               <button
                 onClick={() => setMobileOpen(true)}
                 className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-[#162033] text-slate-200 transition hover:bg-[#1E293B] xl:hidden"
@@ -1096,8 +1095,8 @@ sidebarHasProfile=true,
               >
                 <FiMenu size={18} />
               </button>
-
-              <button
+{!sidebarHasProfile && (
+             <button
                 type="button"
                 onClick={() => handleSafeNavigate("/admin/dashBoard")}
                 className="flex items-center gap-2.5"
@@ -1110,8 +1109,10 @@ sidebarHasProfile=true,
                   <div className="text-[10px] font-medium leading-4 text-slate-400">Admin panel</div>
                 </div>
               </button>
-            </div>
           )}
+            
+            </div>
+          
 
           <nav className="absolute left-1/2 top-0 hidden h-full -translate-x-1/2 items-center gap-1 xl:flex">
             <button
