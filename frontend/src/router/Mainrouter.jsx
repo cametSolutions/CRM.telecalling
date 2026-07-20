@@ -41,19 +41,19 @@ const Mainrouter = ({ headerHeight }) => {
   ]
   return (
     <div
-      className="overflow-auto h-full " 
+      className="overflow-auto h-full" 
     >
       <Routes>
         <Route path="/" element={<Login />} />
         {/* <Route path="/admin/productlist" element={<ProductList />} /> */}
         {/* <Route path="/admin/home" element={<CallregistrationList />} /> */}
-        {!isMobile && (
+        
           <Route path="/admin/home" element={<CallregistrationList />} />
-        )}
+        
       
-        {!isMobile && (
+      
           <Route path="/staff/home" element={<CallregistrationList />} />
-        )}
+        
         {allRoutes.map((route, index) => {
           const { path, component: Component, title } = route
           return (

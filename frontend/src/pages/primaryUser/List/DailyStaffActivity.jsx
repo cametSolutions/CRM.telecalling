@@ -401,7 +401,7 @@ setActiveUserId(userId)
     // </div>
     <div className="h-full bg-[#ADD8E6] overflow-hidden">
       <div className="flex h-full flex-row overflow-hidden">
-        <StaticSidebar
+        {/* <StaticSidebar
           handleMoreClick={handleMoreClick}
           selectedCompanyBranch={selectedcompanyBranch}
           setselectedCompanyBranch={setselectedcompanyBranch}
@@ -409,10 +409,10 @@ setActiveUserId(userId)
           parentperiodmode={periodMode}
           parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
-        />
+        /> */}
 
         <div className="flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden">
-          <header className="flex items-center justify-between bg-[#ADD8E6]">
+          {/* <header className="flex items-center justify-between bg-[#ADD8E6]">
             {loggedUser?.role?.toLowerCase() === "admin" ? (
               <AdminHeader hide={true} />
             ) : (
@@ -435,9 +435,9 @@ setActiveUserId(userId)
                 <Settings size={15} strokeWidth={2.2} />
               </button>
 
-              {/* <button className="rounded-full p-1.5 transition bg-slate-100">
+              <button className="rounded-full p-1.5 transition bg-slate-100">
             <User size={15} strokeWidth={2.2} />
-          </button> */}
+          </button>
 
               <div className="relative">
                 <button
@@ -450,7 +450,7 @@ setActiveUserId(userId)
                   <User size={15} strokeWidth={2.2} />
                 </button>
 
-                {/* {showUserMenu && (
+                {showUserMenu && (
               <div
                 onClick={(e) => e.stopPropagation()}
                 className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
@@ -462,10 +462,10 @@ setActiveUserId(userId)
                   Logout
                 </button>
               </div>
-            )} */}
+            )}
               </div>
             </div>
-          </header>
+          </header> */}
 
           <div className="flex flex-1 min-h-0 min-w-0 flex-col">
             {/* Top bar */}

@@ -273,7 +273,7 @@ function LeadClosed() {
   return (
     <div className="h-full bg-[#ADD8E6 overflow-hidden">
       <div className="flex h-full flex-row overflow-hidden">
-        <StaticSidebar
+        {/* <StaticSidebar
           handleMoreClick={handleMoreClick}
           selectedCompanyBranch={selectedcompanyBranch}
           setselectedCompanyBranch={setselectedcompanyBranch}
@@ -281,9 +281,9 @@ function LeadClosed() {
           parentperiodmode={periodMode}
           parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
-        />
+        /> */}
         <div className="flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden justify-center">
-          <header className="flex items-center justify-between ">
+          {/* <header className="flex items-center justify-between ">
             {userData?.role?.toLowerCase() === "admin" ? (
               <AdminHeader hide={true} />
             ) : (
@@ -318,7 +318,7 @@ function LeadClosed() {
                 </button>
               </div>
             </div>
-          </header>
+          </header> */}
 
           <div className="flex flex-1 flex-col min-h-0 min-w-0 overflow-hidden  w-full justify-center  bg-[#ADD8E6]">
             {/* {loader && (

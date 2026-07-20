@@ -27,6 +27,7 @@ import {
   ChevronRight,
   X
 } from "lucide-react"
+import { useSelector } from "react-redux"
 import UseFetch from "../../../hooks/useFetch"
 import AdminHeader from "../../../header/AdminHeader"
 import StaffHeader from "../../../header/StaffHeader"
@@ -35,6 +36,8 @@ import SkeletonTable from "../../../components/loader/SkeletonTable"
 import { StaticSidebar } from "../../../components/primaryUser/StaticSidebar"
 import { loggeduserBranches } from "../../../../slices/companyBranchSlice"
 const Reallocation = () => {
+const reduxselectedBranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
+console.log(reduxselectedBranch)
   const [status, setStatus] = useState("Pending")
   const [selectedLabel, setSelectedLabel] = useState(null)
   const [showTableList, setshowTableList] = useState(false)
@@ -73,7 +76,7 @@ const Reallocation = () => {
   const [selectedUserName, setselecteduserName] = useState(null)
   const { data: branches } = UseFetch("/branch/getBranch")
   const { data: branchProduct } = UseFetch(
-    `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
+    `/product/getallbranchProduct?branch=${reduxselectedBranch}`
   )
   const [formData, setFormData] = useState({
     allocationDate: "",
@@ -85,8 +88,8 @@ const Reallocation = () => {
     refreshHook
   } = UseFetch(
     loggedUser &&
-      selectedCompanyBranch &&
-      `/lead/getallreallocatedLead?selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
+      reduxselectedBranch &&
+      `/lead/getallreallocatedLead?selectedBranch=${reduxselectedBranch}&role=${loggedUser.role}`
   )
   console.log(leadreallocation)
   const a = leadreallocation?.map((it) => it.leadId)
@@ -399,7 +402,7 @@ const Reallocation = () => {
   return (
     <div className=" h-full bg-[#ADD8E6] overflow-hidden">
       <div className="flex h-full flex-row">
-        <StaticSidebar
+        {/* <StaticSidebar
           handleMoreClick={handleMoreClick}
           selectedCompanyBranch={selectedCompanyBranch}
           setselectedCompanyBranch={setSelectedCompanyBranch}
@@ -407,9 +410,9 @@ const Reallocation = () => {
           parentperiodmode={periodMode}
           parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
-        />
+        /> */}
         <div className="flex flex-1 flex-col overflow-hidden">
-          <header className="flex items-center justify-between bg-[#ADD8E6]">
+          {/* <header className="flex items-center justify-between bg-[#ADD8E6]">
             {loggedUser?.role?.toLowerCase() === "admin" ? (
               <AdminHeader hide={true} />
             ) : (
@@ -428,9 +431,9 @@ const Reallocation = () => {
               <button className="rounded-full p-1.5 transition bg-slate-100">
                 <Settings size={15} strokeWidth={2.2} />
               </button>
-              {/* <button className="rounded-full p-1.5 transition bg-slate-100">
+              <button className="rounded-full p-1.5 transition bg-slate-100">
                 <User size={15} strokeWidth={2.2} />
-              </button> */}
+              </button>
 
               <div className="relative">
                 <button
@@ -443,7 +446,7 @@ const Reallocation = () => {
                   <User size={15} strokeWidth={2.2} />
                 </button>
 
-                {/* {showUserMenu && (
+                {showUserMenu && (
                   <div
                     onClick={(e) => e.stopPropagation()} 
                     className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
@@ -455,10 +458,10 @@ const Reallocation = () => {
                       Logout
                     </button>
                   </div>
-                )} */}
+                )}
               </div>
             </div>
-          </header>
+          </header> */}
           {(submitLoading || loading) && (
             <BarLoader
               cssOverride={{ width: "100%", height: "4px" }}

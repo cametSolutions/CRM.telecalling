@@ -270,7 +270,7 @@ console.log(periodMode)
   return (
     <div className="h-full bg-[#ADD8E6] overflow-hidden">
       <div className="flex h-full flex-row overflow-hidden">
-        <StaticSidebar
+        {/* <StaticSidebar
           handleMoreClick={handleMoreClick}
           selectedCompanyBranch={selectedcompanyBranch}
           setselectedCompanyBranch={setselectedcompanyBranch}
@@ -278,45 +278,10 @@ console.log(periodMode)
           parentperiodmode={periodMode}
           parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
-        />
+        /> */}
 
         <div className="flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden justify-center">
-          <header className="flex items-center justify-between ">
-            {user?.role?.toLowerCase() === "admin" ? (
-              <AdminHeader hide={true} />
-            ) : (
-              <StaffHeader hide={true} />
-            )}
-
-            <div className="flex h-full items-center gap-1.5  pr-3">
-              <button className="rounded-full bg-slate-100 p-1.5 transition">
-                <Mail size={15} strokeWidth={2.2} />
-              </button>
-
-              <div className="relative">
-                <button className="rounded-full bg-slate-100 p-1.5 transition">
-                  <MessageSquareText size={15} strokeWidth={2.2} />
-                </button>
-                <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />
-              </div>
-
-              <button className="rounded-full bg-slate-100 p-1.5 transition">
-                <Settings size={15} strokeWidth={2.2} />
-              </button>
-
-              <div className="relative">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setShowUserMenu((prev) => !prev)
-                  }}
-                  className="rounded-full bg-slate-100 p-1.5 transition"
-                >
-                  <User size={15} strokeWidth={2.2} />
-                </button>
-              </div>
-            </div>
-          </header>
+          
 
           <div className="flex flex-1 min-h-0 min-w-0 overflow-hidden  w-full justify-center">
             <LeadMaster

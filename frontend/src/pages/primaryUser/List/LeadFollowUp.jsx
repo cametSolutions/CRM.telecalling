@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { Pencil } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom"
+import { useSelector } from "react-redux"
 import Breadcrumb from "../../../components/common/Breadcrumb"
 import { formatDate } from "../../../utils/dateUtils"
 import MyDatePicker from "../../../components/common/MyDatePicker"
@@ -43,7 +44,8 @@ import React from "react"
 const LeadFollowUp = () => {
   const location = useLocation()
   const navigate = useNavigate()
-
+const reduxselectedBranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
+console.log(reduxselectedBranch)
   const safeState = location?.state || {}
   console.log(location?.state)
   const nav = [
@@ -1340,9 +1342,10 @@ console.log(ishavePayment)
   //   loggedUser &&
   //   selectedCompanyBranch
   // console.log(safeState.istotal)
+console.log(safeState)
   const shouldFetch =
     !!loggedUser &&
-    !!selectedCompanyBranch &&
+    !!reduxselectedBranch &&
     ((safeState?.viewMode !== "product" &&
       safeState?.istotal &&
       !!safeState?.staffId) ||
@@ -1367,8 +1370,9 @@ console.log(ishavePayment)
   //       `&header=${safeState?.header}` +
   //       `&from=${safeState?.from ?? null}`
   //     : null;
+console.log(shouldFetch)
   const followupUrl = shouldFetch
-    ? `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}` +
+    ? `/lead/getallLeadFollowUp?branchSelected=${reduxselectedBranch}` +
       `&loggeduserid=${safeState.istotal ? safeState.staffId : loggedUser._id}` +
       `&role=${safeState.istotal ? safeState.staffRole : loggedUser.role}` +
       `&pendingfollowup=${finalPending}` +
@@ -1378,7 +1382,8 @@ console.log(ishavePayment)
       `${safeState?.header ? `&header=${safeState.header}` : ""}` +
       `${safeState?.from ? `&from=${safeState.from}` : ""}`
     : null
-
+console.log(followupUrl)
+// '/lead/getallLeadFollowUp?branchSelected=66f7b26c1e7129afd9aee189&loggeduserid=67220ce51c400b86242fe178&role=undefined&pendingfollowup=true&viewmode=true&startDate=2026-07-01&endDate=2026-07-31&header=Total Leads&from=followupReport'
   const {
     data: loggedusersallocatedleads,
     isLoading: loading,
@@ -1387,7 +1392,7 @@ console.log(ishavePayment)
   } = useQuery({
     queryKey: [
       "followups",
-      selectedCompanyBranch,
+      reduxselectedBranch,
       safeState?.staffId || "",
       finalPending,
       dates.startDate || "",
@@ -3038,7 +3043,7 @@ console.log(ishavePayment)
   return (
     <div className="h-full  bg-[#ADD8E6] overflow-hidden">
       <div className="flex h-full  flex-row">
-        <StaticSidebar
+        {/* <StaticSidebar
           handleMoreClick={handleMoreClick}
           selectedCompanyBranch={selectedCompanyBranch}
           setselectedCompanyBranch={setselectedCompanyBranch}
@@ -3046,10 +3051,10 @@ console.log(ishavePayment)
           parentperiodmode={periodMode}
           parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
-        />
+        /> */}
 
         <div className="flex flex-1 flex-col overflow-hidden min-h-0">
-          <header className="flex items-center justify-between ">
+          {/* <header className="flex items-center justify-between ">
             {originalloggeduser?.role?.toLowerCase() === "admin" ? (
               <AdminHeader hide={true} />
             ) : (
@@ -3069,9 +3074,9 @@ console.log(ishavePayment)
               <button className="rounded-full p-1.5 transition bg-slate-100">
                 <Settings size={15} strokeWidth={2.2} />
               </button>
-              {/* <button className="rounded-full p-1.5 transition bg-slate-100">
+              <button className="rounded-full p-1.5 transition bg-slate-100">
                 <User size={15} strokeWidth={2.2} />
-              </button> */}
+              </button>
 
               <div className="relative">
                 <button
@@ -3084,7 +3089,7 @@ console.log(ishavePayment)
                   <User size={15} strokeWidth={2.2} />
                 </button>
 
-                {/* {showUserMenu && (
+                {showUserMenu && (
                   <div
                     onClick={(e) => e.stopPropagation()} 
                     className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
@@ -3096,10 +3101,10 @@ console.log(ishavePayment)
                       Logout
                     </button>
                   </div>
-                )} */}
+                )}
               </div>
             </div>
-          </header>
+          </header> */}
 
           {(loading || productwiseloader) && (
             <BarLoader

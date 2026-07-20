@@ -345,10 +345,11 @@ export default function AccountSearch() {
         //   `/customer/getCustomer?search=${value}&userBranch=${branches}`
         // )
 
-        const branch = JSON.stringify(branches)
-        // const url = `http://localhost:9000/api/customer/getCustomer?search=${value}&role=${
-        //   user.role
-        // }&userBranch=${encodeURIComponent(branch)}`
+//         const branch = JSON.stringify(branches)
+// console.log(branch)
+//         const url = `http://localhost:9000/api/customer/getCustomer?search=${value}&role=${
+//           user.role
+//         }&userBranch=${encodeURIComponent(branch)}`
 
         const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${value}&role=${
           user.role
@@ -1603,7 +1604,7 @@ export default function AccountSearch() {
   return (
     <div className="h-screen bg-[#ADD8E6] overflow-hidden">
       <div className="flex h-full flex-row">
-        <StaticSidebar
+        {/* <StaticSidebar
           handleMoreClick={handleMoreClick}
           selectedCompanyBranch={selectedcompanyBranch}
           setselectedCompanyBranch={setselectedcompanyBranch}
@@ -1611,10 +1612,10 @@ export default function AccountSearch() {
           parentperiodmode={periodMode}
           parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
-        />
+        /> */}
 
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <header className="flex shrink-0 items-center justify-between bg-[#ADD8E6]">
+          {/* <header className="flex shrink-0 items-center justify-between bg-[#ADD8E6]">
             {user?.role?.toLowerCase() === "admin" ? (
               <AdminHeader hide={true} />
             ) : (
@@ -1649,7 +1650,7 @@ export default function AccountSearch() {
                 </button>
               </div>
             </div>
-          </header>
+          </header> */}
 
           <div className="sticky top-0 z-40 shrink-0 bg-[#ADD8E6] px-5 pb-4 pt-2">
             <div className="w-full max-w-md">
