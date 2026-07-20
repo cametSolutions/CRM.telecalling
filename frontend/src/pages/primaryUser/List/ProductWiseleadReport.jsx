@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
+import { useSelector } from "react-redux"
 import ReportTable from "../../../components/primaryUser/ReportTable"
 import { MonthRangePicker } from "../../../components/primaryUser/MonthRangePicker"
 import UseFetch from "../../../hooks/useFetch"
@@ -46,6 +47,8 @@ export default function ProductWiseleadReport() {
     firstDay: null,
     lastDay: null
   })
+const reduxselectedBranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
+console.log(reduxselectedBranch)
   console.log(filterRange)
   const [data, setData] = useState([])
   const [viewMode, setViewMode] = useState("staff") // "staff" | "product"
@@ -101,13 +104,13 @@ console.log(filterRange)
   const { data: report, isLoading: loading } = useQuery({
     queryKey: [
       "productWiseReport",
-      selectedBranch,
+      reduxselectedBranch,
       filterRange.firstDay,
       filterRange.lastDay
     ],
 
     enabled:
-      !!selectedBranch && !!filterRange.firstDay && !!filterRange.lastDay,
+      !!reduxselectedBranch && !!filterRange.firstDay && !!filterRange.lastDay,
 
     queryFn: async () => {
 console.log("query")
@@ -115,7 +118,7 @@ console.log("query")
         params: {
           startDate: filterRange.firstDay,
           endDate: filterRange.lastDay,
-          branchId: selectedBranch
+          branchId: reduxselectedBranch
         }
       })
 console.log("response.data",response.data.data)
@@ -132,14 +135,14 @@ console.log(selectedBranch)
   //   `/product/getallbranchProduct?branch=${selectedBranch}`
   // )
   const { data: branchProduct = [] } = useQuery({
-    queryKey: ["branchProducts", selectedBranch],
+    queryKey: ["branchProducts", reduxselectedBranch],
 
-    enabled: !!selectedBranch,
+    enabled: !!reduxselectedBranch,
 
     queryFn: async () => {
       const response = await api.get(`/product/getallbranchProduct`, {
         params: {
-          branch: selectedBranch
+          branch: reduxselectedBranch
         }
       })
 
@@ -215,7 +218,7 @@ console.log(selectedBranch)
     const staffMap = {}
     console.log(rows)
     rows.forEach((row) => {
-      if (String(row.branch) !== String(selectedBranch)) return
+      if (String(row.branch) !== String(reduxselectedBranch)) return
       const staffKey = row.staffId
       if (!staffKey) return
 
@@ -254,7 +257,7 @@ console.log(selectedBranch)
     setSelectedStaff(null)
     setDrillDown(false)
     setViewMode("staff")
-  }, [report, selectedBranch])
+  }, [report, reduxselectedBranch])
 
   const headersName = [
     "staffId",
@@ -431,7 +434,7 @@ console.log("hhhhh")
     const staffMap = {}
 
     rows.forEach((row) => {
-      if (String(row.branch) !== String(selectedBranch)) return
+      if (String(row.branch) !== String(reduxselectedBranch)) return
       const staffKey = row.staffId
       if (!staffKey) return
 
@@ -484,7 +487,7 @@ console.log("hhhhh")
 
     // Filter by selected branch and map to product view
     const productData = rows
-      .filter((row) => String(row.branch) === String(selectedBranch))
+      .filter((row) => String(row.branch) === String(reduxselectedBranch))
       .map((row) => ({
         staffId: row.staffId,
         productId: row.productId,
@@ -541,7 +544,7 @@ console.log("hhhhh")
         {
           label: "Product-wise-lead-Report",
           path: "/admin/reports/product-wise-report",
-          state: { filterRange, selectedBranch,change:true }
+          state: { filterRange, selectedBranch:reduxselectedBranch,change:true }
         },
         { label: "Lead Follow-Up", path: "" }
       ]

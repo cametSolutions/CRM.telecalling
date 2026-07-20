@@ -1382,7 +1382,8 @@ console.log(shouldFetch)
       `${safeState?.header ? `&header=${safeState.header}` : ""}` +
       `${safeState?.from ? `&from=${safeState.from}` : ""}`
     : null
-
+console.log(followupUrl)
+// '/lead/getallLeadFollowUp?branchSelected=66f7b26c1e7129afd9aee189&loggeduserid=67220ce51c400b86242fe178&role=undefined&pendingfollowup=true&viewmode=true&startDate=2026-07-01&endDate=2026-07-31&header=Total Leads&from=followupReport'
   const {
     data: loggedusersallocatedleads,
     isLoading: loading,

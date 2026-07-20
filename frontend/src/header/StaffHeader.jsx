@@ -1209,7 +1209,7 @@ console.log("hhh")
               </button>
             </div>
 
-            <div className="relative">
+            {/* <div className="relative">
               <button
                 type="button"
                 onClick={onNotificationClick}
@@ -1219,8 +1219,8 @@ console.log("hhh")
                 <MessageSquareText size={15} strokeWidth={2.2} />
                 <IconBadge count={messageCount} />
               </button>
-            </div>
-
+            </div> */}
+{/* 
             <button
               type="button"
               onClick={() => handleSafeNavigate("/staff/settings")}
@@ -1228,7 +1228,7 @@ console.log("hhh")
               className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-slate-200 transition hover:bg-white/20"
             >
               <Settings size={15} strokeWidth={2.2} />
-            </button>
+            </button> */}
 
             <ReportBugButton api={api} />
 

@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom"
 import UseFetch from "../../../hooks/useFetch"
 import MyDatePicker from "../../../components/common/MyDatePicker"
+import { useSelector } from "react-redux"
 import BarLoader from "react-spinners/BarLoader"
 import LeadTaskComponent from "../../../components/primaryUser/LeadTaskComponent"
 import { PerformanceModal } from "../../../components/primaryUser/PerformanceModal"
@@ -31,6 +32,8 @@ import { StaticSidebar } from "../../../components/primaryUser/StaticSidebar"
 import StaffHeader from "../../../header/StaffHeader"
 import { PropagateLoader } from "react-spinners"
 const LeadTask = () => {
+const reduxselectedBranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
+console.log(reduxselectedBranch)
   const [loggedUser, setloggedUser] = useState(null)
   const [dates, setDates] = useState({ startDate: "", endDate: "" })
   console.log(dates)
@@ -142,11 +145,11 @@ console.log(ownTask)
 
   const { data, error, loading, refreshHook } = UseFetch(
     loggedUser &&
-      selectedCompanyBranch &&
-      `/lead/getrespectedleadTask?userid=${loggedUser._id}&branchSelected=${selectedCompanyBranch}&role=${loggedUser.role}&ownTask=${ownTask}`
+      reduxselectedBranch &&
+      `/lead/getrespectedleadTask?userid=${loggedUser._id}&branchSelected=${reduxselectedBranch}&role=${loggedUser.role}&ownTask=${ownTask}`
   )
   const { data: branchProduct } = UseFetch(
-    `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
+    `/product/getallbranchProduct?branch=${reduxselectedBranch}`
   )
   const formatdate = (date) => new Date(date).toISOString().split("T")[0]
   const getLocalDate = (date) => {

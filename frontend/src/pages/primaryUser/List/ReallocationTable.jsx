@@ -5,6 +5,7 @@ import { toast } from "react-toastify"
 import { PropagateLoader } from "react-spinners"
 import { useNavigate, useParams } from "react-router-dom"
 import BarLoader from "react-spinners/BarLoader"
+import { useSelector } from "react-redux"
 import api from "../../../api/api"
 import Select from "react-select"
 import { CollectionupdateModal } from "../../../components/primaryUser/CollectionupdateModal"
@@ -34,6 +35,8 @@ import StaffHeader from "../../../header/StaffHeader"
 import SkeletonTable from "../../../components/loader/SkeletonTable"
 import { getLocalStorageItem } from "../../../helper/localstorage"
 const ReallocationTable = () => {
+const reduxselectedBranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
+console.log(reduxselectedBranch)
   console.log("hd")
   const { label } = useParams()
   console.log(label)
@@ -91,11 +94,11 @@ console.log(isClosed)
     refreshHook
   } = UseFetch(
     loggedUser &&
-      selectedCompanyBranch &&
-      `/lead/getallreallocatedLead?selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
+      reduxselectedBranch &&
+      `/lead/getallreallocatedLead?selectedBranch=${reduxselectedBranch}&role=${loggedUser.role}`
   )
   const { data: branchProduct } = UseFetch(
-    `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
+    `/product/getallbranchProduct?branch=${reduxselectedBranch}`
   )
   const { data: tasks } = UseFetch("/lead/getallTask")
   console.log(tasks)

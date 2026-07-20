@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import ReportTable from "../../../components/primaryUser/ReportTable"
 import UseFetch from "../../../hooks/useFetch"
+import { useSelector } from "react-redux"
 import { MonthRangePicker } from "../../../components/primaryUser/MonthRangePicker"
 import { Navigate, useNavigate } from "react-router-dom"
 import { PerformanceModal } from "../../../components/primaryUser/PerformanceModal"
@@ -28,6 +29,8 @@ import {
   X
 } from "lucide-react"
 export default function SalesFunnel() {
+const reduxselectedBranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
+console.log(reduxselectedBranch)
   const [date, setdate] = useState({
     startDate: "",
     endDate: ""
@@ -64,7 +67,8 @@ const now=new Date()
   const { data: salesfunnel } = UseFetch(
     filterRange.firstDay &&
       filterRange.lastDay &&
-      `/lead/getsalesfunnels?startDate=${filterRange.firstDay}&endDate=${filterRange.lastDay}`
+reduxselectedBranch&&
+      `/lead/getsalesfunnels?startDate=${filterRange.firstDay}&endDate=${filterRange.lastDay}&selectedBranch=${reduxselectedBranch}`
   )
  useEffect(() => {
     if (selectedCategory) {

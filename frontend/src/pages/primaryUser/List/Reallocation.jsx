@@ -27,6 +27,7 @@ import {
   ChevronRight,
   X
 } from "lucide-react"
+import { useSelector } from "react-redux"
 import UseFetch from "../../../hooks/useFetch"
 import AdminHeader from "../../../header/AdminHeader"
 import StaffHeader from "../../../header/StaffHeader"
@@ -35,6 +36,8 @@ import SkeletonTable from "../../../components/loader/SkeletonTable"
 import { StaticSidebar } from "../../../components/primaryUser/StaticSidebar"
 import { loggeduserBranches } from "../../../../slices/companyBranchSlice"
 const Reallocation = () => {
+const reduxselectedBranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
+console.log(reduxselectedBranch)
   const [status, setStatus] = useState("Pending")
   const [selectedLabel, setSelectedLabel] = useState(null)
   const [showTableList, setshowTableList] = useState(false)
@@ -73,7 +76,7 @@ const Reallocation = () => {
   const [selectedUserName, setselecteduserName] = useState(null)
   const { data: branches } = UseFetch("/branch/getBranch")
   const { data: branchProduct } = UseFetch(
-    `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
+    `/product/getallbranchProduct?branch=${reduxselectedBranch}`
   )
   const [formData, setFormData] = useState({
     allocationDate: "",
@@ -85,8 +88,8 @@ const Reallocation = () => {
     refreshHook
   } = UseFetch(
     loggedUser &&
-      selectedCompanyBranch &&
-      `/lead/getallreallocatedLead?selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
+      reduxselectedBranch &&
+      `/lead/getallreallocatedLead?selectedBranch=${reduxselectedBranch}&role=${loggedUser.role}`
   )
   console.log(leadreallocation)
   const a = leadreallocation?.map((it) => it.leadId)

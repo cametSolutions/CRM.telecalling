@@ -26,6 +26,7 @@ import NodataAvailable from "../../../components/NodataAvailable"
 import AdminHeader from "../../../header/AdminHeader"
 import StaffHeader from "../../../header/StaffHeader"
 import { getLocalStorageItem } from "../../../helper/localstorage"
+import { useSelector } from "react-redux"
 import React from "react"
 import { toast } from "react-toastify"
 import { PropagateLoader } from "react-spinners"
@@ -38,6 +39,8 @@ import { PerformanceModal } from "../../../components/primaryUser/PerformanceMod
 import SkeletonTable from "../../../components/loader/SkeletonTable"
 import { StaticSidebar } from "../../../components/primaryUser/StaticSidebar"
 const LeadAllocationTable = () => {
+const reduxselectedBranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
+console.log(reduxselectedBranch)
   const [status, setStatus] = useState("Pending")
   const [popupOpen, setpopupOpen] = useState(false)
   const [submiterror, setsubmitError] = useState("")
@@ -94,11 +97,11 @@ const LeadAllocationTable = () => {
     status &&
       loggedUser &&
       selectedCompanyBranch &&
-      `/lead/getallLead?Status=${status}&selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
+      `/lead/getallLead?Status=${status}&selectedBranch=${reduxselectedBranch}&role=${loggedUser.role}`
   )
 console.log(leadPendinglist)
   const { data: branchProduct } = UseFetch(
-    `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
+    `/product/getallbranchProduct?branch=${reduxselectedBranch}`
   )
   console.log(selectedAllocationType)
   console.log(selectedItem)
@@ -206,7 +209,7 @@ console.log(leadPendinglist)
     }
   }, [loggedUser, branches])
   useEffect(() => {
-    if (alluserdata && selectedCompanyBranch) {
+    if (alluserdata && reduxselectedBranch) {
       const { allusers = [], allAdmins = [] } = alluserdata
 
       // Combine allusers and allAdmins
@@ -217,7 +220,7 @@ console.log(leadPendinglist)
       const filter = allusers.filter(
         (staff) =>
           staff.isVerified === true &&
-          staff.selected.some((s) => selectedCompanyBranch === s.branch_id)
+          staff.selected.some((s) => reduxselectedBranch === s.branch_id)
       )
       console.log(filter)
       const combinedUsers = [...filter, ...allAdmins]
@@ -228,7 +231,7 @@ console.log(leadPendinglist)
         }))
       )
     }
-  }, [alluserdata, selectedCompanyBranch])
+  }, [alluserdata, reduxselectedBranch])
   const getgroupingData = (data) => {
     const groupedLeads = {}
     let grandTotal = 0
@@ -260,7 +263,7 @@ groupedLeads
       //for getting approved allocation,
       setToggleLoading(true)
       const response = await api.get(
-        `/lead/getallLead?Status=Approved&selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
+        `/lead/getallLead?Status=Approved&selectedBranch=${reduxselectedBranch}&role=${loggedUser.role}`
       )
 
       if (response.status >= 200 && response.status < 300) {
@@ -299,7 +302,7 @@ groupedLeads
       //for getting pending allocation
       setToggleLoading(true)
       const response = await api.get(
-        `/lead/getallLead?Status=Pending&selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
+        `/lead/getallLead?Status=Pending&selectedBranch=${reduxselectedBranch}&role=${loggedUser.role}`
       )
       if (response.status >= 200 && response.status < 300) {
         setSelectedAllocates({})
@@ -646,7 +649,7 @@ console.log(taskId)
 console.log(taskName)
           response = await api.post(
             //change allocation to another staff means reassigning to another one
-            `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&selectedbranch=${selectedCompanyBranch}&allocationTypeName=${encodeURIComponent(
+            `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&selectedbranch=${reduxselectedBranch}&allocationTypeName=${encodeURIComponent(
               taskName
             )}&allocationtypeId=${taskId}&allocatedBy=${loggedUser._id}`,
             { selectedItem, cleanedData }
@@ -663,7 +666,7 @@ console.log("hhhh")
           console.log("hhhh")
           //set allocation to respected staff from allocation pending page
           response = await api.post(
-            `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&selectedbranch=${selectedCompanyBranch}&allocationTypeName=${encodeURIComponent(
+            `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&selectedbranch=${reduxselectedBranch}&allocationTypeName=${encodeURIComponent(
               allocationname
             )}&allocationtypeId=${selected}&allocatedBy=${loggedUser._id}`,
             { selectedItem, cleanedData }
@@ -876,7 +879,7 @@ const itemid=item?.allocatedTo?.id??item?.allocatedTo?._id
   }
   console.log(formData)
   console.log(tasks)
-  console.log(selectedCompanyBranch)
+  console.log(reduxselectedBranch)
   return (
     <div className="flex  h-full overflow-hidden">
       {/* <StaticSidebar

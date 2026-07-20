@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react"
 import UseFetch from "../../../hooks/useFetch"
+import { useSelector } from "react-redux"
 import { useNavigate } from "react-router-dom"
 import { useLocation } from "react-router-dom"
 import { PaymentHistoryModal } from "../../../components/primaryUser/PaymentHistoryModal"
@@ -38,6 +39,8 @@ import { PropagateLoader } from "react-spinners"
 import { toast } from "react-toastify"
 
 export default function VerifiedCollections() {
+const reduxselectedBranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
+console.log(reduxselectedBranch)
   console.log("hh")
   const [showFullName, setShowFullName] = useState(false)
 const location=useLocation()
@@ -97,9 +100,9 @@ console.log(location.state)
     loading,
     refreshHook
   } = UseFetch(
-    selectedCompanyBranch &&
+    reduxselectedBranch &&
       loggedUser &&
-      `/lead/collectionLeads?selectedBranch=${selectedCompanyBranch}&verified=${verifiedLead}&isAccountant=${isdepartmentisAccountant}&loggeduserby=${loggedUser._id}`
+      `/lead/collectionLeads?selectedBranch=${reduxselectedBranch}&verified=${verifiedLead}&isAccountant=${isdepartmentisAccountant}&loggeduserby=${loggedUser._id}`
   )
 console.log(collectionlead)
 const {
@@ -107,15 +110,15 @@ const {
     loading:leadloading,
     refreshHook:leadHook
   } = UseFetch(
-    selectedCompanyBranch &&
+    reduxselectedBranch &&
       loggedUser &&
-      `/lead/verifiedcollectionLeads?selectedBranch=${selectedCompanyBranch}&verified=${true}&startDate=${startDate}&endDate=${endDate}`
+      `/lead/verifiedcollectionLeads?selectedBranch=${reduxselectedBranch}&verified=${true}&startDate=${startDate}&endDate=${endDate}`
   )
 console.log(startDate)
 console.log(endDate)
 console.log(verifiedcollectionlead)
   const { data: branchProduct } = UseFetch(
-    `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
+    `/product/getallbranchProduct?branch=${reduxselectedBranch}`
   )
   console.log(selectedCompanyBranch)
   console.log(verifiedLead)
