@@ -207,6 +207,7 @@ const Sidebar = ({
   setAvatarOpen,
   onPasswordChange
 }) => {
+console.log(categorylist)
 console.log(selectedBranch)
 
   const [modalOpen, setModalOpen] = useState(false)
