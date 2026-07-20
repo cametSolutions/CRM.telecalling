@@ -719,6 +719,7 @@ onperformanceModalClick,
   isMobile
 }) => {
 console.log(selectedBranch)
+console.log(user)
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState(null)
 

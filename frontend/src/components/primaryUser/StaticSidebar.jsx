@@ -272,8 +272,9 @@ import { toast } from "react-toastify"
 import { useDispatch } from "react-redux"
 export const StaticSidebar = ({
   selectedCompanyBranch,
+setcategoryId,
   // setselectedPeriod,
-  handleMoreClick,
+  // handleMoreClick,
   setselectedCompanyBranch,
   parenttargetData,
   parentyear,
@@ -454,19 +455,13 @@ console.log(a)
       setSidebarOpen((prev) => !prev)
     }
   }
+const handleMoreClick=(categoryid)=>{
+console.log(categoryid)
+console.log("hhh")
+setcategoryId(categoryid)
+onperformanceModalClick()
+}
 
-//   const handleBranchChange = (branch) => {
-// console.log(branch)
-//     setselectedBranch(branch)
-//     // setselectedCompanyBranch(branch)
-// setLocalStorageItem("selectedBranch",branch)
-// console.log("bbbb")
-//  dispatch(selectedBranch(branch))
-// console.log('vvvv')
-//     if (isMobile) {
-//       setSidebarOpen(false)
-//     }
-//   }
 const handleBranchChange = (branch) => {
   try {
     console.log(branch);

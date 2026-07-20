@@ -163,8 +163,10 @@ const Layout = () => {
   const [headerHeight, setHeaderHeight] = useState(0)
   const [notificationPopup, setNotificationPopup] = useState(false)
   const [loggedUser, setLoggedUser] = useState(null)
+console.log(loggedUser)
   const [changepasswordOpen, setchangepasswordOpen] = useState(false)
 const [performanceModalOpen,setperformanceModalOpen]=useState(false)
+const [categoryId,setcategoryId]=useState(null)
 console.log(performanceModalOpen)
   const isAuthPage = location.pathname === "/"
 const [targetData,setTargetData]=useState([])
@@ -262,7 +264,7 @@ const [targetData,setTargetData]=useState([])
       <div className="h-screen flex overflow-hidden">
         {/* Sidebar */}
         {shouldshowSidebar && (
-          <StaticSidebar onpasswordClick={()=>setchangepasswordOpen(true)} onperformanceModalClick={()=>setperformanceModalOpen(true)} setTargetData={setTargetData} targetData={targetData}/>
+          <StaticSidebar onpasswordClick={()=>setchangepasswordOpen(true)} onperformanceModalClick={()=>setperformanceModalOpen(true)} setTargetData={setTargetData} targetData={targetData} setcategoryId={setcategoryId}/>
         )}
 
         {/* Right Side */}
@@ -298,6 +300,9 @@ const [targetData,setTargetData]=useState([])
 <PerformanceModal
 open={performanceModalOpen}
 onClose={()=>setperformanceModalOpen(false)}
+targetData={targetData}
+loggedUser={loggedUser}
+categoryId={categoryId}
 />
 
       <ChangePasswordModal
