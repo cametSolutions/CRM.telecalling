@@ -5,6 +5,7 @@ import { FancySelect } from "../common/FancySelect"
 
 export function PerformanceModal({
   modalOpen,
+open,
   splitType,
   selectedperiod,
   allperiods,
@@ -24,6 +25,8 @@ export function PerformanceModal({
 selectedUser,
   activeUserId
 }) {
+console.log(open)
+if(!open)return null
 console.log(selectedUser)
 console.log(productlist)
 console.log(modalOpen)
@@ -202,7 +205,7 @@ console.log(targetData)
   const { target, achieved, balance } = summary || {}
 console.log(summary)
 
-  if (!modalOpen || !targetData.length) return null
+  if (!open || !targetData.length) return null
 
   const isAmountMode = splitType === "amount"
 
