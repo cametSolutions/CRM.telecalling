@@ -73,6 +73,7 @@ setLocalStorageItem("selectedBranch",selectedCompany.branch_id)
           }
           localStorage.setItem("authToken", token)
           localStorage.setItem("user", JSON.stringify(User))
+console.log(User)
           //           setTimeout(() => {
           // console.log(User)
           //             if (User.role === "Admin") {

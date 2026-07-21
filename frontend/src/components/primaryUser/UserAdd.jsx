@@ -335,6 +335,7 @@ console.log(stateOptions)
   }
 
   const profileImage = (url) => {
+console.log(url)
     setImageData((prevData) => ({
       ...prevData,
       profileUrl: url
