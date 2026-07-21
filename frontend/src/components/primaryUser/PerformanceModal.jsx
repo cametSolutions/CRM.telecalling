@@ -1,10 +1,11 @@
-
-
 import { useEffect, useMemo, useState } from "react"
-import { FancySelect } from "../common/FancySelect"
 
+import { FancySelect } from "../common/FancySelect"
 export function PerformanceModal({
   modalOpen,
+  open,
+  categoryId,
+  loggedUser,
   splitType,
   selectedperiod,
   allperiods,
@@ -14,29 +15,44 @@ export function PerformanceModal({
   summary,
   products,
   selectedMonth,
-  selectedYear,
+  // selectedYear,
   onMonthChange,
   onYearChange,
   targetData,
-  loggedUser,
+  // loggedUser,
   category,
   handleSelectedUser,
-selectedUser,
+  selectedUser,
   activeUserId
 }) {
-console.log(selectedUser)
-console.log(productlist)
-console.log(modalOpen)
-console.log(targetData)
 console.log(selectedperiod)
-console.log(allperiods)
+console.log(selectedMonth)
+  console.log(category)
+  console.log(selectedUser)
+  console.log(targetData)
+  console.log(open)
+  console.log(modalOpen)
+  if (!open) return null
+  console.log(loggedUser)
+  console.log(selectedUser)
+  console.log(selectedUser)
+  console.log(productlist)
+  console.log(modalOpen)
+  console.log(targetData)
+  console.log(selectedperiod)
+  console.log(allperiods)
+const [selectedDatapopup, setselectedDataPopup] = useState({})
   const [activeMetric, setActiveMetric] = useState("achieved")
   const [allusersData, setallusersData] = useState([])
-const [userwisetargetData,setuserwisetargetdata]=useState({})
+  const [userwisetargetData, setuserwisetargetdata] = useState({})
   const [localSelectedPeriod, setLocalSelectedPeriod] = useState(
-    selectedperiod || ""
+    targetData?.selectedPeriodName || ""
   )
-
+const now=new Date()
+  const [periodMode, setperiodMode] = useState("all")
+  const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
+  console.log(targetData?.selectedPeriodName)
+  console.log(localSelectedPeriod)
   const MONTHS = [
     "January",
     "February",
@@ -69,7 +85,7 @@ const [userwisetargetData,setuserwisetargetdata]=useState({})
 
   const getPeriodRange = (periodLabel) => {
     if (!periodLabel) return null
-
+    console.log("hhh")
     const cleaned = String(periodLabel).trim()
     const match = cleaned.match(/^([A-Za-z]+)\s*-\s*([A-Za-z]+)\s+(\d{4})$/)
 
@@ -90,21 +106,64 @@ const [userwisetargetData,setuserwisetargetdata]=useState({})
   }
 
   useEffect(() => {
-    setLocalSelectedPeriod(selectedperiod || "")
-  }, [selectedperiod])
-
-
+    setLocalSelectedPeriod(targetData?.selectedPeriodName || "")
+  }, [targetData?.selectedPeriodName])
+console.log(categoryId)
+  useEffect(() => {
+    if (categoryId) {
+ const filteredselectedCategory = targetData?.userWiseResults.flatMap(
+      (user) => user.categories || []
+    ).filter((item) => item.categoryId === categoryId)
+    console.log("Hh")
+    const summary = filteredselectedCategory.reduce(
+      (acc, cur) => {
+        acc.target += Number(cur.target || 0)
+        acc.achieved += Number(cur.achieved || 0)
+        acc.balance += Number(cur.balance || 0)
+        return acc
+      },
+      { target: 0, achieved: 0, balance: 0 }
+    )
+console.log(summary)
+ setselectedDataPopup(summary)
+//  console.log(loggedUser)
+//     console.log(targetData)
+//     // const filteredloggedUserItem = targetData?.userWiseResults.filter(
+//     //   (item) => item.userId === loggedUser._id
+//     // )
+//     // console.log(filteredloggedUserItem)
+//     const filteredselectedCategory =
+//       filteredloggedUserItem[0]?.categories.filter(
+//         (item) => item.categoryId === categoryId
+//       )
+//     console.log(filteredselectedCategory)
+//     const summary = filteredselectedCategory?.reduce(
+//       (acc, cur) => {
+//         acc.target += Number(cur.target || 0)
+//         acc.achieved += Number(cur.achieved || 0)
+//         acc.balance += Number(cur.balance || 0)
+//         return acc
+//       },
+//       { target: 0, achieved: 0, balance: 0 }
+//     )
+//     console.log(summary)
+//     // setselectedDataPopup(summary)
+//     console.log(targetData)
+    }
+   
+  }, [targetData])
 
   const periodOptions = useMemo(() => {
-    return (allperiods || []).map((period) => {
+    return (targetData.periods || []).map((period) => {
       const parsed = getPeriodRange(period)
       return {
         value: period,
         label: parsed?.displayLabel || String(period).replace(/\s+\d{4}$/, "")
       }
     })
-  }, [allperiods])
-console.log(allperiods)
+  }, [targetData.periods])
+console.log(periodOptions)
+  console.log(targetData.periods)
   const monthOptions = useMemo(() => {
     const parsed = getPeriodRange(localSelectedPeriod)
 
@@ -130,15 +189,15 @@ console.log(allperiods)
       return { value: String(year), label: String(year) }
     })
   }, [])
-console.log(targetData)
+  console.log(targetData)
   const handleMetricTab = (tab) => {
     setActiveMetric(tab)
-
+    console.log(tab)
     const result =
-      targetData
+      targetData?.userWiseResults
         ?.filter((user) =>
           user.categories?.some(
-            (cat) => String(cat.categoryId) === String(category?.Id)
+            (cat) => String(cat.categoryId) === String(categoryId)
           )
         )
         .map((user) => {
@@ -173,7 +232,7 @@ console.log(targetData)
             amount: Number(amount || 0)
           }
         }) || []
-
+    console.log(result)
     setallusersData(result)
   }
 
@@ -199,10 +258,13 @@ console.log(targetData)
     return "Achieved"
   }
 
-  const { target, achieved, balance } = summary || {}
-console.log(summary)
-
-  if (!modalOpen || !targetData.length) return null
+  const { target, achieved, balance } = selectedDatapopup || {}
+  console.log(selectedDatapopup)
+console.log(open)
+console.log(targetData)
+  if (!open || !targetData?.userWiseResults?.length) return null
+console.log(open)
+console.log(targetData)
 
   const isAmountMode = splitType === "amount"
 
@@ -215,7 +277,7 @@ console.log(summary)
 
     return `Q: ${num.toLocaleString("en-IN")}`
   }
-
+console.log("hhh")
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-3 backdrop-blur-sm">
       <div className="w-full max-w-4xl rounded-2xl bg-slate-50 shadow-2xl ring-1 ring-slate-900/10 ">
@@ -224,7 +286,7 @@ console.log(summary)
             <h2 className="text-base font-semibold text-slate-900">
               Performance Summary{" "}
               <span className="text-slate-500">
-                ({category?.categoryName?.toUpperCase() || ""})
+                {/* ({category?.categoryName?.toUpperCase() || ""}) */}
               </span>
             </h2>
             <p className="mt-0.5 text-xs text-slate-500">
@@ -243,9 +305,9 @@ console.log(summary)
 
             <FancySelect
               label="Month"
-              value={String(selectedMonth ?? "all")}
+              value={String(periodMode ?? "all")}
               options={monthOptions}
-              onChange={onMonthChange}
+              // onChange={onMonthChange}
               width="min-w-[140px]"
             />
 
@@ -253,7 +315,7 @@ console.log(summary)
               label="Year"
               value={String(selectedYear || "")}
               options={yearOptions}
-              onChange={onYearChange}
+              // onChange={onYearChange}
               width="min-w-[110px]"
             />
 
@@ -270,7 +332,7 @@ console.log(summary)
         <div className="border-b border-slate-200 bg-slate-100/60 px-5 py-3">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wide text-slate-600">
-              {selectedUser ||""}
+              {/* {loggedUser?.name || ""} */}
             </span>
           </div>
 
@@ -328,11 +390,11 @@ console.log(summary)
                     {allusersData.map((item, index) => {
                       const isActive =
                         String(activeUserId) === String(item.userId)
-console.log(isActive)
+                      console.log(isActive)
                       return (
                         <tr
                           key={item.userId || index}
-                          onClick={() => 
+                          onClick={() =>
                             handleSelectedUser(
                               category,
                               item.userId,
@@ -373,9 +435,7 @@ console.log(isActive)
               {activeMetric === "target"
                 ? `Product List - ${category?.categoryName?.toUpperCase() || ""}`
                 : `Product-wise Report - ${
-                    selectedUser?.toUpperCase() ||
-                    "All users"
-                    
+                    selectedUser?.toUpperCase() || "All users"
                   }`}
             </div>
 

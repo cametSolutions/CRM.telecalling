@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom"
 import UseFetch from "../../../hooks/useFetch"
 import MyDatePicker from "../../../components/common/MyDatePicker"
+import { useSelector } from "react-redux"
 import BarLoader from "react-spinners/BarLoader"
 import LeadTaskComponent from "../../../components/primaryUser/LeadTaskComponent"
 import { PerformanceModal } from "../../../components/primaryUser/PerformanceModal"
@@ -31,6 +32,8 @@ import { StaticSidebar } from "../../../components/primaryUser/StaticSidebar"
 import StaffHeader from "../../../header/StaffHeader"
 import { PropagateLoader } from "react-spinners"
 const LeadTask = () => {
+const reduxselectedBranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
+console.log(reduxselectedBranch)
   const [loggedUser, setloggedUser] = useState(null)
   const [dates, setDates] = useState({ startDate: "", endDate: "" })
   console.log(dates)
@@ -142,11 +145,11 @@ console.log(ownTask)
 
   const { data, error, loading, refreshHook } = UseFetch(
     loggedUser &&
-      selectedCompanyBranch &&
-      `/lead/getrespectedleadTask?userid=${loggedUser._id}&branchSelected=${selectedCompanyBranch}&role=${loggedUser.role}&ownTask=${ownTask}`
+      reduxselectedBranch &&
+      `/lead/getrespectedleadTask?userid=${loggedUser._id}&branchSelected=${reduxselectedBranch}&role=${loggedUser.role}&ownTask=${ownTask}`
   )
   const { data: branchProduct } = UseFetch(
-    `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
+    `/product/getallbranchProduct?branch=${reduxselectedBranch}`
   )
   const formatdate = (date) => new Date(date).toISOString().split("T")[0]
   const getLocalDate = (date) => {
@@ -456,7 +459,7 @@ console.log("hh")
   return (
     <div className="h-full  bg-[#ADD8E6]">
       <div className="flex h-full flex-row">
-        <StaticSidebar
+        {/* <StaticSidebar
           handleMoreClick={handleMoreClick}
           selectedCompanyBranch={selectedCompanyBranch}
           setselectedCompanyBranch={setselectedCompanyBranch}
@@ -464,9 +467,9 @@ console.log("hh")
           parentperiodmode={periodMode}
           parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
-        />
+        /> */}
         <div className="flex flex-1 flex-col overflow-hidden">
-          <header className="flex items-center justify-between">
+          {/* <header className="flex items-center justify-between">
             {loggedUser?.role?.toLowerCase() === "admin" ? (
               <AdminHeader hide={true} />
             ) : (
@@ -485,9 +488,9 @@ console.log("hh")
               <button className="rounded-full p-1.5 transition bg-slate-100">
                 <Settings size={15} strokeWidth={2.2} />
               </button>
-              {/* <button className="rounded-full p-1.5 transition bg-slate-100">
+              <button className="rounded-full p-1.5 transition bg-slate-100">
                 <User size={15} strokeWidth={2.2} />
-              </button> */}
+              </button>
 
               <div className="relative">
                 <button
@@ -500,7 +503,7 @@ console.log("hh")
                   <User size={15} strokeWidth={2.2} />
                 </button>
 
-                {/* {showUserMenu && (
+                {showUserMenu && (
                   <div
                     onClick={(e) => e.stopPropagation()} 
                     className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
@@ -512,10 +515,10 @@ console.log("hh")
                       Logout
                     </button>
                   </div>
-                )} */}
+                )}
               </div>
             </div>
-          </header>
+          </header> */}
           {loading && (
             <BarLoader
               cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`

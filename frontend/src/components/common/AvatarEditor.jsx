@@ -5,6 +5,7 @@ import { getCroppedImg } from "./getCroppedImg";
 import uploadImageToCloudinary from "../../utils/uploadImageToCloudinary";
 
 export default function AvatarEditor({ open, onClose, onUploaded }) {
+console.log(open)
   const [imageSrc, setImageSrc] = useState(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
+import { useSelector } from "react-redux"
 import ReportTable from "../../../components/primaryUser/ReportTable"
 import { MonthRangePicker } from "../../../components/primaryUser/MonthRangePicker"
 import UseFetch from "../../../hooks/useFetch"
@@ -46,6 +47,8 @@ export default function ProductWiseleadReport() {
     firstDay: null,
     lastDay: null
   })
+const reduxselectedBranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
+console.log(reduxselectedBranch)
   console.log(filterRange)
   const [data, setData] = useState([])
   const [viewMode, setViewMode] = useState("staff") // "staff" | "product"
@@ -101,13 +104,13 @@ console.log(filterRange)
   const { data: report, isLoading: loading } = useQuery({
     queryKey: [
       "productWiseReport",
-      selectedBranch,
+      reduxselectedBranch,
       filterRange.firstDay,
       filterRange.lastDay
     ],
 
     enabled:
-      !!selectedBranch && !!filterRange.firstDay && !!filterRange.lastDay,
+      !!reduxselectedBranch && !!filterRange.firstDay && !!filterRange.lastDay,
 
     queryFn: async () => {
 console.log("query")
@@ -115,7 +118,7 @@ console.log("query")
         params: {
           startDate: filterRange.firstDay,
           endDate: filterRange.lastDay,
-          branchId: selectedBranch
+          branchId: reduxselectedBranch
         }
       })
 console.log("response.data",response.data.data)
@@ -132,14 +135,14 @@ console.log(selectedBranch)
   //   `/product/getallbranchProduct?branch=${selectedBranch}`
   // )
   const { data: branchProduct = [] } = useQuery({
-    queryKey: ["branchProducts", selectedBranch],
+    queryKey: ["branchProducts", reduxselectedBranch],
 
-    enabled: !!selectedBranch,
+    enabled: !!reduxselectedBranch,
 
     queryFn: async () => {
       const response = await api.get(`/product/getallbranchProduct`, {
         params: {
-          branch: selectedBranch
+          branch: reduxselectedBranch
         }
       })
 
@@ -215,7 +218,7 @@ console.log(selectedBranch)
     const staffMap = {}
     console.log(rows)
     rows.forEach((row) => {
-      if (String(row.branch) !== String(selectedBranch)) return
+      if (String(row.branch) !== String(reduxselectedBranch)) return
       const staffKey = row.staffId
       if (!staffKey) return
 
@@ -254,7 +257,7 @@ console.log(selectedBranch)
     setSelectedStaff(null)
     setDrillDown(false)
     setViewMode("staff")
-  }, [report, selectedBranch])
+  }, [report, reduxselectedBranch])
 
   const headersName = [
     "staffId",
@@ -431,7 +434,7 @@ console.log("hhhhh")
     const staffMap = {}
 
     rows.forEach((row) => {
-      if (String(row.branch) !== String(selectedBranch)) return
+      if (String(row.branch) !== String(reduxselectedBranch)) return
       const staffKey = row.staffId
       if (!staffKey) return
 
@@ -484,7 +487,7 @@ console.log("hhhhh")
 
     // Filter by selected branch and map to product view
     const productData = rows
-      .filter((row) => String(row.branch) === String(selectedBranch))
+      .filter((row) => String(row.branch) === String(reduxselectedBranch))
       .map((row) => ({
         staffId: row.staffId,
         productId: row.productId,
@@ -541,7 +544,7 @@ console.log("hhhhh")
         {
           label: "Product-wise-lead-Report",
           path: "/admin/reports/product-wise-report",
-          state: { filterRange, selectedBranch,change:true }
+          state: { filterRange, selectedBranch:reduxselectedBranch,change:true }
         },
         { label: "Lead Follow-Up", path: "" }
       ]
@@ -574,7 +577,7 @@ console.log("hhhhh")
   return (
     <div className="h-full bg-[#ADD8E6]">
       <div className="flex h-full flex-row">
-        <StaticSidebar
+        {/* <StaticSidebar
           handleMoreClick={handleMoreClick}
           selectedCompanyBranch={selectedBranch}
           setselectedCompanyBranch={setselectedBranch}
@@ -582,9 +585,9 @@ console.log("hhhhh")
           parentperiodmode={periodMode}
           parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
-        />
+        /> */}
         <div className="flex flex-1 flex-col overflow-hidden">
-          <header className="flex items-center justify-between bg-[#ADD8E6]">
+          {/* <header className="flex items-center justify-between bg-[#ADD8E6]">
             {loggeduser?.role?.toLowerCase() === "admin" ? (
               <AdminHeader hide={true} />
             ) : (
@@ -604,9 +607,9 @@ console.log("hhhhh")
               <button className="rounded-full p-1.5 transition bg-slate-100">
                 <Settings size={15} strokeWidth={2.2} />
               </button>
-              {/* <button className="rounded-full p-1.5 transition bg-slate-100">
+              <button className="rounded-full p-1.5 transition bg-slate-100">
                 <User size={15} strokeWidth={2.2} />
-              </button> */}
+              </button>
 
               <div className="relative">
                 <button
@@ -619,7 +622,7 @@ console.log("hhhhh")
                   <User size={15} strokeWidth={2.2} />
                 </button>
 
-                {/* {showUserMenu && (
+                {showUserMenu && (
                   <div
                     onClick={(e) => e.stopPropagation()} 
                     className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
@@ -631,10 +634,10 @@ console.log("hhhhh")
                       Logout
                     </button>
                   </div>
-                )} */}
+                )}
               </div>
             </div>
-          </header>
+          </header> */}
           {/* MAIN CONTAINER */}
           <div className="h-full flex flex-col overflow-hidden">
             {/* ================= HEADER ================= */}

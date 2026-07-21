@@ -22,7 +22,8 @@ function UserEdit() {
   
     imageData
   ) => {
-
+console.log(userData)
+console.log(imageData)
 
     try {
       const response = await api.post(
