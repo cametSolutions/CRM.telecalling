@@ -260,6 +260,7 @@ import {
   getLocalStorageItem,
   setLocalStorageItem
 } from "../../helper/localstorage"
+import { useNavigate } from "react-router-dom"
 import {setsliceselectedBranch} from "../../../slices/companyBranchSlice.js"
 // import {setselected}
 import { useSelector } from "react-redux"
@@ -272,19 +273,22 @@ import { toast } from "react-toastify"
 import { useDispatch } from "react-redux"
 export const StaticSidebar = ({
   selectedCompanyBranch,
+setcategoryId,
   // setselectedPeriod,
-  handleMoreClick,
+  // handleMoreClick,
   setselectedCompanyBranch,
   parenttargetData,
   parentyear,
   parentperiodmode,
 onpasswordClick,
 onperformanceModalClick,
-setTargetData,targetData
+setTargetData,targetData,
+onavataropenClick
 }) => {
 console.log("hh")
 // console.log(onpasswordClick)
   const now = new Date()
+const navigate=useNavigate()
  const dispatch = useDispatch()
   const [categorylist, setcategorylist] = useState([])
   // const now = new Date()
@@ -293,7 +297,9 @@ console.log("hh")
 console.log(selectedYear)
   const [periodMode, setperiodMode] = useState("all")
   const [avatarOpen, setAvatarOpen] = useState(false)
-  const [user, setUser] = useState(null)
+  // const [user, setUser] = useState(null)
+const user=useSelector((state)=>state.auth.user)
+console.log(user)
   const [selectedBranch, setselectedBranch] = useState(null)
 console.log(selectedBranch)
   // const [periodMode, setperiodMode] = useState(parentperiodmode)
@@ -345,19 +351,18 @@ console.log(a)
 
   useEffect(() => {
     if (!branchlist) return
+if(!user)return
 
-    const storedUser = getLocalStorageItem("user")
-    if (storedUser) {
-      setUser(storedUser)
+   
 
-      const uniqueBranches = (storedUser.selected || []).map((branch) => ({
+      const uniqueBranches = (user.selected || []).map((branch) => ({
         id: branch.branch_id,
         label: branch.branchName
       }))
 
       setbranchOptions(uniqueBranches)
-    }
-  }, [branchlist])
+    
+  }, [branchlist,user])
 
   useEffect(() => {
     if (data?.userWiseResults && data?.userWiseResults.length && user?._id) {
@@ -436,37 +441,49 @@ console.log(a)
     }
   }
 
-  const handleAvatarSave = (updatedProfileUrl) => {
-    const storedUser = getLocalStorageItem("user")
-    const updatedUser = {
-      ...storedUser,
-      profileUrl: updatedProfileUrl
-    }
+  // const handleAvatarSave = (updatedProfileUrl) => {
+  //   const storedUser = getLocalStorageItem("user")
+  //   const updatedUser = {
+  //     ...storedUser,
+  //     profileUrl: updatedProfileUrl
+  //   }
 
-    setUser(updatedUser)
-    setLocalStorageItem("user", updatedUser)
-    setAvatarOpen(false)
-    toast.success("Profile photo updated")
-  }
+  //   setUser(updatedUser)
+  //   setLocalStorageItem("user", updatedUser)
+  //   setAvatarOpen(false)
+  //   toast.success("Profile photo updated")
+  // }
 
   const toggleSidebar = () => {
     if (!isMobile) {
       setSidebarOpen((prev) => !prev)
     }
   }
-
-//   const handleBranchChange = (branch) => {
-// console.log(branch)
-//     setselectedBranch(branch)
-//     // setselectedCompanyBranch(branch)
-// setLocalStorageItem("selectedBranch",branch)
-// console.log("bbbb")
-//  dispatch(selectedBranch(branch))
-// console.log('vvvv')
-//     if (isMobile) {
-//       setSidebarOpen(false)
-//     }
-//   }
+const handleMoreClick=(categoryid)=>{
+console.log(categoryid)
+console.log("hhh")
+setcategoryId(categoryid)
+onperformanceModalClick()
+}
+ const logout = async () => {
+    try {
+console.log("hhh")
+      const res = await api.post("/auth/logout")
+      if (res.status === 200 && res.data?.message === "Logged out successfully") {
+        localStorage.removeItem("authToken")
+        localStorage.removeItem("user")
+        localStorage.removeItem("timer")
+        localStorage.removeItem("wish")
+        toast.success("Logout successfully")
+        navigate("/")
+      } else {
+        toast.error("Logout failed on server")
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error("Logout failed, please try again")
+    }
+  }
 const handleBranchChange = (branch) => {
   try {
     console.log(branch);
@@ -589,6 +606,8 @@ const handleBranchChange = (branch) => {
         handleMoreClick={handleMoreClick}
         onpasswordClick={onpasswordClick}
         onperformanceModalClick={onperformanceModalClick}
+onLogoutClick={logout}
+onavataropenClick={onavataropenClick}
         achievedPoints={achievedPoints}
         sidebarOpen={sidebarOpen}
         toggleSidebar={toggleSidebar}

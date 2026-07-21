@@ -681,12 +681,15 @@
 // }
 
 // export default Sidebar
+
+
 import React, { useMemo, useState } from "react"
 import {
   Menu,
   ChevronLeft,
   ChevronRight,
   X,
+LogOut,
   Eye,
   EyeOff,
   LockKeyhole,
@@ -708,6 +711,7 @@ onperformanceModalClick,
   user,
   selectedBranch,
   setselectedBranch,
+onLogoutClick,
   // setselectedParentBranch,
   branchOptions,
   categorylist,
@@ -716,9 +720,11 @@ onperformanceModalClick,
   SkeletonTable,
   setAvatarOpen,
   onPasswordChange,
-  isMobile
+  isMobile,
+onavataropenClick
 }) => {
 console.log(selectedBranch)
+console.log(user)
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState(null)
 
@@ -985,7 +991,7 @@ console.log(sidebarOpen)
                 <div className="flex items-start gap-2">
                   <button
                     type="button"
-                    onClick={() => setAvatarOpen(true)}
+                    onClick={() =>onavataropenClick()}
                     className="relative h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-white/20 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
                   >
                     {user?.profileUrl ? (
@@ -1007,13 +1013,13 @@ console.log(sidebarOpen)
 
                   <div className="min-w-0 flex-1">
                     <h3 className="truncate text-[12px] font-semibold leading-4 text-white">
-                      {user?.name || "Staff User"}
+                      {user?.name?.toUpperCase() || "Staff User"}
                     </h3>
                     <p className="mt-0.5 truncate text-[10px] leading-4 text-slate-300">
                       {user?.department?.department || user?.role || "Staff"}
                     </p>
 
-                    <div className="mt-1 flex items-center justify-between gap-1.5">
+                    {/* <div className="mt-1 flex items-center justify-between gap-1.5">
                       <span className="inline-flex min-w-0 items-center gap-1 rounded-full bg-slate-950/55 px-2 py-1 text-[9px] font-medium text-slate-300">
                         <Clock3 size={10} className="shrink-0" />
                         <span className="truncate">{expiryDate}</span>
@@ -1027,7 +1033,61 @@ console.log(sidebarOpen)
                         <LockKeyhole size={10} />
                         Pass
                       </button>
-                    </div>
+                    </div> */}
+{/* <div className="mt-1 flex items-center justify-between gap-1.5">
+  <span className="inline-flex min-w-0 items-center gap-1 rounded-full bg-slate-950/55 px-2 py-1 text-[9px] font-medium text-slate-300">
+    <Clock3 size={10} className="shrink-0" />
+    <span className="truncate">{expiryDate}</span>
+  </span>
+
+  <div className="flex shrink-0 items-center gap-1">
+    <button
+      type="button"
+      onClick={onpasswordClick}
+      className="inline-flex items-center gap-1 rounded-md border border-white/15 bg-white/10 px-2 py-1 text-[9px] font-medium text-white transition hover:bg-white/15"
+    >
+      <LockKeyhole size={10} />
+      Pass
+    </button>
+
+    <button
+      type="button"
+      // onClick={onLogoutClick}
+      className="inline-flex items-center gap-1 rounded-md border border-rose-400/30 bg-rose-500/15 px-2 py-1 text-[9px] font-medium text-rose-200 transition hover:bg-rose-500/25"
+    >
+      <LogOut size={10} />
+      Exit
+    </button>
+  </div>
+</div> */}
+<div className="mt-1.5 space-y-1.5">
+  {/* Expiry badge — full width, own line, never truncates */}
+  <span className="inline-flex w-full items-center gap-1 rounded-full bg-slate-950/55 px-2 py-1 text-[9px] font-medium text-slate-300">
+    <Clock3 size={10} className="shrink-0" />
+    <span className="truncate">Expires {expiryDate}</span>
+  </span>
+
+  {/* Pass / Exit — equal-width pair, own row */}
+  <div className="flex items-center gap-1.5">
+    <button
+      type="button"
+      onClick={onpasswordClick}
+      className="flex flex-1 items-center justify-center gap-1 rounded-md border border-white/15 bg-white/10 px-2 py-1.5 text-[10px] font-medium text-white transition hover:bg-white/15"
+    >
+      <LockKeyhole size={11} />
+      Password
+    </button>
+
+    <button
+      type="button"
+      onClick={onLogoutClick}
+      className="flex flex-1 items-center justify-center gap-1 rounded-md border border-rose-400/30 bg-rose-500/15 px-2 py-1.5 text-[10px] font-medium text-rose-200 transition hover:bg-rose-500/25"
+    >
+      <LogOut size={11} />
+      Logout
+    </button>
+  </div>
+</div>
                   </div>
                 </div>
               </div>

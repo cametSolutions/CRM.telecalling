@@ -120,6 +120,7 @@ console.log(todaysCollection)
   const [showUserMenu, setShowUserMenu] = useState(false)
   console.log(showUserMenu)
   const [periodMode, setperiodMode] = useState("all")
+console.log(periodMode)
   const [loggedusedTarget, setloggeduserTarget] = useState([])
   const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   const { data: followup } = UseFetch(
@@ -374,6 +375,8 @@ console.log(collectiondata)
   console.log(loggedusedTarget)
   useEffect(() => {
     const storedUser = getLocalStorageItem("user")
+
+console.log(storedUser)
     if (storedUser) {
       setUser(storedUser)
       setselecteduserName(storedUser.name)
@@ -575,26 +578,7 @@ console.log(collectiondata)
     }
   }
   const toggleSidebar = () => setSidebarOpen((prev) => !prev)
-  const handleAvatarUploaded = async (url) => {
-    try {
-      const updateurl = await api.post(
-        `/auth/uploadimage?userId=${user?._id}`,
-        { url }
-      )
-
-      if (updateurl.status === 200) {
-        toast.success("Profile updated successfully")
-        setUser((prev) => {
-          const updated = { ...(prev || {}), profileUrl: url }
-          setLocalStorageItem("user", JSON.stringify(updated))
-          return updated
-        })
-      }
-    } catch (error) {
-      console.log("error", error)
-      toast.error("Profile not uploaded")
-    }
-  }
+ 
   const handleSelectedUser = (category, userId, userName) => {
     setselecteduserName(userName)
     setselectedCategory({
@@ -695,6 +679,26 @@ console.log(collectiondata)
       setacheivedProducts([])
     }
     setOpenModal(true)
+  }
+ const handleAvatarUploaded = async (url) => {
+    try {
+      const updateurl = await api.post(
+        `/auth/uploadimage?userId=${user?._id}`,
+        { url }
+      )
+
+      if (updateurl.status === 200) {
+        toast.success("Profile updated successfully")
+        setUser((prev) => {
+          const updated = { ...(prev || {}), profileUrl: url }
+          setLocalStorageItem("user", JSON.stringify(updated))
+          return updated
+        })
+      }
+    } catch (error) {
+      console.log("error", error)
+      toast.error("Profile not uploaded")
+    }
   }
 
   const total = productData.reduce((acc, item) => acc + item.value, 0)
@@ -1890,7 +1894,7 @@ function CollectionDetails({
 
   function handleNavigate(item) {
     console.log(item)
-
+if(item.amount<=0)return
     navigate(basePath, {
       state: {
         startDate: item?.startDate,

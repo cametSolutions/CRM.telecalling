@@ -98,6 +98,7 @@ const CategoryListIconFirst = ({
   handleMoreClick,
   sidebarOpen
 }) => {
+console.log(categorylist)
   return (
     <div
       className={`
@@ -113,7 +114,7 @@ const CategoryListIconFirst = ({
               key={`${item.categoryId || item.categoryName}-${index}`}
               item={item}
               index={index}
-              onClick={handleMoreClick}
+              onClick={()=>handleMoreClick(item?.categoryId)}
             />
           ))
         ) : (

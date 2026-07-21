@@ -139,35 +139,40 @@
 // export default Layout
 
 import { useEffect, useRef, useState } from "react"
-import { useSelector } from "react-redux"
+import { useSelector,useDispatch } from "react-redux"
 import { useLocation, matchPath } from "react-router-dom"
+import { toast } from "react-toastify"
 import AdminHeader from "../header/AdminHeader"
 import StaffHeader from "../header/StaffHeader"
+import { updateUser } from "../../slices/authSlice"
 import ChangePasswordModal from "../components/common/ChangePasswordModal"
 import { StaticSidebar } from "../components/primaryUser/StaticSidebar"
 import { NotificationPopup } from "../components/primaryUser/NotificationPopup"
 import GlobalUnsavedChangesModal from "../components/common/GlobalUnsavedChangesModal"
-
+import AvatarEditor from "../components/common/AvatarEditor"
 import Mainrouter from "../router/Mainrouter"
 import { PerformanceModal } from "../components/primaryUser/PerformanceModal"
 import useAutoLogout from "../hooks/useAutoLogout"
 import UseFetch from "../hooks/useFetch"
-
-import { getLocalStorageItem } from "../helper/localstorage"
+import api from "../api/api"
+import { getLocalStorageItem,setLocalStorageItem } from "../helper/localstorage"
 
 const Layout = () => {
   const location = useLocation()
-
+const dispatch=useDispatch()
   const headerRef = useRef(null)
 
   const [headerHeight, setHeaderHeight] = useState(0)
   const [notificationPopup, setNotificationPopup] = useState(false)
-  const [loggedUser, setLoggedUser] = useState(null)
+  // const [loggedUser, setLoggedUser] = useState(null)
+  // console.log(loggedUser)
   const [changepasswordOpen, setchangepasswordOpen] = useState(false)
-const [performanceModalOpen,setperformanceModalOpen]=useState(false)
-console.log(performanceModalOpen)
+  const [performanceModalOpen, setperformanceModalOpen] = useState(false)
+  const [categoryId, setcategoryId] = useState(null)
+  console.log(performanceModalOpen)
   const isAuthPage = location.pathname === "/"
-const [targetData,setTargetData]=useState([])
+  const [targetData, setTargetData] = useState([])
+  const [avatarOpen, setAvatarOpen] = useState(false)
   useAutoLogout(!isAuthPage)
 
   const isAdmin = location.pathname.startsWith("/admin")
@@ -176,6 +181,8 @@ const [targetData,setTargetData]=useState([])
   const selectedBranch = useSelector(
     (state) => state.companyBranch.selectedBranch
   )
+const loggedUser=useSelector((state)=>state.auth.user)
+console.log(loggedUser)
   const hideHeaderRoutes = [
     "/staff/home",
     "/admin/home",
@@ -237,9 +244,13 @@ const [targetData,setTargetData]=useState([])
     matchPath({ path: route, end: true }, location.pathname)
   )
   console.log(shouldshowSidebar)
-  useEffect(() => {
-    setLoggedUser(getLocalStorageItem("user"))
-  }, [])
+//   useEffect(() => {
+// const a=localStorage.getItem("user")
+// console.log(a)
+// const c=getLocalStorageItem("user")
+// console.log(c)
+//     setLoggedUser(getLocalStorageItem("user"))
+//   }, [])
 
   const { data: notificationData } = UseFetch(
     loggedUser &&
@@ -256,13 +267,43 @@ const [targetData,setTargetData]=useState([])
   if (isAuthPage) {
     return <Mainrouter />
   }
+console.log(loggedUser)
+  const handleAvatarUploaded = async (url) => {
+    try {
+      const updateurl = await api.post(
+        `/auth/uploadimage?userId=${loggedUser?._id}`,
+        { url }
+      )
 
+      if (updateurl.status === 200) {
+        toast.success("Profile updated successfully")
+//         setLoggedUser((prev) => {
+//           const updated = { ...(prev || {}), profileUrl: url }
+//           // setLocalStorageItem("user", JSON.stringify(updated))
+// setLocalStorageItem("user", updated)   // ✅ no JSON.stringify here
+//           return updated
+//         })
+  const updated = { ...(loggedUser || {}), profileUrl: url }
+        dispatch(updateUser(updated))   // ✅ updates Redux state AND localStorage together
+      }
+    } catch (error) {
+      console.log("error", error)
+      toast.error("Profile not uploaded")
+    }
+  }
   return (
     <>
       <div className="h-screen flex overflow-hidden">
         {/* Sidebar */}
         {shouldshowSidebar && (
-          <StaticSidebar onpasswordClick={()=>setchangepasswordOpen(true)} onperformanceModalClick={()=>setperformanceModalOpen(true)} setTargetData={setTargetData} targetData={targetData}/>
+          <StaticSidebar
+            onpasswordClick={() => setchangepasswordOpen(true)}
+            onperformanceModalClick={() => setperformanceModalOpen(true)}
+onavataropenClick={()=>setAvatarOpen(true)}
+            setTargetData={setTargetData}
+            targetData={targetData}
+            setcategoryId={setcategoryId}
+          />
         )}
 
         {/* Right Side */}
@@ -295,14 +336,23 @@ const [targetData,setTargetData]=useState([])
         onClose={() => setNotificationPopup(false)}
         notificationData={notificationData}
       />
-<PerformanceModal
-open={performanceModalOpen}
-onClose={()=>setperformanceModalOpen(false)}
-/>
+      <PerformanceModal
+        open={performanceModalOpen}
+        onClose={() => setperformanceModalOpen(false)}
+        targetData={targetData}
+        loggedUser={loggedUser}
+        categoryId={categoryId}
+      />
 
       <ChangePasswordModal
         open={changepasswordOpen}
         onClose={() => setchangepasswordOpen(false)}
+      />
+      <AvatarEditor
+        open={avatarOpen}
+
+        onClose={() => setAvatarOpen(false)}
+        onUploaded={handleAvatarUploaded}
       />
 
       <GlobalUnsavedChangesModal />
