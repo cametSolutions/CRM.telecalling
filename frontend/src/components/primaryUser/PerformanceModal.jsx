@@ -15,7 +15,7 @@ export function PerformanceModal({
   summary,
   products,
   selectedMonth,
-  selectedYear,
+  // selectedYear,
   onMonthChange,
   onYearChange,
   targetData,
@@ -25,6 +25,7 @@ export function PerformanceModal({
   selectedUser,
   activeUserId
 }) {
+console.log(selectedperiod)
 console.log(selectedMonth)
   console.log(category)
   console.log(selectedUser)
@@ -40,14 +41,16 @@ console.log(selectedMonth)
   console.log(targetData)
   console.log(selectedperiod)
   console.log(allperiods)
+const [selectedDatapopup, setselectedDataPopup] = useState({})
   const [activeMetric, setActiveMetric] = useState("achieved")
   const [allusersData, setallusersData] = useState([])
   const [userwisetargetData, setuserwisetargetdata] = useState({})
   const [localSelectedPeriod, setLocalSelectedPeriod] = useState(
     targetData?.selectedPeriodName || ""
   )
-
-
+const now=new Date()
+  const [periodMode, setperiodMode] = useState("all")
+  const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   console.log(targetData?.selectedPeriodName)
   console.log(localSelectedPeriod)
   const MONTHS = [
@@ -106,14 +109,29 @@ console.log(selectedMonth)
     setLocalSelectedPeriod(targetData?.selectedPeriodName || "")
   }, [targetData?.selectedPeriodName])
 console.log(categoryId)
-//   useEffect(() => {
-//     if (categoryId) {
+  useEffect(() => {
+    if (categoryId) {
+ const filteredselectedCategory = targetData?.userWiseResults.flatMap(
+      (user) => user.categories || []
+    ).filter((item) => item.categoryId === categoryId)
+    console.log("Hh")
+    const summary = filteredselectedCategory.reduce(
+      (acc, cur) => {
+        acc.target += Number(cur.target || 0)
+        acc.achieved += Number(cur.achieved || 0)
+        acc.balance += Number(cur.balance || 0)
+        return acc
+      },
+      { target: 0, achieved: 0, balance: 0 }
+    )
+console.log(summary)
+ setselectedDataPopup(summary)
 //  console.log(loggedUser)
 //     console.log(targetData)
-//     const filteredloggedUserItem = targetData?.userWiseResults.filter(
-//       (item) => item.userId === loggedUser._id
-//     )
-//     console.log(filteredloggedUserItem)
+//     // const filteredloggedUserItem = targetData?.userWiseResults.filter(
+//     //   (item) => item.userId === loggedUser._id
+//     // )
+//     // console.log(filteredloggedUserItem)
 //     const filteredselectedCategory =
 //       filteredloggedUserItem[0]?.categories.filter(
 //         (item) => item.categoryId === categoryId
@@ -131,9 +149,9 @@ console.log(categoryId)
 //     console.log(summary)
 //     // setselectedDataPopup(summary)
 //     console.log(targetData)
-//     }
+    }
    
-//   }, [targetData])
+  }, [targetData])
 
   const periodOptions = useMemo(() => {
     return (targetData.periods || []).map((period) => {
@@ -179,7 +197,7 @@ console.log(periodOptions)
       targetData?.userWiseResults
         ?.filter((user) =>
           user.categories?.some(
-            (cat) => String(cat.categoryId) === String(category?.Id)
+            (cat) => String(cat.categoryId) === String(categoryId)
           )
         )
         .map((user) => {
@@ -240,8 +258,8 @@ console.log(periodOptions)
     return "Achieved"
   }
 
-  const { target, achieved, balance } = summary || {}
-  console.log(summary)
+  const { target, achieved, balance } = selectedDatapopup || {}
+  console.log(selectedDatapopup)
 console.log(open)
 console.log(targetData)
   if (!open || !targetData?.userWiseResults?.length) return null
@@ -285,29 +303,29 @@ console.log("hhh")
               width="min-w-[180px]"
             />
 
-            {/* <FancySelect
+            <FancySelect
               label="Month"
-              value={String(selectedMonth ?? "all")}
+              value={String(periodMode ?? "all")}
               options={monthOptions}
-              onChange={onMonthChange}
+              // onChange={onMonthChange}
               width="min-w-[140px]"
-            /> */}
+            />
 
-            {/* <FancySelect
+            <FancySelect
               label="Year"
               value={String(selectedYear || "")}
               options={yearOptions}
-              onChange={onYearChange}
+              // onChange={onYearChange}
               width="min-w-[110px]"
-            /> */}
+            />
 
-            {/* <button
+            <button
               type="button"
               onClick={onClose}
               className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 shadow-sm transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
             >
               Close
-            </button> */}
+            </button>
           </div>
         </div>
 
@@ -369,7 +387,7 @@ console.log("hhh")
                   </thead>
 
                   <tbody className="divide-y divide-slate-100 bg-white">
-                    {/* {allusersData.map((item, index) => {
+                    {allusersData.map((item, index) => {
                       const isActive =
                         String(activeUserId) === String(item.userId)
                       console.log(isActive)
@@ -402,7 +420,7 @@ console.log("hhh")
                           </td>
                         </tr>
                       )
-                    })} */}
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -410,7 +428,7 @@ console.log("hhh")
           </>
         )}
 
-        {/* {activeMetric && (
+        {activeMetric && (
           <div className="px-5 pb-4 pt-2">
             <div className="mb-2 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-100">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -490,7 +508,7 @@ console.log("hhh")
               )}
             </div>
           </div>
-        )} */}
+        )}
       </div>
     </div>
   )

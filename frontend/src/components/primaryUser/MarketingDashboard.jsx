@@ -120,6 +120,7 @@ console.log(todaysCollection)
   const [showUserMenu, setShowUserMenu] = useState(false)
   console.log(showUserMenu)
   const [periodMode, setperiodMode] = useState("all")
+console.log(periodMode)
   const [loggedusedTarget, setloggeduserTarget] = useState([])
   const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   const { data: followup } = UseFetch(
