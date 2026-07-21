@@ -5,6 +5,7 @@ import { toast } from "react-toastify"
 import { PropagateLoader } from "react-spinners"
 import { useNavigate, useParams } from "react-router-dom"
 import BarLoader from "react-spinners/BarLoader"
+import { useSelector } from "react-redux"
 import api from "../../../api/api"
 import Select from "react-select"
 import { CollectionupdateModal } from "../../../components/primaryUser/CollectionupdateModal"
@@ -34,6 +35,8 @@ import StaffHeader from "../../../header/StaffHeader"
 import SkeletonTable from "../../../components/loader/SkeletonTable"
 import { getLocalStorageItem } from "../../../helper/localstorage"
 const ReallocationTable = () => {
+const reduxselectedBranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
+console.log(reduxselectedBranch)
   console.log("hd")
   const { label } = useParams()
   console.log(label)
@@ -91,11 +94,11 @@ console.log(isClosed)
     refreshHook
   } = UseFetch(
     loggedUser &&
-      selectedCompanyBranch &&
-      `/lead/getallreallocatedLead?selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
+      reduxselectedBranch &&
+      `/lead/getallreallocatedLead?selectedBranch=${reduxselectedBranch}&role=${loggedUser.role}`
   )
   const { data: branchProduct } = UseFetch(
-    `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
+    `/product/getallbranchProduct?branch=${reduxselectedBranch}`
   )
   const { data: tasks } = UseFetch("/lead/getallTask")
   console.log(tasks)
@@ -432,7 +435,7 @@ console.log(isClosed)
   return (
     <div className="h-full  bg-[#ADD8E6] overflow-hidden">
       <div className="flex h-full flex-row">
-        <StaticSidebar
+        {/* <StaticSidebar
           handleMoreClick={handleMoreClick}
           selectedCompanyBranch={selectedCompanyBranch}
           setselectedCompanyBranch={setSelectedCompanyBranch}
@@ -440,9 +443,9 @@ console.log(isClosed)
           parentperiodmode={periodMode}
           parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
-        />
+        /> */}
         <div className="flex flex-1 flex-col overflow-hidden min-h-0">
-          <header className="flex items-center justify-between bg-[#ADD8E6]">
+          {/* <header className="flex items-center justify-between bg-[#ADD8E6]">
             {loggedUser?.role?.toLowerCase() === "admin" ? (
               <AdminHeader hide={true} />
             ) : (
@@ -462,9 +465,9 @@ console.log(isClosed)
               <button className="rounded-full p-1.5 transition bg-slate-100">
                 <Settings size={15} strokeWidth={2.2} />
               </button>
-              {/* <button className="rounded-full p-1.5 transition bg-slate-100">
+              <button className="rounded-full p-1.5 transition bg-slate-100">
                 <User size={15} strokeWidth={2.2} />
-              </button> */}
+              </button>
 
               <div className="relative">
                 <button
@@ -477,7 +480,7 @@ console.log(isClosed)
                   <User size={15} strokeWidth={2.2} />
                 </button>
 
-                {/* {showUserMenu && (
+                {showUserMenu && (
                   <div
                     onClick={(e) => e.stopPropagation()} 
                     className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
@@ -489,10 +492,10 @@ console.log(isClosed)
                       Logout
                     </button>
                   </div>
-                )} */}
+                )}
               </div>
             </div>
-          </header>
+          </header> */}
           {(submitLoading || loading) && (
             <BarLoader
               cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`

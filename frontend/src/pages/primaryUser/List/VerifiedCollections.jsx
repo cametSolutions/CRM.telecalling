@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react"
 import UseFetch from "../../../hooks/useFetch"
+import { useSelector } from "react-redux"
 import { useNavigate } from "react-router-dom"
 import { useLocation } from "react-router-dom"
 import { PaymentHistoryModal } from "../../../components/primaryUser/PaymentHistoryModal"
@@ -38,6 +39,8 @@ import { PropagateLoader } from "react-spinners"
 import { toast } from "react-toastify"
 
 export default function VerifiedCollections() {
+const reduxselectedBranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
+console.log(reduxselectedBranch)
   console.log("hh")
   const [showFullName, setShowFullName] = useState(false)
 const location=useLocation()
@@ -97,9 +100,9 @@ console.log(location.state)
     loading,
     refreshHook
   } = UseFetch(
-    selectedCompanyBranch &&
+    reduxselectedBranch &&
       loggedUser &&
-      `/lead/collectionLeads?selectedBranch=${selectedCompanyBranch}&verified=${verifiedLead}&isAccountant=${isdepartmentisAccountant}&loggeduserby=${loggedUser._id}`
+      `/lead/collectionLeads?selectedBranch=${reduxselectedBranch}&verified=${verifiedLead}&isAccountant=${isdepartmentisAccountant}&loggeduserby=${loggedUser._id}`
   )
 console.log(collectionlead)
 const {
@@ -107,15 +110,15 @@ const {
     loading:leadloading,
     refreshHook:leadHook
   } = UseFetch(
-    selectedCompanyBranch &&
+    reduxselectedBranch &&
       loggedUser &&
-      `/lead/verifiedcollectionLeads?selectedBranch=${selectedCompanyBranch}&verified=${true}&startDate=${startDate}&endDate=${endDate}`
+      `/lead/verifiedcollectionLeads?selectedBranch=${reduxselectedBranch}&verified=${true}&startDate=${startDate}&endDate=${endDate}`
   )
 console.log(startDate)
 console.log(endDate)
 console.log(verifiedcollectionlead)
   const { data: branchProduct } = UseFetch(
-    `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
+    `/product/getallbranchProduct?branch=${reduxselectedBranch}`
   )
   console.log(selectedCompanyBranch)
   console.log(verifiedLead)
@@ -730,7 +733,7 @@ console.log(tableData)
   return (
     <div className="h-full  bg-[#ADD8E6]">
       <div className="flex h-full flex-row">
-        <StaticSidebar
+        {/* <StaticSidebar
           handleMoreClick={handleMoreClick}
           selectedCompanyBranch={selectedCompanyBranch}
           setselectedCompanyBranch={setselectedCompanyBranch}
@@ -738,9 +741,9 @@ console.log(tableData)
           parentperiodmode={periodMode}
           parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
-        />
+        /> */}
         <div className="flex flex-1 flex-col overflow-hidden">
-          <header className="flex items-center justify-between bg-[#ADD8E6]">
+          {/* <header className="flex items-center justify-between bg-[#ADD8E6]">
             {loggedUser?.role?.toLowerCase() === "admin" ? (
               <AdminHeader hide={true} />
             ) : (
@@ -772,7 +775,7 @@ console.log(tableData)
                   <User size={15} strokeWidth={2.2} />
                 </button>
 
-                {/* {showUserMenu && (
+                {showUserMenu && (
                   <div
                     onClick={(e) => e.stopPropagation()} 
                     className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
@@ -784,10 +787,10 @@ console.log(tableData)
                       Logout
                     </button>
                   </div>
-                )} */}
+                )}
               </div>
             </div>
-          </header>
+          </header> */}
 
           <div className="flex justify-start items-center p-3 md:p-5 md:pb-2 sticky top-0 z-30 gap-3">
             <h2 className="text-lg font-bold">Verified Collections</h2>

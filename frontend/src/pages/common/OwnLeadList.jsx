@@ -685,7 +685,7 @@ console.log(item?.mobile)
   return (
     <div className="h-full overflow-hidden bg-[#ADD8E6]">
       <div className="flex h-full overflow-hidden lg:flex-row">
-        {selectedCompanyBranch && (
+        {/* {selectedCompanyBranch && (
           <StaticSidebar
             handleMoreClick={handleMoreClick}
             selectedCompanyBranch={selectedCompanyBranch}
@@ -695,10 +695,10 @@ console.log(item?.mobile)
             parentyear={selectedYear}
             setselectedPeriod={setselectedPeriod}
           />
-        )}
+        )} */}
 
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <header className="flex items-center justify-between ">
+          {/* <header className="flex items-center justify-between ">
             {loggedUser?.role?.toLowerCase() === "admin" ? (
               <AdminHeader hide={true} />
             ) : (
@@ -733,7 +733,7 @@ console.log(item?.mobile)
                 </button>
               </div>
             </div>
-          </header>
+          </header> */}
 
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
             <Breadcrumb items={Breadcrumblist} />

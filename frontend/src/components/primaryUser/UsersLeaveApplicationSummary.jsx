@@ -457,7 +457,7 @@ function UsersLeaveApplicationSummary() {
         //   }
         // )
         const response = await fetch(
-          `https://www.crmtest.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+          `https://www.crm.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
           {
             method: "POST",
             headers: {

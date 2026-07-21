@@ -38,7 +38,7 @@ const Login = () => {
         if (res.status === 200) {
           const allcompanybranches = res.data?.data?.map((b) => b._id) || []
           const loggeduserbranches = User.selected?.map((a) => a.branch_id)
-
+setLocalStorageItem("selectedBranch",selectedCompany.branch_id)
           setLocalStorageItem("loggeduserbranches", loggeduserbranches)
           setLocalStorageItem("companybranches", allcompanybranches)
           dispatch(loggeduserBranches(loggeduserbranches))
@@ -73,6 +73,7 @@ const Login = () => {
           }
           localStorage.setItem("authToken", token)
           localStorage.setItem("user", JSON.stringify(User))
+console.log(User)
           //           setTimeout(() => {
           // console.log(User)
           //             if (User.role === "Admin") {

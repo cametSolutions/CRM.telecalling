@@ -13,7 +13,7 @@ import api from "../../api/api"
 import { useNavigate } from "react-router-dom"
 import Breadcrumb from "../../components/common/Breadcrumb"
 import { Loader } from "lucide-react"
-import { selectedBranch } from "../../../slices/companyBranchSlice"
+import { setsliceselectedBranch } from "../../../slices/companyBranchSlice"
 import FullScreenLoader from "../../components/common/FullScreenLoader"
 // ─────────────────────────────────────────────────────────────────────────────
 // DropdownPortal — keeps dropdown aligned on scroll/resize

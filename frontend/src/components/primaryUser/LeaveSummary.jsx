@@ -888,7 +888,7 @@ console.log(staffId)
     // </div>
     <div className="h-full bg-[#ADD8E6] overflow-hidden">
       <div className="flex h-full flex-row overflow-hidden">
-        <StaticSidebar
+        {/* <StaticSidebar
           handleMoreClick={handleMoreClick}
           selectedCompanyBranch={selectedCompanyBranch}
           setselectedCompanyBranch={setselectedCompanyBranch}
@@ -896,10 +896,10 @@ console.log(staffId)
           parentperiodmode={periodMode}
           parentyear={selectedYear}
           setselectedPeriod={setselectedPeriod}
-        />
+        /> */}
 
         <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
-          <header className="flex items-center justify-between bg-[#ADD8E6]">
+          {/* <header className="flex items-center justify-between bg-[#ADD8E6]">
             {user?.role?.toLowerCase() === "admin" ? (
               <AdminHeader hide={true} />
             ) : (
@@ -933,22 +933,10 @@ console.log(staffId)
                   <User size={15} strokeWidth={2.2} />
                 </button>
 
-                {/* {showUserMenu && (
-              <div
-                onClick={(e) => e.stopPropagation()}
-                className="absolute right-0 z-50 mt-2 w-32 rounded-md border border-slate-200 bg-white shadow-lg"
-              >
-                <button
-                  onClick={handleLogout}
-                  className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100"
-                >
-                  Logout
-                </button>
-              </div>
-            )} */}
+              
               </div>
             </div>
-          </header>
+          </header> */}
 
           {loading && (
             <BarLoader
