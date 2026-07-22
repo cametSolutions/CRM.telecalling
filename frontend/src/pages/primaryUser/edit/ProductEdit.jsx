@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom"
 import UseFetch from "../../../hooks/useFetch"
 import ProductAdd from "../../../components/primaryUser/ProductAdd"
 import api from "../../../api/api"
-import toast from "react-hot-toast"
+import {toast} from"react-toastify"
 import { useNavigate } from "react-router-dom"
 function ProductEdit() {
   const [data, setData] = useState([])

@@ -33,6 +33,7 @@ export const ProductRegistration = async (req, res) => {
     const payload = {
       selected: tableData,
       productName: productData.productName,
+
       productPrice: productData.productPrice,
       productorservicetype: productData.productorservicetype,
       description: productData.description,
@@ -40,6 +41,7 @@ export const ProductRegistration = async (req, res) => {
         productData.defaultservices.length > 0 && {
         defaultservices: productData.defaultservices,
       }),
+status:productData?.status
     };
 
     const products = new Product(payload);
@@ -81,6 +83,7 @@ export const EditProduct = async (req, res) => {
       productData.description || existingProduct.description
     existingProduct.defaultservices = productData.defaultservices || [];
     existingProduct.productorservicetype = productData?.productorservicetype
+existingProduct.status=productData?.status
     // Step 3: Save the changes to the database
     await existingProduct.save()
     res.status(200).json({ message: "Product edit successfully" })
@@ -115,7 +118,6 @@ export const GetbranchProduct = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" })
   }
 }
-
 export const GetallProducts = async (req, res) => {
   try {
     const { branchselected = null, branchselectedArray = null } = req.query

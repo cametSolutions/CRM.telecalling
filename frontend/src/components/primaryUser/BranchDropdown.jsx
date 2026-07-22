@@ -5,6 +5,8 @@ export default function BranchDropdown({
   branches,
   onBranchChange,
   branchSelected,
+label = "Select",
+  labletrue = false,
   showallbranchOption = false //if needed option "All" may some pages wont want "all"
 }) {
   const [selectedBranch, setSelectedBranch] = useState(null)
@@ -47,6 +49,11 @@ export default function BranchDropdown({
 
   return (
     <div className="relative min-w-48" ref={dropdownRef}>
+{labletrue && (
+        <label className="ml-1 mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500">
+          {label}
+        </label>
+      )}
       {/* Dropdown Button */}
 
       <button

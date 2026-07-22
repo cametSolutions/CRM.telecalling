@@ -17,7 +17,7 @@ const useAutoLogout = (isActive) => {
 
     const resetTimer = () => {
       clearTimeout(timer);
-      timer = setTimeout(logout, 15 * 60 * 1000);
+      timer = setTimeout(logout, 60 * 60 * 1000);
     };
 
     window.addEventListener("mousemove", resetTimer);

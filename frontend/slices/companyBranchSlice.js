@@ -9,13 +9,15 @@ console.log(storedBranch)
 // Retrieve later with proper typing
 const companybranches = getLocalStorageItem("companybranches");
 const loggeduserbranches = getLocalStorageItem("loggeduserbranches")
+const loggeduserBranchOptions = getLocalStorageItem("loggeduserBranchOptions")
 console.log(loggeduserbranches)
 
 const initialState = {
     selectedCompany: storedCompany ? storedCompany : null,
     selectedBranch: storedBranch ? storedBranch : null,
     branches: companybranches ? companybranches : [],
-    loggeduserbranches: loggeduserbranches ? loggeduserbranches : []
+    loggeduserbranches: loggeduserbranches ? loggeduserbranches : [],
+    userbranchOptions: loggeduserBranchOptions ? loggeduserBranchOptions : []
 };
 
 const companyBranchSlice = createSlice({
@@ -31,6 +33,9 @@ const companyBranchSlice = createSlice({
         setBranches(state, action) {
             state.branches = action.payload;
         },
+        setloggeduserBranchOptions(state, action) {
+            state.userbranchOptions = action.payload
+        },
         loggeduserBranches(state, action) {
             state.loggeduserbranches = action.payload
         },
@@ -41,7 +46,7 @@ const companyBranchSlice = createSlice({
     }
 });
 
-export const { selectedCompany, setsliceselectedBranch, setBranches, resetSelection,loggeduserBranches } =
+export const { selectedCompany, setsliceselectedBranch, setBranches, resetSelection, loggeduserBranches,setloggeduserBranchOptions } =
     companyBranchSlice.actions;
 
 export default companyBranchSlice.reducer;

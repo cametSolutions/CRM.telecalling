@@ -83,7 +83,7 @@ const CustomerAdd = ({
   const loggeduserBranch = useSelector(
     (state) => state.companyBranch.loggeduserbranches
   )
-
+console.log(loggeduserBranch)
   const [detailsData, setdetailsData] = useState({})
   const [isSaved, setIsSaved] = useState(false)
   console.log(isSaved)
