@@ -7154,8 +7154,8 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
         stats.present = Math.max(0, stats.present - stats.latecutting);
 
       }
-// if(stats?.name==="Fathima Nazrin CM"){
-// console.log(stats)}
+      // if(stats?.name==="Fathima Nazrin CM"){
+      // console.log(stats)}
 
       staffAttendanceStats.push(stats);
     }
@@ -7541,8 +7541,8 @@ export const UpdateUserandAdmin = async (req, res) => {
   const { userId, userData, tabledata, imageData = {} } = req.body   // ✅ default imageData too, avoids a crash if it's ever missing entirely
   const { profileUrl, documentUrl } = imageData                       // ✅ no default here — undefined vs "" vs real value are now distinguishable
   const { role } = userData
-console.log("pffff",profileUrl)
-console.log(typeof profileUrl === "string")
+  console.log("pffff", profileUrl)
+  console.log(typeof profileUrl === "string")
 
   const { assignedto, profileUrl: _ignoredProfileUrl, documentUrl: _ignoredDocumentUrl, ...filteredUserData } = userData
 
@@ -7584,7 +7584,7 @@ console.log(typeof profileUrl === "string")
     // Only write these fields when a real, non-empty new value came through.
     // typeof check + truthy check together handle: key missing entirely,
     // key present but "", and key present with a real URL — all correctly.
-    if (typeof profileUrl === "string" ) {
+    if (typeof profileUrl === "string") {
       updateQuery.$set.profileUrl = profileUrl
     }
     if (typeof documentUrl === "string" && documentUrl.length > 0) {
@@ -7657,16 +7657,16 @@ export const Login = async (req, res) => {
     const passwordExpiryAt = user.passwordExpiryAt
       ? new Date(user.passwordExpiryAt)
       : null
-let passwordExpiryWarning = null
+    let passwordExpiryWarning = null
 
-if (passwordExpiryAt) {
-  const diffMs = passwordExpiryAt.getTime() - now.getTime()
-  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+    if (passwordExpiryAt) {
+      const diffMs = passwordExpiryAt.getTime() - now.getTime()
+      const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
 
-  if (diffDays > 0 && diffDays <= 7) {
-    passwordExpiryWarning = `Your password will expire in ${diffDays} day(s).`
-  }
-}
+      if (diffDays > 0 && diffDays <= 7) {
+        passwordExpiryWarning = `Your password will expire in ${diffDays} day(s).`
+      }
+    }
     if (passwordExpiryAt && passwordExpiryAt <= now) {
       return res.status(403).json({
         message: "Your password has expired. Please change your password.",
@@ -7677,7 +7677,7 @@ if (passwordExpiryAt) {
     }
 
     const token = generateToken(res, user)
-
+const leavemasterdata=await Leavemaster.find({})
     if (token) {
       const { password, ...userwithoutpassword } = user
 
@@ -7688,14 +7688,15 @@ if (passwordExpiryAt) {
       //   branch,
       //   passwordExpired: false
       // })
-return res.status(200).json({
-  message: "Login successful",
-  token,
-  User: userwithoutpassword,
-  branch,
-  passwordExpired: false,
-  passwordExpiryWarning
-})
+      return res.status(200).json({
+        message: "Login successful",
+        token,
+        User: userwithoutpassword,
+        branch,
+        passwordExpired: false,
+        passwordExpiryWarning,
+leavemasterdata
+      })
     }
 
     return res.status(500).json({
@@ -7726,7 +7727,7 @@ export const changePassword = async (req, res) => {
       true
     } else {
       user = await Admin.findById(userId)
-     
+
     }
     if (!user) {
       return res.status(404).json({ message: "User not found" })
@@ -7738,10 +7739,10 @@ export const changePassword = async (req, res) => {
     }
 
     // const hashedPassword = await bcrypt.hash(newPassword, 10)
-console.log("newpaswword",newPassword)
-console.log("currrentpasss",currentPassword)
-// console.log("hashedpasss",hashedPassword)
-console.log("user",user)
+    console.log("newpaswword", newPassword)
+    console.log("currrentpasss", currentPassword)
+    // console.log("hashedpasss",hashedPassword)
+    console.log("user", user)
     const expiryDate = new Date()
     expiryDate.setMonth(expiryDate.getMonth() + 2)
 
