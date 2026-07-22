@@ -930,34 +930,55 @@ const productOptions = useMemo(() => {
       })
       .filter((customer) => customer.selected?.length > 0 || !customer.selected)
   }, [allCustomers, productType])
-  console.log(normalizedCustomers)
-  const a = normalizedCustomers.filter(
-    (i) => i.customerName === "2020 MARGIN FREE SUPER MARKET"
-  )
-  console.log(a)
-  const filteredCustomers = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase()
-    console.log(term)
-    if (!term) return normalizedCustomers
-    console.log("h")
-    return normalizedCustomers.filter((cust) => {
-      const matchesCustomer =
-        cust.customerName?.toLowerCase().includes(term) ||
-        cust.mobile?.toLowerCase().includes(term) ||
-        cust.email?.toLowerCase().includes(term) ||
-        cust.address1?.toLowerCase().includes(term)
+ 
+//   const filteredCustomers = useMemo(() => {
+//     const term = searchTerm.trim().toLowerCase()
+//     console.log(term)
+//     if (!term) return normalizedCustomers
+//     console.log("h")
+//     return normalizedCustomers.filter((cust) => {
+// console.log(cust)
+//       const matchesCustomer =
+//         cust.customerName?.toLowerCase().includes(term) ||
+//         cust.mobile?.toLowerCase().includes(term) ||
+//         cust.email?.toLowerCase().includes(term) ||
+//         cust.address1?.toLowerCase().includes(term)
 
-      const matchesSelected = cust.selected?.some(
-        (sel) =>
-          sel?.licensenumber?.toString().toLowerCase().includes(term) ||
-          sel?.productName?.toLowerCase().includes(term) ||
-          sel?.branch_id?.branchName?.toLowerCase().includes(term)
+//       const matchesSelected = cust.selected?.some(
+//         (sel) =>
+//           sel?.licensenumber?.toString().toLowerCase().includes(term) ||
+//           sel?.productName?.toLowerCase().includes(term) ||
+//           sel?.branch_id?.branchName?.toLowerCase().includes(term)
+//       )
+
+//       return matchesCustomer || matchesSelected
+//     })
+//   }, [normalizedCustomers, searchTerm])
+const filteredCustomers = useMemo(() => {
+  const normalize = (value) => String(value ?? "").trim().toLowerCase()
+
+  const term = normalize(searchTerm)
+
+  if (!term) return normalizedCustomers
+
+  return normalizedCustomers.filter((cust) => {
+    const matchesCustomer =
+      normalize(cust.customerName).includes(term) ||
+      normalize(cust.mobile).includes(term) 
+      // normalize(cust.email).includes(term) ||
+      // normalize(cust.address1).includes(term)
+
+    const matchesSelected = Array.isArray(cust.selected) &&
+      cust.selected.some((sel) =>
+        normalize(sel?.licensenumber).includes(term) 
+// ||
+//         normalize(sel?.productName).includes(term) ||
+//         normalize(sel?.branch_id?.branchName).includes(term)
       )
 
-      return matchesCustomer || matchesSelected
-    })
-  }, [normalizedCustomers, searchTerm])
-
+    return matchesCustomer || matchesSelected
+  })
+}, [normalizedCustomers, searchTerm])
   useEffect(() => {
     if (searchTerm.trim()) {
       setcustomerCount(filteredCustomers.length)
