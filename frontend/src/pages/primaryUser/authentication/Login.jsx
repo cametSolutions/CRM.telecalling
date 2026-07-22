@@ -32,7 +32,9 @@ const Login = () => {
       setLoading(true)
       const response = await api.post(`/auth/login`, data)
       const datas = response.data
-      const { token, User, passwordExpiryWarning } = datas
+      const { token, User, passwordExpiryWarning,leavemasterdata } = datas
+console.log(leavemasterdata)
+
       if (response.status === 200) {
         const selectedCompany = User.selected[0]
         const res = await api.get("/branch/getBranch")
@@ -42,11 +44,13 @@ const Login = () => {
 setLocalStorageItem("selectedBranch",selectedCompany.branch_id)
           setLocalStorageItem("loggeduserbranches", loggeduserbranches)
           setLocalStorageItem("companybranches", allcompanybranches)
+setLocalStorageItem("checkinTime",leavemasterdata[0]?.checkIn)
           dispatch(loggeduserBranches(loggeduserbranches))
  const uniqueBranches = (User.selected || []).map((branch) => ({
         id: branch.branch_id,
         label: branch.branchName
       }))
+console.log(leavemasterdata)
 setLocalStorageItem("loggeduserBranchOptions",uniqueBranches)
           dispatch(setBranches(allcompanybranches))
 dispatch(setloggeduserBranchOptions(uniqueBranches))

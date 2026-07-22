@@ -1,32 +1,34 @@
 import { createSlice } from "@reduxjs/toolkit";
-
+import { getLocalStorageItem } from "../src/helper/localstorage";
+console.log(localStorage.getItem("checkinTime"))
 const initialState = {
   token: localStorage.getItem("authToken") || null,
   user: JSON.parse(localStorage.getItem("user")) || null,
   activeCompany:
     JSON.parse(localStorage.getItem("activeCompany")) || null,
   isAuthenticated: !!localStorage.getItem("authToken"),
-};
-
+  checkInTime: getLocalStorageItem("checkinTime") || null
+}
 const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
     loginSuccess: (state, action) => {
-      const { token, user,activeCompany } = action.payload;
+      const { token, user, activeCompany, checkInTime } = action.payload;
 
       state.token = token;
       state.user = user;
       state.isAuthenticated = true;
-state.activeCompany = activeCompany;
+      state.activeCompany = activeCompany;
+      state.checkInTime = checkInTime
       localStorage.setItem("authToken", token);
       localStorage.setItem("user", JSON.stringify(user));
- localStorage.setItem(
+      localStorage.setItem(
         "activeCompany",
         JSON.stringify(activeCompany)
       );
     },
- changeActiveCompany: (state, action) => {
+    changeActiveCompany: (state, action) => {
 
       state.activeCompany = action.payload;
 
