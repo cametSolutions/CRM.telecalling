@@ -1930,6 +1930,7 @@ const LeadMaster = ({
   showpopupMessage,
   selectedcompanyBranch
 }) => {
+console.log(Breadcrumblist)
   console.log(from)
   console.log(Data)
   console.log(isReadOnly)
@@ -2085,7 +2086,7 @@ const LeadMaster = ({
       selectedBranch &&
       `/product/getallServices?branchselected=${selectedBranch}`
   )
-
+console.log(haveprimaryProduct)
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -5346,6 +5347,8 @@ convertexcel
                         console.log(showLicenseDropdown)
                         const isAmountLocked =
                           isReadOnly || isRowPriceLocked(item)
+console.log(isAmountLocked)
+console.log(isReadOnly)
                         const isTaxLocked = isReadOnly || isRowPriceLocked(item)
                         console.log(isReadOnly)
                         console.log(isAmountLocked)

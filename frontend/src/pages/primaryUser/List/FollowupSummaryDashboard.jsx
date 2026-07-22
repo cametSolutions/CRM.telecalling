@@ -8,6 +8,7 @@ import { PerformanceModal } from "../../../components/primaryUser/PerformanceMod
 import { StaticSidebar } from "../../../components/primaryUser/StaticSidebar"
 import AdminHeader from "../../../header/AdminHeader"
 import StaffHeader from "../../../header/StaffHeader"
+import { useSelector } from "react-redux"
 import {
   Eye,
   Phone,
@@ -27,6 +28,10 @@ import {
   X
 } from "lucide-react"
 export default function FollowupSummaryDashboard() {
+  const selectedBranch = useSelector(
+    (branch) => branch.companyBranch.selectedBranch
+  )
+  console.log(selectedBranch)
   const navigate = useNavigate()
 
   const [date, setdate] = useState({
@@ -34,7 +39,7 @@ export default function FollowupSummaryDashboard() {
     endDate: ""
   })
   const [data, setData] = useState([])
-  const [selectedBranch, setselectedBranch] = useState(null)
+  // const [selectedBranch, setselectedBranch] = useState(null)
   const [userbranches, setuserBranches] = useState([])
   const [selectedUserName, setselecteduserName] = useState(null)
   const [selectedCategory, setselectedCategory] = useState(null)
@@ -56,6 +61,7 @@ export default function FollowupSummaryDashboard() {
       selectedBranch &&
       `/lead/getfollowupsummaryReport?startDate=${date.startDate}&endDate=${date.endDate}&branchId=${selectedBranch}`
   )
+  console.log(selectedBranch)
   console.log(date.startDate)
   console.log(date.endDate)
   const { data: branchProduct } = UseFetch(
@@ -143,7 +149,7 @@ export default function FollowupSummaryDashboard() {
     const userData = getLocalStorageItem("user")
     if (!userData?.selected?.length) return
     setloggedUser(userData)
-    setselectedBranch(userData.selected[0]?.branch_id)
+    // setselectedBranch(userData.selected[0]?.branch_id)
     const branches = userData.selected.map((branch) => ({
       id: branch.branch_id,
       branchName: branch.branchName
@@ -318,6 +324,14 @@ export default function FollowupSummaryDashboard() {
   const handleFollowupCellClick = ({ row, header }) => {
     console.log(header)
     console.log(row)
+
+    if (header === "Total Leads" && row.leadCount <= 0) return
+if (header === "Due Today" && row.dueToday <= 0) return
+if (header === "Overdue" && row.overDue <= 0) return
+if (header === "Upcoming" && row.future <= 0) return
+    if (header === "New Lead" && row.neverFollowup <= 0) return
+    if (header === "Converted" && row.converted <= 0) return
+ if (header === "Lost" && row.lost <= 0) return
     const breadcrumb = [
       { label: "Report", path: "" },
       { label: "Follow-Up Summary", path: "/admin/reports/follow-up-summary" },
@@ -425,7 +439,7 @@ export default function FollowupSummaryDashboard() {
           istotal: true,
           header: "Total Leads",
           branchId: row.branchIds?.[0],
-breadcrumb
+          breadcrumb
         }
       })
       console.log("hhh")

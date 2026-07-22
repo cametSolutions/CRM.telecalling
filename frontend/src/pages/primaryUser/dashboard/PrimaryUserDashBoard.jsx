@@ -7,6 +7,7 @@ import {
   MdScience,
   MdBarChart
 } from "react-icons/md"
+import { useSelector } from "react-redux"
 import { FiChevronDown, FiX } from "react-icons/fi"
 import { FaSpinner, FaUserCircle } from "react-icons/fa"
 import { toast } from "react-toastify"
@@ -17,6 +18,8 @@ import api from "../../../api/api"
 import AnnouncementModal from "../../../components/primaryUser/AnnouncementModal"
 import AnnouncementBanner from "../../../components/primaryUser/AnnouncementBanner"
 export default function PrimaryUserDashBoard() {
+const userRole=useSelector((user)=>user.auth.user.role)
+console.log(userRole)
   const [leaveList, setTodayLeaveList] = useState([])
   const [announcement, setAnnouncementText] = useState("")
   const [achieverLoader, setachieverLoader] = useState(false)
@@ -915,6 +918,8 @@ const announcements =
   {openannoucementpopup && (
     <AnnouncementModal
       open={openannoucementpopup}
+isAdmin={userRole==="Admin"}
+announcements={announcements?.announcement}
       onClose={() => setopenannoucementpopup(false)}
       onSuccess={() => setopenannoucementpopup(false)}
     />
@@ -924,7 +929,7 @@ const announcements =
     <AnnouncementBanner
       announcementlist={announcements}
       setopenannoucementpopup={setopenannoucementpopup}
-      action={false}
+      action={true}
     />
   </div>
 
