@@ -1969,6 +1969,7 @@ console.log(Breadcrumblist)
   console.log(takenLicenses)
   const [warningErrors, setwarningError] = useState({})
   const [haveprimaryProduct, sethaveprimaryProduct] = useState(false)
+console.log(haveprimaryProduct)
   const [unselectedtaggedlicense, setunselectedtaggedlicense] = useState({})
   console.log(unselectedtaggedlicense)
   console.log(warningErrors)
@@ -3955,7 +3956,7 @@ setSelectedLeadList((prev) =>
       leadId: "",
       leadBy: loggeduser?._id || loggeduser?.id || ""
     })
-
+setTakenLicense([])
     clearMainerrors()
     setValidateError({})
     setwarningMessage("")
@@ -5607,7 +5608,7 @@ console.log(isReadOnly)
                             <td className="border border-gray-300 px-1 py-1">
                               <input
                                 type="number"
-                                readOnly={isAmountLocked || !haveprimaryProduct}
+                                readOnly={isAmountLocked}
                                 value={item.productPrice}
                                 onChange={(e) =>
                                   handlePriceChange(index, e.target.value)
@@ -5625,7 +5626,7 @@ console.log(isReadOnly)
                             <td className="border border-gray-300 px-1 py-1">
                               <input
                                 type="number"
-                                readOnly={isTaxLocked || !haveprimaryProduct}
+                                readOnly={isTaxLocked}
                                 value={item.hsn}
                                 onChange={(e) =>
                                   handleHsnChange(index, e.target.value)
