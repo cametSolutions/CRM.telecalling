@@ -8,7 +8,7 @@ const productSchema = new mongoose.Schema({
   productorservicetype: { type: String, required: true },
   defaultservices: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
   serviceid: [{ type: mongoose.Schema.Types.ObjectId, ref: "Service" }],
-
+status:{type:String,enum:["Active","Inactive"]},
   selected: [{
     hsn_id: { type: mongoose.Schema.Types.ObjectId, ref: "Hsn", set: v => (v === "" ? undefined : v) },
     hsnName: { type: String },

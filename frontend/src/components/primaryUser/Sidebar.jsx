@@ -1099,6 +1099,7 @@ console.log(sidebarOpen)
                     // setselectedParentBranch(value)
                     setselectedBranch(value)
                   }}
+  className="w-[200px] shrink-0"
                   options={branchOptions}
                 />
               </div>

@@ -545,7 +545,8 @@ export const GetscrollCustomer = async (req, res) => {
       limit = 100,
       search = "",
       loggeduserBranches,
-      customerType = "Allcustomers"
+      customerType = "Allcustomers",
+productfilter="All"
     } = req.query;
 
     if (!loggeduserBranches) {
@@ -558,7 +559,15 @@ export const GetscrollCustomer = async (req, res) => {
     const pageNum = Math.max(1, parseInt(page));
     const pageSize = Math.max(1, parseInt(limit));
     const skip = (pageNum - 1) * pageSize;
+ const hasProductFilter =
+      productfilter &&
+      productfilter !== "All" &&
+      mongoose.Types.ObjectId.isValid(productfilter)
 
+    const productId = hasProductFilter
+      ? new mongoose.Types.ObjectId(productfilter)
+      : null
+console.log("productid",productId)
     let baseMatch = {};
 
     if (customerType === "ProductMissing") {
@@ -583,6 +592,9 @@ export const GetscrollCustomer = async (req, res) => {
 
       if (customerType !== "Allcustomers") {
         baseMatch.isActive = customerType;
+      }
+if (hasProductFilter) {
+        baseMatch["selected.product_id"] = productId
       }
     }
 
@@ -615,8 +627,18 @@ export const GetscrollCustomer = async (req, res) => {
         ]
       };
     }
+ const selectedFilterCondition = hasProductFilter
+      ? {
+          $and: [
+            { $eq: ["$$sel.branch_id", branchId] },
+            { $eq: ["$$sel.product_id", productId] }
+          ]
+        }
+      : {
+          $eq: ["$$sel.branch_id", branchId]
+        }
 
-    const pipeline = [
+ const pipeline = [
       { $match: match },
 
       {
@@ -624,31 +646,34 @@ export const GetscrollCustomer = async (req, res) => {
           metadata: [
             ...(customerType !== "ProductMissing"
               ? [
-                {
-                  $addFields: {
-                    selected: {
-                      $filter: {
-                        input: "$selected",
-                        as: "sel",
-                        cond: {
-                          $eq: ["$$sel.branch_id", branchId]
+                  {
+                    $addFields: {
+                      selected: {
+                        $filter: {
+                          input: "$selected",
+                          as: "sel",
+                          cond: selectedFilterCondition
                         }
                       }
                     }
+                  },
+                  {
+                    $match: {
+                      selected: { $exists: true, $ne: [] }
+                    }
+                  },
+                  {
+                    $unwind: {
+                      path: "$selected",
+                      preserveNullAndEmptyArrays: true
+                    }
+                  },
+                  {
+                    $group: {
+                      _id: "$_id"
+                    }
                   }
-                },
-                {
-                  $unwind: {
-                    path: "$selected",
-                    preserveNullAndEmptyArrays: true
-                  }
-                },
-                {
-                  $group: {
-                    _id: "$_id"
-                  }
-                }
-              ]
+                ]
               : []),
             {
               $count: "selectedbranchCustomercount"
@@ -658,144 +683,162 @@ export const GetscrollCustomer = async (req, res) => {
           customers: [
             ...(customerType !== "ProductMissing"
               ? [
-                {
-                  $addFields: {
-                    selected: {
-                      $filter: {
-                        input: "$selected",
-                        as: "sel",
-                        cond: {
-                          $eq: ["$$sel.branch_id", branchId]
+                  {
+                    $addFields: {
+                      selected: {
+                        $filter: {
+                          input: "$selected",
+                          as: "sel",
+                          cond: selectedFilterCondition
                         }
                       }
                     }
-                  }
-                },
-                {
-                  $unwind: {
-                    path: "$selected",
-                    preserveNullAndEmptyArrays: true
-                  }
-                },
+                  },
+                  {
+                    $match: {
+                      selected: { $exists: true, $ne: [] }
+                    }
+                  },
+                  {
+                    $unwind: {
+                      path: "$selected",
+                      preserveNullAndEmptyArrays: true
+                    }
+                  },
 
-                {
-                  $lookup: {
-                    from: "products",
-                    localField: "selected.product_id",
-                    foreignField: "_id",
-                    as: "productDetails"
-                  }
-                },
-                {
-                  $unwind: {
-                    path: "$productDetails",
-                    preserveNullAndEmptyArrays: true
-                  }
-                },
+                  {
+                    $lookup: {
+                      from: "products",
+                      localField: "selected.product_id",
+                      foreignField: "_id",
+                      as: "productDetails"
+                    }
+                  },
+                  {
+                    $unwind: {
+                      path: "$productDetails",
+                      preserveNullAndEmptyArrays: true
+                    }
+                  },
 
-                {
-                  $lookup: {
-                    from: "branches",
-                    localField: "selected.branch_id",
-                    foreignField: "_id",
-                    as: "branchDetails"
-                  }
-                },
-                {
-                  $unwind: {
-                    path: "$branchDetails",
-                    preserveNullAndEmptyArrays: true
-                  }
-                },
+                  {
+                    $lookup: {
+                      from: "branches",
+                      localField: "selected.branch_id",
+                      foreignField: "_id",
+                      as: "branchDetails"
+                    }
+                  },
+                  {
+                    $unwind: {
+                      path: "$branchDetails",
+                      preserveNullAndEmptyArrays: true
+                    }
+                  },
 
-                {
-                  $lookup: {
-                    from: "companies",
-                    localField: "selected.company_id",
-                    foreignField: "_id",
-                    as: "companyDetails"
-                  }
-                },
-                {
-                  $unwind: {
-                    path: "$companyDetails",
-                    preserveNullAndEmptyArrays: true
-                  }
-                },
+                  {
+                    $lookup: {
+                      from: "companies",
+                      localField: "selected.company_id",
+                      foreignField: "_id",
+                      as: "companyDetails"
+                    }
+                  },
+                  {
+                    $unwind: {
+                      path: "$companyDetails",
+                      preserveNullAndEmptyArrays: true
+                    }
+                  },
 
-                {
-                  $addFields: {
-                    "selected.productName": {
-                      $ifNull: ["$productDetails.productName", null]
-                    },
-                    "selected.branch_id": {
-                      $cond: [
-                        { $ifNull: ["$branchDetails._id", false] },
-                        {
-                          _id: "$branchDetails._id",
-                          branchName: "$branchDetails.branchName"
-                        },
-                        null
-                      ]
-                    },
-                    "selected.company_id": {
-                      $cond: [
-                        { $ifNull: ["$companyDetails._id", false] },
-                        {
-                          _id: "$companyDetails._id",
-                          companyName: "$companyDetails.companyName"
-                        },
-                        null
-                      ]
+                  {
+                    $addFields: {
+                      "selected.product_id": {
+                        $cond: [
+                          { $ifNull: ["$productDetails._id", false] },
+                          {
+                            _id: "$productDetails._id",
+                            productName: "$productDetails.productName",
+                            productorservicetype:
+                              "$productDetails.productorservicetype"
+                          },
+                          null
+                        ]
+                      },
+                      "selected.productName": {
+                        $ifNull: ["$productDetails.productName", null]
+                      },
+                      "selected.productorservicetype": {
+                        $ifNull: ["$productDetails.productorservicetype", null]
+                      },
+                      "selected.branch_id": {
+                        $cond: [
+                          { $ifNull: ["$branchDetails._id", false] },
+                          {
+                            _id: "$branchDetails._id",
+                            branchName: "$branchDetails.branchName"
+                          },
+                          null
+                        ]
+                      },
+                      "selected.company_id": {
+                        $cond: [
+                          { $ifNull: ["$companyDetails._id", false] },
+                          {
+                            _id: "$companyDetails._id",
+                            companyName: "$companyDetails.companyName"
+                          },
+                          null
+                        ]
+                      }
+                    }
+                  },
+
+                  {
+                    $group: {
+                      _id: "$_id",
+                      customerName: { $first: "$customerName" },
+                      address1: { $first: "$address1" },
+                      address2: { $first: "$address2" },
+                      country: { $first: "$country" },
+                      city: { $first: "$city" },
+                      pincode: { $first: "$pincode" },
+                      contactPerson: { $first: "$contactPerson" },
+                      landline: { $first: "$landline" },
+                      industry: { $first: "$industry" },
+                      partner: { $first: "$partner" },
+                      state: { $first: "$state" },
+                      registrationType: { $first: "$registrationType" },
+                      gstNo: { $first: "$gstNo" },
+                      email: { $first: "$email" },
+                      mobile: { $first: "$mobile" },
+                      selected: {
+                        $push: "$selected"
+                      }
                     }
                   }
-                },
-
-                {
-                  $group: {
-                    _id: "$_id",
-                    customerName: { $first: "$customerName" },
-                    address1: { $first: "$address1" },
-                    address2: { $first: "$address2" },
-                    country: { $first: "$country" },
-                    city: { $first: "$city" },
-                    pincode: { $first: "$pincode" },
-                    contactPerson: { $first: "$contactPerson" },
-                    landline: { $first: "$landline" },
-                    industry: { $first: "$industry" },
-                    partner: { $first: "$partner" },
-                    state: { $first: "$state" },
-                    registrationType: { $first: "$registrationType" },
-                    gstNo: { $first: "$gstNo" },
-                    email: { $first: "$email" },
-                    mobile: { $first: "$mobile" },
-                    selected: {
-                      $push: "$selected"
-                    }
-                  }
-                }
-              ]
+                ]
               : [
-                {
-                  $project: {
-                    customerName: 1,
-                    address1: 1,
-                    address2: 1,
-                    country: 1,
-                    city: 1,
-                    pincode: 1,
-                    contactPerson: 1,
-                    landline: 1,
-                    industry: 1,
-                    partner: 1,
-                    state: 1,
-                    registrationType: 1,
-                    gstNo: 1,
-                    email: 1,
-                    mobile: 1
+                  {
+                    $project: {
+                      customerName: 1,
+                      address1: 1,
+                      address2: 1,
+                      country: 1,
+                      city: 1,
+                      pincode: 1,
+                      contactPerson: 1,
+                      landline: 1,
+                      industry: 1,
+                      partner: 1,
+                      state: 1,
+                      registrationType: 1,
+                      gstNo: 1,
+                      email: 1,
+                      mobile: 1
+                    }
                   }
-                }
-              ]),
+                ]),
 
             { $sort: { customerName: 1 } },
             { $skip: skip },
@@ -820,7 +863,212 @@ export const GetscrollCustomer = async (req, res) => {
           customers: "$customers"
         }
       }
-    ];
+    ]
+    // const pipeline = [
+    //   { $match: match },
+
+    //   {
+    //     $facet: {
+    //       metadata: [
+    //         ...(customerType !== "ProductMissing"
+    //           ? [
+    //             {
+    //               $addFields: {
+    //                 selected: {
+    //                   $filter: {
+    //                     input: "$selected",
+    //                     as: "sel",
+    //                     cond: {
+    //                       $eq: ["$$sel.branch_id", branchId]
+    //                     }
+    //                   }
+    //                 }
+    //               }
+    //             },
+    //             {
+    //               $unwind: {
+    //                 path: "$selected",
+    //                 preserveNullAndEmptyArrays: true
+    //               }
+    //             },
+    //             {
+    //               $group: {
+    //                 _id: "$_id"
+    //               }
+    //             }
+    //           ]
+    //           : []),
+    //         {
+    //           $count: "selectedbranchCustomercount"
+    //         }
+    //       ],
+
+    //       customers: [
+    //         ...(customerType !== "ProductMissing"
+    //           ? [
+    //             {
+    //               $addFields: {
+    //                 selected: {
+    //                   $filter: {
+    //                     input: "$selected",
+    //                     as: "sel",
+    //                     cond: {
+    //                       $eq: ["$$sel.branch_id", branchId]
+    //                     }
+    //                   }
+    //                 }
+    //               }
+    //             },
+    //             {
+    //               $unwind: {
+    //                 path: "$selected",
+    //                 preserveNullAndEmptyArrays: true
+    //               }
+    //             },
+
+    //             {
+    //               $lookup: {
+    //                 from: "products",
+    //                 localField: "selected.product_id",
+    //                 foreignField: "_id",
+    //                 as: "productDetails"
+    //               }
+    //             },
+    //             {
+    //               $unwind: {
+    //                 path: "$productDetails",
+    //                 preserveNullAndEmptyArrays: true
+    //               }
+    //             },
+
+    //             {
+    //               $lookup: {
+    //                 from: "branches",
+    //                 localField: "selected.branch_id",
+    //                 foreignField: "_id",
+    //                 as: "branchDetails"
+    //               }
+    //             },
+    //             {
+    //               $unwind: {
+    //                 path: "$branchDetails",
+    //                 preserveNullAndEmptyArrays: true
+    //               }
+    //             },
+
+    //             {
+    //               $lookup: {
+    //                 from: "companies",
+    //                 localField: "selected.company_id",
+    //                 foreignField: "_id",
+    //                 as: "companyDetails"
+    //               }
+    //             },
+    //             {
+    //               $unwind: {
+    //                 path: "$companyDetails",
+    //                 preserveNullAndEmptyArrays: true
+    //               }
+    //             },
+
+    //             {
+    //               $addFields: {
+    //                 "selected.productName": {
+    //                   $ifNull: ["$productDetails.productName", null]
+    //                 },
+    //                 "selected.branch_id": {
+    //                   $cond: [
+    //                     { $ifNull: ["$branchDetails._id", false] },
+    //                     {
+    //                       _id: "$branchDetails._id",
+    //                       branchName: "$branchDetails.branchName"
+    //                     },
+    //                     null
+    //                   ]
+    //                 },
+    //                 "selected.company_id": {
+    //                   $cond: [
+    //                     { $ifNull: ["$companyDetails._id", false] },
+    //                     {
+    //                       _id: "$companyDetails._id",
+    //                       companyName: "$companyDetails.companyName"
+    //                     },
+    //                     null
+    //                   ]
+    //                 }
+    //               }
+    //             },
+
+    //             {
+    //               $group: {
+    //                 _id: "$_id",
+    //                 customerName: { $first: "$customerName" },
+    //                 address1: { $first: "$address1" },
+    //                 address2: { $first: "$address2" },
+    //                 country: { $first: "$country" },
+    //                 city: { $first: "$city" },
+    //                 pincode: { $first: "$pincode" },
+    //                 contactPerson: { $first: "$contactPerson" },
+    //                 landline: { $first: "$landline" },
+    //                 industry: { $first: "$industry" },
+    //                 partner: { $first: "$partner" },
+    //                 state: { $first: "$state" },
+    //                 registrationType: { $first: "$registrationType" },
+    //                 gstNo: { $first: "$gstNo" },
+    //                 email: { $first: "$email" },
+    //                 mobile: { $first: "$mobile" },
+    //                 selected: {
+    //                   $push: "$selected"
+    //                 }
+    //               }
+    //             }
+    //           ]
+    //           : [
+    //             {
+    //               $project: {
+    //                 customerName: 1,
+    //                 address1: 1,
+    //                 address2: 1,
+    //                 country: 1,
+    //                 city: 1,
+    //                 pincode: 1,
+    //                 contactPerson: 1,
+    //                 landline: 1,
+    //                 industry: 1,
+    //                 partner: 1,
+    //                 state: 1,
+    //                 registrationType: 1,
+    //                 gstNo: 1,
+    //                 email: 1,
+    //                 mobile: 1
+    //               }
+    //             }
+    //           ]),
+
+    //         { $sort: { customerName: 1 } },
+    //         { $skip: skip },
+    //         { $limit: pageSize }
+    //       ]
+    //     }
+    //   },
+
+    //   {
+    //     $project: {
+    //       selectedbranchCustomercount: {
+    //         $ifNull: [
+    //           {
+    //             $arrayElemAt: [
+    //               "$metadata.selectedbranchCustomercount",
+    //               0
+    //             ]
+    //           },
+    //           0
+    //         ]
+    //       },
+    //       customers: "$customers"
+    //     }
+    //   }
+    // ];
 
     const result = await Customer.aggregate(pipeline);
     const responseData = result[0] || {

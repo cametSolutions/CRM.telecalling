@@ -11,7 +11,8 @@ import { setLocalStorageItem } from "../../../helper/localstorage"
 import { loginSuccess } from "../../../../slices/authSlice.js"
 import {
   setBranches,
-  loggeduserBranches
+  loggeduserBranches,
+setloggeduserBranchOptions
 } from "../../../../slices/companyBranchSlice.js"
 const Login = () => {
   const [passwordVisible, setPasswordVisible] = useState(false)
@@ -42,7 +43,13 @@ setLocalStorageItem("selectedBranch",selectedCompany.branch_id)
           setLocalStorageItem("loggeduserbranches", loggeduserbranches)
           setLocalStorageItem("companybranches", allcompanybranches)
           dispatch(loggeduserBranches(loggeduserbranches))
+ const uniqueBranches = (User.selected || []).map((branch) => ({
+        id: branch.branch_id,
+        label: branch.branchName
+      }))
+setLocalStorageItem("loggeduserBranchOptions",uniqueBranches)
           dispatch(setBranches(allcompanybranches))
+dispatch(setloggeduserBranchOptions(uniqueBranches))
           dispatch(
             loginSuccess({
               token,
@@ -74,16 +81,7 @@ setLocalStorageItem("selectedBranch",selectedCompany.branch_id)
           localStorage.setItem("authToken", token)
           localStorage.setItem("user", JSON.stringify(User))
 console.log(User)
-          //           setTimeout(() => {
-          // console.log(User)
-          //             if (User.role === "Admin") {
-          //               setLoading(false)
-          //               navigate("/admin/dashBoard")
-          //             } else if (User.role === "Staff" || User.role === "Manager") {
-          //               setLoading(false)
-          //               navigate("/staff/dashBoard")
-          //             }
-          //           }, 1000)
+          
           if (User.role === "Admin") {
             navigate("/admin/dashboard")
           } else {

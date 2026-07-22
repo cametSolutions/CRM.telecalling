@@ -354,16 +354,16 @@ console.log(a)
 if(!user)return
 
    
-
+console.log(user)
       const uniqueBranches = (user.selected || []).map((branch) => ({
         id: branch.branch_id,
         label: branch.branchName
       }))
-
+console.log(uniqueBranches)
       setbranchOptions(uniqueBranches)
     
   }, [branchlist,user])
-
+console.log(branchOptions)
   useEffect(() => {
     if (data?.userWiseResults && data?.userWiseResults.length && user?._id) {
       // parenttargetData(data)
