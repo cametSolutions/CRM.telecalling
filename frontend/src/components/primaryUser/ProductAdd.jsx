@@ -662,7 +662,7 @@ const ProductAdd = ({
 
             {selectedProductType === "Primaryproduct" && (
               <div className="relative">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Default Services
                 </label>
 
@@ -692,6 +692,41 @@ const ProductAdd = ({
                 )}
               </div>
             )}
+
+
+
+<div>
+  
+<label
+  htmlFor="status"
+  className="mb-1 block text-sm font-medium text-gray-700"
+>
+  Status <span className="text-red-500">*</span>
+</label>
+  <select
+    id="status"
+    aria-invalid={errors.status ? "true" : "false"}
+    aria-describedby={errors.status ? "status-error" : undefined}
+    {...register("status", {
+      required: "Status is required"
+    })}
+    className={`block w-full rounded-md border p-2 text-sm shadow-sm outline-none cursor-pointer ${
+      errors.status
+        ? "border-red-500 focus:border-red-500"
+        : "border-gray-300 focus:border-gray-500"
+    }`}
+  >
+    <option value="">Select Status</option>
+    <option value="Active">Active</option>
+    <option value="Inactive">Inactive</option>
+  </select>
+
+  {errors.status && (
+    <p id="status-error" className="mt-1 text-sm text-red-600">
+      {errors.status.message}
+    </p>
+  )}
+</div>
           </div>
           {selectedBranch && (
             <div className="mt-6">
