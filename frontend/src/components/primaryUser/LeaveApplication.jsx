@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react"
 import { toast } from "react-toastify"
+import { useSelector } from "react-redux"
 import dayjs from "dayjs"
 import { FaArrowRight } from "react-icons/fa"
 import BarLoader from "react-spinners/BarLoader"
@@ -10,6 +11,7 @@ import { StaticSidebar } from "./StaticSidebar"
 import { PerformanceModal } from "./PerformanceModal"
 import AdminHeader from "../../header/AdminHeader"
 import StaffHeader from "../../header/StaffHeader"
+import PopUp from "../common/PopUp"
 import {
   Eye,
   Phone,
@@ -29,10 +31,13 @@ import {
   X
 } from "lucide-react"
 function LeaveApplication() {
+  const checkinTime = useSelector((time) => time.auth.checkInTime)
+  console.log(checkinTime)
   const [events, setEvents] = useState([])
   const [edit, setEdit] = useState(null)
+const [resolveSubmit, setResolveSubmit] = useState(null);
   const [activeUserId, setActiveUserId] = useState(null)
-
+  const [popupOpen, setPopupOpen] = useState(false)
   const [showTypeSelector, setShowTypeSelector] = useState(false)
   const [selectedType, setSelectedType] = useState("")
   const [isHaveCompensatoryleave, setcompensatoryLeave] = useState(false)
@@ -63,6 +68,7 @@ function LeaveApplication() {
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
   const now = new Date()
+const [popupMessage,setPopupMessage]=useState(null)
   const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   const [periodMode, setperiodMode] = useState("all")
   const [targetData, settargetData] = useState([])
@@ -967,7 +973,9 @@ function LeaveApplication() {
       setErrors((prev) => ({ ...prev, [name]: "" }))
     }
   }
-
+const onClose = () => {
+    setPopupOpen(false)
+  }
   const formatTo12Hour = (time) => {
     if (!time) return "--:--"
     if (time.includes("AM") || time.includes("PM")) return time
@@ -1039,6 +1047,74 @@ function LeaveApplication() {
             bottom: "It's a holiday—you can't request leave."
           }))
           return false
+        }
+        const now = new Date()
+
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+
+        const leaveDate = new Date(formData.leaveDate)
+        leaveDate.setHours(0, 0, 0, 0)
+
+        if (leaveDate < today) {
+         
+          setPopupMessage(
+    "This is a backdated leave request. Previous Sunday/holiday attendance will be washed out."
+  );
+  setPopupOpen(true);
+
+  const confirmed = await new Promise((resolve) => {
+    setResolveSubmit(() => resolve);
+  });
+
+  if (!confirmed) return false;
+          
+        }
+        console.log(leaveDate.getTime())
+        console.log(today.getTime())
+        if (leaveDate.getTime() === today.getTime()) {
+          // Same-day leave - check punch-in time
+          const [time, period] = checkinTime.split(" ") // "9:30", "AM"
+          let [hours, minutes] = time.split(":")
+
+          hours = Number(hours)
+          minutes = Number(minutes)
+
+          if (period === "PM" && hours !== 12) {
+            hours += 12
+          }
+
+          if (period === "AM" && hours === 12) {
+            hours = 0
+          }
+
+          const punchInTime = new Date()
+          punchInTime.setHours(hours, minutes, 0, 0)
+
+          console.log(punchInTime)
+          console.log(now)
+          console.log(punchInTime)
+          if (now > punchInTime) {
+            // <PopUp
+            //   isOpen={popupOpen}
+            //   onClose={()=>onClose}
+            //   message={
+            //     "This leave request is being submitted after the punch-in time. Previous Sunday/holiday attendance will be washed out."
+            //   }
+            // />
+  setPopupMessage(
+     "This leave request is being submitted after the punch-in time. Previous Sunday/holiday attendance will be washed out."
+  );
+  setPopupOpen(true);
+
+  const confirmed = await new Promise((resolve) => {
+    setResolveSubmit(() => resolve);
+  });
+
+  if (!confirmed) return false;
+           
+      
+          }
         }
       }
 
@@ -1308,6 +1384,7 @@ function LeaveApplication() {
 
       return false
     } catch (error) {
+console.log(error)
       setLoader(false)
       setMessage((prev) => ({
         ...prev,
@@ -2835,358 +2912,380 @@ function LeaveApplication() {
     //     />
     //   </div>
     // </div>
-<div className="min-h-full bg-[#ADD8E6]">
-  <div className="flex min-h-full flex-col lg:flex-row">
-    <div className="flex flex-1 flex-col">
-      <div className="sticky top-0 z-30 flex items-center justify-between gap-2 bg-[#ADD8E6] px-3 py-2 sm:gap-3 sm:px-4 sm:py-3">
-        <h2 className="min-w-0 flex-1 truncate text-base font-semibold sm:text-xl">
-          {visibleMonth}
-        </h2>
+    <div className="min-h-full bg-[#ADD8E6]">
+      <div className="flex min-h-full flex-col lg:flex-row">
+        <div className="flex flex-1 flex-col">
+          <div className="sticky top-0 z-30 flex items-center justify-between gap-2 bg-[#ADD8E6] px-3 py-2 sm:gap-3 sm:px-4 sm:py-3">
+            <h2 className="min-w-0 flex-1 truncate text-base font-semibold sm:text-xl">
+              {visibleMonth}
+            </h2>
 
-        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              console.log("prevmonthclickedd")
-              prevMonth()
-            }}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 transition hover:bg-gray-200 active:bg-gray-300 sm:h-9 sm:w-9"
-            aria-label="Previous month"
-          >
-            <HiChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => goToToday()}
-            className="rounded-lg bg-gray-100 px-2.5 py-1.5 text-xs font-medium transition hover:bg-gray-200 active:bg-gray-300 sm:px-4 sm:py-2 sm:text-sm"
-          >
-            Today
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              console.log("nextmonthclicked")
-              nextMonth()
-            }}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 transition hover:bg-gray-200 active:bg-gray-300 sm:h-9 sm:w-9"
-            aria-label="Next month"
-          >
-            <HiChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
-          </button>
-        </div>
-      </div>
-
-      <div className="mx-2 rounded-2xl border border-slate-200 bg-slate-50/80 p-2 shadow-sm sm:mx-4 sm:p-3">
-        <div className="space-y-1.5">
-          {visibleDays.map((date, index) => {
-            const dayLeaves =
-              currentmonthleaveData?.filter(
-                (leave) =>
-                  new Date(leave.leaveDate).toISOString().split("T")[0] ===
-                  date.fullDate
-              ) || []
-
-            // Derive a fixed-format compact badge locally instead of trusting
-            // date.fullMonthDay's length (that's what was causing 2-line wrap).
-            const d = new Date(date.fullDate)
-            const dayNum = d.getDate().toString().padStart(2, "0")
-            const monthAbbr = d.toLocaleString("default", { month: "short" }) // "Aug"
-            const weekday = d.toLocaleString("default", { weekday: "long" })
-
-            return (
-              <div
-                key={index}
+            <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+              <button
+                type="button"
                 onClick={() => {
-                  setSelectedDate(date)
-                  setSelectedType("")
-                  setShowTypeSelector(true)
+                  console.log("prevmonthclickedd")
+                  prevMonth()
                 }}
-                className="group flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 shadow-sm transition-all duration-150 hover:border-slate-300 hover:shadow-md active:scale-[0.99] sm:gap-3 sm:px-3 sm:py-2"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 transition hover:bg-gray-200 active:bg-gray-300 sm:h-9 sm:w-9"
+                aria-label="Previous month"
               >
-                {/* Compact fixed-size badge — never wraps, never grows the row */}
-                <div className="flex h-9 w-11 shrink-0 flex-col items-center justify-center rounded-lg bg-slate-900 leading-none text-white sm:h-10 sm:w-12">
-                  <span className="text-[12px] font-bold sm:text-sm">{dayNum}</span>
-                  <span className="text-[8px] font-medium uppercase tracking-wide text-slate-300 sm:text-[9px]">
-                    {monthAbbr}
-                  </span>
-                </div>
-
-                <div className="min-w-0 flex-1 text-sm font-semibold text-slate-900 sm:text-base">
-                  {weekday}
-                </div>
-
-                {/* Status area: single line when no leaves, stacks only if there's data to show */}
-                <div className="flex shrink-0 flex-col items-end gap-1">
-                  {dayLeaves.length > 0 ? (
-                    dayLeaves.map((leave, i) => {
-                      const isApproved =
-                        leave.departmentstatus === "Dept Approved" ||
-                        leave.hrstatus === "HR/Onsite Approved"
-
-                      const isPending =
-                        leave.departmentstatus === "Not Approved" &&
-                        leave.hrstatus === "Not Approved"
-
-                      return (
-                        <span
-                          key={i}
-                          title={`${leave?.leaveType} - ${leave?.leaveCategory}`}
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold sm:text-xs ${
-                            isApproved
-                              ? "bg-emerald-100 text-emerald-700"
-                              : isPending
-                                ? "bg-amber-100 text-amber-700"
-                                : "bg-rose-100 text-rose-700"
-                          }`}
-                        >
-                          {isApproved ? "Approved" : isPending ? "Pending" : "Rejected"}
-                        </span>
-                      )
-                    })
-                  ) : (
-                    <span className="text-[10px] text-slate-400 sm:text-xs">No leave</span>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-    </div>
-
-    {/* modals unchanged — see previous message for full versions */}
- {showTypeSelector && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-        <div className="w-full max-w-xs rounded-lg bg-white p-6 shadow-lg">
-          <h3 className="mb-4 text-center text-lg font-semibold">
-            Select Request Type
-          </h3>
-
-          <div className="flex flex-col space-y-3">
-            {["leave", "onsite", "mispunch"].map((type) => (
-              <label
-                key={type}
-                className="flex cursor-pointer items-center space-x-2 rounded-md px-2 py-2 transition hover:bg-gray-50"
-              >
-                <input
-                  type="radio"
-                  name="type"
-                  value={type}
-                  checked={selectedType === type}
-                  onChange={(e) =>
-                    handleTypeSelection(e.target.value, selectedDate)
-                  }
-                />
-                <span className="capitalize">{type}</span>
-              </label>
-            ))}
-          </div>
-
-          <div className="mt-5 flex justify-end">
-            <button
-              type="button"
-              className="rounded bg-gray-400 px-4 py-1 text-white transition hover:bg-gray-500"
-              onClick={() => {
-                setShowTypeSelector(false)
-                setSelectedType("")
-              }}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </div>
-    )}
-
-    {showModal && leaveBalance && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-        <div
-          className={`flex max-h-[90vh] w-full flex-col overflow-y-auto rounded-lg bg-white shadow-lg ${
-            selectedTab === "New Onsite" ? "md:w-3/4" : "sm:w-auto"
-          }`}
-        >
-          {loader && (
-            <BarLoader
-              cssOverride={{ width: "100%", height: "6px" }}
-              color="#4A90E2"
-            />
-          )}
-
-          <div className="p-3">
-            <div className="flex flex-wrap justify-center gap-x-4 gap-y-1">
-              {tabs
-                ?.filter((tab) => {
-                  if (selectedType === "leave") {
-                    return ["Leave", "New Leave", "Edit Leave"].includes(
-                      tab
-                    )
-                  }
-                  if (selectedType === "onsite") {
-                    return ["Onsite", "New Onsite", "Edit Onsite"].includes(
-                      tab
-                    )
-                  }
-                  if (selectedType === "mispunch") {
-                    return ["Mispunch", "New Mispunch"].includes(tab)
-                  }
-                  return false
-                })
-                .map((tab) => (
-                  <span
-                    key={tab}
-                    onClick={() => {
-                      setSelectedTab(tab)
-                      setMessage({ top: "", bottom: "" })
-                      selectedTabContent(tab)
-                      setIsOnsite(tab === "Onsite")
-                    }}
-                    className={`cursor-pointer text-sm sm:text-base ${
-                      selectedTab === tab
-                        ? "font-semibold text-blue-500 underline"
-                        : "text-black"
-                    }`}
-                  >
-                    {tab}
-                  </span>
-                ))}
-            </div>
-
-            <div className="mt-4">{renderContent()}</div>
-
-            <div className="mt-4 flex flex-wrap justify-center gap-3 sm:gap-4">
-              {selectedTab === "Leave" && (
-                <button
-                  type="button"
-                  className="rounded-lg bg-blue-800 px-4 py-2 text-sm text-white hover:bg-blue-700 sm:text-base"
-                  onClick={() => {
-                    setSelectedTab("New Leave")
-                    setFormData((prev) => ({
-                      ...prev,
-                      leaveType: "Full Day",
-                      leaveCategory: "",
-                      halfDayPeriod: "",
-                      reason: ""
-                    }))
-                  }}
-                >
-                  Apply New Leaves
-                </button>
-              )}
-
-              {selectedTab === "Onsite" && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedTab("New Onsite")
-                    setFormData((prev) => ({
-                      ...prev,
-                      onsiteType: "Full Day",
-                      halfDayPeriod: "",
-                      description: ""
-                    }))
-                    setTableRows([])
-                  }}
-                  className="rounded-lg bg-blue-800 px-4 py-2 text-sm text-white shadow-lg hover:bg-blue-900 sm:text-base"
-                >
-                  Apply New Onsite
-                </button>
-              )}
-
-              {selectedTab === "Mispunch" && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedTab("New Mispunch")
-                    setFormData((prev) => ({
-                      ...prev,
-                      misspunchDate: clickedDate || prev.misspunchDate,
-                      mispunchType: "",
-                      misspunchTime: "",
-                      remark: "",
-                      showMisspunchTime: false,
-                      isTimeEditable: false,
-                      editHour: "09",
-                      editMinute: "30",
-                      editPeriod: "AM"
-                    }))
-                  }}
-                  className="rounded-lg bg-blue-800 px-4 py-2 text-sm text-white shadow-lg hover:bg-blue-900 sm:text-base"
-                >
-                  Apply New Misspunch
-                </button>
-              )}
-
-              {selectedTab === "New Mispunch" && (
-                <button
-                  type="button"
-                  className="group relative rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-2.5 text-sm font-medium text-white shadow-lg shadow-blue-200 transition-all duration-200 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl hover:shadow-blue-300 disabled:cursor-not-allowed disabled:opacity-50"
-                  onClick={() => handleSubmitAndReset("New Mispunch")}
-                  disabled={!formData.mispunchType || !formData.remark}
-                >
-                  <span className="flex items-center gap-1.5">
-                    Submit Request
-                    <svg
-                      className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13 7l5 5m0 0l-5 5m5-5H6"
-                      />
-                    </svg>
-                  </span>
-                </button>
-              )}
-
-              {(selectedTab === "Edit Onsite" ||
-                selectedTab === "Edit Leave" ||
-                selectedTab === "New Leave" ||
-                selectedTab === "New Onsite") && (
-                <>
-                  <button
-                    type="button"
-                    className="rounded bg-gradient-to-b from-blue-400 to-blue-500 px-4 py-2 text-sm text-white hover:from-blue-400 hover:to-blue-600 sm:text-base"
-                    onClick={() => handleSubmitAndReset(selectedTab)}
-                  >
-                    {selectedTab === "Edit Onsite" ||
-                    selectedTab === "Edit Leave"
-                      ? "Update"
-                      : "Submit"}
-                  </button>
-
-                  {(selectedTab === "Edit Onsite" ||
-                    selectedTab === "Edit Leave") && (
-                    <button
-                      type="button"
-                      className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:bg-red-700 active:translate-y-[2px] active:shadow-md sm:text-base"
-                      onClick={() => handledelete(formData)}
-                    >
-                      Delete
-                    </button>
-                  )}
-                </>
-              )}
+                <HiChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+              </button>
 
               <button
                 type="button"
-                className="rounded bg-gray-500 px-4 py-2 text-sm text-white hover:bg-gray-600 sm:text-base"
-                onClick={resetApplicationFlow}
+                onClick={() => goToToday()}
+                className="rounded-lg bg-gray-100 px-2.5 py-1.5 text-xs font-medium transition hover:bg-gray-200 active:bg-gray-300 sm:px-4 sm:py-2 sm:text-sm"
               >
-                Close
+                Today
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  console.log("nextmonthclicked")
+                  nextMonth()
+                }}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 transition hover:bg-gray-200 active:bg-gray-300 sm:h-9 sm:w-9"
+                aria-label="Next month"
+              >
+                <HiChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
             </div>
           </div>
+
+          <div className="mx-2 rounded-2xl border border-slate-200 bg-slate-50/80 p-2 shadow-sm sm:mx-4 sm:p-3">
+            <div className="space-y-1.5">
+              {visibleDays.map((date, index) => {
+                const dayLeaves =
+                  currentmonthleaveData?.filter(
+                    (leave) =>
+                      new Date(leave.leaveDate).toISOString().split("T")[0] ===
+                      date.fullDate
+                  ) || []
+
+                // Derive a fixed-format compact badge locally instead of trusting
+                // date.fullMonthDay's length (that's what was causing 2-line wrap).
+                const d = new Date(date.fullDate)
+                const dayNum = d.getDate().toString().padStart(2, "0")
+                const monthAbbr = d.toLocaleString("default", {
+                  month: "short"
+                }) // "Aug"
+                const weekday = d.toLocaleString("default", { weekday: "long" })
+
+                return (
+                  <div
+                    key={index}
+                    onClick={() => {
+                      setSelectedDate(date)
+                      setSelectedType("")
+                      setShowTypeSelector(true)
+                    }}
+                    className="group flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 shadow-sm transition-all duration-150 hover:border-slate-300 hover:shadow-md active:scale-[0.99] sm:gap-3 sm:px-3 sm:py-2"
+                  >
+                    {/* Compact fixed-size badge — never wraps, never grows the row */}
+                    <div className="flex h-9 w-11 shrink-0 flex-col items-center justify-center rounded-lg bg-slate-900 leading-none text-white sm:h-10 sm:w-12">
+                      <span className="text-[12px] font-bold sm:text-sm">
+                        {dayNum}
+                      </span>
+                      <span className="text-[8px] font-medium uppercase tracking-wide text-slate-300 sm:text-[9px]">
+                        {monthAbbr}
+                      </span>
+                    </div>
+
+                    <div className="min-w-0 flex-1 text-sm font-semibold text-slate-900 sm:text-base">
+                      {weekday}
+                    </div>
+
+                    {/* Status area: single line when no leaves, stacks only if there's data to show */}
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      {dayLeaves.length > 0 ? (
+                        dayLeaves.map((leave, i) => {
+                          const isApproved =
+                            leave.departmentstatus === "Dept Approved" ||
+                            leave.hrstatus === "HR/Onsite Approved"
+
+                          const isPending =
+                            leave.departmentstatus === "Not Approved" &&
+                            leave.hrstatus === "Not Approved"
+
+                          return (
+                            <span
+                              key={i}
+                              title={`${leave?.leaveType} - ${leave?.leaveCategory}`}
+                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold sm:text-xs ${
+                                isApproved
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : isPending
+                                    ? "bg-amber-100 text-amber-700"
+                                    : "bg-rose-100 text-rose-700"
+                              }`}
+                            >
+                              {isApproved
+                                ? "Approved"
+                                : isPending
+                                  ? "Pending"
+                                  : "Rejected"}
+                            </span>
+                          )
+                        })
+                      ) : (
+                        <span className="text-[10px] text-slate-400 sm:text-xs">
+                          No leave
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
         </div>
+
+        {/* modals unchanged — see previous message for full versions */}
+        {showTypeSelector && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="w-full max-w-xs rounded-lg bg-white p-6 shadow-lg">
+              <h3 className="mb-4 text-center text-lg font-semibold">
+                Select Request Type
+              </h3>
+
+              <div className="flex flex-col space-y-3">
+                {["leave", "onsite", "mispunch"].map((type) => (
+                  <label
+                    key={type}
+                    className="flex cursor-pointer items-center space-x-2 rounded-md px-2 py-2 transition hover:bg-gray-50"
+                  >
+                    <input
+                      type="radio"
+                      name="type"
+                      value={type}
+                      checked={selectedType === type}
+                      onChange={(e) =>
+                        handleTypeSelection(e.target.value, selectedDate)
+                      }
+                    />
+                    <span className="capitalize">{type}</span>
+                  </label>
+                ))}
+              </div>
+
+              <div className="mt-5 flex justify-end">
+                <button
+                  type="button"
+                  className="rounded bg-gray-400 px-4 py-1 text-white transition hover:bg-gray-500"
+                  onClick={() => {
+                    setShowTypeSelector(false)
+                    setSelectedType("")
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showModal && leaveBalance && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div
+              className={`flex max-h-[90vh] w-full flex-col overflow-y-auto rounded-lg bg-white shadow-lg ${
+                selectedTab === "New Onsite" ? "md:w-3/4" : "sm:w-auto"
+              }`}
+            >
+              {loader && (
+                <BarLoader
+                  cssOverride={{ width: "100%", height: "6px" }}
+                  color="#4A90E2"
+                />
+              )}
+
+              <div className="p-3">
+                <div className="flex flex-wrap justify-center gap-x-4 gap-y-1">
+                  {tabs
+                    ?.filter((tab) => {
+                      if (selectedType === "leave") {
+                        return ["Leave", "New Leave", "Edit Leave"].includes(
+                          tab
+                        )
+                      }
+                      if (selectedType === "onsite") {
+                        return ["Onsite", "New Onsite", "Edit Onsite"].includes(
+                          tab
+                        )
+                      }
+                      if (selectedType === "mispunch") {
+                        return ["Mispunch", "New Mispunch"].includes(tab)
+                      }
+                      return false
+                    })
+                    .map((tab) => (
+                      <span
+                        key={tab}
+                        onClick={() => {
+                          setSelectedTab(tab)
+                          setMessage({ top: "", bottom: "" })
+                          selectedTabContent(tab)
+                          setIsOnsite(tab === "Onsite")
+                        }}
+                        className={`cursor-pointer text-sm sm:text-base ${
+                          selectedTab === tab
+                            ? "font-semibold text-blue-500 underline"
+                            : "text-black"
+                        }`}
+                      >
+                        {tab}
+                      </span>
+                    ))}
+                </div>
+
+                <div className="mt-4">{renderContent()}</div>
+
+                <div className="mt-4 flex flex-wrap justify-center gap-3 sm:gap-4">
+                  {selectedTab === "Leave" && (
+                    <button
+                      type="button"
+                      className="rounded-lg bg-blue-800 px-4 py-2 text-sm text-white hover:bg-blue-700 sm:text-base"
+                      onClick={() => {
+                        setSelectedTab("New Leave")
+                        setFormData((prev) => ({
+                          ...prev,
+                          leaveType: "Full Day",
+                          leaveCategory: "",
+                          halfDayPeriod: "",
+                          reason: ""
+                        }))
+                      }}
+                    >
+                      Apply New Leaves
+                    </button>
+                  )}
+
+                  {selectedTab === "Onsite" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedTab("New Onsite")
+                        setFormData((prev) => ({
+                          ...prev,
+                          onsiteType: "Full Day",
+                          halfDayPeriod: "",
+                          description: ""
+                        }))
+                        setTableRows([])
+                      }}
+                      className="rounded-lg bg-blue-800 px-4 py-2 text-sm text-white shadow-lg hover:bg-blue-900 sm:text-base"
+                    >
+                      Apply New Onsite
+                    </button>
+                  )}
+
+                  {selectedTab === "Mispunch" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedTab("New Mispunch")
+                        setFormData((prev) => ({
+                          ...prev,
+                          misspunchDate: clickedDate || prev.misspunchDate,
+                          mispunchType: "",
+                          misspunchTime: "",
+                          remark: "",
+                          showMisspunchTime: false,
+                          isTimeEditable: false,
+                          editHour: "09",
+                          editMinute: "30",
+                          editPeriod: "AM"
+                        }))
+                      }}
+                      className="rounded-lg bg-blue-800 px-4 py-2 text-sm text-white shadow-lg hover:bg-blue-900 sm:text-base"
+                    >
+                      Apply New Misspunch
+                    </button>
+                  )}
+
+                  {selectedTab === "New Mispunch" && (
+                    <button
+                      type="button"
+                      className="group relative rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-2.5 text-sm font-medium text-white shadow-lg shadow-blue-200 transition-all duration-200 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl hover:shadow-blue-300 disabled:cursor-not-allowed disabled:opacity-50"
+                      onClick={() => handleSubmitAndReset("New Mispunch")}
+                      disabled={!formData.mispunchType || !formData.remark}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        Submit Request
+                        <svg
+                          className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 7l5 5m0 0l-5 5m5-5H6"
+                          />
+                        </svg>
+                      </span>
+                    </button>
+                  )}
+
+                  {(selectedTab === "Edit Onsite" ||
+                    selectedTab === "Edit Leave" ||
+                    selectedTab === "New Leave" ||
+                    selectedTab === "New Onsite") && (
+                    <>
+                      <button
+                        type="button"
+                        className="rounded bg-gradient-to-b from-blue-400 to-blue-500 px-4 py-2 text-sm text-white hover:from-blue-400 hover:to-blue-600 sm:text-base"
+                        onClick={() => handleSubmitAndReset(selectedTab)}
+                      >
+                        {selectedTab === "Edit Onsite" ||
+                        selectedTab === "Edit Leave"
+                          ? "Update"
+                          : "Submit"}
+                      </button>
+
+                      {(selectedTab === "Edit Onsite" ||
+                        selectedTab === "Edit Leave") && (
+                        <button
+                          type="button"
+                          className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:bg-red-700 active:translate-y-[2px] active:shadow-md sm:text-base"
+                          onClick={() => handledelete(formData)}
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </>
+                  )}
+
+                  <button
+                    type="button"
+                    className="rounded bg-gray-500 px-4 py-2 text-sm text-white hover:bg-gray-600 sm:text-base"
+                    onClick={resetApplicationFlow}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-    )}
-  </div>
-</div>
+<PopUp
+  isOpen={popupOpen}
+  message={popupMessage}
+  onClose={() => {
+    setPopupOpen(false);
+    resolveSubmit?.(false); // Cancel
+  }}
+  onConfirm={() => {
+    setPopupOpen(false);
+    resolveSubmit?.(true); // Continue
+  }}
+/>
+    </div>
   )
 }
 
