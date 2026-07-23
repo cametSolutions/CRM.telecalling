@@ -93,15 +93,24 @@ export const GetallfollowupList = async (req, res) => {
     const isNewMode = isViewMode || hasValidHeader || hasValidDates;
 
     let query = {};
-
+    console.log("isviewmodoe", isViewMode)
     if (isViewMode) {
       query = {
         activityLog: {
           $elemMatch: {
             taskTo: "followup",
-            $or: [{ submittedUser: userObjectId }, { taskallocatedTo: userObjectId }],
+ taskallocatedTo: userObjectId,
+            // $or: [{ submittedUser: userObjectId }, { taskallocatedTo: userObjectId }],
             allocationChanged: false,
             allocatedClosed: false,
+            ...(start && end
+              ? {
+                submissionDate: {
+                  $gte: start,
+                  $lte: end
+                }
+              }
+              : {})
           },
         },
         leadBranch: branchObjectId,
