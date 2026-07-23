@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useRef, useLayoutEffect } from "react"
 import { useLocation } from "react-router-dom"
 import { createPortal } from "react-dom"
+import { parsePhoneNumberFromString } from "libphonenumber-js/mobile"
 import { Country, State } from "country-state-city"
 import BarLoader from "react-spinners/BarLoader"
 import { FaSpinner } from "react-icons/fa"
@@ -15,6 +16,7 @@ import Breadcrumb from "../../components/common/Breadcrumb"
 import { Loader } from "lucide-react"
 import { setsliceselectedBranch } from "../../../slices/companyBranchSlice"
 import FullScreenLoader from "../../components/common/FullScreenLoader"
+// import { parse } from "path"
 // ─────────────────────────────────────────────────────────────────────────────
 // DropdownPortal — keeps dropdown aligned on scroll/resize
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1930,7 +1932,7 @@ const LeadMaster = ({
   showpopupMessage,
   selectedcompanyBranch
 }) => {
-console.log(Breadcrumblist)
+  console.log(Breadcrumblist)
   console.log(from)
   console.log(Data)
   console.log(isReadOnly)
@@ -1969,7 +1971,7 @@ console.log(Breadcrumblist)
   console.log(takenLicenses)
   const [warningErrors, setwarningError] = useState({})
   const [haveprimaryProduct, sethaveprimaryProduct] = useState(false)
-console.log(haveprimaryProduct)
+  console.log(haveprimaryProduct)
   const [unselectedtaggedlicense, setunselectedtaggedlicense] = useState({})
   console.log(unselectedtaggedlicense)
   console.log(warningErrors)
@@ -2048,6 +2050,7 @@ console.log(haveprimaryProduct)
   const dropdownLicenseRef = useRef(null)
   const dropdownLeadforRef = useRef(null)
   const registrationType = watchModal("registrationType")
+  const selectedCountrymodal = watchModal("country")
   const navigate = useNavigate()
   const location = useLocation()
   const mobileValue = watchModal("mobile")
@@ -2087,7 +2090,7 @@ console.log(haveprimaryProduct)
       selectedBranch &&
       `/product/getallServices?branchselected=${selectedBranch}`
   )
-console.log(haveprimaryProduct)
+  console.log(haveprimaryProduct)
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -2781,37 +2784,38 @@ console.log(haveprimaryProduct)
   useEffect(() => {
     if (selectedleadlist && selectedleadlist.length) {
       console.log(selectedleadlist)
-if(!haveprimaryProduct){
- 
-setSelectedLeadList((prev) =>
-        prev.map((lead) => {
-          if (lead.productorservicetype !== "Additionalservice"||!Array.isArray(lead.taggeddata)) {
-            return lead
-          }
+      if (!haveprimaryProduct) {
+        setSelectedLeadList((prev) =>
+          prev.map((lead) => {
+            if (
+              lead.productorservicetype !== "Additionalservice" ||
+              !Array.isArray(lead.taggeddata)
+            ) {
+              return lead
+            }
 
-          return {
-            ...lead,
-            taggeddata: lead.taggeddata.map((row) => {
-              const taxExclusive = Number(row.taxexclusiveAmount || 0)
-              const taxRate = Number(row.leadTax || 0)
-              const discount = Number(discountAmount || 0)
-              console.log(discount)
-              const taxAmount = (taxExclusive * taxRate) / 100
-              console.log(taxAmount)
-              console.log(taxExclusive)
-              return {
-                ...row,
-                taxinclusiveamount: Number(
-                  (taxExclusive + taxAmount - discount).toFixed(2)
-                ),
-                discountAmount: discount
-              }
-            })
-          }
-        })
-      )
-}
-      
+            return {
+              ...lead,
+              taggeddata: lead.taggeddata.map((row) => {
+                const taxExclusive = Number(row.taxexclusiveAmount || 0)
+                const taxRate = Number(row.leadTax || 0)
+                const discount = Number(discountAmount || 0)
+                console.log(discount)
+                const taxAmount = (taxExclusive * taxRate) / 100
+                console.log(taxAmount)
+                console.log(taxExclusive)
+                return {
+                  ...row,
+                  taxinclusiveamount: Number(
+                    (taxExclusive + taxAmount - discount).toFixed(2)
+                  ),
+                  discountAmount: discount
+                }
+              })
+            }
+          })
+        )
+      }
     }
   }, [discountAmount])
   useEffect(() => {
@@ -3135,6 +3139,8 @@ setSelectedLeadList((prev) =>
     console.log("hhh")
     if (defaultCountry) {
       setSelectedCountry(defaultCountry)
+console.log(defaultCountry)
+console.log(defaultCountry.value)
       setValueModal("country", defaultCountry.value)
     }
   }, [defaultCountry])
@@ -3956,7 +3962,7 @@ setSelectedLeadList((prev) =>
       leadId: "",
       leadBy: loggeduser?._id || loggeduser?.id || ""
     })
-setTakenLicense([])
+    setTakenLicense([])
     clearMainerrors()
     setValidateError({})
     setwarningMessage("")
@@ -4163,15 +4169,15 @@ setTakenLicense([])
         if (taggeddata.length > 0) {
           for (let j = 0; j < taggeddata.length; j++) {
             const tag = taggeddata[j]
-console.log(tag)
+            console.log(tag)
             const tagLicense = String(
               tag?.licensenumber || tag?.licenseNumber || ""
             ).trim()
             const due = parseDateOnly(tag?.nextDue)
             const productAmount = Number(tag?.taxexclusiveAmount)
-const nextDueAmount=Number(tag?.nextDueAmount)
-console.log(productAmount)
-console.log(!productAmount > 0)
+            const nextDueAmount = Number(tag?.nextDueAmount)
+            console.log(productAmount)
+            console.log(!productAmount > 0)
             if (!tagLicense) {
               console.log("hh")
               return `Tagged license number is required for ${row?.productName || row?.productorServiceName}`
@@ -4180,18 +4186,18 @@ console.log(!productAmount > 0)
             //   console.log("hh")
             //   return `Lead amount is required for ${row?.productName || row?.productorServiceName} ${tag?.licensenumber},not less than 0`
             // }
-if (Number(productAmount) <= 0) {
-  console.log("hh");
-  return `Lead amount is required for ${
-    row?.productName || row?.productorServiceName
-  } (${tag?.licensenumber}). It must be greater than 0.`;
-}
-if (Number(nextDueAmount) <= 0) {
-  console.log("hh");
-  return `NextDueAmount is required for ${
-    row?.productName || row?.productorServiceName
-  } (${tag?.licensenumber}). It must be greater than 0.`;
-}
+            if (Number(productAmount) <= 0) {
+              console.log("hh")
+              return `Lead amount is required for ${
+                row?.productName || row?.productorServiceName
+              } (${tag?.licensenumber}). It must be greater than 0.`
+            }
+            if (Number(nextDueAmount) <= 0) {
+              console.log("hh")
+              return `NextDueAmount is required for ${
+                row?.productName || row?.productorServiceName
+              } (${tag?.licensenumber}). It must be greater than 0.`
+            }
             if (!due) {
               return `Next due is required for  ${row?.productName || row?.productorServiceName}`
             }
@@ -4345,7 +4351,7 @@ if (Number(nextDueAmount) <= 0) {
         console.log(selectedleadlist)
         console.log(loggeduser)
         console.log(data)
-    
+
         seteditLoadingState(true)
         const updated = await handleclosingData(
           data,
@@ -4715,7 +4721,8 @@ if (Number(nextDueAmount) <= 0) {
               nextDueAmount:
                 existing?.nextDueAmount ??
                 existingTag?.nextDueAmount ??
-               item?.actualproductPrice?? item?.productPrice,
+                item?.actualproductPrice ??
+                item?.productPrice,
               sourceIndex: lic?.sourceIndex,
               productAmount,
               taxexclusiveAmount:
@@ -4746,11 +4753,14 @@ if (Number(nextDueAmount) <= 0) {
               totalnextDueAmount:
                 existing?.totalnextDueAmount ??
                 existingTag?.totalnextDueAmount ??
-item?.actualNetAmount??
+                item?.actualNetAmount ??
                 item?.netAmount,
               leadTax: existing?.hsn ?? existingTag?.hsn ?? item?.hsn,
               nextDueTax:
-                existing?.nextDueTax ?? existingTag?.nextDueTax ??item?.actualHsn?? item?.hsn,
+                existing?.nextDueTax ??
+                existingTag?.nextDueTax ??
+                item?.actualHsn ??
+                item?.hsn,
               discountAmount:
                 existing?.discountAmount ??
                 existingTag?.discountAmount ??
@@ -4879,70 +4889,67 @@ item?.actualNetAmount??
   console.log(tableRows)
   console.log(selectedCustomer)
 
-const handledownloadexcel = async () => {
-  try {
-    const companyId = "66f7b0b7ecbbc22fa88a9126";
+  const handledownloadexcel = async () => {
+    try {
+      const companyId = "66f7b0b7ecbbc22fa88a9126"
 
-    const response = await api.get(
-      "lead/export-branch-wise-product-usage",
-      {
+      const response = await api.get("lead/export-branch-wise-product-usage", {
         params: { companyId },
-        responseType: "blob",
-      }
-    );
+        responseType: "blob"
+      })
 
-    const blob = new Blob([response.data], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      })
 
-    const fileName = "Branch_Wise_Product_Usage_Report.xlsx";
+      const fileName = "Branch_Wise_Product_Usage_Report.xlsx"
 
-    const url = window.URL.createObjectURL(blob);
+      const url = window.URL.createObjectURL(blob)
 
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = fileName;
+      const link = document.createElement("a")
+      link.href = url
+      link.download = fileName
 
-    document.body.appendChild(link);
-    link.click();
+      document.body.appendChild(link)
+      link.click()
 
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-  } catch (error) {
-    console.error(error);
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error(error)
 
-    toast.error("Failed to download Excel report.");
+      toast.error("Failed to download Excel report.")
+    }
   }
-};
-// const handledownloadexcel = async () => {
-//   try {
-//     const companyId = "66f7b0b7ecbbc22fa88a9126"; // pass dynamically if needed
+  // const handledownloadexcel = async () => {
+  //   try {
+  //     const companyId = "66f7b0b7ecbbc22fa88a9126"; // pass dynamically if needed
 
-//     const response = await api.get(
-//       "lead/export-branch-wise-product-usage",
-//       {
-//         params: { companyId },
-//         responseType: "blob",
-//       }
-//     );
-// console.log(response.data)
-//     const blob = new Blob([response.data], {
-//       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-//     });
+  //     const response = await api.get(
+  //       "lead/export-branch-wise-product-usage",
+  //       {
+  //         params: { companyId },
+  //         responseType: "blob",
+  //       }
+  //     );
+  // console.log(response.data)
+  //     const blob = new Blob([response.data], {
+  //       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  //     });
 
-//     const url = window.URL.createObjectURL(blob);
-//     const link = document.createElement("a");
-//     link.href = url;
-//     link.setAttribute("download", "branch_product_usage_report.xlsx");
+  //     const url = window.URL.createObjectURL(blob);
+  //     const link = document.createElement("a");
+  //     link.href = url;
+  //     link.setAttribute("download", "branch_product_usage_report.xlsx");
 
-//     document.body.appendChild(link);
-//     link.click();
-//     link.remove();
-//     window.URL.revokeObjectURL(url);
-//   } catch (error) {
-//     console.error("Excel download failed:", error);
-//   }
-// };
+  //     document.body.appendChild(link);
+  //     link.click();
+  //     link.remove();
+  //     window.URL.revokeObjectURL(url);
+  //   } catch (error) {
+  //     console.error("Excel download failed:", error);
+  //   }
+  // };
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#ADD8E6]">
       {(modalloader ||
@@ -4994,7 +5001,7 @@ const handledownloadexcel = async () => {
                 <div className="text-sm font-bold px-4 py-1 rounded border-2 text-red-600 border-red-500 bg-white">
                   {process === "Registration" ? "New Lead" : "Edit Lead"}
                 </div>
-{/* <button
+                {/* <button
 type="button"
 onClick={handledownloadexcel}
 >
@@ -5348,8 +5355,8 @@ convertexcel
                         console.log(showLicenseDropdown)
                         const isAmountLocked =
                           isReadOnly || isRowPriceLocked(item)
-console.log(isAmountLocked)
-console.log(isReadOnly)
+                        console.log(isAmountLocked)
+                        console.log(isReadOnly)
                         const isTaxLocked = isReadOnly || isRowPriceLocked(item)
                         console.log(isReadOnly)
                         console.log(isAmountLocked)
@@ -5843,33 +5850,33 @@ console.log(isReadOnly)
                         <input
                           type="number"
                           {...registerMain(field)}
- onFocus={(e) => {
-    if (field === "discamnt" && !haveprimaryProduct) {
-console.log("hh")
-      const isInvalid = selectedleadlist.some(
-        (lead) =>
-          !lead.taggeddata?.length ||
-          lead.taggeddata.some(
-            (tag) => Number(tag.taxexclusiveAmount || 0) <= 0
-          )
-      );
-console.log(selectedleadlist)
-      if (isInvalid) {
-console.log("hhh")
-        toast.warning(
-          "Please tag a license and enter the Lead Amount in Details PopUp first."
-        );
-        e.target.blur(); // Prevent editing
-
-      }
-    }
-  }}
+                          onFocus={(e) => {
+                            if (field === "discamnt" && !haveprimaryProduct) {
+                              console.log("hh")
+                              const isInvalid = selectedleadlist.some(
+                                (lead) =>
+                                  !lead.taggeddata?.length ||
+                                  lead.taggeddata.some(
+                                    (tag) =>
+                                      Number(tag.taxexclusiveAmount || 0) <= 0
+                                  )
+                              )
+                              console.log(selectedleadlist)
+                              if (isInvalid) {
+                                console.log("hhh")
+                                toast.warning(
+                                  "Please tag a license and enter the Lead Amount in Details PopUp first."
+                                )
+                                e.target.blur() // Prevent editing
+                              }
+                            }
+                          }}
                           onWheel={(e) => e.currentTarget.blur()}
- onKeyDown={(e) => {
-    if (["-", "+", "e", "E"].includes(e.key)) {
-      e.preventDefault();
-    }
-  }}
+                          onKeyDown={(e) => {
+                            if (["-", "+", "e", "E"].includes(e.key)) {
+                              e.preventDefault()
+                            }
+                          }}
                           readOnly={viewonly}
                           className={`flex-1 min-w-0 border border-gray-300 rounded-r px-3 py-[6px] text-sm text-right bg-white outline-none ${viewonly ? "cursor-not-allowed" : ""} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0`}
                         />
@@ -7071,7 +7078,7 @@ console.log("hhh")
               </div>
             </div>
           )} */}
-{/* {showdetailsopen && (
+          {/* {showdetailsopen && (
   <div className="fixed inset-0 z-[9999] bg-slate-950/50 backdrop-blur-[2px]">
     <div className="flex min-h-dvh items-end justify-center p-0 sm:items-center sm:p-4">
       <div
@@ -7918,7 +7925,7 @@ console.log("hhh")
     </div>
   </div>
 )} */}
-{/* {showdetailsopen && (
+          {/* {showdetailsopen && (
   <div className="fixed inset-0 z-[9999] bg-slate-950/50 backdrop-blur-[2px]">
     <div className="flex min-h-dvh items-end justify-center p-0 sm:items-center sm:p-4">
       <div
@@ -8528,574 +8535,703 @@ console.log("hhh")
       </div>
     </div>
   </div>
-)} */}{/*new ui*/}
-{showdetailsopen && (
-  <div className="fixed inset-0 z-[9999] bg-slate-950/60 backdrop-blur-[2px]">
-    <div className="flex min-h-dvh items-end justify-center p-0 sm:items-center sm:p-4 lg:p-6">
-      <div
-        role="dialog"
-        aria-modal="true"
-        className={`flex h-[94dvh] w-full flex-col overflow-hidden border border-slate-200 bg-white shadow-2xl sm:h-auto sm:max-h-[92dvh] sm:rounded-2xl transition-all ${
-          String(detailsItem?.productorservicetype || "").toLowerCase() === "primaryproduct"
-            ? "sm:max-w-xl"
-            : detailsForm?.taggeddata?.length > 0
-              ? haveprimaryProduct?"sm:max-w-2xl":"sm:max-w-4xl"
-              : "sm:max-w-2xl"
-        }`}
-      >
-        {/* Header */}
-        <div className="sticky top-0 z-20 border-b border-slate-200 bg-[#1B2A4A] text-white">
-          <div className="flex items-start justify-between gap-3 px-5 py-4">
-            <div className="min-w-0">
-              <h2 className="text-base font-semibold leading-5">
-                {String(detailsItem?.productorservicetype || "").toLowerCase() === "primaryproduct"
-                  ? "Primary Product Details"
-                  : "Additional Service Details"}
-              </h2>
-              <p className="mt-1 text-[11px] leading-4 text-slate-300">
-                Update the selected item details
-              </p>
-            </div>
+)} */}
+          {/*new ui*/}
+          {showdetailsopen && (
+            <div className="fixed inset-0 z-[9999] bg-slate-950/60 backdrop-blur-[2px]">
+              <div className="flex min-h-dvh items-end justify-center p-0 sm:items-center sm:p-4 lg:p-6">
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  className={`flex h-[94dvh] w-full flex-col overflow-hidden border border-slate-200 bg-white shadow-2xl sm:h-auto sm:max-h-[92dvh] sm:rounded-2xl transition-all ${
+                    String(
+                      detailsItem?.productorservicetype || ""
+                    ).toLowerCase() === "primaryproduct"
+                      ? "sm:max-w-xl"
+                      : detailsForm?.taggeddata?.length > 0
+                        ? haveprimaryProduct
+                          ? "sm:max-w-2xl"
+                          : "sm:max-w-4xl"
+                        : "sm:max-w-2xl"
+                  }`}
+                >
+                  {/* Header */}
+                  <div className="sticky top-0 z-20 border-b border-slate-200 bg-[#1B2A4A] text-white">
+                    <div className="flex items-start justify-between gap-3 px-5 py-4">
+                      <div className="min-w-0">
+                        <h2 className="text-base font-semibold leading-5">
+                          {String(
+                            detailsItem?.productorservicetype || ""
+                          ).toLowerCase() === "primaryproduct"
+                            ? "Primary Product Details"
+                            : "Additional Service Details"}
+                        </h2>
+                        <p className="mt-1 text-[11px] leading-4 text-slate-300">
+                          Update the selected item details
+                        </p>
+                      </div>
 
-            <button
-              type="button"
-              onClick={() => setdetailsopen(false)}
-              aria-label="Close"
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-base text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40"
-            >
-              ×
-            </button>
-          </div>
-        </div>
-
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto bg-slate-50">
-          <div className="space-y-4 p-4 sm:p-5">
-            {String(detailsItem?.productorservicetype || "").toLowerCase() === "primaryproduct" ? (
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h3 className="mb-4 text-sm font-semibold text-slate-800">
-                  Product Information
-                </h3>
-
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                      Name
-                    </label>
-                    <input
-                      type="text"
-                      name="name"
-                      readOnly
-                      value={detailsForm.name}
-                      onChange={handleDetailsChange}
-                      placeholder="List of Primary Products"
-                      className="h-10 w-full cursor-not-allowed rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-500 outline-none"
-                    />
+                      <button
+                        type="button"
+                        onClick={() => setdetailsopen(false)}
+                        aria-label="Close"
+                        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-base text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40"
+                      >
+                        ×
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="relative" ref={tradeDropdownRef}>
-                    <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                      Software Trade
-                    </label>
+                  {/* Body */}
+                  <div className="flex-1 overflow-y-auto bg-slate-50">
+                    <div className="space-y-4 p-4 sm:p-5">
+                      {String(
+                        detailsItem?.productorservicetype || ""
+                      ).toLowerCase() === "primaryproduct" ? (
+                        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                          <h3 className="mb-4 text-sm font-semibold text-slate-800">
+                            Product Information
+                          </h3>
 
-                    <button
-                      type="button"
-                      onClick={() => setIsTradeOpen((prev) => !prev)}
-                      className="flex h-10 w-full items-center justify-between rounded-lg border border-slate-300 bg-white px-3 text-left text-sm text-slate-700 shadow-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
-                    >
-                      <span className={detailsForm.softwareTrade ? "text-slate-800" : "text-slate-400"}>
-                        {detailsForm.softwareTrade || "Select Software Trade"}
-                      </span>
+                          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div>
+                              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                Name
+                              </label>
+                              <input
+                                type="text"
+                                name="name"
+                                readOnly
+                                value={detailsForm.name}
+                                onChange={handleDetailsChange}
+                                placeholder="List of Primary Products"
+                                className="h-10 w-full cursor-not-allowed rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-500 outline-none"
+                              />
+                            </div>
 
-                      <svg
-                        className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${
-                          isTradeOpen ? "rotate-180" : ""
-                        }`}
-                        viewBox="0 0 20 20"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path d="M5 7.5L10 12.5L15 7.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </button>
+                            <div className="relative" ref={tradeDropdownRef}>
+                              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                Software Trade
+                              </label>
 
-                    {isTradeOpen && (
-                      <div className="absolute z-30 mt-1.5 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
-                        <div className="max-h-56 overflow-y-auto p-1">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setDetailsForm((prev) => ({ ...prev, softwareTrade: "" }))
-                              setIsTradeOpen(false)
-                            }}
-                            className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition ${
-                              !detailsForm.softwareTrade
-                                ? "bg-[#1B2A4A]/10 font-medium text-[#1B2A4A]"
-                                : "text-slate-700 hover:bg-slate-50"
-                            }`}
-                          >
-                            <span>Select Software Trade</span>
-                          </button>
+                              <button
+                                type="button"
+                                onClick={() => setIsTradeOpen((prev) => !prev)}
+                                className="flex h-10 w-full items-center justify-between rounded-lg border border-slate-300 bg-white px-3 text-left text-sm text-slate-700 shadow-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                              >
+                                <span
+                                  className={
+                                    detailsForm.softwareTrade
+                                      ? "text-slate-800"
+                                      : "text-slate-400"
+                                  }
+                                >
+                                  {detailsForm.softwareTrade ||
+                                    "Select Software Trade"}
+                                </span>
 
-                          {softwareTrades.map((trade, index) => (
-                            <button
-                              key={index}
-                              type="button"
-                              onClick={() => {
-                                setDetailsForm((prev) => ({ ...prev, softwareTrade: trade }))
-                                setIsTradeOpen(false)
-                              }}
-                              className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition ${
-                                detailsForm.softwareTrade === trade
-                                  ? "bg-[#1B2A4A]/10 font-medium text-[#1B2A4A]"
-                                  : "text-slate-700 hover:bg-slate-50"
-                              }`}
-                            >
-                              <span>{trade}</span>
-                              {detailsForm.softwareTrade === trade && (
                                 <svg
-                                  className="h-4 w-4 text-[#1B2A4A]"
+                                  className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${
+                                    isTradeOpen ? "rotate-180" : ""
+                                  }`}
                                   viewBox="0 0 20 20"
                                   fill="none"
                                   stroke="currentColor"
                                   strokeWidth="2"
                                 >
-                                  <path d="M5 10.5L8.5 14L15 7.5" strokeLinecap="round" strokeLinejoin="round" />
+                                  <path
+                                    d="M5 7.5L10 12.5L15 7.5"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
                                 </svg>
+                              </button>
+
+                              {isTradeOpen && (
+                                <div className="absolute z-30 mt-1.5 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+                                  <div className="max-h-56 overflow-y-auto p-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setDetailsForm((prev) => ({
+                                          ...prev,
+                                          softwareTrade: ""
+                                        }))
+                                        setIsTradeOpen(false)
+                                      }}
+                                      className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition ${
+                                        !detailsForm.softwareTrade
+                                          ? "bg-[#1B2A4A]/10 font-medium text-[#1B2A4A]"
+                                          : "text-slate-700 hover:bg-slate-50"
+                                      }`}
+                                    >
+                                      <span>Select Software Trade</span>
+                                    </button>
+
+                                    {softwareTrades.map((trade, index) => (
+                                      <button
+                                        key={index}
+                                        type="button"
+                                        onClick={() => {
+                                          setDetailsForm((prev) => ({
+                                            ...prev,
+                                            softwareTrade: trade
+                                          }))
+                                          setIsTradeOpen(false)
+                                        }}
+                                        className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition ${
+                                          detailsForm.softwareTrade === trade
+                                            ? "bg-[#1B2A4A]/10 font-medium text-[#1B2A4A]"
+                                            : "text-slate-700 hover:bg-slate-50"
+                                        }`}
+                                      >
+                                        <span>{trade}</span>
+                                        {detailsForm.softwareTrade ===
+                                          trade && (
+                                          <svg
+                                            className="h-4 w-4 text-[#1B2A4A]"
+                                            viewBox="0 0 20 20"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                          >
+                                            <path
+                                              d="M5 10.5L8.5 14L15 7.5"
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                            />
+                                          </svg>
+                                        )}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
                               )}
-                            </button>
-                          ))}
+                            </div>
+
+                            <div>
+                              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                Application Date
+                              </label>
+                              <input
+                                type="date"
+                                name="applicationDate"
+                                value={detailsForm.applicationDate}
+                                onChange={handleDetailsChange}
+                                className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 shadow-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                Status
+                              </label>
+                              <select
+                                name="status"
+                                value={detailsForm.status}
+                                onChange={handleDetailsChange}
+                                className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 shadow-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                              >
+                                <option value="Running">Active</option>
+                                <option value="Deactive">DE active</option>
+                              </select>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      ) : (
+                        <>
+                          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                            <h3 className="mb-4 text-sm font-semibold text-slate-800">
+                              Service Information
+                            </h3>
+
+                            {/* Product Name + Status (+ Next Due when no tagged rows) always sit side by side */}
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                              <div>
+                                <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                  Product Name
+                                </label>
+                                <input
+                                  type="text"
+                                  name="productName"
+                                  readOnly
+                                  value={detailsForm.name}
+                                  onChange={handleDetailsChange}
+                                  placeholder="List of additional service"
+                                  className="h-10 w-full cursor-not-allowed rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-500 outline-none"
+                                />
+                              </div>
+
+                              {!detailsForm?.taggeddata?.length && (
+                                <div>
+                                  <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                    Next Due
+                                  </label>
+                                  <input
+                                    type="date"
+                                    name="nextDue"
+                                    value={detailsForm.nextDue}
+                                    onChange={handleDetailsChange}
+                                    className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 shadow-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                                  />
+                                </div>
+                              )}
+
+                              <div>
+                                <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                  Status
+                                </label>
+                                <select
+                                  name="status"
+                                  value={detailsForm.status}
+                                  onChange={handleDetailsChange}
+                                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 shadow-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                                >
+                                  <option value="Running">Active</option>
+                                  <option value="Deactive">DE active</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+
+                          {detailsForm?.taggeddata?.length ? (
+                            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                              <div className="border-b border-slate-200 bg-white px-4 py-3">
+                                <h3 className="text-sm font-semibold text-slate-800">
+                                  Tagged License Due Details
+                                </h3>
+                                <p className="mt-0.5 text-[11px] text-slate-500">
+                                  {detailsForm.taggeddata.length} license
+                                  {detailsForm.taggeddata.length > 1
+                                    ? "s"
+                                    : ""}{" "}
+                                  tagged to this service
+                                </p>
+                              </div>
+
+                              {/* table-fixed + percentage colgroup = width always matches the container, no horizontal scroll on laptop (12in / ~1024px+) */}
+                              <div className="w-full">
+                                <table className="w-full table-fixed border-collapse">
+                                  <colgroup>
+                                    {!haveprimaryProduct ? (
+                                      <>
+                                        <col style={{ width: "10%" }} />
+                                        <col style={{ width: "5%" }} />
+                                        <col style={{ width: "10%" }} />
+                                        <col style={{ width: "6%" }} />
+                                        <col style={{ width: "6%" }} />
+                                        <col style={{ width: "6%" }} />
+                                        <col style={{ width: "8%" }} />
+                                        <col style={{ width: "6%" }} />
+                                        <col style={{ width: "4%" }} />
+                                      </>
+                                    ) : (
+                                      <>
+                                        <col style={{ width: "19%" }} />
+                                        <col style={{ width: "12%" }} />
+                                        <col style={{ width: "18%" }} />
+                                        <col style={{ width: "17%" }} />
+                                        <col style={{ width: "16%" }} />
+                                        <col style={{ width: "8%" }} />
+                                      </>
+                                    )}
+                                  </colgroup>
+
+                                  <thead className="bg-slate-100">
+                                    <tr className="text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500">
+                                      <th className="border-b border-slate-200 px-2 py-2.5 text-center">
+                                        License No.
+                                      </th>
+                                      <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">
+                                        Users
+                                      </th>
+                                      <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">
+                                        Serial No
+                                      </th>
+
+                                      {!haveprimaryProduct && (
+                                        <>
+                                          <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">
+                                            Lead Amt
+                                          </th>
+                                          <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">
+                                            {" "}
+                                            Lead Tax
+                                          </th>
+                                          <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">
+                                            Discount
+                                          </th>
+                                        </>
+                                      )}
+
+                                      <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">
+                                        Next Due
+                                      </th>
+                                      <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">
+                                        Next Due Amt
+                                      </th>
+                                      <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">
+                                        Due Tax
+                                      </th>
+                                    </tr>
+                                  </thead>
+
+                                  <tbody className="divide-y divide-slate-100">
+                                    {detailsForm.taggeddata.map(
+                                      (tag, rowIndex) => (
+                                        <tr
+                                          key={`${tag?.licensenumber}-${rowIndex}`}
+                                          className="align-top odd:bg-white even:bg-slate-50/60"
+                                        >
+                                          <td className="px-2 py-2">
+                                            <input
+                                              value={tag?.licensenumber || ""}
+                                              readOnly
+                                              title={tag?.licensenumber || ""}
+                                              className="h-7 w-full cursor-not-allowed truncate rounded-md border border-slate-200 bg-slate-100 px-2 text-[11px] text-slate-500 outline-none"
+                                            />
+                                          </td>
+
+                                          <td className="px-1.5 py-2">
+                                            <input
+                                              type="number"
+                                              value={tag?.noofusers ?? ""}
+                                              onChange={(e) => {
+                                                handleTaggedDueChange(
+                                                  rowIndex,
+                                                  e.target.value,
+                                                  "noofusers",
+                                                  null,
+                                                  detailsForm?.productType
+                                                )
+                                              }}
+                                              onWheel={(e) =>
+                                                e.currentTarget.blur()
+                                              }
+                                              className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-center text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                            />
+                                          </td>
+
+                                          <td className="px-1.5 py-2">
+                                            <input
+                                              type="text"
+                                              value={tag?.serialNumber || ""}
+                                              onChange={(e) => {
+                                                handleTaggedDueChange(
+                                                  rowIndex,
+                                                  e.target.value,
+                                                  "serialNumber",
+                                                  null,
+                                                  detailsForm?.productType
+                                                )
+                                              }}
+                                              onWheel={(e) =>
+                                                e.currentTarget.blur()
+                                              }
+                                              className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                            />
+                                          </td>
+
+                                          {!haveprimaryProduct && (
+                                            <>
+                                              <td className="px-1.5 py-2">
+                                                <div className="space-y-0.5">
+                                                  <input
+                                                    type="number"
+                                                    value={
+                                                      tag?.taxexclusiveAmount ||
+                                                      ""
+                                                    }
+                                                    onWheel={(e) =>
+                                                      e.currentTarget.blur()
+                                                    }
+                                                    onKeyDown={(e) => {
+                                                      if (
+                                                        [
+                                                          "-",
+                                                          "+",
+                                                          "e",
+                                                          "E"
+                                                        ].includes(e.key)
+                                                      ) {
+                                                        e.preventDefault()
+                                                      }
+                                                    }}
+                                                    onChange={(e) => {
+                                                      handleTaggedDueChange(
+                                                        rowIndex,
+                                                        e.target.value,
+                                                        "taxexclusiveAmount",
+                                                        tag?.originalHsn,
+                                                        detailsForm?.productType
+                                                      )
+                                                    }}
+                                                    className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                                  />
+                                                  <p className="truncate text-right text-[12px] text-slate-600">
+                                                    {Number(
+                                                      tag?.taxinclusiveamount ||
+                                                        0
+                                                    ).toFixed(2)}
+                                                  </p>
+                                                </div>
+                                              </td>
+
+                                              <td className="px-1.5 py-2">
+                                                <div className="flex justify-center pt-1">
+                                                  <label className="inline-flex cursor-pointer items-center justify-center">
+                                                    <input
+                                                      type="checkbox"
+                                                      checked={
+                                                        Number(
+                                                          tag?.leadTax || 0
+                                                        ) > 0
+                                                      }
+                                                      onChange={(e) => {
+                                                        handleTaggedDueChange(
+                                                          rowIndex,
+                                                          e.target.checked,
+                                                          "leadTax",
+                                                          tag?.leadTax,
+                                                          detailsForm?.productType
+                                                        )
+                                                      }}
+                                                      className="sr-only"
+                                                    />
+                                                    <span
+                                                      className={`flex h-5 w-5 items-center justify-center rounded border text-[11px] shadow-sm transition-all duration-200 ${
+                                                        Number(
+                                                          tag?.leadTax || 0
+                                                        ) > 0
+                                                          ? "border-[#1B2A4A] bg-[#1B2A4A] text-white"
+                                                          : "border-slate-300 bg-white text-transparent"
+                                                      }`}
+                                                    >
+                                                      ✓
+                                                    </span>
+                                                  </label>
+                                                </div>
+                                              </td>
+
+                                              <td className="px-1.5 py-2">
+                                                <input
+                                                  type="number"
+                                                  value={
+                                                    tag?.discountAmount || ""
+                                                  }
+                                                  onWheel={(e) =>
+                                                    e.currentTarget.blur()
+                                                  }
+                                                  onKeyDown={(e) => {
+                                                    if (
+                                                      [
+                                                        "-",
+                                                        "+",
+                                                        "e",
+                                                        "E"
+                                                      ].includes(e.key)
+                                                    ) {
+                                                      e.preventDefault()
+                                                    }
+                                                  }}
+                                                  onChange={(e) => {
+                                                    handleTaggedDueChange(
+                                                      rowIndex,
+                                                      e.target.value,
+                                                      "discountAmount",
+                                                      null,
+                                                      detailsForm?.productType
+                                                    )
+                                                  }}
+                                                  className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                                />
+                                              </td>
+                                            </>
+                                          )}
+
+                                          <td className="px-1.5 py-2">
+                                            <input
+                                              type="date"
+                                              min={today}
+                                              value={tag?.nextDue || ""}
+                                              onChange={(e) => {
+                                                const selectedDate =
+                                                  e.target.value
+
+                                                if (
+                                                  selectedDate &&
+                                                  selectedDate < today
+                                                ) {
+                                                  setwarningError((prev) => ({
+                                                    ...prev,
+                                                    nextduewarning: {
+                                                      ...(prev.nextduewarning ||
+                                                        {}),
+                                                      [rowIndex]:
+                                                        "Due date must be today or later."
+                                                    }
+                                                  }))
+                                                  return
+                                                }
+
+                                                setwarningError((prev) => ({
+                                                  ...prev,
+                                                  nextduewarning: {
+                                                    ...(prev.nextduewarning ||
+                                                      {}),
+                                                    [rowIndex]: ""
+                                                  }
+                                                }))
+
+                                                handleTaggedDueChange(
+                                                  rowIndex,
+                                                  selectedDate,
+                                                  "nextDue"
+                                                )
+                                              }}
+                                              className={`h-7 w-full rounded-md border bg-white px-1.5 text-[11px] text-slate-700 outline-none transition ${
+                                                warningErrors?.nextduewarning?.[
+                                                  rowIndex
+                                                ]
+                                                  ? "border-red-400 focus:ring-1 focus:ring-red-100"
+                                                  : "border-slate-200 focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10"
+                                              }`}
+                                            />
+                                            {warningErrors?.nextduewarning?.[
+                                              rowIndex
+                                            ] && (
+                                              <p className="mt-1 text-[9px] leading-tight text-red-500">
+                                                {
+                                                  warningErrors.nextduewarning[
+                                                    rowIndex
+                                                  ]
+                                                }
+                                              </p>
+                                            )}
+                                          </td>
+
+                                          <td className="px-1.5 py-2">
+                                            <div className="space-y-0.5">
+                                              <input
+                                                type="number"
+                                                value={tag?.nextDueAmount || ""}
+                                                onWheel={(e) =>
+                                                  e.currentTarget.blur()
+                                                }
+                                                onKeyDown={(e) => {
+                                                  if (
+                                                    [
+                                                      "-",
+                                                      "+",
+                                                      "e",
+                                                      "E"
+                                                    ].includes(e.key)
+                                                  ) {
+                                                    e.preventDefault()
+                                                  }
+                                                }}
+                                                onChange={(e) => {
+                                                  handleTaggedDueChange(
+                                                    rowIndex,
+                                                    e.target.value,
+                                                    "nextDueAmount",
+                                                    tag?.originalHsn,
+                                                    detailsForm?.productType
+                                                  )
+                                                }}
+                                                className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                              />
+                                              <p className="truncate text-right text-[12px] text-slate-600">
+                                                {Number(
+                                                  tag?.totalnextDueAmount || 0
+                                                ).toFixed(2)}
+                                              </p>
+                                            </div>
+                                          </td>
+
+                                          <td className="px-1.5 py-2">
+                                            <div className="flex justify-center pt-1">
+                                              <label className="inline-flex cursor-pointer items-center justify-center">
+                                                <input
+                                                  type="checkbox"
+                                                  checked={
+                                                    Number(
+                                                      tag?.nextDueTax || 0
+                                                    ) > 0
+                                                  }
+                                                  onChange={(e) => {
+                                                    console.log(tag?.nextDueTax)
+                                                    handleTaggedDueChange(
+                                                      rowIndex,
+                                                      e.target.checked,
+                                                      "nextDueTax",
+                                                      tag?.nextDueTax,
+                                                      detailsForm?.productType
+                                                    )
+                                                  }}
+                                                  className="sr-only"
+                                                />
+                                                <span
+                                                  className={`flex h-5 w-5 items-center justify-center rounded border text-[11px] shadow-sm transition-all duration-200 ${
+                                                    Number(
+                                                      tag?.nextDueTax || 0
+                                                    ) > 0
+                                                      ? "border-[#1B2A4A] bg-[#1B2A4A] text-white"
+                                                      : "border-slate-300 bg-white text-transparent"
+                                                  }`}
+                                                >
+                                                  ✓
+                                                </span>
+                                              </label>
+                                            </div>
+                                          </td>
+                                        </tr>
+                                      )
+                                    )}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center shadow-sm">
+                              <h3 className="text-sm font-semibold text-slate-800">
+                                Additional Service Details
+                              </h3>
+                              <p className="mt-1 text-[12px] text-slate-500">
+                                No tagged license rows are available for this
+                                item.
+                              </p>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                      Application Date
-                    </label>
-                    <input
-                      type="date"
-                      name="applicationDate"
-                      value={detailsForm.applicationDate}
-                      onChange={handleDetailsChange}
-                      className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 shadow-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
-                    />
-                  </div>
+                  {/* Footer */}
+                  <div className="sticky bottom-0 border-t border-slate-200 bg-white px-5 py-3.5">
+                    <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setdetailsopen(false)}
+                        className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300"
+                      >
+                        Cancel
+                      </button>
 
-                  <div>
-                    <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                      Status
-                    </label>
-                    <select
-                      name="status"
-                      value={detailsForm.status}
-                      onChange={handleDetailsChange}
-                      className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 shadow-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
-                    >
-                      <option value="Running">Active</option>
-                      <option value="Deactive">DE active</option>
-                    </select>
+                      <button
+                        type="button"
+                        onClick={handleDetailsSave}
+                        className="inline-flex h-10 items-center justify-center rounded-lg bg-[#1B2A4A] px-5 text-sm font-semibold text-white transition hover:bg-[#243660] focus:outline-none focus:ring-2 focus:ring-[#1B2A4A]/40"
+                      >
+                        Save Details
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            ) : (
-              <>
-                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <h3 className="mb-4 text-sm font-semibold text-slate-800">
-                    Service Information
-                  </h3>
-
-                  {/* Product Name + Status (+ Next Due when no tagged rows) always sit side by side */}
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div>
-                      <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                        Product Name
-                      </label>
-                      <input
-                        type="text"
-                        name="productName"
-                        readOnly
-                        value={detailsForm.name}
-                        onChange={handleDetailsChange}
-                        placeholder="List of additional service"
-                        className="h-10 w-full cursor-not-allowed rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-500 outline-none"
-                      />
-                    </div>
-
-                    {!detailsForm?.taggeddata?.length && (
-                      <div>
-                        <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                          Next Due
-                        </label>
-                        <input
-                          type="date"
-                          name="nextDue"
-                          value={detailsForm.nextDue}
-                          onChange={handleDetailsChange}
-                          className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 shadow-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
-                        />
-                      </div>
-                    )}
-
-                    <div>
-                      <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                        Status
-                      </label>
-                      <select
-                        name="status"
-                        value={detailsForm.status}
-                        onChange={handleDetailsChange}
-                        className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 shadow-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
-                      >
-                        <option value="Running">Active</option>
-                        <option value="Deactive">DE active</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {detailsForm?.taggeddata?.length ? (
-                  <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                    <div className="border-b border-slate-200 bg-white px-4 py-3">
-                      <h3 className="text-sm font-semibold text-slate-800">
-                        Tagged License Due Details
-                      </h3>
-                      <p className="mt-0.5 text-[11px] text-slate-500">
-                        {detailsForm.taggeddata.length} license{detailsForm.taggeddata.length > 1 ? "s" : ""} tagged to this service
-                      </p>
-                    </div>
-
-                    {/* table-fixed + percentage colgroup = width always matches the container, no horizontal scroll on laptop (12in / ~1024px+) */}
-                    <div className="w-full">
-                      <table className="w-full table-fixed border-collapse">
-                        <colgroup>
-                          {!haveprimaryProduct ? (
-                            <>
-                              <col style={{ width: "10%" }} />
-                              <col style={{ width: "5%" }} />
-                              <col style={{ width: "10%" }} />
-                              <col style={{ width: "6%" }} />
-                              <col style={{ width: "6%" }} />
-                              <col style={{ width: "6%" }} />
-                              <col style={{ width: "8%" }} />
-                              <col style={{ width: "6%" }} />
-                              <col style={{ width: "4%" }} />
-                            </>
-                          ) : (
-                            <>
-                              <col style={{ width: "19%" }} />
-                              <col style={{ width: "12%" }} />
-                              <col style={{ width: "18%" }} />
-                              <col style={{ width: "17%" }} />
-                              <col style={{ width: "16%" }} />
-                              <col style={{ width: "8%" }} />
-                            </>
-                          )}
-                        </colgroup>
-
-                        <thead className="bg-slate-100">
-                          <tr className="text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500">
-                            <th className="border-b border-slate-200 px-2 py-2.5 text-center">License No.</th>
-                            <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Users</th>
-                            <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Serial No</th>
-
-                            {!haveprimaryProduct && (
-                              <>
-                                <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Lead Amt</th>
-                                <th className="border-b border-slate-200 px-1.5 py-2.5 text-center"> Lead Tax</th>
-                                <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Discount</th>
-                              </>
-                            )}
-
-                            <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Next Due</th>
-                            <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Next Due Amt</th>
-                            <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">Due Tax</th>
-                          </tr>
-                        </thead>
-
-                        <tbody className="divide-y divide-slate-100">
-                          {detailsForm.taggeddata.map((tag, rowIndex) => (
-                            <tr
-                              key={`${tag?.licensenumber}-${rowIndex}`}
-                              className="align-top odd:bg-white even:bg-slate-50/60"
-                            >
-                              <td className="px-2 py-2">
-                                <input
-                                  value={tag?.licensenumber || ""}
-                                  readOnly
-                                  title={tag?.licensenumber || ""}
-                                  className="h-7 w-full cursor-not-allowed truncate rounded-md border border-slate-200 bg-slate-100 px-2 text-[11px] text-slate-500 outline-none"
-                                />
-                              </td>
-
-                              <td className="px-1.5 py-2">
-                                <input
-                                  type="number"
-                                  value={tag?.noofusers ?? ""}
-                                  onChange={(e) => {
-                                    handleTaggedDueChange(
-                                      rowIndex,
-                                      e.target.value,
-                                      "noofusers",
-                                      null,
-                                      detailsForm?.productType
-                                    )
-                                  }}
-                                  onWheel={(e) => e.currentTarget.blur()}
-                                  className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-center text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                />
-                              </td>
-
-                              <td className="px-1.5 py-2">
-                                <input
-                                  type="text"
-                                  value={tag?.serialNumber || ""}
-                                  onChange={(e) => {
-                                    handleTaggedDueChange(
-                                      rowIndex,
-                                      e.target.value,
-                                      "serialNumber",
-                                      null,
-                                      detailsForm?.productType
-                                    )
-                                  }}
-                                  onWheel={(e) => e.currentTarget.blur()}
-                                  className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                />
-                              </td>
-
-                              {!haveprimaryProduct && (
-                                <>
-                                  <td className="px-1.5 py-2">
-                                    <div className="space-y-0.5">
-                                      <input
-                                        type="number"
-                                        value={tag?.taxexclusiveAmount || ""}
-                                        onWheel={(e) => e.currentTarget.blur()}
- onKeyDown={(e) => {
-    if (["-", "+", "e", "E"].includes(e.key)) {
-      e.preventDefault();
-    }
-  }}
-                                        onChange={(e) => {
-                                          handleTaggedDueChange(
-                                            rowIndex,
-                                            e.target.value,
-                                            "taxexclusiveAmount",
-                                            tag?.originalHsn,
-                                            detailsForm?.productType
-                                          )
-                                        }}
-                                        className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                      />
-                                      <p className="truncate text-right text-[12px] text-slate-600">
-                                        {Number(tag?.taxinclusiveamount || 0).toFixed(2)}
-                                      </p>
-                                    </div>
-                                  </td>
-
-                                  <td className="px-1.5 py-2">
-                                    <div className="flex justify-center pt-1">
-                                      <label className="inline-flex cursor-pointer items-center justify-center">
-                                        <input
-                                          type="checkbox"
-                                          checked={Number(tag?.leadTax || 0) > 0}
-                                          onChange={(e) => {
-                                            handleTaggedDueChange(
-                                              rowIndex,
-                                              e.target.checked,
-                                              "leadTax",
-                                              tag?.leadTax,
-                                              detailsForm?.productType
-                                            )
-                                          }}
-                                          className="sr-only"
-                                        />
-                                        <span
-                                          className={`flex h-5 w-5 items-center justify-center rounded border text-[11px] shadow-sm transition-all duration-200 ${
-                                            Number(tag?.leadTax || 0) > 0
-                                              ? "border-[#1B2A4A] bg-[#1B2A4A] text-white"
-                                              : "border-slate-300 bg-white text-transparent"
-                                          }`}
-                                        >
-                                          ✓
-                                        </span>
-                                      </label>
-                                    </div>
-                                  </td>
-
-                                  <td className="px-1.5 py-2">
-                                    <input
-                                      type="number"
-                                      value={tag?.discountAmount || ""}
-                                      onWheel={(e) => e.currentTarget.blur()}
- onKeyDown={(e) => {
-    if (["-", "+", "e", "E"].includes(e.key)) {
-      e.preventDefault();
-    }
-  }}
-                                      onChange={(e) => {
-                                        handleTaggedDueChange(
-                                          rowIndex,
-                                          e.target.value,
-                                          "discountAmount",
-                                          null,
-                                          detailsForm?.productType
-                                        )
-                                      }}
-                                      className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                    />
-                                  </td>
-                                </>
-                              )}
-
-                              <td className="px-1.5 py-2">
-                                <input
-                                  type="date"
-                                  min={today}
-                                  value={tag?.nextDue || ""}
-                                  onChange={(e) => {
-                                    const selectedDate = e.target.value
-
-                                    if (selectedDate && selectedDate < today) {
-                                      setwarningError((prev) => ({
-                                        ...prev,
-                                        nextduewarning: {
-                                          ...(prev.nextduewarning || {}),
-                                          [rowIndex]: "Due date must be today or later."
-                                        }
-                                      }))
-                                      return
-                                    }
-
-                                    setwarningError((prev) => ({
-                                      ...prev,
-                                      nextduewarning: {
-                                        ...(prev.nextduewarning || {}),
-                                        [rowIndex]: ""
-                                      }
-                                    }))
-
-                                    handleTaggedDueChange(rowIndex, selectedDate, "nextDue")
-                                  }}
-                                  className={`h-7 w-full rounded-md border bg-white px-1.5 text-[11px] text-slate-700 outline-none transition ${
-                                    warningErrors?.nextduewarning?.[rowIndex]
-                                      ? "border-red-400 focus:ring-1 focus:ring-red-100"
-                                      : "border-slate-200 focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10"
-                                  }`}
-                                />
-                                {warningErrors?.nextduewarning?.[rowIndex] && (
-                                  <p className="mt-1 text-[9px] leading-tight text-red-500">
-                                    {warningErrors.nextduewarning[rowIndex]}
-                                  </p>
-                                )}
-                              </td>
-
-                              <td className="px-1.5 py-2">
-                                <div className="space-y-0.5">
-                                  <input
-                                    type="number"
-                                    value={tag?.nextDueAmount || ""}
-                                    onWheel={(e) => e.currentTarget.blur()}
- onKeyDown={(e) => {
-    if (["-", "+", "e", "E"].includes(e.key)) {
-      e.preventDefault();
-    }
-  }}
-                                    onChange={(e) => {
-                                      handleTaggedDueChange(
-                                        rowIndex,
-                                        e.target.value,
-                                        "nextDueAmount",
-                                        tag?.originalHsn,
-                                        detailsForm?.productType
-                                      )
-                                    }}
-                                    className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                  />
-                                  <p className="truncate text-right text-[12px] text-slate-600">
-                                    {Number(tag?.totalnextDueAmount || 0).toFixed(2)}
-                                  </p>
-                                </div>
-                              </td>
-
-                              <td className="px-1.5 py-2">
-                                <div className="flex justify-center pt-1">
-                                  <label className="inline-flex cursor-pointer items-center justify-center">
-                                    <input
-                                      type="checkbox"
-                                      checked={Number(tag?.nextDueTax || 0) > 0}
-                                      onChange={(e) => {
-console.log(tag?.nextDueTax)
-                                        handleTaggedDueChange(
-                                          rowIndex,
-                                          e.target.checked,
-                                          "nextDueTax",
-                                          tag?.nextDueTax,
-                                          detailsForm?.productType
-                                        )
-                                      }}
-                                      className="sr-only"
-                                    />
-                                    <span
-                                      className={`flex h-5 w-5 items-center justify-center rounded border text-[11px] shadow-sm transition-all duration-200 ${
-                                        Number(tag?.nextDueTax || 0) > 0
-                                          ? "border-[#1B2A4A] bg-[#1B2A4A] text-white"
-                                          : "border-slate-300 bg-white text-transparent"
-                                      }`}
-                                    >
-                                      ✓
-                                    </span>
-                                  </label>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center shadow-sm">
-                    <h3 className="text-sm font-semibold text-slate-800">
-                      Additional Service Details
-                    </h3>
-                    <p className="mt-1 text-[12px] text-slate-500">
-                      No tagged license rows are available for this item.
-                    </p>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="sticky bottom-0 border-t border-slate-200 bg-white px-5 py-3.5">
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              onClick={() => setdetailsopen(false)}
-              className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300"
-            >
-              Cancel
-            </button>
-
-            <button
-              type="button"
-              onClick={handleDetailsSave}
-              className="inline-flex h-10 items-center justify-center rounded-lg bg-[#1B2A4A] px-5 text-sm font-semibold text-white transition hover:bg-[#243660] focus:outline-none focus:ring-2 focus:ring-[#1B2A4A]/40"
-            >
-              Save Details
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+            </div>
+          )}
 
           {modalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-3 sm:p-4">
@@ -9210,7 +9346,7 @@ console.log(tag?.nextDueTax)
                           <label className="mb-1 block text-[11px] font-semibold text-slate-600">
                             Mobile <span className="text-red-500">*</span>
                           </label>
-                          <input
+                          {/* <input
                             type="tel"
                             {...registerModal("mobile", {
                               required: "Mobile is Required",
@@ -9222,6 +9358,67 @@ console.log(tag?.nextDueTax)
                                   return "Must be 10 digits after country code"
                                 }
                                 return true
+                              }
+                            })}
+                            onBlur={(e) =>
+                              setValueModal("mobile", e.target.value.trim())
+                            }
+                            placeholder="Mobile"
+                            className="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                          /> */}
+                          <input
+                            type="tel"
+                            {...registerModal("mobile", {
+                              required: "Mobile is Required",
+                              // validate: (value) => {
+                              //   const phone = String(value ?? "").trim()
+
+                              //   if (!phone) return "Mobile is Required"
+
+                              //   const countryCode = selectedCountrymodal || "IN"
+                              //   console.log(countryCode)
+                              //   try {
+                              //     const parsed = parsePhoneNumberFromString(
+                              //       phone,
+                              //       countryCode
+                              //     )
+                              //     console.log(parsed)
+                              //     console.log(phone)
+                              //     console.log(countryCode)
+                              //     if (!parsed || !parsed.isValid()) {
+                              //       return "Invalid mobile number for selected country"
+                              //     }
+
+                              //     return true
+                              //   } catch (error) {
+                              //     return "Invalid mobile number"
+                              //   }
+                              // }
+                              validate: (value) => {
+                                const phone = value.trim()
+
+                                if (!phone) return "Mobile is Required"
+
+                                try {
+                                  const parsed = phone.startsWith("+")
+                                    ? parsePhoneNumberFromString(phone)
+                                    : parsePhoneNumberFromString(
+                                        phone,
+                                        selectedCountrymodal
+                                      )
+
+                                  if (!parsed) {
+                                    return "Invalid mobile number"
+                                  }
+
+                                  if (!parsed.isValid()) {
+                                    return "Invalid mobile number"
+                                  }
+
+                                  return true
+                                } catch {
+                                  return "Invalid mobile number"
+                                }
                               }
                             })}
                             onBlur={(e) =>

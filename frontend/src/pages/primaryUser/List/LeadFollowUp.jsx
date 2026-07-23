@@ -44,8 +44,10 @@ import React from "react"
 const LeadFollowUp = () => {
   const location = useLocation()
   const navigate = useNavigate()
-const reduxselectedBranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
-console.log(reduxselectedBranch)
+  const reduxselectedBranch = useSelector(
+    (branch) => branch.companyBranch.selectedBranch
+  )
+  console.log(reduxselectedBranch)
   const safeState = location?.state || {}
   console.log(location?.state)
   const nav = [
@@ -95,7 +97,7 @@ console.log(reduxselectedBranch)
     useState(false)
   console.log(ischangeallocationfortask)
   const [ishavePayment, setishavePayment] = useState(false)
-console.log(ishavePayment)
+  console.log(ishavePayment)
   const [collectionupdatedata, setcollectionupdateData] = useState({})
   const [showfollowupModal, setshowFollowupModal] = useState(false)
   const [isdropdownOpen, setIsdropdownOpen] = useState(false)
@@ -379,7 +381,7 @@ console.log(ishavePayment)
 
         groupedLeads[assignedTo].push(lead)
       })
-
+      console.log(groupedLeads)
       setnetTotalAmount(TotalAmount(filteredLeads))
       setTableData(normalizeTableData(groupedLeads))
       return
@@ -449,7 +451,7 @@ console.log(ishavePayment)
         ...postdatefollowup,
         ...(safeState?.viewMode ? [] : taskSubmittedLeads)
       ]
-
+      console.log(mergedall)
       setnetTotalAmount(TotalAmount(mergedall))
       setTableData(normalizeTableData(mergedall))
 
@@ -522,7 +524,7 @@ console.log(ishavePayment)
 
         groupedLeads[assignedTo].push(lead)
       })
-
+      console.log(groupedLeads)
       setnetTotalAmount(TotalAmount(mergedall))
       setTableData(normalizeTableData(groupedLeads))
 
@@ -551,7 +553,7 @@ console.log(ishavePayment)
               entry.taskTo === "followup" && entry.followupClosed === true
           )
       )
-
+      console.log(clearedLeads)
       setnetTotalAmount(TotalAmount(clearedLeads))
       setTableData(normalizeTableData(clearedLeads))
 
@@ -604,7 +606,7 @@ console.log(ishavePayment)
 
         groupedLeads[assignedTo].push(lead)
       })
-
+      console.log(groupedLeads)
       setnetTotalAmount(TotalAmount(clearedLeads))
       setTableData(normalizeTableData(groupedLeads))
     }
@@ -1013,6 +1015,7 @@ console.log(ishavePayment)
             const groupedData = normalizeTableData(groupedLeads)
             // console.log(groupedData)
             setnetTotalAmount(TotalAmount(filteredLeads))
+            console.log(groupedData)
             setTableData(groupedData)
           } else {
             if (pending && ownFollowUp) {
@@ -1084,6 +1087,7 @@ console.log(ishavePayment)
               setnetTotalAmount(TotalAmount(mergedall))
               // console.log(Data)
               // mergedall.forEach((item)=>)
+
               setTableData(Data)
             } else if (pending && !ownFollowUp) {
               console.log("h")
@@ -1184,6 +1188,7 @@ console.log(ishavePayment)
               // then store it in state
               setnetTotalAmount(TotalAmount(clearedLeads))
               const Data = normalizeTableData(clearedLeads)
+              console.log(Data)
               setTableData(Data)
             } else if (!pending && !ownFollowUp) {
               console.log("H")
@@ -1342,7 +1347,7 @@ console.log(ishavePayment)
   //   loggedUser &&
   //   selectedCompanyBranch
   // console.log(safeState.istotal)
-console.log(safeState)
+  console.log(safeState)
   const shouldFetch =
     !!loggedUser &&
     !!reduxselectedBranch &&
@@ -1370,7 +1375,7 @@ console.log(safeState)
   //       `&header=${safeState?.header}` +
   //       `&from=${safeState?.from ?? null}`
   //     : null;
-console.log(shouldFetch)
+  console.log(shouldFetch)
   const followupUrl = shouldFetch
     ? `/lead/getallLeadFollowUp?branchSelected=${reduxselectedBranch}` +
       `&loggeduserid=${safeState.istotal ? safeState.staffId : loggedUser._id}` +
@@ -1382,9 +1387,9 @@ console.log(shouldFetch)
       `${safeState?.header ? `&header=${safeState.header}` : ""}` +
       `${safeState?.from ? `&from=${safeState.from}` : ""}`
     : null
-console.log(safeState)
-console.log(followupUrl)
-// '/lead/getallLeadFollowUp?branchSelected=66f7b26c1e7129afd9aee189&loggeduserid=67220ce51c400b86242fe178&role=undefined&pendingfollowup=true&viewmode=true&startDate=2026-07-01&endDate=2026-07-31&header=Total Leads&from=followupReport'
+  console.log(safeState)
+  console.log(followupUrl)
+  // '/lead/getallLeadFollowUp?branchSelected=66f7b26c1e7129afd9aee189&loggeduserid=67220ce51c400b86242fe178&role=undefined&pendingfollowup=true&viewmode=true&startDate=2026-07-01&endDate=2026-07-31&header=Total Leads&from=followupReport'
   const {
     data: loggedusersallocatedleads,
     isLoading: loading,
@@ -2531,7 +2536,6 @@ console.log(followupUrl)
   const handleFollowUpDateSubmit = async () => {
     console.log(formData)
     console.log(collectionupdatedata)
-    
 
     if (followupDateLoader) return
     try {
@@ -3577,7 +3581,7 @@ console.log(followupUrl)
                             setishavePayment(!ishavePayment)
                             if (ishavePayment) {
                               console.log("Hhh")
-setcollectionupdateData({})
+                              setcollectionupdateData({})
                             } else {
                               console.log("hhh")
                             }
@@ -3603,7 +3607,7 @@ setcollectionupdateData({})
                             data={selectedData}
                             from="followup"
                             closemodal={setcollectionUpdateModal}
-setishavePayment={setishavePayment}
+                            setishavePayment={setishavePayment}
                             partnerlist={partner}
                             loggedUser={loggedUser}
                             setishavePayment={setishavePayment}
