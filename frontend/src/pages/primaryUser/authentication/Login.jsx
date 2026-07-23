@@ -12,7 +12,9 @@ import { loginSuccess } from "../../../../slices/authSlice.js"
 import {
   setBranches,
   loggeduserBranches,
-setloggeduserBranchOptions
+  setloggeduserBranchOptions,
+  setsliceselectedBranch,
+  selectedCompany as setSelectedCompany
 } from "../../../../slices/companyBranchSlice.js"
 const Login = () => {
   const [passwordVisible, setPasswordVisible] = useState(false)
@@ -32,8 +34,8 @@ const Login = () => {
       setLoading(true)
       const response = await api.post(`/auth/login`, data)
       const datas = response.data
-      const { token, User, passwordExpiryWarning,leavemasterdata } = datas
-console.log(leavemasterdata)
+      const { token, User, passwordExpiryWarning, leavemasterdata } = datas
+      console.log(leavemasterdata)
 
       if (response.status === 200) {
         const selectedCompany = User.selected[0]
@@ -41,19 +43,34 @@ console.log(leavemasterdata)
         if (res.status === 200) {
           const allcompanybranches = res.data?.data?.map((b) => b._id) || []
           const loggeduserbranches = User.selected?.map((a) => a.branch_id)
-setLocalStorageItem("selectedBranch",selectedCompany.branch_id)
+          localStorage.setItem("authToken", token)
+          localStorage.setItem("user", JSON.stringify(User))
+          const uniqueBranches = (User.selected || []).map((branch) => ({
+            id: branch.branch_id,
+            label: branch.branchName
+          }))
+
+          // Save to localStorage
+          setLocalStorageItem("selectedCompany", selectedCompany)
+          setLocalStorageItem("selectedBranch", selectedCompany.branch_id)
           setLocalStorageItem("loggeduserbranches", loggeduserbranches)
           setLocalStorageItem("companybranches", allcompanybranches)
-setLocalStorageItem("checkinTime",leavemasterdata[0]?.checkIn)
+          setLocalStorageItem("loggeduserBranchOptions", uniqueBranches)
+          setLocalStorageItem("checkinTime", leavemasterdata[0]?.checkIn)
+          // localStorage.setItem("activeCompany", JSON.stringify(selectedCompany))
+          // setLocalStorageItem("loggeduserBranchOptions", uniqueBranches)
+          // setLocalStorageItem("selectedBranch", selectedCompany.branch_id)
+          // setLocalStorageItem("loggeduserbranches", loggeduserbranches)
+          // setLocalStorageItem("companybranches", allcompanybranches)
+          // setLocalStorageItem("checkinTime", leavemasterdata[0]?.checkIn)
+
+          //
+          // Update Redux
+          dispatch(setSelectedCompany(selectedCompany))
+          dispatch(setsliceselectedBranch(selectedCompany.branch_id))
           dispatch(loggeduserBranches(loggeduserbranches))
- const uniqueBranches = (User.selected || []).map((branch) => ({
-        id: branch.branch_id,
-        label: branch.branchName
-      }))
-console.log(leavemasterdata)
-setLocalStorageItem("loggeduserBranchOptions",uniqueBranches)
           dispatch(setBranches(allcompanybranches))
-dispatch(setloggeduserBranchOptions(uniqueBranches))
+          dispatch(setloggeduserBranchOptions(uniqueBranches))
           dispatch(
             loginSuccess({
               token,
@@ -65,7 +82,6 @@ dispatch(setloggeduserBranchOptions(uniqueBranches))
             })
           )
 
-          localStorage.setItem("activeCompany", JSON.stringify(selectedCompany))
           console.log("hh")
           toast.success(response.data.message, {
             icon: "🚀",
@@ -82,10 +98,7 @@ dispatch(setloggeduserBranchOptions(uniqueBranches))
           if (passwordExpiryWarning) {
             toast.warn(passwordExpiryWarning)
           }
-          localStorage.setItem("authToken", token)
-          localStorage.setItem("user", JSON.stringify(User))
-console.log(User)
-          
+
           if (User.role === "Admin") {
             navigate("/admin/dashboard")
           } else {
