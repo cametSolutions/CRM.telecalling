@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import api from "../../../api/api"
+import { useSelector } from "react-redux"
 import { toast } from "react-toastify"
 import { useFetcher, useNavigate } from "react-router-dom"
 import LeadMaster from "../../common/LeadMaster"
@@ -27,6 +28,10 @@ import {
 } from "lucide-react"
 import UseFetch from "../../../hooks/useFetch"
 function LeadRegister() {
+const selectedBranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
+console.log(selectedBranch)
+
+
   const [loader, setLoader] = useState(false)
   const [popupMessage, setpopUpMessage] = useState("")
   const userData = localStorage.getItem("user")
@@ -50,7 +55,7 @@ const now =new Date()
   const navigate = useNavigate()
   // reset functions exposed from LeadMaster
   const { data: branchProduct } = UseFetch(
-    selectedcompanyBranch &&
+    selectedBranch &&
       `/product/getallbranchProduct?branch=${selectedcompanyBranch}`
   )
 console.log("hhhh")
@@ -265,7 +270,7 @@ console.log(selectedtableLeadData)
   }
   console.log(achievedproducts)
   console.log(periodMode)
-  console.log(selectedcompanyBranch)
+  console.log(selectedBranch)
 console.log(periodMode)
   return (
     <div className="h-full bg-[#ADD8E6] overflow-hidden">
@@ -292,6 +297,7 @@ console.log(periodMode)
               showmessage={popupMessage}
               showpopupMessage={setpopUpMessage}
               selectedcompanyBranch={selectedcompanyBranch}
+
             />
           </div>
         </div>

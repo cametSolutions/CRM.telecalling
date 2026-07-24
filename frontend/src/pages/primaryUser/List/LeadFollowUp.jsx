@@ -2667,7 +2667,7 @@ const LeadFollowUp = () => {
 
   // [Keep all your existing component code - LeadRow, renderTable, etc.]
   // ... (LeadRow component and renderTable function remain the same)
-
+const toSafeUpper = (value) => String(value ?? "").trim().toUpperCase()
   const LeadRow = ({ item, index }) => {
     console.log(item)
     const [open, setOpen] = useState(false)
@@ -2692,9 +2692,15 @@ const LeadFollowUp = () => {
             it?.taskClosed === false
         )
       : false
-    const customerName = item?.customerName?.customerName.toUpperCase()
-    const shouldShowTooltipCustomer = customerName.length > 20
-    const shouldShowTooltipEmail = item?.email.length > 5
+    // const customerName = item?.customerName?.customerName.toUpperCase()
+    // const shouldShowTooltipCustomer = customerName.length > 20
+    // const shouldShowTooltipEmail = item?.email.length > 5
+
+const customerName = String(item?.customerName?.customerName ?? "").toUpperCase()
+const shouldShowTooltipCustomer = customerName.length > 20
+
+const email = String(item?.email ?? "")
+const shouldShowTooltipEmail = email.length > 5
 
     return (
       <>
@@ -3326,7 +3332,7 @@ const LeadFollowUp = () => {
                     Follow-Up
                   </h2>
                   <p className="text-sm text-blue-600 mt-0.5 font-semibold">
-                    {formData?.customerName}
+                    {toSafeUpper(formData?.customerName)}
                   </p>
                 </div>
                 <div className="text-lg font-semibold flex-grow text-end ">

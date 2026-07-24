@@ -99,7 +99,7 @@ export const GetallfollowupList = async (req, res) => {
         activityLog: {
           $elemMatch: {
             taskTo: "followup",
- taskallocatedTo: userObjectId,
+            taskallocatedTo: userObjectId,
             // $or: [{ submittedUser: userObjectId }, { taskallocatedTo: userObjectId }],
             allocationChanged: false,
             allocatedClosed: false,
@@ -1343,6 +1343,7 @@ export const LeadRegister = async (req, res) => {
         licenseNumber: item.licenseNumber,
         productPrice: item.productPrice,
         hsn: item.hsn,
+actualHsn:item?.actualHsn,
         productorservicetype: item.productorservicetype,
         netAmount: item.netAmount,
         price: item.price,
@@ -3360,7 +3361,7 @@ export const Checkduplicatecustomer = async (req, res) => {
     if (existingCustomer) {
       return res.json({
         exists: true,
-        message: "Customer already exists with this name and mobile number",
+        message: "A customer already exists with the same name and mobile number.",
         customer: existingCustomer,
       });
     }
@@ -4984,6 +4985,7 @@ export const UpdateLeadRegister = async (req, res) => {
     const mappedleadData = leadData.map((item) => {
       const productPrice = Number(item?.productPrice || 0);
       const hsn = Number(item?.hsn || 0);
+const actualHsn=Number(item?.actualHsn||0)
       const netAmount = Number(item?.netAmount || 0);
       const taxAmount = netAmount - productPrice;
 
@@ -4995,6 +4997,7 @@ export const UpdateLeadRegister = async (req, res) => {
         price: item?.price ?? null,
         productPrice,
         hsn,
+actualHsn,
         netAmount,
         taxAmount,
         productorservicetype: item?.productorservicetype || "",
@@ -5081,6 +5084,7 @@ export const UpdateLeadRegister = async (req, res) => {
           mobile: data.mobile,
           email: data.email,
           landline: data.phone,
+          partner: data.partner
         },
       },
       { session }
@@ -7097,67 +7101,185 @@ export const GetalltaskanalysisLeads = async (req, res) => {
 };
 export const GetallReallocatedLead = async (req, res) => {
   try {
-    const { selectedBranch } = req.query;
-    const branchObjectId = new mongoose.Types.ObjectId(selectedBranch);
-    const query = { leadBranch: branchObjectId, reallocatedTo: true, leadConfirmed: false };
+    const { selectedBranch } = req.query
+    const branchObjectId = new mongoose.Types.ObjectId(selectedBranch)
+
+    const query = {
+      leadBranch: branchObjectId,
+      reallocatedTo: true,
+      leadConfirmed: false
+    }
 
     const reallocatedLeads = await LeadMaster.find(query)
-      .populate({ path: "customerName" })
-      .populate({ path: "partner" })
-      .lean();
-
-    const populatedreallocatedLeads = await Promise.all(
-      reallocatedLeads.map(async (lead) => {
-        const submittedusermodel =
-          lead.activityLog[lead.activityLog.length - 1];
-        if (
-          !lead.leadByModel ||
-          !mongoose.models[lead.leadByModel] ||
-          !submittedusermodel.submissiondoneByModel ||
-          !mongoose.models[submittedusermodel.submissiondoneByModel]
-        ) {
-          console.error(`Model ${lead.leadByModel} is not registered`);
-          console.error(`Model ${submittedusermodel} is not registered`);
-          return lead; // Return lead as-is if model is invalid
-        }
-
-        // Fetch the referenced document manually
-        const assignedModel = mongoose.model(lead.leadByModel);
-        const submitteduserModel = mongoose.model(
-          submittedusermodel.submissiondoneByModel
-        );
-        const populatedSubmitteduser = await submitteduserModel
-          .findById(submittedusermodel.submittedUser)
-          .select("name");
-        const populatedLeadBy = await assignedModel
-          .findById(lead.leadBy)
-          .select("name");
-
-        const lasttaskby =
-          lead.activityLog[lead.activityLog.length - 1]?.taskBy;
-        const populatedlasttaskBy = await Task.findById(lasttaskby)
-          .select("taskName")
-          .lean();
-
-        return {
-          ...lead,
-          leadBy: populatedLeadBy,
-          lasttask: populatedlasttaskBy,
-          submittedUser: populatedSubmitteduser,
-        }; // Merge populated data
+      .select({
+        customerName: 1,
+        partner: 1,
+        leadBy: 1,
+        leadByModel: 1,
+        activityLog: 1,
+        leadId: 1,
+        leadDate: 1,
+        mobile: 1,
+        phone: 1,
+        email: 1,
+        location: 1,
+        pincode: 1,
+        trade: 1,
+        remark: 1,
+        reallocatedTo: 1,
+        leadConfirmed: 1,
+        leadBranch: 1,
+        createdAt: 1
       })
-    );
-    if (populatedreallocatedLeads) {
+      .populate({ path: "customerName", select: "customerName mobile email" })
+      .populate({ path: "partner", select: "name" })
+      .lean()
+
+    if (!reallocatedLeads.length) {
       return res.status(200).json({
         message: "reallocated leads found",
-        data: populatedreallocatedLeads,
-      });
+        data: []
+      })
     }
+
+    const staffIds = new Set()
+    const adminIds = new Set()
+    const taskIds = new Set()
+
+    for (const lead of reallocatedLeads) {
+      if (lead?.leadBy) {
+        if (lead.leadByModel === "Staff") staffIds.add(String(lead.leadBy))
+        if (lead.leadByModel === "Admin") adminIds.add(String(lead.leadBy))
+      }
+
+      const lastActivity = lead?.activityLog?.[lead.activityLog.length - 1]
+
+      if (lastActivity?.submittedUser) {
+        if (lastActivity.submissiondoneByModel === "Staff") {
+          staffIds.add(String(lastActivity.submittedUser))
+        }
+        if (lastActivity.submissiondoneByModel === "Admin") {
+          adminIds.add(String(lastActivity.submittedUser))
+        }
+      }
+
+      if (lastActivity?.taskBy) {
+        taskIds.add(String(lastActivity.taskBy))
+      }
+    }
+
+    const [staffDocs, adminDocs, taskDocs] = await Promise.all([
+      staffIds.size
+        ? mongoose.model("Staff").find({ _id: { $in: [...staffIds] } }).select("name").lean()
+        : [],
+      adminIds.size
+        ? mongoose.model("Admin").find({ _id: { $in: [...adminIds] } }).select("name").lean()
+        : [],
+      taskIds.size
+        ? Task.find({ _id: { $in: [...taskIds] } }).select("taskName").lean()
+        : []
+    ])
+
+    const staffMap = new Map(staffDocs.map((doc) => [String(doc._id), doc]))
+    const adminMap = new Map(adminDocs.map((doc) => [String(doc._id), doc]))
+    const taskMap = new Map(taskDocs.map((doc) => [String(doc._id), doc]))
+
+    const getUserByModel = (id, model) => {
+      if (!id || !model) return null
+      const key = String(id)
+      if (model === "Staff") return staffMap.get(key) || null
+      if (model === "Admin") return adminMap.get(key) || null
+      return null
+    }
+
+    const populatedreallocatedLeads = reallocatedLeads.map((lead) => {
+      const lastActivity = lead?.activityLog?.[lead.activityLog.length - 1] || null
+
+      return {
+        ...lead,
+        leadBy: getUserByModel(lead?.leadBy, lead?.leadByModel),
+        lasttask: lastActivity?.taskBy
+          ? taskMap.get(String(lastActivity.taskBy)) || null
+          : null,
+        submittedUser: getUserByModel(
+          lastActivity?.submittedUser,
+          lastActivity?.submissiondoneByModel
+        )
+      }
+    })
+
+    return res.status(200).json({
+      message: "reallocated leads found",
+      data: populatedreallocatedLeads
+    })
   } catch (error) {
-    console.log("error:", error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
   }
-};
+}
+// export const GetallReallocatedLead = async (req, res) => {
+//   try {
+//     const { selectedBranch } = req.query;
+//     const branchObjectId = new mongoose.Types.ObjectId(selectedBranch);
+//     const query = { leadBranch: branchObjectId, reallocatedTo: true, leadConfirmed: false };
+
+//     const reallocatedLeads = await LeadMaster.find(query)
+//       .populate({ path: "customerName" })
+//       .populate({ path: "partner" })
+//       .lean();
+
+//     const populatedreallocatedLeads = await Promise.all(
+//       reallocatedLeads.map(async (lead) => {
+//         const submittedusermodel =
+//           lead.activityLog[lead.activityLog.length - 1];
+//         if (
+//           !lead.leadByModel ||
+//           !mongoose.models[lead.leadByModel] ||
+//           !submittedusermodel.submissiondoneByModel ||
+//           !mongoose.models[submittedusermodel.submissiondoneByModel]
+//         ) {
+//           console.error(`Model ${lead.leadByModel} is not registered`);
+//           console.error(`Model ${submittedusermodel} is not registered`);
+//           return lead; // Return lead as-is if model is invalid
+//         }
+
+//         // Fetch the referenced document manually
+//         const assignedModel = mongoose.model(lead.leadByModel);
+//         const submitteduserModel = mongoose.model(
+//           submittedusermodel.submissiondoneByModel
+//         );
+//         const populatedSubmitteduser = await submitteduserModel
+//           .findById(submittedusermodel.submittedUser)
+//           .select("name");
+//         const populatedLeadBy = await assignedModel
+//           .findById(lead.leadBy)
+//           .select("name");
+
+//         const lasttaskby =
+//           lead.activityLog[lead.activityLog.length - 1]?.taskBy;
+//         const populatedlasttaskBy = await Task.findById(lasttaskby)
+//           .select("taskName")
+//           .lean();
+
+//         return {
+//           ...lead,
+//           leadBy: populatedLeadBy,
+//           lasttask: populatedlasttaskBy,
+//           submittedUser: populatedSubmitteduser,
+//         }; // Merge populated data
+//       })
+//     );
+//     if (populatedreallocatedLeads) {
+//       return res.status(200).json({
+//         message: "reallocated leads found",
+//         data: populatedreallocatedLeads,
+//       });
+//     }
+//   } catch (error) {
+//     console.log("error:", error.message);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// };
 export const GetallleadOwned = async (req, res) => {
   try {
     const { selectedBranch } = req.query;
@@ -8396,286 +8518,566 @@ export const UpdateLeadTask = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+
+
+const { Types } = mongoose;
+
+const toObjectId = (value) =>
+  isValidObjectId(value) ? new Types.ObjectId(value) : null;
+
+
+
+const getRegisteredModel = (modelName) => {
+  if (!modelName) return null;
+  return mongoose.models[modelName] || null;
+};
+
+const batchFetchByModels = async (modelName, ids, select) => {
+  const Model = getRegisteredModel(modelName);
+  if (!Model || !ids?.size) return [];
+
+  return Model.find({ _id: { $in: [...ids] } })
+    .select(select)
+    .lean();
+};
+
+const buildMap = (docs) =>
+  new Map(docs.map((doc) => [String(doc._id), doc]));
+
 export const GetrespectedleadTask = async (req, res) => {
   try {
     const { userid, branchSelected, role, ownTask } = req.query;
-    const userObjectId = new mongoose.Types.ObjectId(userid);
-    const branchObjectId = new mongoose.Types.ObjectId(branchSelected);
+
+    const userObjectId = toObjectId(userid);
+    const branchObjectId = toObjectId(branchSelected);
+
+    if (!branchObjectId) {
+      return res.status(400).json({ message: "Invalid branchSelected" });
+    }
+
+    if (ownTask === "true" && !userObjectId) {
+      return res.status(400).json({ message: "Invalid userid" });
+    }
+
     const isAdminOrManager = role === "Admin" || role === "Manager";
+
+    const elemMatch = {
+      allocationChanged: false,
+      taskTo: { $ne: "followup" },
+      ...(isAdminOrManager ? {} : { taskallocatedTo: userObjectId }),
+    };
+
     const query = {
       leadBranch: branchObjectId,
-      activityLog: {
-        $elemMatch: {
-          ...(isAdminOrManager ? {} : { taskallocatedTo: userObjectId }), //conditionally include
-          allocationChanged: false,
-          taskTo: {
-            $ne: "followup",
-          },
-        },
-      },
+      activityLog: { $elemMatch: elemMatch },
     };
 
     const selectedfollowup = await LeadMaster.find(query)
+      .select({
+        leadId: 1,
+        leadDate: 1,
+        customerName: 1,
+        mobile: 1,
+        phone: 1,
+        email: 1,
+        location: 1,
+        pincode: 1,
+        trade: 1,
+        partner: 1,
+        leadConfirmed: 1,
+        leadClosed: 1,
+        leadLost: 1,
+        dueDate: 1,
+        leadFor: 1,
+        leadBy: 1,
+        leadByModel: 1,
+        activityLog: 1,
+        createdAt: 1,
+        updatedAt: 1,
+      })
       .populate({ path: "customerName", select: "customerName" })
       .lean();
 
-    const taskLeads = [];
-    if (ownTask === "false") {
-      for (const lead of selectedfollowup) {
-        let lastAllocatedItem = null;
+    if (!selectedfollowup.length) {
+      return res.status(200).json({ message: "No Task found", data: [] });
+    }
 
-        // Populate activityLog
-        lead.activityLog = await Promise.all(
-          lead.activityLog.map(async (item) => {
-            // ✅ Track latest allocation (even followup)
-            if (item?.taskallocatedTo) {
-              lastAllocatedItem = item;
-            }
+    const userIdsByModel = {};
+    const taskIds = new Set();
+    const productIds = new Set();
+    const serviceIds = new Set();
 
+    for (const lead of selectedfollowup) {
+      if (lead?.leadBy && lead?.leadByModel) {
+        userIdsByModel[lead.leadByModel] ??= new Set();
+        userIdsByModel[lead.leadByModel].add(String(lead.leadBy));
+      }
 
-            let populatedSubmittedUser = null;
-            let populatedTaskAllocatedTo = null;
-            let populatedTask = null
-            let populatedtaskBy = null;
-
-            if (
-              item.submittedUser &&
-              item.submissiondoneByModel &&
-              mongoose.models[item.submissiondoneByModel]
-            ) {
-              const model = mongoose.model(item.submissiondoneByModel);
-              populatedSubmittedUser = await model
-                .findById(item.submittedUser)
-                .select("name")
-                .lean();
-            }
-
-            if (
-              item.taskallocatedTo &&
-              item.taskallocatedToModel &&
-              mongoose.models[item.taskallocatedToModel]
-            ) {
-              const model = mongoose.model(item.taskallocatedToModel);
-              populatedTaskAllocatedTo = await model
-                .findById(item.taskallocatedTo)
-                .select("name")
-                .lean();
-            }
-            if (item?.taskId) {
-              populatedTask = await Task.findById(item.taskId)
-                .select("taskName")
-                .lean();
-            }
-            if (item?.taskBy && isValidObjectId(item?.taskBy)) {
-              populatedtaskBy = await Task.findById(item?.taskBy)
-                .select("taskName")
-                .lean();
-            }
-
-            return {
-              ...item,
-              taskBy: populatedtaskBy,
-              taskId: populatedTask,
-              submittedUser: populatedSubmittedUser || item.submittedUser,
-              taskallocatedTo:
-                populatedTaskAllocatedTo || item.taskallocatedTo,
-            };
-          })
-        );
-        lead.leadFor = await Promise.all(
-          lead.leadFor.map(async (item) => {
-
-
-
-            let populatedProductorservice = null;
-
-
-            if (
-              item.productorServiceId &&
-              item.productorServicemodel &&
-              mongoose.models[item.productorServicemodel]
-            ) {
-              const model = mongoose.model(item.productorServicemodel);
-              populatedProductorservice = await model
-                .findById(item.productorServiceId)
-                .select("productName")
-                .lean();
-            }
-
-
-
-            return {
-              ...item,
-
-              productorServiceId: populatedProductorservice || item.productorServiceId,
-
-            };
-          })
-        );
-
-        // ✅ Populate top-level allocatedTo / allocatedBy (even if followup)
-        if (lastAllocatedItem) {
-          let populatedAllocatedTo = null;
-          let populatedAllocatedBy = null;
-
-          if (
-            lastAllocatedItem.taskallocatedTo &&
-            lastAllocatedItem.taskallocatedToModel &&
-            mongoose.models[lastAllocatedItem.taskallocatedToModel]
-          ) {
-            const model = mongoose.model(
-              lastAllocatedItem.taskallocatedToModel
-            );
-            populatedAllocatedTo = await model
-              .findById(lastAllocatedItem.taskallocatedTo)
-              .select("name")
-              .lean();
-          }
-
-          if (
-            lastAllocatedItem.taskallocatedBy &&
-            lastAllocatedItem.taskallocatedByModel &&
-            mongoose.models[lastAllocatedItem.taskallocatedByModel]
-          ) {
-            const model = mongoose.model(
-              lastAllocatedItem.taskallocatedByModel
-            );
-            populatedAllocatedBy = await model
-              .findById(lastAllocatedItem.taskallocatedBy)
-              .select("name")
-              .lean();
-          }
-          const leadByModel = mongoose.model(lead.leadByModel);
-          const populatedLeadBy = await leadByModel
-            .findById(lead.leadBy)
-            .select("name")
-            .lean();
-          lead.leadBy = populatedLeadBy;
-          lead.taskallocatedTo = populatedAllocatedTo;
-          lead.taskallocatedBy = populatedAllocatedBy;
+      for (const log of lead.activityLog || []) {
+        if (log?.submittedUser && log?.submissiondoneByModel) {
+          userIdsByModel[log.submissiondoneByModel] ??= new Set();
+          userIdsByModel[log.submissiondoneByModel].add(String(log.submittedUser));
         }
 
-        // ✅ Finally, push the fully populated lead to taskLeads
-        taskLeads.push(lead);
+        if (log?.taskallocatedTo && log?.taskallocatedToModel) {
+          userIdsByModel[log.taskallocatedToModel] ??= new Set();
+          userIdsByModel[log.taskallocatedToModel].add(String(log.taskallocatedTo));
+        }
+
+        if (log?.taskallocatedBy && log?.taskallocatedByModel) {
+          userIdsByModel[log.taskallocatedByModel] ??= new Set();
+          userIdsByModel[log.taskallocatedByModel].add(String(log.taskallocatedBy));
+        }
+
+        if (log?.taskId) taskIds.add(String(log.taskId));
+        if (log?.taskBy && isValidObjectId(log.taskBy)) {
+          taskIds.add(String(log.taskBy));
+        }
       }
-    } else {
-      for (const lead of selectedfollowup) {
-        const matchedallocation = lead.activityLog.filter(
+
+      for (const item of lead.leadFor || []) {
+        if (!item?.productorServiceId || !item?.productorServicemodel) continue;
+
+        if (item.productorServicemodel === "Product") {
+          productIds.add(String(item.productorServiceId));
+        } else if (item.productorServicemodel === "Service") {
+          serviceIds.add(String(item.productorServiceId));
+        }
+      }
+    }
+
+    const userModelEntries = Object.entries(userIdsByModel);
+
+    const userFetchPromises = userModelEntries.map(([modelName, ids]) =>
+      batchFetchByModels(modelName, ids, "name")
+        .then((docs) => [modelName, buildMap(docs)])
+    );
+
+    const [userMapsEntries, taskDocs, productDocs, serviceDocs] = await Promise.all([
+      Promise.all(userFetchPromises),
+      taskIds.size
+        ? Task.find({ _id: { $in: [...taskIds] } }).select("taskName").lean()
+        : [],
+      productIds.size
+        ? mongoose.model("Product").find({ _id: { $in: [...productIds] } }).select("productName").lean()
+        : [],
+      serviceIds.size
+        ? mongoose.model("Service").find({ _id: { $in: [...serviceIds] } }).select("serviceName productName").lean()
+        : [],
+    ]);
+
+    const userMaps = new Map(userMapsEntries);
+    const taskMap = buildMap(taskDocs);
+    const productMap = buildMap(productDocs);
+    const serviceMap = buildMap(serviceDocs);
+
+    const resolveUser = (id, modelName) => {
+      const key = toIdString(id);
+      if (!key || !modelName) return id ?? null;
+      const modelMap = userMaps.get(modelName);
+      return modelMap?.get(key) || id;
+    };
+
+    const resolveTask = (id) => {
+      const key = toIdString(id);
+      if (!key) return id ?? null;
+      return taskMap.get(key) || id;
+    };
+
+    const resolveProductOrService = (id, modelName) => {
+      const key = toIdString(id);
+      if (!key || !modelName) return id ?? null;
+      if (modelName === "Product") return productMap.get(key) || id;
+      if (modelName === "Service") return serviceMap.get(key) || id;
+      return id;
+    };
+
+    const taskLeads = [];
+
+    for (const lead of selectedfollowup) {
+      const activityLog = Array.isArray(lead.activityLog) ? lead.activityLog : [];
+      const leadFor = Array.isArray(lead.leadFor) ? lead.leadFor : [];
+
+      let lastAllocatedItem = null;
+      for (const item of activityLog) {
+        if (item?.taskallocatedTo) {
+          lastAllocatedItem = item;
+        }
+      }
+
+      if (ownTask === "true") {
+        const matchedallocation = activityLog.filter(
           (item) =>
-            item?.taskallocatedTo?.equals(userid) &&
+            String(item?.taskallocatedTo) === String(userid) &&
             item?.taskTo !== "followup" &&
             !item?.allocationChanged
         );
 
-        if (matchedallocation && matchedallocation.length > 0) {
-          // Populate outer fields
-          const leadByModel = mongoose.model(lead.leadByModel);
-          const allocatedToModel = mongoose.model(
-            matchedallocation[0].taskallocatedToModel
-          );
-          const allocatedByModel = mongoose.model(
-            matchedallocation[0].taskallocatedByModel
-          );
+        if (!matchedallocation.length) continue;
 
-          const populatedLeadBy = await leadByModel
-            .findById(lead.leadBy)
-            .select("name")
-            .lean();
-          const populatedAllocatedTo = await allocatedToModel
-            .findById(matchedallocation[0].taskallocatedTo)
-            .select("name")
-            .lean();
-          const populatedAllocatedBy = await allocatedByModel
-            .findById(matchedallocation[0].taskallocatedBy)
-            .select("name")
-            .lean();
+        const firstMatched = matchedallocation[0];
 
-          // Populate activityLog (submittedUser, etc.)
-          const populatedActivityLog = await Promise.all(
-            lead.activityLog.map(async (log) => {
-              let populatedSubmittedUser = null;
-              let populatedTaskAllocatedTo = null;
-              let populatedTask = null;
-              let populatedtaskBy = null;
+        const populatedActivityLog = activityLog.map((log) => ({
+          ...log,
+          taskBy: resolveTask(log?.taskBy),
+          taskId: resolveTask(log?.taskId),
+          submittedUser: resolveUser(log?.submittedUser, log?.submissiondoneByModel),
+          taskallocatedTo: resolveUser(log?.taskallocatedTo, log?.taskallocatedToModel),
+        }));
 
-              if (
-                log.submittedUser &&
-                log.submissiondoneByModel &&
-                mongoose.models[log.submissiondoneByModel]
-              ) {
-                const model = mongoose.model(log.submissiondoneByModel);
-                populatedSubmittedUser = await model
-                  .findById(log.submittedUser)
-                  .select("name")
-                  .lean();
-              }
+        const populatedLeadFor = leadFor.map((item) => ({
+          ...item,
+          productorServiceId: resolveProductOrService(
+            item?.productorServiceId,
+            item?.productorServicemodel
+          ),
+        }));
 
-              if (
-                log.taskallocatedTo &&
-                log.taskallocatedToModel &&
-                mongoose.models[log.taskallocatedToModel]
-              ) {
-                const model = mongoose.model(log.taskallocatedToModel);
-                populatedTaskAllocatedTo = await model
-                  .findById(log.taskallocatedTo)
-                  .select("name")
-                  .lean();
-              }
-              if (log?.taskId) {
-                populatedTask = await Task.findById(log.taskId)
-                  .select("taskName")
-                  .lean();
-              }
-              if (log?.taskBy && isValidObjectId(log.taskBy)) {
-                populatedtaskBy = await Task.findById(log.taskBy)
-                  .select("taskName")
-                  .lean();
-              }
-              return {
-                ...log,
-                taskBy: populatedtaskBy,
-                taskId: populatedTask,
-                submittedUser: populatedSubmittedUser || log.submittedUser,
-                taskallocatedTo:
-                  populatedTaskAllocatedTo || log.taskallocatedTo,
-              };
-            })
-          );
-          const populatedLeadFor = await Promise.all(
-            lead.leadFor.map(async (item) => {
-              const model = mongoose.model(item.productorServicemodel);
-              const populated = await model
-                .findById(item.productorServiceId)
-                .lean()
-                .catch(() => null);
+        taskLeads.push({
+          ...lead,
+          leadBy: resolveUser(lead?.leadBy, lead?.leadByModel),
+          taskallocatedTo: resolveUser(
+            firstMatched?.taskallocatedTo,
+            firstMatched?.taskallocatedToModel
+          ),
+          taskallocatedBy: resolveUser(
+            firstMatched?.taskallocatedBy,
+            firstMatched?.taskallocatedByModel
+          ),
+          activityLog: populatedActivityLog,
+          leadFor: populatedLeadFor,
+        });
 
-              return { ...item, productorServiceId: populated };
-            })
-          );
-          taskLeads.push({
-            ...lead,
-            leadBy: populatedLeadBy || lead.leadBy,
-            taskallocatedTo: populatedAllocatedTo,
-            taskallocatedBy: populatedAllocatedBy,
-            activityLog: populatedActivityLog,
-            leadFor: populatedLeadFor
-          });
-        }
+        continue;
       }
+
+      const populatedActivityLog = activityLog.map((item) => ({
+        ...item,
+        taskBy: resolveTask(item?.taskBy),
+        taskId: resolveTask(item?.taskId),
+        submittedUser: resolveUser(item?.submittedUser, item?.submissiondoneByModel),
+        taskallocatedTo: resolveUser(item?.taskallocatedTo, item?.taskallocatedToModel),
+      }));
+
+      const populatedLeadFor = leadFor.map((item) => ({
+        ...item,
+        productorServiceId: resolveProductOrService(
+          item?.productorServiceId,
+          item?.productorServicemodel
+        ),
+      }));
+
+      taskLeads.push({
+        ...lead,
+        leadBy: resolveUser(lead?.leadBy, lead?.leadByModel),
+        taskallocatedTo: lastAllocatedItem
+          ? resolveUser(lastAllocatedItem?.taskallocatedTo, lastAllocatedItem?.taskallocatedToModel)
+          : null,
+        taskallocatedBy: lastAllocatedItem
+          ? resolveUser(lastAllocatedItem?.taskallocatedBy, lastAllocatedItem?.taskallocatedByModel)
+          : null,
+        activityLog: populatedActivityLog,
+        leadFor: populatedLeadFor,
+      });
     }
 
-    if (taskLeads && taskLeads.length === 0) {
-      return res
-        .status(200)
-        .json({ message: "No Task found", data: taskLeads });
-    } else {
-      return res.status(201).json({ messge: "Task found", data: taskLeads });
+    if (!taskLeads.length) {
+      return res.status(200).json({ message: "No Task found", data: [] });
     }
+
+    return res.status(200).json({ message: "Task found", data: taskLeads });
   } catch (error) {
-    console.log("error", error)
+    console.error("GetrespectedleadTask error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+
+
+
+
+//not indexed GetrespectedleadTask 
+// export const GetrespectedleadTask = async (req, res) => {
+//   try {
+//     const { userid, branchSelected, role, ownTask } = req.query;
+//     const userObjectId = new mongoose.Types.ObjectId(userid);
+//     const branchObjectId = new mongoose.Types.ObjectId(branchSelected);
+//     const isAdminOrManager = role === "Admin" || role === "Manager";
+//     const query = {
+//       leadBranch: branchObjectId,
+//       activityLog: {
+//         $elemMatch: {
+//           ...(isAdminOrManager ? {} : { taskallocatedTo: userObjectId }), //conditionally include
+//           allocationChanged: false,
+//           taskTo: {
+//             $ne: "followup",
+//           },
+//         },
+//       },
+//     };
+
+//     const selectedfollowup = await LeadMaster.find(query)
+//       .populate({ path: "customerName", select: "customerName" })
+//       .lean();
+
+//     const taskLeads = [];
+//     if (ownTask === "false") {
+//       for (const lead of selectedfollowup) {
+//         let lastAllocatedItem = null;
+
+//         // Populate activityLog
+//         lead.activityLog = await Promise.all(
+//           lead.activityLog.map(async (item) => {
+//             // ✅ Track latest allocation (even followup)
+//             if (item?.taskallocatedTo) {
+//               lastAllocatedItem = item;
+//             }
+
+
+//             let populatedSubmittedUser = null;
+//             let populatedTaskAllocatedTo = null;
+//             let populatedTask = null
+//             let populatedtaskBy = null;
+
+//             if (
+//               item.submittedUser &&
+//               item.submissiondoneByModel &&
+//               mongoose.models[item.submissiondoneByModel]
+//             ) {
+//               const model = mongoose.model(item.submissiondoneByModel);
+//               populatedSubmittedUser = await model
+//                 .findById(item.submittedUser)
+//                 .select("name")
+//                 .lean();
+//             }
+
+//             if (
+//               item.taskallocatedTo &&
+//               item.taskallocatedToModel &&
+//               mongoose.models[item.taskallocatedToModel]
+//             ) {
+//               const model = mongoose.model(item.taskallocatedToModel);
+//               populatedTaskAllocatedTo = await model
+//                 .findById(item.taskallocatedTo)
+//                 .select("name")
+//                 .lean();
+//             }
+//             if (item?.taskId) {
+//               populatedTask = await Task.findById(item.taskId)
+//                 .select("taskName")
+//                 .lean();
+//             }
+//             if (item?.taskBy && isValidObjectId(item?.taskBy)) {
+//               populatedtaskBy = await Task.findById(item?.taskBy)
+//                 .select("taskName")
+//                 .lean();
+//             }
+
+//             return {
+//               ...item,
+//               taskBy: populatedtaskBy,
+//               taskId: populatedTask,
+//               submittedUser: populatedSubmittedUser || item.submittedUser,
+//               taskallocatedTo:
+//                 populatedTaskAllocatedTo || item.taskallocatedTo,
+//             };
+//           })
+//         );
+//         lead.leadFor = await Promise.all(
+//           lead.leadFor.map(async (item) => {
+
+
+
+//             let populatedProductorservice = null;
+
+
+//             if (
+//               item.productorServiceId &&
+//               item.productorServicemodel &&
+//               mongoose.models[item.productorServicemodel]
+//             ) {
+//               const model = mongoose.model(item.productorServicemodel);
+//               populatedProductorservice = await model
+//                 .findById(item.productorServiceId)
+//                 .select("productName")
+//                 .lean();
+//             }
+
+
+
+//             return {
+//               ...item,
+
+//               productorServiceId: populatedProductorservice || item.productorServiceId,
+
+//             };
+//           })
+//         );
+
+//         // ✅ Populate top-level allocatedTo / allocatedBy (even if followup)
+//         if (lastAllocatedItem) {
+//           let populatedAllocatedTo = null;
+//           let populatedAllocatedBy = null;
+
+//           if (
+//             lastAllocatedItem.taskallocatedTo &&
+//             lastAllocatedItem.taskallocatedToModel &&
+//             mongoose.models[lastAllocatedItem.taskallocatedToModel]
+//           ) {
+//             const model = mongoose.model(
+//               lastAllocatedItem.taskallocatedToModel
+//             );
+//             populatedAllocatedTo = await model
+//               .findById(lastAllocatedItem.taskallocatedTo)
+//               .select("name")
+//               .lean();
+//           }
+
+//           if (
+//             lastAllocatedItem.taskallocatedBy &&
+//             lastAllocatedItem.taskallocatedByModel &&
+//             mongoose.models[lastAllocatedItem.taskallocatedByModel]
+//           ) {
+//             const model = mongoose.model(
+//               lastAllocatedItem.taskallocatedByModel
+//             );
+//             populatedAllocatedBy = await model
+//               .findById(lastAllocatedItem.taskallocatedBy)
+//               .select("name")
+//               .lean();
+//           }
+//           const leadByModel = mongoose.model(lead.leadByModel);
+//           const populatedLeadBy = await leadByModel
+//             .findById(lead.leadBy)
+//             .select("name")
+//             .lean();
+//           lead.leadBy = populatedLeadBy;
+//           lead.taskallocatedTo = populatedAllocatedTo;
+//           lead.taskallocatedBy = populatedAllocatedBy;
+//         }
+
+//         // ✅ Finally, push the fully populated lead to taskLeads
+//         taskLeads.push(lead);
+//       }
+//     } else {
+//       for (const lead of selectedfollowup) {
+//         const matchedallocation = lead.activityLog.filter(
+//           (item) =>
+//             item?.taskallocatedTo?.equals(userid) &&
+//             item?.taskTo !== "followup" &&
+//             !item?.allocationChanged
+//         );
+
+//         if (matchedallocation && matchedallocation.length > 0) {
+//           // Populate outer fields
+//           const leadByModel = mongoose.model(lead.leadByModel);
+//           const allocatedToModel = mongoose.model(
+//             matchedallocation[0].taskallocatedToModel
+//           );
+//           const allocatedByModel = mongoose.model(
+//             matchedallocation[0].taskallocatedByModel
+//           );
+
+//           const populatedLeadBy = await leadByModel
+//             .findById(lead.leadBy)
+//             .select("name")
+//             .lean();
+//           const populatedAllocatedTo = await allocatedToModel
+//             .findById(matchedallocation[0].taskallocatedTo)
+//             .select("name")
+//             .lean();
+//           const populatedAllocatedBy = await allocatedByModel
+//             .findById(matchedallocation[0].taskallocatedBy)
+//             .select("name")
+//             .lean();
+
+//           // Populate activityLog (submittedUser, etc.)
+//           const populatedActivityLog = await Promise.all(
+//             lead.activityLog.map(async (log) => {
+//               let populatedSubmittedUser = null;
+//               let populatedTaskAllocatedTo = null;
+//               let populatedTask = null;
+//               let populatedtaskBy = null;
+
+//               if (
+//                 log.submittedUser &&
+//                 log.submissiondoneByModel &&
+//                 mongoose.models[log.submissiondoneByModel]
+//               ) {
+//                 const model = mongoose.model(log.submissiondoneByModel);
+//                 populatedSubmittedUser = await model
+//                   .findById(log.submittedUser)
+//                   .select("name")
+//                   .lean();
+//               }
+
+//               if (
+//                 log.taskallocatedTo &&
+//                 log.taskallocatedToModel &&
+//                 mongoose.models[log.taskallocatedToModel]
+//               ) {
+//                 const model = mongoose.model(log.taskallocatedToModel);
+//                 populatedTaskAllocatedTo = await model
+//                   .findById(log.taskallocatedTo)
+//                   .select("name")
+//                   .lean();
+//               }
+//               if (log?.taskId) {
+//                 populatedTask = await Task.findById(log.taskId)
+//                   .select("taskName")
+//                   .lean();
+//               }
+//               if (log?.taskBy && isValidObjectId(log.taskBy)) {
+//                 populatedtaskBy = await Task.findById(log.taskBy)
+//                   .select("taskName")
+//                   .lean();
+//               }
+//               return {
+//                 ...log,
+//                 taskBy: populatedtaskBy,
+//                 taskId: populatedTask,
+//                 submittedUser: populatedSubmittedUser || log.submittedUser,
+//                 taskallocatedTo:
+//                   populatedTaskAllocatedTo || log.taskallocatedTo,
+//               };
+//             })
+//           );
+//           const populatedLeadFor = await Promise.all(
+//             lead.leadFor.map(async (item) => {
+//               const model = mongoose.model(item.productorServicemodel);
+//               const populated = await model
+//                 .findById(item.productorServiceId)
+//                 .lean()
+//                 .catch(() => null);
+
+//               return { ...item, productorServiceId: populated };
+//             })
+//           );
+//           taskLeads.push({
+//             ...lead,
+//             leadBy: populatedLeadBy || lead.leadBy,
+//             taskallocatedTo: populatedAllocatedTo,
+//             taskallocatedBy: populatedAllocatedBy,
+//             activityLog: populatedActivityLog,
+//             leadFor: populatedLeadFor
+//           });
+//         }
+//       }
+//     }
+
+//     if (taskLeads && taskLeads.length === 0) {
+//       return res
+//         .status(200)
+//         .json({ message: "No Task found", data: taskLeads });
+//     } else {
+//       return res.status(201).json({ messge: "Task found", data: taskLeads });
+//     }
+//   } catch (error) {
+//     console.log("error", error)
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// };
 export const GetselectedLeadData = async (req, res) => {
   try {
     const { leadId } = req.query;
@@ -10790,292 +11192,295 @@ export const getverifiedCollectionLeads = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 }
-export const GetcollectionLeads = async (req, res) => {
-  try {
-    const { selectedBranch, isAccountant, loggeduserby, verified } = req.query;
-    const verifiedBool = verified === "true";
-    const accountantMode = isAccountant === "true";
+// export const GetcollectionLeads = async (req, res) => {
+//   try {
+//     const { selectedBranch, isAccountant, loggeduserby, verified } = req.query;
+//     const verifiedBool = verified === "true";
+//     const accountantMode = isAccountant === "true";
 
-    const matchedCollectionlead = await LeadMaster.aggregate([
-      {
-        $match: {
-          leadBranch: new mongoose.Types.ObjectId(selectedBranch),
-        },
-      },
-      {
-        $addFields: {
-          followupActivities: {
-            $filter: {
-              input: "$activityLog",
-              as: "activity",
-              cond: { $eq: ["$$activity.taskTo", "followup"] },
-            },
-          },
-        },
-      },
-      {
-        $addFields: {
-          latestFollowupActivity: {
-            $arrayElemAt: ["$followupActivities", -1],
-          },
-        },
-      },
-      {
-        $match: {
-          "latestFollowupActivity.followupClosed": true,
-        },
-      },
-    ]);
+//     const matchedCollectionlead = await LeadMaster.aggregate([
+//       {
+//         $match: {
+//           leadBranch: new mongoose.Types.ObjectId(selectedBranch),
+//         },
+//       },
+//       {
+//         $addFields: {
+//           followupActivities: {
+//             $filter: {
+//               input: "$activityLog",
+//               as: "activity",
+//               cond: { $eq: ["$$activity.taskTo", "followup"] },
+//             },
+//           },
+//         },
+//       },
+//       {
+//         $addFields: {
+//           latestFollowupActivity: {
+//             $arrayElemAt: ["$followupActivities", -1],
+//           },
+//         },
+//       },
+//       {
+//         $match: {
+//           "latestFollowupActivity.followupClosed": true,
+//         },
+//       },
+//     ]);
+// // console.log("mathceccollectionlead",matchedCollectionlead)
 
-    const populatedLeads = await LeadMaster.populate(matchedCollectionlead, [
-      { path: "customerName" },
-      { path: "partner" },
-    ]);
+//     const populatedLeads = await LeadMaster.populate(matchedCollectionlead, [
+//       { path: "customerName" },
+//       { path: "partner" },
+//     ]);
+// // console.log("poupdalda",populatedLeads)
+//     const populatedcollectionLeads = await Promise.all(
+//       populatedLeads.map(async (lead) => {
+//         if (!lead.leadByModel || !mongoose.models[lead.leadByModel]) {
+//           console.error(`Model ${lead.leadByModel} is not registered`);
+//           return null;
+//         }
 
-    const populatedcollectionLeads = await Promise.all(
-      populatedLeads.map(async (lead) => {
-        if (!lead.leadByModel || !mongoose.models[lead.leadByModel]) {
-          console.error(`Model ${lead.leadByModel} is not registered`);
-          return null;
-        }
+//         const assignedModel = mongoose.model(lead.leadByModel);
+//         const populatedLeadBy = await assignedModel
+//           .findById(lead.leadBy)
+//           .select("name")
+//           .lean();
 
-        const assignedModel = mongoose.model(lead.leadByModel);
-        const populatedLeadBy = await assignedModel
-          .findById(lead.leadBy)
-          .select("name")
-          .lean();
+//         let lasttaskallocatedto = null;
+//         let lasttaskallocatedBy = null;
 
-        let lasttaskallocatedto = null;
-        let lasttaskallocatedBy = null;
+//         const populatedActivityLog = await Promise.all(
+//           (lead.activityLog || []).map(async (activity) => {
+//             const populatedActivity = { ...activity };
 
-        const populatedActivityLog = await Promise.all(
-          (lead.activityLog || []).map(async (activity) => {
-            const populatedActivity = { ...activity };
+//             if (activity.submissiondoneByModel && activity.submittedUser) {
+//               const model = mongoose.model(activity.submissiondoneByModel);
+//               populatedActivity.submittedUser = await model
+//                 .findById(activity.submittedUser)
+//                 .select("name")
+//                 .lean();
+//             }
+//             // console.log("taskbjyuyyyyyyyyyyyyy",activity?.taskBy)
+//             if (activity?.taskBy) {
+//               populatedActivity.taskBy = await Task.findById(activity?.taskBy).select("taskName").lean()
+//               // console.log("populatedd", populatedActivity?.taskBy)
+//             }
+//             if (activity?.taskTo) {
+//               // console.log("tasktoooo", activity?.taskId)
+//               populatedActivity.taskId = await Task.findById(activity?.taskId).select("taskName").lean()
+//               // console.log("poplatedtaktooo", populatedActivity.taskId)
+//             }
 
-            if (activity.submissiondoneByModel && activity.submittedUser) {
-              const model = mongoose.model(activity.submissiondoneByModel);
-              populatedActivity.submittedUser = await model
-                .findById(activity.submittedUser)
-                .select("name")
-                .lean();
-            }
-            // console.log("taskbjyuyyyyyyyyyyyyy",activity?.taskBy)
-            if (activity?.taskBy) {
-              populatedActivity.taskBy = await Task.findById(activity?.taskBy).select("taskName").lean()
-              // console.log("populatedd", populatedActivity?.taskBy)
-            }
-            if (activity?.taskTo) {
-              // console.log("tasktoooo", activity?.taskId)
-              populatedActivity.taskId = await Task.findById(activity?.taskId).select("taskName").lean()
-              // console.log("poplatedtaktooo", populatedActivity.taskId)
-            }
+//             if (activity.taskallocatedByModel && activity.taskallocatedBy) {
+//               const model = mongoose.model(activity.taskallocatedByModel);
+//               lasttaskallocatedBy = populatedActivity.taskallocatedBy =
+//                 await model.findById(activity.taskallocatedBy).select("name").lean();
+//             }
 
-            if (activity.taskallocatedByModel && activity.taskallocatedBy) {
-              const model = mongoose.model(activity.taskallocatedByModel);
-              lasttaskallocatedBy = populatedActivity.taskallocatedBy =
-                await model.findById(activity.taskallocatedBy).select("name").lean();
-            }
+//             if (activity.taskallocatedToModel && activity.taskallocatedTo) {
+//               const model = mongoose.model(activity.taskallocatedToModel);
+//               lasttaskallocatedto = populatedActivity.taskallocatedTo =
+//                 await model.findById(activity.taskallocatedTo).select("name").lean();
+//             }
 
-            if (activity.taskallocatedToModel && activity.taskallocatedTo) {
-              const model = mongoose.model(activity.taskallocatedToModel);
-              lasttaskallocatedto = populatedActivity.taskallocatedTo =
-                await model.findById(activity.taskallocatedTo).select("name").lean();
-            }
-
-            return populatedActivity;
-          })
-        );
+//             return populatedActivity;
+//           })
+//         );
 
 
-        const latestFollowupActivity = [...(lead.activityLog || [])]
-          .filter((activity) => activity?.taskTo === "followup")
-          .at(-1);
+//         const latestFollowupActivity = [...(lead.activityLog || [])]
+//           .filter((activity) => activity?.taskTo === "followup")
+//           .at(-1);
 
-        const isFollowupClosed = latestFollowupActivity?.followupClosed === true;
+//         const isFollowupClosed = latestFollowupActivity?.followupClosed === true;
 
-        if (!isFollowupClosed) {
-          return null;
-        }
+//         if (!isFollowupClosed) {
+// console.log("followupnot closedddddddd")
+//           return null;
+//         }
 
-        const populatedLeadFor = await Promise.all(
-          (lead.leadFor || []).map(async (item) => {
-            const populatedItem = { ...item };
+//         const populatedLeadFor = await Promise.all(
+//           (lead.leadFor || []).map(async (item) => {
+//             const populatedItem = { ...item };
 
-            if (item.productorServicemodel && item.productorServiceId) {
-              try {
-                const model = mongoose.model(item.productorServicemodel);
-                const productDoc = await model
-                  .findById(item.productorServiceId)
-                  .select("productName name title")
-                  .lean();
+//             if (item.productorServicemodel && item.productorServiceId) {
+//               try {
+//                 const model = mongoose.model(item.productorServicemodel);
+//                 const productDoc = await model
+//                   .findById(item.productorServiceId)
+//                   .select("productName name title")
+//                   .lean();
 
-                populatedItem.productorServiceId = productDoc;
-              } catch (err) {
-                populatedItem.productorServiceId = null;
-              }
-            }
+//                 populatedItem.productorServiceId = productDoc;
+//               } catch (err) {
+//                 populatedItem.productorServiceId = null;
+//               }
+//             }
 
-            return populatedItem;
-          })
-        );
+//             return populatedItem;
+//           })
+//         );
 
-        const paymentHistoryWithIndex = (lead?.paymentHistory || []).map(
-          (history, index) => ({
-            ...history,
-            originalIndex: index,
-          })
-        );
+//         const paymentHistoryWithIndex = (lead?.paymentHistory || []).map(
+//           (history, index) => ({
+//             ...history,
+//             originalIndex: index,
+//           })
+//         );
 
-        let filteredPaymentHistory = paymentHistoryWithIndex;
+//         let filteredPaymentHistory = paymentHistoryWithIndex;
 
-        if (accountantMode) {
-          filteredPaymentHistory = filteredPaymentHistory.filter(
-            (history) => history?.paymentVerified === verifiedBool
-          );
-        } else {
-          filteredPaymentHistory = filteredPaymentHistory.filter((history) => {
-            const receivedByMatch = loggeduserby
-              ? String(history?.receivedBy) === String(loggeduserby)
-              : true;
+//         if (accountantMode) {
+//           filteredPaymentHistory = filteredPaymentHistory.filter(
+//             (history) => history?.paymentVerified === verifiedBool
+//           );
+//         } else {
+//           filteredPaymentHistory = filteredPaymentHistory.filter((history) => {
+//             const receivedByMatch = loggeduserby
+//               ? String(history?.receivedBy) === String(loggeduserby)
+//               : true;
 
-            return receivedByMatch;
-          });
-        }
-        // let filteredPaymentHistory = paymentHistoryWithIndex;
+//             return receivedByMatch;
+//           });
+//         }
+//         // let filteredPaymentHistory = paymentHistoryWithIndex;
 
-        // if (verifiedBool) {
-        //   filteredPaymentHistory = filteredPaymentHistory.filter((history) => {
-        //     if (!history.paymentVerified) return false;
+//         // if (verifiedBool) {
+//         //   filteredPaymentHistory = filteredPaymentHistory.filter((history) => {
+//         //     if (!history.paymentVerified) return false;
 
-        //     if (!history.verifiedAt) return false;
+//         //     if (!history.verifiedAt) return false;
 
-        //     const verifiedAt = new Date(history.verifiedAt);
+//         //     const verifiedAt = new Date(history.verifiedAt);
 
-        //     if (fromDate && verifiedAt < fromDate) {
-        //       return false;
-        //     }
+//         //     if (fromDate && verifiedAt < fromDate) {
+//         //       return false;
+//         //     }
 
-        //     if (toDate && verifiedAt > toDate) {
-        //       return false;
-        //     }
+//         //     if (toDate && verifiedAt > toDate) {
+//         //       return false;
+//         //     }
 
-        //     return true;
-        //   });
-        // } else {
-        //   filteredPaymentHistory = filteredPaymentHistory.filter((history) => {
-        //     const receivedByMatch = loggeduserby
-        //       ? String(history.receivedBy) === String(loggeduserby)
-        //       : true;
+//         //     return true;
+//         //   });
+//         // } else {
+//         //   filteredPaymentHistory = filteredPaymentHistory.filter((history) => {
+//         //     const receivedByMatch = loggeduserby
+//         //       ? String(history.receivedBy) === String(loggeduserby)
+//         //       : true;
 
-        //     return receivedByMatch;
-        //   });
-        // }
+//         //     return receivedByMatch;
+//         //   });
+//         // }
 
-        if (filteredPaymentHistory.length === 0) {
-          return null;
-        }
+//         if (filteredPaymentHistory.length === 0) {
+//           return null;
+//         }
 
-        const populatedpaymentHistory = filteredPaymentHistory.length
-          ? await Promise.all(
-            filteredPaymentHistory.map(async (history) => {
-              const populatedhistory = { ...history };
+//         const populatedpaymentHistory = filteredPaymentHistory.length
+//           ? await Promise.all(
+//             filteredPaymentHistory.map(async (history) => {
+//               const populatedhistory = { ...history };
 
-              if (history.receivedModel && history.receivedBy) {
-                const recvModel = mongoose.model(history.receivedModel);
-                populatedhistory.receivedBy = await recvModel
-                  .findById(history.receivedBy)
-                  .select("name")
-                  .lean();
-              }
+//               if (history.receivedModel && history.receivedBy) {
+//                 const recvModel = mongoose.model(history.receivedModel);
+//                 populatedhistory.receivedBy = await recvModel
+//                   .findById(history.receivedBy)
+//                   .select("name")
+//                   .lean();
+//               }
 
-              if (history.paymentverifiedModel && history.paymentVerifiedBy) {
-                const verifiedModel = mongoose.model(
-                  history.paymentverifiedModel
-                );
-                populatedhistory.paymentVerifiedBy = await verifiedModel
-                  .findById(history.paymentVerifiedBy)
-                  .select("name")
-                  .lean();
-              }
+//               if (history.paymentverifiedModel && history.paymentVerifiedBy) {
+//                 const verifiedModel = mongoose.model(
+//                   history.paymentverifiedModel
+//                 );
+//                 populatedhistory.paymentVerifiedBy = await verifiedModel
+//                   .findById(history.paymentVerifiedBy)
+//                   .select("name")
+//                   .lean();
+//               }
 
-              if (Array.isArray(history.paymentEntries)) {
-                populatedhistory.paymentEntries = await Promise.all(
-                  history.paymentEntries.map(async (entry) => {
-                    const populatedEntry = { ...entry };
+//               if (Array.isArray(history.paymentEntries)) {
+//                 populatedhistory.paymentEntries = await Promise.all(
+//                   history.paymentEntries.map(async (entry) => {
+//                     const populatedEntry = { ...entry };
 
-                    if (
-                      entry.productorServicemodel &&
-                      entry.productorServiceId
-                    ) {
-                      try {
-                        const ProdModel = mongoose.model(
-                          entry.productorServicemodel
-                        );
-                        const doc = await ProdModel.findById(
-                          entry.productorServiceId
-                        )
-                          .select("productName name title")
-                          .lean();
+//                     if (
+//                       entry.productorServicemodel &&
+//                       entry.productorServiceId
+//                     ) {
+//                       try {
+//                         const ProdModel = mongoose.model(
+//                           entry.productorServicemodel
+//                         );
+//                         const doc = await ProdModel.findById(
+//                           entry.productorServiceId
+//                         )
+//                           .select("productName name title")
+//                           .lean();
 
-                        populatedEntry.productorServiceId = doc;
-                      } catch (err) {
-                        populatedEntry.productorServiceId = null;
-                      }
-                    }
+//                         populatedEntry.productorServiceId = doc;
+//                       } catch (err) {
+//                         populatedEntry.productorServiceId = null;
+//                       }
+//                     }
 
-                    return populatedEntry;
-                  })
-                );
-              }
+//                     return populatedEntry;
+//                   })
+//                 );
+//               }
 
-              return populatedhistory;
-            })
-          )
-          : [];
+//               return populatedhistory;
+//             })
+//           )
+//           : [];
 
-        // if (!accountantMode && populatedpaymentHistory.length === 0) {
-        //   return null;
-        // }
+//         // if (!accountantMode && populatedpaymentHistory.length === 0) {
+//         //   return null;
+//         // }
 
-        // if (accountantMode && populatedpaymentHistory.length === 0) {
-        //   return null;
-        // }
+//         // if (accountantMode && populatedpaymentHistory.length === 0) {
+//         //   return null;
+//         // }
 
-        const lastActivity =
-          populatedActivityLog[populatedActivityLog.length - 1];
+//         const lastActivity =
+//           populatedActivityLog[populatedActivityLog.length - 1];
 
-        return {
-          ...lead,
-          leadBy: populatedLeadBy,
-          paymentHistory: populatedpaymentHistory,
-          leadFor: populatedLeadFor,
-          activityLog: populatedActivityLog,
-          taskallocatedTo: lasttaskallocatedto || null,
-          taskallocatedBy: lasttaskallocatedBy || null,
-          leadclosedBy: lastActivity?.submittedUser || null,
-          followupClosed: isFollowupClosed,
-        };
-      })
-    );
+//         return {
+//           ...lead,
+//           leadBy: populatedLeadBy,
+//           paymentHistory: populatedpaymentHistory,
+//           leadFor: populatedLeadFor,
+//           activityLog: populatedActivityLog,
+//           taskallocatedTo: lasttaskallocatedto || null,
+//           taskallocatedBy: lasttaskallocatedBy || null,
+//           leadclosedBy: lastActivity?.submittedUser || null,
+//           followupClosed: isFollowupClosed,
+//         };
+//       })
+//     );
+// console.log(
+// "Hhhhhhhhhhhhh",populatedcollectionLeads)
+//     const finalLeads = populatedcollectionLeads.filter(Boolean);
 
-    const finalLeads = populatedcollectionLeads.filter(Boolean);
-
-    if (finalLeads.length > 0) {
-      return res.status(201).json({
-        message: "lead found",
-        data: finalLeads,
-      });
-    } else {
-      return res.status(200).json({
-        message: "lead not found",
-        data: [],
-      });
-    }
-  } catch (error) {
-    console.log("error", error.message);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-};
+//     if (finalLeads.length > 0) {
+//       return res.status(201).json({
+//         message: "lead found",
+//         data: finalLeads,
+//       });
+//     } else {
+//       return res.status(200).json({
+//         message: "lead not found",
+//         data: [],
+//       });
+//     }
+//   } catch (error) {
+//     console.log("error", error.message);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// };
 // export const GetcollectionLeads = async (req, res) => {
 //   try {
 //     const { selectedBranch, isAccountant, loggeduserby } = req.query;
@@ -11482,7 +11887,228 @@ export const GetcollectionLeads = async (req, res) => {
 //     return res.status(500).json({ message: "Internal server error" });
 //   }
 // };
+export const GetcollectionLeads = async (req, res) => {
+  try {
+    const { selectedBranch, isAccountant, loggeduserby, verified } = req.query;
 
+    const branchId = new mongoose.Types.ObjectId(selectedBranch);
+    const accountantMode = isAccountant === "true";
+    const verifiedBool = verified === "true";
+
+    const leads = await LeadMaster.find({
+      leadBranch: branchId,
+      activityLog: {
+        $elemMatch: {
+          taskTo: "followup",
+          followupClosed: true
+        }
+      }
+    })
+      .select({
+        leadId: 1,
+        leadDate: 1,
+        customerName: 1,
+        partner: 1,
+balanceAmount:1,
+        leadBy: 1,
+        leadByModel: 1,
+        leadFor: 1,
+        paymentHistory: 1,
+        activityLog: 1,
+        leadBranch: 1,
+        mobile: 1,
+        email: 1,
+        location: 1,
+        remark: 1,
+        createdAt: 1
+      })
+      .lean();
+
+    if (!leads.length) {
+      return res.status(200).json({ message: "lead not found", data: [] });
+    }
+
+    const ids = {
+      customers: new Set(),
+      partners: new Set(),
+      tasks: new Set(),
+      staff: new Set(),
+      admin: new Set(),
+      products: new Set(),
+      services: new Set()
+    };
+
+    for (const lead of leads) {
+      if (lead.customerName) ids.customers.add(String(lead.customerName));
+      if (lead.partner) ids.partners.add(String(lead.partner));
+      if (lead.leadBy && lead.leadByModel === "Staff") ids.staff.add(String(lead.leadBy));
+      if (lead.leadBy && lead.leadByModel === "Admin") ids.admin.add(String(lead.leadBy));
+
+      for (const item of lead.leadFor || []) {
+        if (item.productorServiceId && item.productorServicemodel === "Product") {
+          ids.products.add(String(item.productorServiceId));
+        }
+        if (item.productorServiceId && item.productorServicemodel === "Service") {
+          ids.services.add(String(item.productorServiceId));
+        }
+      }
+
+      for (const act of lead.activityLog || []) {
+        if (act.taskBy) ids.tasks.add(String(act.taskBy));
+        if (act.taskId) ids.tasks.add(String(act.taskId));
+
+        if (act.submittedUser && act.submissiondoneByModel === "Staff") ids.staff.add(String(act.submittedUser));
+        if (act.submittedUser && act.submissiondoneByModel === "Admin") ids.admin.add(String(act.submittedUser));
+
+        if (act.taskallocatedBy && act.taskallocatedByModel === "Staff") ids.staff.add(String(act.taskallocatedBy));
+        if (act.taskallocatedBy && act.taskallocatedByModel === "Admin") ids.admin.add(String(act.taskallocatedBy));
+
+        if (act.taskallocatedTo && act.taskallocatedToModel === "Staff") ids.staff.add(String(act.taskallocatedTo));
+        if (act.taskallocatedTo && act.taskallocatedToModel === "Admin") ids.admin.add(String(act.taskallocatedTo));
+      }
+
+      for (const pay of lead.paymentHistory || []) {
+        if (pay.receivedBy && pay.receivedModel === "Staff") ids.staff.add(String(pay.receivedBy));
+        if (pay.receivedBy && pay.receivedModel === "Admin") ids.admin.add(String(pay.receivedBy));
+        if (pay.paymentVerifiedBy && pay.paymentverifiedModel === "Staff") ids.staff.add(String(pay.paymentVerifiedBy));
+        if (pay.paymentVerifiedBy && pay.paymentverifiedModel === "Admin") ids.admin.add(String(pay.paymentVerifiedBy));
+
+        for (const entry of pay.paymentEntries || []) {
+          if (entry.productorServiceId && entry.productorServicemodel === "Product") {
+            ids.products.add(String(entry.productorServiceId));
+          }
+          if (entry.productorServiceId && entry.productorServicemodel === "Service") {
+            ids.services.add(String(entry.productorServiceId));
+          }
+        }
+      }
+    }
+
+    const [
+      customers,
+      partners,
+      tasks,
+      staffs,
+      admins,
+      products,
+      services
+    ] = await Promise.all([
+      Customer.find({ _id: { $in: [...ids.customers] } }).select("customerName").lean(),
+      Partner.find({ _id: { $in: [...ids.partners] } }).select("name").lean(),
+      Task.find({ _id: { $in: [...ids.tasks] } }).select("taskName").lean(),
+      Staff.find({ _id: { $in: [...ids.staff] } }).select("name").lean(),
+      Admin.find({ _id: { $in: [...ids.admin] } }).select("name").lean(),
+      Product.find({ _id: { $in: [...ids.products] } }).select("productName name title").lean(),
+      Service.find({ _id: { $in: [...ids.services] } }).select("productName name title").lean()
+    ]);
+
+    const toMap = (arr) => new Map(arr.map((x) => [String(x._id), x]));
+    const customerMap = toMap(customers);
+    const partnerMap = toMap(partners);
+    const taskMap = toMap(tasks);
+    const staffMap = toMap(staffs);
+    const adminMap = toMap(admins);
+    const productMap = toMap(products);
+    const serviceMap = toMap(services);
+
+    const getUser = (id, model) => {
+      if (!id || !model) return null;
+      const key = String(id);
+      return model === "Staff" ? staffMap.get(key) || null : adminMap.get(key) || null;
+    };
+
+    const getServiceProduct = (id, model) => {
+      if (!id || !model) return null;
+      const key = String(id);
+      return model === "Product"
+        ? productMap.get(key) || null
+        : serviceMap.get(key) || null;
+    };
+
+    const finalLeads = leads.map((lead) => {
+      const latestFollowup = [...(lead.activityLog || [])]
+        .filter((a) => a?.taskTo === "followup")
+        .at(-1);
+
+      if (!latestFollowup || latestFollowup.followupClosed !== true) return null;
+
+      // const filteredPaymentHistory = (lead.paymentHistory || []).filter((history) => {
+      //   if (accountantMode) return history?.paymentVerified === verifiedBool;
+      //   return loggeduserby ? String(history?.receivedBy) === String(loggeduserby) : true;
+      // });
+const filteredPaymentHistory = (lead.paymentHistory || [])
+  .map((history, originalIndex) => ({
+    ...history,
+    originalIndex
+  }))
+  .filter((history) => {
+    if (accountantMode) return history?.paymentVerified === verifiedBool;
+    return loggeduserby ? String(history?.receivedBy) === String(loggeduserby) : true;
+  });
+
+      const hydratedActivityLog = (lead.activityLog || []).map((activity) => ({
+        ...activity,
+        submittedUser: getUser(activity.submittedUser, activity.submissiondoneByModel),
+        taskallocatedBy: getUser(activity.taskallocatedBy, activity.taskallocatedByModel),
+        taskallocatedTo: getUser(activity.taskallocatedTo, activity.taskallocatedToModel),
+        taskBy: activity.taskBy ? taskMap.get(String(activity.taskBy)) || null : null,
+        taskId: activity.taskId ? taskMap.get(String(activity.taskId)) || null : null
+      }));
+
+      const hydratedLeadFor = (lead.leadFor || []).map((item) => ({
+        ...item,
+        productorServiceId: getServiceProduct(item.productorServiceId, item.productorServicemodel)
+      }));
+
+      // const hydratedPayments = filteredPaymentHistory.map((history, index) => ({
+      //   ...history,
+      //   originalIndex: index,
+      //   receivedBy: getUser(history.receivedBy, history.receivedModel),
+      //   paymentVerifiedBy: getUser(history.paymentVerifiedBy, history.paymentverifiedModel),
+      //   paymentEntries: (history.paymentEntries || []).map((entry) => ({
+      //     ...entry,
+      //     productorServiceId: getServiceProduct(entry.productorServiceId, entry.productorServicemodel)
+      //   }))
+      // }));
+const hydratedPayments = filteredPaymentHistory.map((history) => ({
+  ...history,
+  receivedBy: getUser(history.receivedBy, history.receivedModel),
+  paymentVerifiedBy: getUser(history.paymentVerifiedBy, history.paymentverifiedModel),
+  paymentEntries: (history.paymentEntries || []).map((entry) => ({
+    ...entry,
+    productorServiceId: getServiceProduct(entry.productorServiceId, entry.productorServicemodel)
+  }))
+}));
+
+      const lastActivity = hydratedActivityLog.at(-1);
+      const lastAllocatedActivity = [...hydratedActivityLog]
+        .reverse()
+        .find((a) => a?.taskallocatedTo || a?.taskallocatedBy);
+
+      return {
+        ...lead,
+        customerName: customerMap.get(String(lead.customerName)) || null,
+        partner: partnerMap.get(String(lead.partner)) || null,
+        leadBy: getUser(lead.leadBy, lead.leadByModel),
+        leadFor: hydratedLeadFor,
+        paymentHistory: hydratedPayments,
+        activityLog: hydratedActivityLog,
+        taskallocatedTo: lastAllocatedActivity?.taskallocatedTo || null,
+        taskallocatedBy: lastAllocatedActivity?.taskallocatedBy || null,
+        leadclosedBy: lastActivity?.submittedUser || null,
+        followupClosed: true
+      };
+    }).filter(Boolean);
+
+    return res.status(finalLeads.length ? 201 : 200).json({
+      message: finalLeads.length ? "lead found" : "lead not found",
+      data: finalLeads
+    });
+  } catch (error) {
+    console.log("error", error.message);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
 export const GetlostLeads = async (req, res) => {
   try {
     const { selectedBranch } = req.query;

@@ -874,6 +874,7 @@ const CustomerListform = () => {
   const allCustomers = useMemo(() => {
     return data?.pages?.flatMap((page) => page?.customers || []) || []
   }, [data])
+console.log(allCustomers)
   const productOptions = useMemo(() => {
     if (!productlist?.length) return []
 
@@ -882,28 +883,59 @@ const CustomerListform = () => {
       label: (it?.shortName ?? it.productName).toUpperCase()
     }))
   }, [productlist])
+const normalizedCustomers = useMemo(() => {
+  return allCustomers.filter((customer) => {
+    if (selectedstatus === "ProductMissing") {
+      return !Array.isArray(customer.selected) || customer.selected.length === 0
+    }
 
-  const normalizedCustomers = useMemo(() => {
-    return allCustomers
-      .map((customer) => {
-        const selectedItems = customer.selected || []
+    if (!Array.isArray(customer.selected)) return false
 
-        const filteredByProduct = selectedItems.filter((item) => {
-          if (productType === "All") return true
+    if (productType === "All") return customer.selected.length > 0
 
-          const itemProductId =
-            item?.product_id?._id || item?.product_id || item?.productid || ""
+    return customer.selected.some((item) => {
+      const itemProductId =
+        item?.product_id?._id || item?.product_id || item?.productid || ""
 
-          return String(itemProductId) === String(productType)
-        })
+      return String(itemProductId) === String(productType)
+    })
+  }).map((customer) => {
+    if (!Array.isArray(customer.selected)) return customer
 
-        return {
-          ...customer,
-          selected: filteredByProduct
-        }
+    if (productType === "All") return customer
+
+    return {
+      ...customer,
+      selected: customer.selected.filter((item) => {
+        const itemProductId =
+          item?.product_id?._id || item?.product_id || item?.productid || ""
+
+        return String(itemProductId) === String(productType)
       })
-      .filter((customer) => customer.selected?.length > 0 || !customer.selected)
-  }, [allCustomers, productType])
+    }
+  })
+}, [allCustomers, productType, selectedstatus])
+  // const normalizedCustomers = useMemo(() => {
+  //   return allCustomers
+  //     .map((customer) => {
+  //       const selectedItems = customer.selected || []
+
+  //       const filteredByProduct = selectedItems.filter((item) => {
+  //         if (productType === "All") return true
+
+  //         const itemProductId =
+  //           item?.product_id?._id || item?.product_id || item?.productid || ""
+
+  //         return String(itemProductId) === String(productType)
+  //       })
+
+  //       return {
+  //         ...customer,
+  //         selected: filteredByProduct
+  //       }
+  //     })
+  //     .filter((customer) => customer.selected?.length > 0 || !customer.selected)
+  // }, [allCustomers, productType])
 
   // const filteredCustomers = useMemo(() => {
   //   const normalize = (value) =>

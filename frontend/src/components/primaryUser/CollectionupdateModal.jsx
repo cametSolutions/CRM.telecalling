@@ -1898,7 +1898,7 @@ setishavePayment,
   const isRegular = formData.registrationType === "regular"
   const balColor =
     totalBalance > 0 ? "#b45309" : totalBalance < 0 ? "#be123c" : "#166534"
-
+const toSafeUpper = (value) => String(value ?? "").trim().toUpperCase()
   return (
     <div
       style={{
@@ -2053,7 +2053,7 @@ setishavePayment,
             <SectionTitle>Customer Information</SectionTitle>
 
             <Field label="Customer Name">
-              <input value={formData.customerName} readOnly style={readonly} />
+              <input value={toSafeUpper(formData.customerName)} readOnly style={readonly} />
             </Field>
             <Field label="Address">
               <input
