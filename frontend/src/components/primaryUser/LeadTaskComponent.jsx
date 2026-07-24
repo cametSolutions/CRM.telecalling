@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom"
 import { LeadhistoryModal } from "./LeadhistoryModal"
 import LeadModal from "./LeadModal"
 import TasksubmissionModal from "./TasksubmissionModal"
+import NoDataAvailable from "../NodataAvailable"
 import {
   Eye,
   IndianRupee,
@@ -373,9 +374,10 @@ console.log(Data)
 
         if (!hasLeads || Data.length === 0) {
           return (
-            <div className="text-center text-gray-500 py-6 text-sm">
-              No Task Available
-            </div>
+            // <div className="text-center text-gray-500 py-6 text-sm">
+            //   No Task Available
+            // </div>
+<NoDataAvailable/>
           )
         }
 

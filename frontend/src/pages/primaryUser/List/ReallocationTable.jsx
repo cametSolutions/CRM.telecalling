@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom"
 import React from "react"
 import { toast } from "react-toastify"
 import { PropagateLoader } from "react-spinners"
+import SkeletonTable from "../../../components/loader/SkeletonTable"
 import { useNavigate, useParams } from "react-router-dom"
 import BarLoader from "react-spinners/BarLoader"
 import { useSelector } from "react-redux"
@@ -32,7 +33,6 @@ import {
 } from "lucide-react"
 import AdminHeader from "../../../header/AdminHeader"
 import StaffHeader from "../../../header/StaffHeader"
-import SkeletonTable from "../../../components/loader/SkeletonTable"
 import { getLocalStorageItem } from "../../../helper/localstorage"
 const ReallocationTable = () => {
 const reduxselectedBranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
@@ -817,8 +817,8 @@ console.log("hhh")
                                     label: "Re Allocation List",
                                     path:
                                       loggedUser?.role === "Admin"
-                                        ? "/admin/transaction/lead/ownedLeadlist"
-                                        : "/staff/transaction/lead/ownedLeadlist",
+                                        ? "/admin/transaction/lead/leadReallocation"
+                                        : "/staff/transaction/lead/leadReallocation",
                                     // state: {
                                     //   dates,
                                     //   ownLead,
@@ -903,18 +903,18 @@ console.log("hhh")
                         {approvedToggleStatus ? (
                           toggleLoading ? (
                             <div className="flex justify-center">
-                              <PropagateLoader color="#3b82f6" size={10} />
+                              <SkeletonTable color="#3b82f6" size={10} />
                             </div>
                           ) : (
                             <div>No Allocated Leads</div>
                           )
                         ) : loading ? (
                           <div className="flex justify-center">
-                            <PropagateLoader color="#3b82f6" size={10} />
+                            <SkeletonTable color="#3b82f6" size={10} />
                           </div>
                         ) : toggleLoading ? (
                           <div className="flex justify-center">
-                            <PropagateLoader color="#3b82f6" size={10} />
+                            <SkeletonTable color="#3b82f6" size={10} />
                           </div>
                         ) : (
                           <div>No Reallocation Leads</div>

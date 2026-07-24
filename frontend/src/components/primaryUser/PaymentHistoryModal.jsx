@@ -5,7 +5,7 @@ import { toast } from "react-toastify"
 import api from "../../api/api"
 export const PaymentHistoryModal = ({
   data,
-showAction=true,
+  showAction = true,
   balanceAmount,
   isforcefullyclosed,
   isChecked,
@@ -20,12 +20,15 @@ showAction=true,
   setselectedLeadId,
   isdepartmentisAccountant = false
 }) => {
+console.log(showAction)
   console.log(verifiedLead)
   console.log(data)
   console.log(leadDocId)
   console.log(isChecked)
   console.log(balanceAmount)
   const [messageRowIndex, setMessageRowIndex] = useState(null)
+const [originalReceivedAmount ,setoriginalReceivedAmount ]=useState(0)
+console.log(originalReceivedAmount)
   const [originalIndex, setOriginalIndex] = useState(null)
   const [editingRow, setEditingRow] = useState(null)
   const [editmessage, seteditMessage] = useState("")
@@ -102,11 +105,14 @@ showAction=true,
       remarks: row.remarks,
       bankRemarks: row.bankRemarks
     })
+setoriginalReceivedAmount(row.receivedAmount)
     console.log("hhh")
   }
   console.log(editedData)
   const handleSave = async () => {
+
     try {
+setoriginalReceivedAmount(0)
       setsubmitLoading(true)
       const response = await api.post(
         `/lead/updatereceivedAmount?leadDocId=${leadDocId}&index=${originalIndex}`,
@@ -132,9 +138,24 @@ showAction=true,
     setEditingRow(null)
     setOriginalIndex(null)
     setEditedData({})
+setoriginalReceivedAmount(0)
   }
   console.log("h")
   const handleInputChange = (field, value) => {
+console.log(totalAmount)
+console.log(editedData)
+console.log(balanceAmount)
+const numericValue = Number(value)
+const maxAllowed = Number(originalReceivedAmount) + Number(balanceAmount)
+console.log(maxAllowed)
+console.log(numericValue)
+console.log(originalReceivedAmount)
+
+  if (numericValue > maxAllowed) {
+    toast.warning(`Received amount cannot be greater than ${maxAllowed}`)
+    return
+  }
+
     setEditedData((prev) => ({
       ...prev,
       [field]: value
@@ -154,6 +175,8 @@ showAction=true,
 
   const handleVerify = async (index, checkverified) => {
     console.log(index)
+console.log(!checkverified?.[index])
+console.log(loggedUser?._id)
 
     try {
       setsubmitLoading(true)
@@ -214,6 +237,7 @@ showAction=true,
               }))
               onClose(false)
               setselectedLeadId(null)
+setoriginalReceivedAmount(0)
             }}
             className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-colors"
           >
@@ -265,7 +289,7 @@ showAction=true,
                   <th className="px-3 sm:px-4 py-3 text-center text-xs sm:text-sm font-semibold whitespace-nowrap">
                     Bank Remarks
                   </th>
-                  {!verifiedLead &&showAction&& (
+                  {!verifiedLead && showAction && (
                     <th className="px-3 sm:px-4 py-3 text-center text-xs sm:text-sm font-semibold  whitespace-nowrap">
                       Actions
                     </th>
@@ -298,7 +322,7 @@ showAction=true,
                             onChange={(e) =>
                               handleInputChange(
                                 "receivedAmount",
-                                parseFloat(e.target.value) 
+                                parseFloat(e.target.value)
                               )
                             }
                             className="w-32 px-2 py-1.5 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm  [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0"
@@ -329,12 +353,11 @@ showAction=true,
                           />
                         ) : (
                           <span className="text-gray-700  block max-w-xs whitespace-normal break-all">
-                            
                             {row.bankRemarks || ""}
                           </span>
                         )}
                       </td>
-                      {!verifiedLead &&showAction&& (
+                      {!verifiedLead && showAction && (
                         <td className="px-3 sm:px-4 py-3  whitespace-nowrap text-center">
                           {isEditing ? (
                             <div className="flex items-center justify-center gap-2">
@@ -442,6 +465,7 @@ showAction=true,
                 warning: ""
               }))
               setselectedLeadId(null)
+setoriginalReceivedAmount(0)
             }}
             className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
           >

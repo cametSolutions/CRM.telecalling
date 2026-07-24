@@ -761,6 +761,8 @@
 // );
 
 // export default mongoose.model("LeadMaster", leadSchema);
+
+
 import mongoose from "mongoose";
 
 const toNullableNumber = (v) => {
@@ -1334,8 +1336,13 @@ const leadSchema = new mongoose.Schema(
 
 leadSchema.index({ leadBranch: 1, leadLost: 1, createdAt: -1 });
 leadSchema.index({ leadBranch: 1, leadConvertedDate: 1 });
+leadSchema.index({ leadBranch: 1, "activityLog.taskTo": 1, "activityLog.followupClosed": 1 });
+leadSchema.index({ leadBranch: 1, "paymentHistory.paymentVerified": 1 });
+leadSchema.index({ leadBy: 1, leadByModel: 1 });
 leadSchema.index({ customerName: 1 });
 leadSchema.index({ partner: 1 });
+leadSchema.index({ leadBranch: 1, reallocatedTo: 1, leadConfirmed: 1 });
+leadSchema.index({ "leadFor.productorServiceId": 1 });
 leadSchema.index({
   leadBranch: 1,
   "activityLog.taskTo": 1,

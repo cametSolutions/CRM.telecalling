@@ -55,6 +55,7 @@ function LeadClosed() {
     userData?.selected[0]?.branch_id
   )
   const [selectedleadbranch, setselectedleadbranch] = useState(null)
+console.log(selectedleadbranch)
   const [activeUserId, setActiveUserId] = useState(null)
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
@@ -143,6 +144,7 @@ function LeadClosed() {
           console.log("hhhh")
           console.log(response.data.data)
           setselectedleadbranch(response.data.data[0].leadBranch)
+console.log(response.data.data[0].leadBranch)
           setfetchedData(response.data.data)
         }
       }
@@ -248,7 +250,7 @@ function LeadClosed() {
     console.log(objectId)
     console.log(userId)
     console.log(role)
-    
+
     try {
       setclosedLoader(true)
       const response = await api.put(`/lead/closingleads?docID=${objectId}`, {

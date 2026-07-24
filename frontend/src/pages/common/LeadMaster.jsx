@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo, useRef, useLayoutEffect } from "react"
 import { useLocation } from "react-router-dom"
 import { createPortal } from "react-dom"
+import { useSelector } from "react-redux"
+import { useDispatch } from "react-redux"
 import { parsePhoneNumberFromString } from "libphonenumber-js/mobile"
 import { Country, State } from "country-state-city"
 import BarLoader from "react-spinners/BarLoader"
@@ -1930,12 +1932,15 @@ const LeadMaster = ({
   seteditLoadingState,
   showmessage,
   showpopupMessage,
-  selectedcompanyBranch
+  selectedcompanyBranch,
+
 }) => {
+console.log(process)
   console.log(Breadcrumblist)
   console.log(from)
   console.log(Data)
   console.log(isReadOnly)
+
   const {
     register: registerMain,
     handleSubmit: handleSubmitMain,
@@ -1961,6 +1966,8 @@ const LeadMaster = ({
     reset: resetModal,
     watch
   } = useForm()
+const dispatch=useDispatch()
+const loggeduserBranch=useSelector((branch)=>branch.companyBranch.loggeduserbranches)
 
   const [productOrserviceSelections, setProductorServiceSelections] = useState(
     {}
@@ -2035,6 +2042,11 @@ const LeadMaster = ({
   const [loggeduser, setloggedUser] = useState(null)
   const [allstaff, setallStaffs] = useState([])
   const [selectedBranch, setSelectedBranch] = useState(selectedcompanyBranch)
+console.log(selectedBranch)
+const showInput =
+  Array.isArray(loggeduserBranch) &&
+  loggeduserBranch.includes(selectedBranch);
+console.log(showInput)
   const [tasklist, settasklist] = useState([])
   const [allcustomer, setallcustomer] = useState([])
   const [selectedUserName, setselecteduserName] = useState(null)
@@ -2230,9 +2242,9 @@ const LeadMaster = ({
   }
 
   const canSelfAllocate =
-    loggeduser?.department?._id === "670c866552847bbebbd35748" ||
-    loggeduser?.department?._id === "670c867352847bbebbd35750"
-
+    loggeduser?.department?.code === "DEPARTMENT3" ||
+    
+console.log(loggeduser)
   useEffect(() => {
     console.log("jjjj")
     setSelectedBranch(selectedcompanyBranch)
@@ -2487,6 +2499,8 @@ const LeadMaster = ({
       setValueMain("mobile", Data[0]?.customerName?.mobile)
       setValueMain("phone", Data[0]?.customerName?.phone)
       setValueMain("email", Data[0]?.customerName?.email)
+setValueMain("phone",Data[0].customerName.landline)
+console.log(Data[0].customerName.landline)
       setValueMain("remark", Data[0].remark)
       setSelectedCustomer(Data[0]?.customerName)
       console.log(Data[0].leadFor)
@@ -2499,6 +2513,7 @@ const LeadMaster = ({
         itemType: item?.productorServicemodel,
         productPrice: item?.productPrice,
         hsn: item?.hsn,
+actualHsn:item?.actualHsn,
         netAmount: item?.netAmount,
         price: item?.price,
         company_id: item?.company_id,
@@ -2665,6 +2680,7 @@ const LeadMaster = ({
             })) || []
 
         console.log("d")
+console.log(selectedcustomerlicenseandproduct)
         setOriginalCustomerTableData(selectedcustomerlicenseandproduct)
         setTemporaryCustomerTableData([])
         setcustomerTableData(selectedcustomerlicenseandproduct)
@@ -2721,7 +2737,7 @@ const LeadMaster = ({
     if (selectedCustomer) {
       console.log(selectedCustomer)
       setValueMain("mobile", selectedCustomer.mobile)
-      setValueMain("phone", selectedCustomer.phone)
+      setValueMain("phone", selectedCustomer.landline)
       setValueMain("email", selectedCustomer.email)
       setValueMain(
         "partner",
@@ -3176,6 +3192,7 @@ console.log(defaultCountry.value)
       setValueModal("registrationType", Data[0]?.customerName?.registrationType)
       setValueModal("gstNo", Data[0]?.customerName?.gstNo)
       setValueModal("city", Data[0]?.customerName?.city)
+setValueModal("country", Data[0]?.customerName?.country)
       console.log("hhh")
     }
   }
@@ -3531,15 +3548,16 @@ console.log(defaultCountry.value)
     console.log(term)
     console.log(hsn)
     console.log(productType)
+console.log(detailsForm)
     setDetailsForm((prev) => ({
       ...prev,
       taggeddata: (prev.taggeddata || []).map((row, i) => {
         if (i !== rowIndex) return row
 
         const originalHsn = Number(
-          row?.originalHsn || row?.actualHsn || row?.hsn || 0
+          row?.originalHsn ??row?.actualHsn ?? row?.hsn ?? 0
         )
-
+// console.log(row.actualHsn)
         const currentLeadAmount = Number(row?.taxexclusiveAmount || 0)
         const currentNextDueAmount = Number(row?.nextDueAmount || 0)
         const currentTotalLeadAmount = Number(row?.taxinclusiveamount || 0)
@@ -3611,6 +3629,8 @@ console.log(defaultCountry.value)
           console.log(checked)
           if (!checked) {
             const taxAmount = (originalHsn / 100) * currentLeadAmount
+console.log(taxAmount)
+console.log(originalHsn)
             console.log(taxAmount)
             console.log(currentTotalLeadAmount)
             updatedRow.leadTax = 0
@@ -4682,6 +4702,7 @@ console.log(defaultCountry.value)
                     String(tag?.licensenumber) === String(lic?.licenseNumber)
                 )
               : null
+console.log(existing)
             // 1. Pick the one WALLET product row (or all, but you showed one)
             const primaryProduct = Array.isArray(filteredproduct)
               ? filteredproduct[0] // or a .find if there are many
@@ -4759,12 +4780,12 @@ console.log(defaultCountry.value)
               nextDueTax:
                 existing?.nextDueTax ??
                 existingTag?.nextDueTax ??
-                item?.actualHsn ??
-                item?.hsn,
+                
+                item?.hsn??item?.actualHsn ,
               discountAmount:
                 existing?.discountAmount ??
-                existingTag?.discountAmount ??
-                item?.discountAmount,
+              
+                item?.discountAmount??0,
               noofusers:
                 existing?.noofusers ??
                 existingTag?.noofusers ??
@@ -5100,8 +5121,12 @@ convertexcel
                       value={selectedBranch}
                       disabled={isReadOnly}
                       onChange={(e) => {
+console.log(e.target.value)
                         setDuplicateWarning("")
                         setSelectedBranch(e.target.value)
+console.log("hhh")
+//           dispatch(setsliceselectedBranch(e.target.value))
+// console.log("hhh")
                         setValueMain("customerName", "")
                         setSelectedCustomer(null)
                         setcustomerTableData([])
@@ -5242,7 +5267,7 @@ convertexcel
                   </div>
                 </div>
 
-                {process === "register" && selfAllocation && (
+                {process === "Registration" && selfAllocation && showInput&&(
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-1">
@@ -5894,7 +5919,7 @@ convertexcel
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 pt-2">
                   {/* left: self allocation or lead id */}
                   <div className="w-full sm:w-1/2">
-                    {process === "register" ? (
+                    {process === "Registration"&&showInput ? (
                       <>
                         <label className="block text-xs font-semibold text-gray-600 mb-1">
                           Self Allocation / Other
@@ -5908,8 +5933,9 @@ convertexcel
                               v === true || v === false
                                 ? true
                                 : "This field is required",
-                            onChange: (e) =>
-                              setselfAllocation(e.target.value === "true")
+                            onChange: (e) =>{
+setValueMain("allocationType","followup")
+                              setselfAllocation(e.target.value === "true")}
                           })}
                           defaultValue="false" // default is Allocate To Other
                           className={`w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8] ${
@@ -8992,7 +9018,7 @@ convertexcel
                                                           rowIndex,
                                                           e.target.checked,
                                                           "leadTax",
-                                                          tag?.leadTax,
+                                                          e.target.checked?tag?.leadTax:0,
                                                           detailsForm?.productType
                                                         )
                                                       }}

@@ -6,6 +6,7 @@ import BarLoader from "react-spinners/BarLoader"
 import LeadTaskComponent from "../../../components/primaryUser/LeadTaskComponent"
 import { PerformanceModal } from "../../../components/primaryUser/PerformanceModal"
 import { useState, useEffect } from "react"
+import NoDataAvailable from "../../../components/NodataAvailable"
 import { getLocalStorageItem } from "../../../helper/localstorage"
 import {
   Eye,
@@ -32,18 +33,20 @@ import { StaticSidebar } from "../../../components/primaryUser/StaticSidebar"
 import StaffHeader from "../../../header/StaffHeader"
 import { PropagateLoader } from "react-spinners"
 const LeadTask = () => {
-const reduxselectedBranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
-console.log(reduxselectedBranch)
+  const reduxselectedBranch = useSelector(
+    (branch) => branch.companyBranch.selectedBranch
+  )
+  console.log(reduxselectedBranch)
   const [loggedUser, setloggedUser] = useState(null)
   const [dates, setDates] = useState({ startDate: "", endDate: "" })
   console.log(dates)
   const [type, settype] = useState("leadTask")
   const [filteredData, setFilteredData] = useState([])
-console.log(filteredData)
+  console.log(filteredData)
   const [netTotalAmount, setnetTotalAmount] = useState(0)
   const [pending, setPending] = useState(true)
   const [ownTask, setownTask] = useState(true)
-console.log(ownTask)
+  console.log(ownTask)
   const navigate = useNavigate()
   const [activeUserId, setActiveUserId] = useState(null)
   const [loggedUserBranches, setloggedUserBranches] = useState(null)
@@ -197,48 +200,48 @@ console.log(ownTask)
       //     }
       //   })
       // })
-const finalOutput = []
-data.forEach((entry) => {
-  const activitylog = entry.activityLog
+      const finalOutput = []
+      data.forEach((entry) => {
+        const activitylog = entry.activityLog
 
-  activitylog.forEach((log) => {
-    if (
-      log.taskClosed === false &&
-      log?.taskallocatedTo &&
-      log.taskTo &&
-      log.taskTo !== "followup" &&
-      log.allocationChanged !== true   // <-- skip superseded allocations
-    ) {
-      finalOutput.push({
-        leadId: entry.leadId,
-        leadDocId: entry._id,
-        allocatedTo: log?.taskallocatedTo?._id,
-        leadDate: entry.leadDate,
-        customerName:
-          entry?.customerName?.customerName || entry?.customerName,
-        leadBy: entry?.leadBy,
-        dueDate: entry?.dueDate,
-        leadFor: entry?.leadFor,
-        netAmount: entry?.netAmount,
-        mobile: entry?.mobile,
-        email: entry?.email,
-        taskTo: log?.taskTo,
-        taskBy: log?.taskBy,
-        remarks: log.remarks,
-        closedDate: log?.submissionDate,
-        matchedlog: log,
-        activityLog: activitylog,
-        taskallocatedTo: entry.taskallocatedTo,
-        taskallocatedBy: entry.taskallocatedBy,
-        sameUser: loggedUser?._id === entry.taskallocatedTo?._id
+        activitylog.forEach((log) => {
+          if (
+            log.taskClosed === false &&
+            log?.taskallocatedTo &&
+            log.taskTo &&
+            log.taskTo !== "followup" &&
+            log.allocationChanged !== true // <-- skip superseded allocations
+          ) {
+            finalOutput.push({
+              leadId: entry.leadId,
+              leadDocId: entry._id,
+              allocatedTo: log?.taskallocatedTo?._id,
+              leadDate: entry.leadDate,
+              customerName:
+                entry?.customerName?.customerName || entry?.customerName,
+              leadBy: entry?.leadBy,
+              dueDate: entry?.dueDate,
+              leadFor: entry?.leadFor,
+              netAmount: entry?.netAmount,
+              mobile: entry?.mobile,
+              email: entry?.email,
+              taskTo: log?.taskTo,
+              taskBy: log?.taskBy,
+              remarks: log.remarks,
+              closedDate: log?.submissionDate,
+              matchedlog: log,
+              activityLog: activitylog,
+              taskallocatedTo: entry.taskallocatedTo,
+              taskallocatedBy: entry.taskallocatedBy,
+              sameUser: loggedUser?._id === entry.taskallocatedTo?._id
+            })
+          }
+        })
       })
-    }
-  })
-})
-console.log(data)
-console.log(data.length)
-console.log(finalOutput)
-console.log('H')
+      console.log(data)
+      console.log(data.length)
+      console.log(finalOutput)
+      console.log("H")
       const totalNetAmount = finalOutput
         .reduce((total, lead) => {
           const leadTotal =
@@ -270,7 +273,7 @@ console.log('H')
 
       setFilteredData(Data)
     } else if (data && !pending) {
-console.log("hh")
+      console.log("hh")
       const finalOutput = []
 
       data.forEach((entry) => {
@@ -607,11 +610,8 @@ console.log("hh")
           </div>
 
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-16 space-y-4">
-              <PropagateLoader color="#3b82f6" size={12} />
-              <p className="text-gray-500 text-sm font-medium">
-                Loading tasks...
-              </p>
+<div className="p-3 rounded-md">
+              <SkeletonTable />
             </div>
           ) : error ? (
             <div className="flex items-center justify-center py-12">
@@ -620,34 +620,17 @@ console.log("hh")
               </div>
             </div>
           ) : data?.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 space-y-3">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-8 h-8 text-gray-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-gray-700 font-semibold text-lg">
-                No Tasks Available
-              </h3>
-            </div>
+<NoDataAvailable/>
+            
           ) : filteredData?.length > 0 ? (
+
             <LeadTaskComponent
               type={type}
               Data={filteredData}
               loggedUser={loggedUser}
               refresh={refreshHook}
               pending={pending}
-ownTask={ownTask}
+              ownTask={ownTask}
             />
           ) : (
             <div className="flex flex-col items-center justify-center py-12 text-gray-500">
