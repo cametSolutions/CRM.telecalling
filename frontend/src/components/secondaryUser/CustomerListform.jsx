@@ -773,6 +773,7 @@
 // }
 
 // export default CustomerListform
+
 import { useState, useEffect, useRef, useMemo } from "react"
 import ExcelJS from "exceljs"
 import { saveAs } from "file-saver"
@@ -809,14 +810,16 @@ const CustomerListform = () => {
 
   const { data: dupi } = UseFetch("/customer/duplicate")
   const { data: unwanted } = UseFetch("/customer/getunwanted")
-   const { data: productlist } = UseFetch( selectedBranch&&
-    `/product/getallProducts?branchselected=${encodeURIComponent(
+  const { data: productlist } = UseFetch(
+    selectedBranch &&
+      `/product/getallProducts?branchselected=${encodeURIComponent(
         JSON.stringify(selectedBranch)
       )}`
   )
   console.log(productlist)
   const fetchCustomers = async ({ pageParam = 1, queryKey }) => {
-    const [_key, { branch, search, status,productfilter }] = queryKey
+    const [_key, { branch, search, status, productfilter }] = queryKey
+    console.log(productfilter)
 
     const res = await api.get(
       `/customer/getcust?limit=100&page=${pageParam}&search=${search}&loggeduserBranches=${branch}&customerType=${status}&productfilter=${productfilter}`
@@ -824,7 +827,7 @@ const CustomerListform = () => {
 
     return res.data.data
   }
-
+  // console.log(productfilter)
   const {
     data,
     fetchNextPage,
@@ -839,7 +842,7 @@ const CustomerListform = () => {
         branch: selectedBranch,
         search: apiSearchTerm,
         status: selectedstatus,
-productfilter:productType
+        productfilter: productType
       }
     ],
     queryFn: fetchCustomers,
@@ -847,7 +850,7 @@ productfilter:productType
       lastPage?.customers?.length === 100 ? allPages.length + 1 : undefined,
     enabled: !!selectedBranch
   })
-
+  console.log(apiSearchTerm)
   useEffect(() => {
     const userData = getLocalStorageItem("user")
     if (!userData) return
@@ -871,93 +874,176 @@ productfilter:productType
   const allCustomers = useMemo(() => {
     return data?.pages?.flatMap((page) => page?.customers || []) || []
   }, [data])
-const productOptions = useMemo(() => {
-  if (!productlist?.length) return []
+console.log(allCustomers)
+  const productOptions = useMemo(() => {
+    if (!productlist?.length) return []
 
-  return productlist.map((it) => ({
-    value: it._id,
-    label: (it?.shortName??it.productName).toUpperCase()
-  }))
-}, [productlist])
-  //   const normalizedCustomers = useMemo(() => {
-  //     return allCustomers.map((customer) => {
+    return productlist.map((it) => ({
+      value: it._id,
+      label: (it?.shortName ?? it.productName).toUpperCase()
+    }))
+  }, [productlist])
+const normalizedCustomers = useMemo(() => {
+  return allCustomers.filter((customer) => {
+    if (selectedstatus === "ProductMissing") {
+      return !Array.isArray(customer.selected) || customer.selected.length === 0
+    }
+
+    if (!Array.isArray(customer.selected)) return false
+
+    if (productType === "All") return customer.selected.length > 0
+
+    return customer.selected.some((item) => {
+      const itemProductId =
+        item?.product_id?._id || item?.product_id || item?.productid || ""
+
+      return String(itemProductId) === String(productType)
+    })
+  }).map((customer) => {
+    if (!Array.isArray(customer.selected)) return customer
+
+    if (productType === "All") return customer
+
+    return {
+      ...customer,
+      selected: customer.selected.filter((item) => {
+        const itemProductId =
+          item?.product_id?._id || item?.product_id || item?.productid || ""
+
+        return String(itemProductId) === String(productType)
+      })
+    }
+  })
+}, [allCustomers, productType, selectedstatus])
+  // const normalizedCustomers = useMemo(() => {
+  //   return allCustomers
+  //     .map((customer) => {
   //       const selectedItems = customer.selected || []
 
-  //       const filteredByProductType = selectedItems.filter((item) => {
-  //         const rawType = String(item?.productorservicetype || "")
-  //           .trim()
-  //           .toLowerCase()
-  // console.log(rawType)
-  // console.log(productType)
+  //       const filteredByProduct = selectedItems.filter((item) => {
+  //         if (productType === "All") return true
 
-  //         if (productType === "Product") {
-  // console.log(!rawType)
-  //           return !rawType || rawType === "primaryproduct"
-  //         }
-  //         if (productType === "Additional Service") {
-  // console.log(!rawType)
-  // console.log(rawType)
-  //           return rawType === "additionalservice"
-  //         }
+  //         const itemProductId =
+  //           item?.product_id?._id || item?.product_id || item?.productid || ""
 
-  //         return true
+  //         return String(itemProductId) === String(productType)
   //       })
 
   //       return {
   //         ...customer,
-  //         selected: filteredByProductType
+  //         selected: filteredByProduct
   //       }
   //     })
-  //   }, [allCustomers, productType])
-  const normalizedCustomers = useMemo(() => {
-    return allCustomers
-      .map((customer) => {
-        const selectedItems = customer.selected || []
+  //     .filter((customer) => customer.selected?.length > 0 || !customer.selected)
+  // }, [allCustomers, productType])
 
-        const filteredByProduct = selectedItems.filter((item) => {
-          if (productType === "All") return true
+  // const filteredCustomers = useMemo(() => {
+  //   const normalize = (value) =>
+  //     String(value ?? "")
+  //       .trim()
+  //       .toLowerCase()
 
-          const itemProductId =
-            item?.product_id?._id || item?.product_id || item?.productid || ""
+  //   const term = normalize(searchTerm)
+  //   console.log(term)
+  //   if (!term) return normalizedCustomers
+  //   console.log(normalizedCustomers)
+  //   const a = normalizedCustomers.filter(
+  //     (item) =>
+  //       item.customerName ===
+  //       "QUALITY INNOVATIONS AND PHARMACEUTICALS INDIA (PVT) LTD"
+  //   )
+  //   console.log(a)
+  //   return normalizedCustomers.filter((cust) => {
+  //     const matchesCustomer =
+  //       normalize(cust.customerName).includes(term) ||
+  //       normalize(cust.mobile).includes(term)
+  //     // normalize(cust.email).includes(term) ||
+  //     // normalize(cust.address1).includes(term)
 
-          return String(itemProductId) === String(productType)
-        })
+  //     const matchesSelected =
+  //       Array.isArray(cust.selected) &&
+  //       cust.selected.some(
+  //         (sel) => normalize(sel?.licensenumber).includes(term)
+  //         // ||
+  //         //         normalize(sel?.productName).includes(term) ||
+  //         //         normalize(sel?.branch_id?.branchName).includes(term)
+  //       )
 
-        return {
-          ...customer,
-          selected: filteredByProduct
-        }
-      })
-      .filter((customer) => customer.selected?.length > 0 || !customer.selected)
-  }, [allCustomers, productType])
-  console.log(normalizedCustomers)
-  const a = normalizedCustomers.filter(
-    (i) => i.customerName === "2020 MARGIN FREE SUPER MARKET"
+  //     return matchesCustomer || matchesSelected
+  //   })
+  // }, [normalizedCustomers, searchTerm])
+const normalize = (value) =>
+  String(value ?? "").trim().toLowerCase()
+
+const customerMatchesSearch = (cust, term) => {
+  const matchesCustomer =
+    normalize(cust.customerName).includes(term) ||
+    normalize(cust.mobile).includes(term) ||
+    normalize(cust.email).includes(term) ||
+    normalize(cust.address1).includes(term)
+
+  const matchesSelected =
+    Array.isArray(cust.selected) &&
+    cust.selected.some(
+      (sel) =>
+        normalize(sel?.licensenumber).includes(term) ||
+        normalize(sel?.productName).includes(term) ||
+        normalize(sel?.branch_id?.branchName).includes(term)
+    )
+
+  return matchesCustomer || matchesSelected
+}
+const filteredCustomers = useMemo(() => {
+  const term = normalize(searchTerm)
+  if (!term) return normalizedCustomers
+  return normalizedCustomers.filter((cust) => customerMatchesSearch(cust, term))
+}, [normalizedCustomers, searchTerm])
+const handleChange = (e) => {
+  const value = e.target.value
+  setsearchTerm(value)
+
+  const term = normalize(value)
+
+  if (!term) {
+    debouncedApiSearch.cancel()
+    setApiSearchTerm("")
+    return
+  }
+
+  const hasLocalMatch = normalizedCustomers.some((cust) =>
+    customerMatchesSearch(cust, term)
   )
-  console.log(a)
-  const filteredCustomers = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase()
-    console.log(term)
-    if (!term) return normalizedCustomers
-    console.log("h")
-    return normalizedCustomers.filter((cust) => {
-      const matchesCustomer =
-        cust.customerName?.toLowerCase().includes(term) ||
-        cust.mobile?.toLowerCase().includes(term) ||
-        cust.email?.toLowerCase().includes(term) ||
-        cust.address1?.toLowerCase().includes(term)
 
-      const matchesSelected = cust.selected?.some(
-        (sel) =>
-          sel?.licensenumber?.toString().toLowerCase().includes(term) ||
-          sel?.productName?.toLowerCase().includes(term) ||
-          sel?.branch_id?.branchName?.toLowerCase().includes(term)
-      )
+  if (!hasLocalMatch) {
+    debouncedApiSearch(value)
+  } else {
+    debouncedApiSearch.cancel()
+    setApiSearchTerm("")
+  }
+}
+// const handleChange = (e) => {
+//   const value = e.target.value
+//   setsearchTerm(value)
 
-      return matchesCustomer || matchesSelected
-    })
-  }, [normalizedCustomers, searchTerm])
+//   const term = normalize(value)
 
+//   if (!term) {
+//     debouncedApiSearch.cancel()
+//     setApiSearchTerm("")
+//     return
+//   }
+
+//   const hasLocalMatch = normalizedCustomers.some((cust) =>
+//     customerMatchesSearch(cust, term)
+//   )
+
+//   if (!hasLocalMatch) {
+//     debouncedApiSearch(value)
+//   } else {
+//     debouncedApiSearch.cancel()
+//     setApiSearchTerm("")
+//   }
+// }
   useEffect(() => {
     if (searchTerm.trim()) {
       setcustomerCount(filteredCustomers.length)
@@ -980,34 +1066,75 @@ const productOptions = useMemo(() => {
     }
   }, [debouncedApiSearch])
 
-  const handleChange = (e) => {
-    const value = e.target.value
-    setsearchTerm(value)
+  // const handleChange = (e) => {
+  //   const value = e.target.value
+  //   setsearchTerm(value)
+  //   console.log(value)
+  //   if (!value.trim()) {
+  //     debouncedApiSearch.cancel()
+  //     setApiSearchTerm("")
+  //     return
+  //   }
 
-    if (!value.trim()) {
-      debouncedApiSearch.cancel()
-      setApiSearchTerm("")
-      return
-    }
+  //   const term = value.trim().toLowerCase()
+  //   console.log(normalizedCustomers)
+  //   console.log(term)
+  //   const hasLocalMatch = normalizedCustomers.some(
+  //     (cust) =>
+  //       cust.customerName?.includes(term) ||
+  //       cust.mobile?.includes(term) ||
+  //       cust.email?.includes(term) ||
+  //       cust.selected?.some(
+  //         (sel) =>
+  //           sel?.licensenumber?.toString().toLowerCase().includes(term) ||
+  //           sel?.productName?.toLowerCase().includes(term)
+  //       )
+  //   )
+  //   console.log(hasLocalMatch)
+  //   if (!hasLocalMatch) {
+  //     console.log(value)
+  //     console.log("h")
+  //     debouncedApiSearch(value)
+  //   }
+  // }
+// const handleChange = (e) => {
+//   const value = e.target.value
+//   setsearchTerm(value)
 
-    const term = value.trim().toLowerCase()
+//   const term = normalize(value)
 
-    const hasLocalMatch = normalizedCustomers.some(
-      (cust) =>
-        cust.customerName?.toLowerCase().includes(term) ||
-        cust.mobile?.toLowerCase().includes(term) ||
-        cust.email?.toLowerCase().includes(term) ||
-        cust.selected?.some(
-          (sel) =>
-            sel?.licensenumber?.toString().toLowerCase().includes(term) ||
-            sel?.productName?.toLowerCase().includes(term)
-        )
-    )
+//   if (!term) {
+//     debouncedApiSearch.cancel()
+//     setApiSearchTerm("")
+//     return
+//   }
 
-    if (!hasLocalMatch) {
-      debouncedApiSearch(value)
-    }
-  }
+//   const hasLocalMatch = normalizedCustomers.some((cust) => {
+//     const matchesCustomer =
+//       normalize(cust.customerName).includes(term) ||
+//       normalize(cust.mobile).includes(term) ||
+//       normalize(cust.email).includes(term) ||
+//       normalize(cust.address1).includes(term)
+
+//     const matchesSelected =
+//       Array.isArray(cust.selected) &&
+//       cust.selected.some(
+//         (sel) =>
+//           normalize(sel?.licensenumber).includes(term) ||
+//           normalize(sel?.productName).includes(term) ||
+//           normalize(sel?.branch_id?.branchName).includes(term)
+//       )
+
+//     return matchesCustomer || matchesSelected
+//   })
+
+//   if (!hasLocalMatch) {
+//     debouncedApiSearch(value)
+//   } else {
+//     debouncedApiSearch.cancel()
+//     setApiSearchTerm("")
+//   }
+// }
 
   const handleBranchChange = (branch) => {
     setselectedBranch(branch)
@@ -1287,10 +1414,7 @@ const productOptions = useMemo(() => {
               <CustomSelect
                 value={productType}
                 onChange={(value) => setproductType(value)}
-                options={[
-                {id:"All",label:"All"},
-                  ...productOptions
-                ]}
+                options={[{ id: "All", label: "All" }, ...productOptions]}
                 className="w-[220px]"
                 label="Product Filter"
                 labletrue

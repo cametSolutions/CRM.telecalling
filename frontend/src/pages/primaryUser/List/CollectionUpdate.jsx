@@ -90,14 +90,19 @@ console.log(selectedreduxbranch)
     loading,
     refreshHook
   } = UseFetch(
-    selectedCompanyBranch &&
+    selectedreduxbranch &&
       loggedUser &&
       `/lead/collectionLeads?selectedBranch=${selectedreduxbranch}&verified=${verifiedLead}&isAccountant=${isdepartmentisAccountant}&loggeduserby=${loggedUser._id}`
   )
+console.log(verifiedLead)
+console.log(isdepartmentisAccountant)
 console.log(selectedreduxbranch)
 console.log(collectionlead)
+const a=collectionlead?.filter((item)=>item.null)
+console.log(a)
   const { data: branchProduct } = UseFetch(
-    `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
+selectedreduxbranch&&
+    `/product/getallbranchProduct?branch=${selectedreduxbranch}`
   )
   console.log(selectedCompanyBranch)
   console.log(verifiedLead)
@@ -114,8 +119,7 @@ console.log(collectionlead)
       const userData = getLocalStorageItem("user")
       console.log(userData.department?.department)
       if (
-        userData.department?.department === "Accountant" ||
-        userData.department?._id === "670c863652847bbebbd35743"
+        userData.department?.code ==="DEPARTMENT2"
       ) {
         setisdepartmentAccountant(true)
       }
@@ -218,6 +222,7 @@ console.log(collectionlead)
       )
       console.log(updatedhistorylist)
       setpaymentHistoryList(updatedhistorylist[0]?.paymentHistory)
+console.log(updatedhistorylist[0])
       setBalanceAmount(updatedhistorylist[0].balanceAmount)
     }
   })
@@ -937,56 +942,78 @@ console.log(collectionlead)
           <div className="h-auto overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3 bg-white">
             <>
               {(() => {
-                const currentData = isforcefullyclosed
-                  ? forcefullyclosedLeads
-                  : tableData
-                console.log(currentData)
-                const hasLeads =
-                  Array.isArray(currentData) &&
-                  currentData.some(
-                    (group) =>
-                      Array.isArray(group.leads) && group.leads.length > 0
-                  )
-                console.log(hasLeads)
-                if (!hasLeads || currentData.length === 0) {
-                  return loading ? (
-                    <div className="flex justify-center py-6">
-                      <PropagateLoader color="#3b82f6" size={10} />
-                    </div>
-                  ) : (
-                    <div className="text-center text-gray-500 py-6">
-                      No Data Available
-                    </div>
-                  )
-                }
+//                 const currentData = isforcefullyclosed
+//                   ? forcefullyclosedLeads
+//                   : tableData
+//                 console.log(currentData)
+//                 const hasLeads =
+//                   Array.isArray(currentData) &&
+//                   currentData.some(
+//                     (group) =>
+//                       Array.isArray(group.leads) && group.leads.length > 0
+//                   )
+//                 console.log(hasLeads)
+//                 if (!hasLeads || currentData.length === 0) {
+//                   return loading ? (
+//                     <div className="flex justify-center py-6">
+//                       <SkeletonTable  />
+//                     </div>
+//                   ) : (
+//                     <div className="text-center text-gray-500 py-6">
+//                       No Data Available
+//                     </div>
+//                   )
+//                 }
 
-                return currentData.map(({ staffName, leads }, index) => (
-                  <div key={staffName || `group-${index}`} className="mb-6">
-                    {staffName && (
-                      <h3 className="text-base font-semibold text-gray-800 mb-2">
-                        {staffName}{" "}
-                        <span className="text-sm text-gray-500">
-                          ({leads?.length || 0} Leads)
-                        </span>
-                      </h3>
-                    )}
+//                 return currentData.map(({ staffName, leads }, index) => (
+//                   <div key={staffName || `group-${index}`} className="mb-6">
+//                     {staffName && (
+//                       <h3 className="text-base font-semibold text-gray-800 mb-2">
+//                         {staffName}{" "}
+//                         <span className="text-sm text-gray-500">
+//                           ({leads?.length || 0} Leads)
+//                         </span>
+//                       </h3>
+//                     )}
 
-                    {/* only render table if there are leads */}
- {loading? (
- <SkeletonTable/>
+                  
+//  {loading? (
+//  <SkeletonTable/>
                     
-                    ) : (
-                       renderTable(leads)
-                    )}
-                    {/* {leads.length > 0 ? (
-                      renderTable(leads)
-                    ) : (
-                      <div className="text-center text-gray-400 py-3 text-sm">
-                        No Lead under {staffName || "this group"}.
-                      </div>
-                    )} */}
-                  </div>
-                ))
+//                     ) : (
+//                        renderTable(leads)
+//                     )}
+                   
+//                   </div>
+//                 ))
+
+
+const currentData = isforcefullyclosed ? forcefullyclosedLeads : tableData
+
+const hasLeads =
+  Array.isArray(currentData) &&
+  currentData.some(
+    (group) => Array.isArray(group?.leads) && group.leads.length > 0
+  )
+
+if (loading) {
+  return <SkeletonTable />
+}
+
+if (!Array.isArray(currentData) || currentData.length === 0 || !hasLeads) {
+  return <div className="py-6 text-center text-gray-500">No Data Available</div>
+}
+
+return currentData.map(({ staffName, leads }, index) => (
+  <div key={staffName || `group-${index}`} className="mb-6">
+    {staffName && (
+      <h3 className="mb-2 text-base font-semibold text-gray-800">
+        {staffName} <span className="text-sm text-gray-500">({leads?.length || 0} Leads)</span>
+      </h3>
+    )}
+    {renderTable(leads)}
+  </div>
+))
               })()}
             </>
           </div>

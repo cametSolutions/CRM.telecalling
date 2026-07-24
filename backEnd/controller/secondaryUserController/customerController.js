@@ -4691,6 +4691,7 @@ export const GetselectedCustomerForCall = async (req, res) => {
 // };
 
 export const GetCustomer = async (req, res) => {
+console.log("hhhhhhhhhhhhhhhhhhhhh")
   const search = req.query?.search?.trim() || "";
   const role = req.query?.role;
   const userBranch = req.query?.userBranch;

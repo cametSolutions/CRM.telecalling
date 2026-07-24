@@ -285,7 +285,7 @@ onperformanceModalClick,
 setTargetData,targetData,
 onavataropenClick
 }) => {
-console.log("hh")
+console.log("hhd")
 // console.log(onpasswordClick)
   const now = new Date()
 const navigate=useNavigate()
@@ -300,8 +300,8 @@ console.log(selectedYear)
   // const [user, setUser] = useState(null)
 const user=useSelector((state)=>state.auth.user)
 console.log(user)
-  const [selectedBranch, setselectedBranch] = useState(null)
-console.log(selectedBranch)
+  // const [selectedBranch, setselectedBranch] = useState(null)
+// console.log(selectedBranch)
   // const [periodMode, setperiodMode] = useState(parentperiodmode)
   const [branchOptions, setbranchOptions] = useState([])
   const [selectedMonth] = useState(
@@ -314,8 +314,8 @@ console.log(selectedBranch)
   const [achievedPoints, setachievedPoints] = useState(0)
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile)
 const brand=useSelector((branch)=>branch.companyBranch.branches)
-const a=useSelector((b)=>b.companyBranch.selectedBranch)
-console.log(a)
+const selectedBranch=useSelector((b)=>b.companyBranch.selectedBranch)
+console.log(selectedBranch)
 console.log(brand)
   const { data, loading: targetLoading } = UseFetch(
     selectedBranch &&
@@ -342,12 +342,7 @@ console.log(data)
   //   setSelectedYear(parentyear)
   // }, [parentyear])
 
-  useEffect(() => {
-    if (a) {
-console.log(a)
-      setselectedBranch(a)
-    }
-  }, [a])
+
 
   useEffect(() => {
     if (!branchlist) return
@@ -488,7 +483,7 @@ const handleBranchChange = (branch) => {
   try {
     console.log(branch);
 
-    setselectedBranch(branch);
+    // setselectedBranch(branch);
 
     setLocalStorageItem("selectedBranch", branch);
 

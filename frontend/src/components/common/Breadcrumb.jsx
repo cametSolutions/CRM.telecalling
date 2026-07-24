@@ -7,7 +7,7 @@ import { ChevronRight, Home } from "lucide-react";
 const Breadcrumb = ({ items = [] }) => {
 console.log(items)
   return (
-    <nav className="flex items-center flex-wrap gap-1 text-sm m-3 mb-0">
+    <nav className="flex items-center flex-wrap gap-1 text-sm m-3 mb-0 ">
       <div className="flex items-center bg-white shadow-sm border rounded-lg px-1 py-1">
         <Home size={16} className="text-blue-600" />
 
