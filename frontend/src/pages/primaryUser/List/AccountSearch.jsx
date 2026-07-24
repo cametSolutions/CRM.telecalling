@@ -160,6 +160,8 @@ export default function AccountSearch() {
   const loggeduserBranch = useSelector(
     (state) => state.companyBranch.loggeduserbranches
   )
+const selectedbranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
+console.log(selectedbranch)
   const { data: productData, error: productError } = UseFetch(
     loggeduserBranch &&
       `/product/getallProducts?branchselected=${encodeURIComponent(
@@ -328,6 +330,7 @@ export default function AccountSearch() {
   }
 
   const handleInputChange = debounce(async (value) => {
+console.log(value)
     try {
       if (value === "") {
         setCustomerData([])
@@ -345,13 +348,14 @@ export default function AccountSearch() {
         //   `/customer/getCustomer?search=${value}&userBranch=${branches}`
         // )
 
-//         const branch = JSON.stringify(branches)
-// console.log(branch)
-//         const url = `http://localhost:9000/api/customer/getCustomer?search=${value}&role=${
-//           user.role
-//         }&userBranch=${encodeURIComponent(branch)}`
+        const branch = JSON.stringify([selectedbranch])
 
-        const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${value}&role=${
+// console.log(branch)
+        // const url = `http://localhost:9000/api/customer/getCustomer?search=${value}&role=${
+        //   user.role
+        // }&userBranch=${encodeURIComponent(branch)}`
+
+        const url = `https://www.crmtest.camet.in/api/customer/getCustomer?search=${value}&role=${
           user.role
         }&userBranch=${encodeURIComponent(branch)}`
 

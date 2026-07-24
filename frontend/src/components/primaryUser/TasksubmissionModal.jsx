@@ -40,6 +40,8 @@ console.log(taskDetails)
     try {
       console.log(taskDetails)
 if(submitloading)return
+console.log(taskDetails)
+
       setsubmitLoading(true)
       const response = await api.post("/lead/taskSubmission", taskDetails)
       toast.success(response.data.message)

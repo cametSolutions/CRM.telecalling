@@ -246,6 +246,7 @@ console.log(location?.state)
   const handleSubmit = async (data, leadData, objectId) => {
     console.log(data)
     console.log(leadData)
+
 const newnetamount = leadData.reduce(
   (sum, item) => sum + Number(item.netAmount || 0),
   0

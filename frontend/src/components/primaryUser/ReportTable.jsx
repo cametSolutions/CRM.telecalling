@@ -597,6 +597,7 @@ export default function ReportTable({
                       }}
                     >
                       {visibleColumns.map((col, colIdx) => {
+console.log(col)
                         const isFirst = colIdx === 0
                         const isLast = colIdx === visibleColumns.length - 1
 
