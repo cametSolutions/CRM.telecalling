@@ -42,14 +42,14 @@ export default function LostLeads() {
   const [ownLead, setownLead] = useState(true)
   const [companyBranches, setcompanyBranches] = useState(null)
   const [selectedCompanyBranch, setselectedCompanyBranch] = useState(null)
-console.log(selectedCompanyBranch)
+  console.log(selectedCompanyBranch)
   const [showhistoryModal, sethistoryModal] = useState(false)
   const [historyList, setHistoryList] = useState([])
   const [selectedUserName, setselecteduserName] = useState(null)
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
   const [activeUserId, setActiveUserId] = useState(null)
-const now=new Date()
+  const now = new Date()
   const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   const [periodMode, setperiodMode] = useState("all")
   const [targetData, settargetData] = useState([])
@@ -59,11 +59,11 @@ const now=new Date()
   const [achievedproducts, setacheivedProducts] = useState([])
   const [selectedPeriod, setselectedPeriod] = useState("")
   const navigate = useNavigate()
-const selbranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
-console.log(selbranch)
-const combranches=useSelector((branch)=>branch.companyBranch.branches)
-console.log(combranches)
-console.log(selbranch)
+  const selbranch = useSelector((branch) => branch.companyBranch.selectedBranch)
+  console.log(selbranch)
+  const combranches = useSelector((branch) => branch.companyBranch.branches)
+  console.log(combranches)
+  console.log(selbranch)
   const { data: companybranches } = UseFetch("/branch/getBranch")
   const { data: branchProduct } = UseFetch(
     `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
@@ -72,12 +72,13 @@ console.log(selbranch)
   console.log(loggedUser)
   console.log(companyBranches)
   console.log(selectedCompanyBranch)
+console.log(location?.state?.endDate)
   const url = shouldFetch
     ? location?.state?.staffId
-      ? `/lead/lostlead?userId=${loggedUser._id}&role=${loggedUser.role}&selectedBranch=${location?.state?.branchId}&ownlead=${ownLead}`
+      ? `/lead/lostlead?userId=${loggedUser._id}&role=${loggedUser.role}&selectedBranch=${location?.state?.branchId}&ownlead=${ownLead}&startDate=${location?.state?.date?.startDate}&endDate=${location?.state?.date?.endDate}`
       : `/lead/lostlead?userId=${loggedUser._id}&role=${loggedUser.role}&selectedBranch=${selectedCompanyBranch}&ownlead=${ownLead}`
     : null
-console.log(selectedCompanyBranch)
+  console.log(selectedCompanyBranch)
   console.log(location?.state)
   console.log(url)
   const { data: lostlead, loading, error, refreshHook } = UseFetch(url)
@@ -106,7 +107,7 @@ console.log(selectedCompanyBranch)
       setproductList(filteredList)
       console.log("J")
       console.log(targetData)
-     
+
       console.log("hhh")
 
       console.log(Datas)
@@ -115,7 +116,7 @@ console.log(selectedCompanyBranch)
       const filteredselectedCategory = Datas.flatMap(
         (user) => user.categories || []
       ).filter((item) => item.categoryId === selectedCategory?.Id)
-console.log(filteredselectedCategory)
+      console.log(filteredselectedCategory)
       console.log("Hh")
       const summary = filteredselectedCategory.reduce(
         (acc, cur) => {
@@ -130,8 +131,8 @@ console.log(filteredselectedCategory)
       setselectedDataPopup(summary)
       console.log(filteredselectedCategory && filteredselectedCategory.length)
       if (filteredselectedCategory && filteredselectedCategory.length) {
-console.log("hh")
-console.log(filteredselectedCategory)
+        console.log("hh")
+        console.log(filteredselectedCategory)
         setacheivedProducts((prev) => [
           ...prev,
           ...filteredselectedCategory.flatMap((item) =>
@@ -148,7 +149,7 @@ console.log(filteredselectedCategory)
   }, [targetData])
 
   useEffect(() => {
-    if (selbranch &&companybranches&& companybranches.length > 0) {
+    if (selbranch && companybranches && companybranches.length > 0) {
       const userData = getLocalStorageItem("user")
       const branch = companybranches?.map((branch) => {
         return {
@@ -160,7 +161,7 @@ console.log(filteredselectedCategory)
       setselectedCompanyBranch(selbranch)
       setLoggedUser(userData)
     }
-  }, [selbranch,companybranches])
+  }, [selbranch, companybranches])
   useEffect(() => {
     if (lostlead && lostlead.length > 0) {
       console.log(lostlead)
@@ -169,6 +170,10 @@ console.log(filteredselectedCategory)
       if (location?.state?.viewMode) {
         // const filteredleads=lostlead.filter((item)=>item.staffId)
         console.log(lostlead)
+        const addd = lostlead.map((item) => item.leadId)
+        const tt = lostlead.filter((item) => item.leadId === "00107")
+        console.log(tt)
+        console.log(addd)
         filteredLeads = lostlead.filter((lead) => {
           // 1️⃣ Get only followup allocation logs
           const followupAllocations = lead.activityLog.filter(
@@ -177,35 +182,95 @@ console.log(filteredselectedCategory)
               log.taskallocatedTo && // must exist
               log.allocationChanged === false
           )
-
+          console.log(followupAllocations)
           // 2️⃣ If no followup allocations → skip
           if (followupAllocations.length === 0) return false
-
+          if (lead.leadId === "00170") {
+            console.log(followupAllocations)
+          }
           // 3️⃣ Take LAST followup allocation
           const lastFollowupAllocation =
             followupAllocations[followupAllocations.length - 1]
-
+          console.log(location.state.staffId)
+          console.log(lastFollowupAllocation)
           // 4️⃣ Match with user
           return (
-            lastFollowupAllocation.taskallocatedTo.toString() ===
-            location?.staffId?.toString()
+            lastFollowupAllocation.taskallocatedTo?._id.toString() ===
+            location?.state?.staffId?.toString()
           )
         })
         console.log(filteredLeads)
       }
-      const groupedLeads = {}
-      let grandTotal = 0
-      location?.state?.viewMode
-        ? filteredLeads
-        : lostlead.forEach((lead) => {
-            const assignedTo = lead?.leadclosedBy?.name
-            const amount = lead?.netAmount || 0
-            grandTotal += amount
-            if (!groupedLeads[assignedTo]) {
-              groupedLeads[assignedTo] = []
-            }
-            groupedLeads[assignedTo].push(lead)
-          })
+console.log(filteredLeads)
+console.log(location.state.viewMode)
+//       const groupedLeads = {}
+//       let grandTotal = 0
+//       location?.state?.viewMode
+//         ? filteredLeads
+//         : lostlead.forEach((lead) => {
+//             const assignedTo = lead?.leadclosedBy?.name
+// console.log(assignedTo)
+//             const amount = lead?.netAmount || 0
+//             grandTotal += amount
+//             if (!groupedLeads[assignedTo]) {
+//               groupedLeads[assignedTo] = []
+//             }
+//             groupedLeads[assignedTo].push(lead)
+//           })
+      // const groupedLeads = {}
+      // let grandTotal = 0
+      // lostlead.forEach((lead) => {
+      //   const assignedTo = lead?.leadclosedBy?.name
+      //   const amount = lead?.netAmount || 0
+      //   grandTotal += amount
+      //   if (!groupedLeads[assignedTo]) {
+      //     groupedLeads[assignedTo] = []
+      //   }
+      //   groupedLeads[assignedTo].push(lead)
+      // })
+// const viewmode = location?.state?.viewmode
+
+// const groupedLeads =
+//   typeof viewmode === "string" && viewmode.trim() !== ""
+//     ? filteredlead.reduce((acc, item) => {
+//         const key = item?.taskallocatedTo?.name || "Unknown"
+//         if (!acc[key]) acc[key] = []
+//         acc[key].push(item)
+//         return acc
+//       }, {})
+//     : {}
+// const groupedLeads = {}
+// let grandTotal = 0
+// location?.state?.viewMode?filteredLeads:lostleads&&
+// lostlead.forEach((lead) => {
+//   const assignedTo = lead?.leadclosedBy?.name
+//   const amount = lead?.netAmount || 0
+//   grandTotal += amount
+
+//   if (!groupedLeads[assignedTo]) {
+//     groupedLeads[assignedTo] = []
+//   }
+
+//   groupedLeads[assignedTo].push(lead)
+// })
+const groupedLeads = {}
+let grandTotal = 0
+
+const leadsToGroup = location?.state?.viewMode ? filteredLeads : lostlead
+
+leadsToGroup.forEach((lead) => {
+  const assignedTo = lead?.leadclosedBy?.name || "Unknown"
+  const amount = lead?.netAmount || 0
+
+  grandTotal += amount
+
+  if (!groupedLeads[assignedTo]) {
+    groupedLeads[assignedTo] = []
+  }
+
+  groupedLeads[assignedTo].push(lead)
+})
+      console.log(groupedLeads)
       const Data = normalizeTableData(groupedLeads)
       settotalAmount(grandTotal)
       setTableData(Data)
@@ -252,7 +317,7 @@ console.log(filteredselectedCategory)
     console.log("J")
     console.log(targetData)
     console.log(loggedUser?._id)
-  
+
     // const filteredselectedCategory =
     //   filteredloggedUserItem[0].categories.filter(
     //     (item) => item.categoryId === id
@@ -289,7 +354,7 @@ console.log(filteredselectedCategory)
     setOpenModal(true)
   }
   const handleSelectedUser = (category, userId, userName) => {
-setActiveUserId(userId)
+    setActiveUserId(userId)
     setselecteduserName(userName)
     setselectedCategory({
       Id: category.Id,
@@ -320,7 +385,7 @@ setActiveUserId(userId)
       //     amount: product.achieved
       //   })) || []
       // )
- setacheivedProducts(
+      setacheivedProducts(
         filteredselectedCategory.flatMap((item) =>
           (item.products || []).map((product) => ({
             productname: product.name,
@@ -622,7 +687,10 @@ setActiveUserId(userId)
           {tableData && tableData.length > 0 && (
             <div className="flex justify-end md:mx-5 text-blue-700 font-semibold  whitespace-nowrap">
               <span>Total Amount :</span>
-              <span className="ml-1 flex items-center"><IndianRupee className="w-4 h-4 mr-1 text-blue-700" />{TotalAmount}</span>
+              <span className="ml-1 flex items-center">
+                <IndianRupee className="w-4 h-4 mr-1 text-blue-700" />
+                {TotalAmount}
+              </span>
             </div>
           )}
           {/* Responsive Table Container this is the newest design*/}
@@ -666,53 +734,50 @@ setActiveUserId(userId)
                   </div>
                 ))
               })()} */}
-{(() => {
-  // 1. Loading
-  if (loading) {
-    return <SkeletonTable />;
-  }
+              {(() => {
+                // 1. Loading
+                if (loading) {
+                  return <SkeletonTable />
+                }
 
-  // 2. Check if there is at least one lead
-  const hasLeads =
-    Array.isArray(tableData) &&
-    tableData.some(
-      ({ leads }) => Array.isArray(leads) && leads.length > 0
-    );
+                // 2. Check if there is at least one lead
+                const hasLeads =
+                  Array.isArray(tableData) &&
+                  tableData.some(
+                    ({ leads }) => Array.isArray(leads) && leads.length > 0
+                  )
 
-  // 3. Empty state
-  if (!hasLeads) {
-    return (
-      <div className="text-center text-gray-500 py-6">
-        No Lost Leads Available
-      </div>
-    );
-  }
+                // 3. Empty state
+                if (!hasLeads) {
+                  return (
+                    <div className="text-center text-gray-500 py-6">
+                      No Lost Leads Available
+                    </div>
+                  )
+                }
 
-  // 4. Render grouped data
-  return tableData.map(({ staffName, leads = [] }, index) => (
-    <div
-      key={staffName || `group-${index}`}
-      className="mb-6"
-    >
-      {staffName && (
-        <h3 className="ml-1 mb-2 text-base font-semibold text-gray-800">
-          {staffName}{" "}
-          <span className="text-sm font-normal text-gray-500">
-            ({leads.length} Leads)
-          </span>
-        </h3>
-      )}
+                // 4. Render grouped data
+                return tableData.map(({ staffName, leads = [] }, index) => (
+                  <div key={staffName || `group-${index}`} className="mb-6">
+                    {staffName && (
+                      <h3 className="ml-1 mb-2 text-base font-semibold text-gray-800">
+                        {staffName}{" "}
+                        <span className="text-sm font-normal text-gray-500">
+                          ({leads.length} Leads)
+                        </span>
+                      </h3>
+                    )}
 
-      {leads.length > 0 ? (
-        renderTable(leads)
-      ) : (
-        <div className="py-3 text-center text-sm text-gray-400">
-          No Leads under {staffName || "this group"}.
-        </div>
-      )}
-    </div>
-  ));
-})()}
+                    {leads.length > 0 ? (
+                      renderTable(leads)
+                    ) : (
+                      <div className="py-3 text-center text-sm text-gray-400">
+                        No Leads under {staffName || "this group"}.
+                      </div>
+                    )}
+                  </div>
+                ))
+              })()}
             </>
           </div>
         </div>
@@ -738,20 +803,20 @@ setActiveUserId(userId)
           setacheivedProducts([])
           setselectedDataPopup([])
           setperiodMode(val)
- setselecteduserName(null)
+          setselecteduserName(null)
         }}
         onYearChange={(val) => {
           setacheivedProducts([])
           setselectedDataPopup([])
           setSelectedYear(val)
- setselecteduserName(null)
+          setselecteduserName(null)
         }}
         productlist={productlist}
         onClose={() => {
           setselecteduserName(null)
           setacheivedProducts([])
           setOpenModal(false)
-  setActiveUserId(null)
+          setActiveUserId(null)
         }}
         selectedMonth={periodMode}
         selectedYear={selectedYear}
@@ -769,7 +834,7 @@ setActiveUserId(userId)
         selectedUser={selectedUserName}
         category={selectedCategory}
         handleSelectedUser={handleSelectedUser}
- activeUserId={activeUserId}
+        activeUserId={activeUserId}
       />
     </div>
   )

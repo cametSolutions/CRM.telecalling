@@ -123,8 +123,22 @@ console.log(todaysCollection)
 console.log(periodMode)
   const [loggedusedTarget, setloggeduserTarget] = useState([])
   const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
+const year = now.getFullYear()
+const month = now.getMonth()
+
+const defaultStartDate = `${year}-${String(month + 1).padStart(2, "0")}-01`
+const defaultEndDate = `${year}-${String(month + 1).padStart(2, "0")}-${String(
+  now.getDate()
+).padStart(2, "0")}`
+
+console.log(defaultEndDate) // e.g. "2026-07-25"
+console.log(date)
+
+const start = defaultStartDate
+const end = defaultEndDate
+console.log(end)
   const { data: followup } = UseFetch(
-    `/lead/getfollowupsummaryReport?branchId=${reduxselectedBranch}`
+    `/lead/getfollowupsummaryReport?branchId=${reduxselectedBranch}&startDate=${start}&endDate=${end}`
   )
   const { data: collectiondata, loading: collectionloader } = UseFetch(
 selectedBranch&&
@@ -191,23 +205,14 @@ console.log(collectiondata)
     }
   }, [])
 
-  // useEffect(() => {
-  //   const handleClickOutside = (e) => {
-  //     if (!e.target.closest(".user-menu-container")) {
-  //       setShowUserMenu(false)
-  //     }
-  //   }
-
-  //   document.addEventListener("mousedown", handleClickOutside)
-
-  //   return () => document.removeEventListener("mousedown", handleClickOutside)
-  // }, [])
+ 
   useEffect(() => {
     if (followup && followup.length && user) {
       const filteredleadcounts = followup.filter(
         (item) => item.staffId === user._id
       )
-
+console.log(followup)
+console.log(filteredleadcounts)
       const item = filteredleadcounts?.[0]
 
       if (item) {
@@ -542,7 +547,7 @@ console.log(storedUser)
           viewMode: "converted",
           from: "followupReport",
           ownlead: true,
-
+header:"Converted",
           istotal: true,
           filterRange: date
         }
@@ -865,95 +870,7 @@ console.log(announcement)
           </div>
           <main className="min-h-0 flex-1 overflow-y-auto">
             <section className="p-3 sm:p-4 lg:p-4">
-              {/* <div className="grid grid-cols-6 gap-2">
-                {cardDisplay.slice(0, 6).map((card) => (
-                  <div
-                    key={card.title}
-                    onClick={() =>
-                      handleFollowupCellClick(card.title, card.value)
-                    }
-                    className="
-        min-w-0
-        flex flex-col justify-between
-        rounded-lg border border-slate-200/90 bg-white
-        px-2.5 py-2.5
-        min-h-[78px]
-cursor-pointer
-      "
-                    style={{
-                      boxShadow:
-                        "0 3px 10px rgba(15,23,42,0.05), inset 0 1px 0 rgba(255,255,255,0.8)"
-                    }}
-                  >
-                    <div className="flex items-start justify-between gap-1.5">
-                      <div className="flex min-w-0 items-center gap-2">
-                        <div
-                          className="
-              flex h-[28px] w-[28px] shrink-0 items-center justify-center
-              rounded-md bg-slate-50
-              sm:h-[30px] sm:w-[30px]
-              lg:h-[32px] lg:w-[32px]
-            "
-                          style={{
-                            boxShadow:
-                              "inset 0 1px 0 rgba(255,255,255,0.85), 0 1px 2px rgba(15,23,42,0.06)"
-                          }}
-                        >
-                          <div className="scale-[0.9] sm:scale-100">
-                            {card.icon}
-                          </div>
-                        </div>
-
-                        <div className="min-w-0">
-                          <h3
-                            className="
-                truncate
-                font-semibold leading-none text-slate-900
-                text-[clamp(14px,1.2vw,18px)]
-              "
-                            title={card.value}
-                          >
-                            {card.value}
-                          </h3>
-                        </div>
-                      </div>
-
-                      <span
-                        className="
-            ml-1 max-w-[48px] shrink-0
-            font-medium text-black
-            text-[clamp(11px,0.9vw,13px)]
-          "
-                        title={card.right}
-                      >
-                        ₹{card.right}
-                      </span>
-                    </div>
-
-                    <p
-                      className="
-          mt-1.5 line-clamp-2
-          font-medium leading-[1.25] text-slate-600
-          text-[clamp(10px,0.95vw,13px)]
-        "
-                      title={card.title}
-                    >
-                      {card.title}
-                    </p>
-                    <p
-                      className="
-          mt-1 line-clamp-2
-          font-medium leading-[1.25] text-slate-600
-text-[clamp(9px,0.75vw,11px)]
-          
-        "
-                      title={card.title}
-                    >
-                      {card.detail}
-                    </p>
-                  </div>
-                ))}
-              </div> */}
+             
 
 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
   {cardDisplay.slice(0, 6).map((card) => (
