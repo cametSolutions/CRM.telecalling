@@ -4690,192 +4690,805 @@ export const GetselectedCustomerForCall = async (req, res) => {
 //   }
 // };
 
-export const GetCustomer = async (req, res) => {
-console.log("hhhhhhhhhhhhhhhhhhhhh")
-  const search = req.query?.search?.trim() || "";
-  const role = req.query?.role;
-  const userBranch = req.query?.userBranch;
-  const pendingCustomerList = req.query?.pendingCustomerList;
+// export const GetCustomer = async (req, res) => {
+// console.log("hhhhhhhhhhhhhhhhhhhhh")
+//   const search = req.query?.search?.trim() || "";
+//   const role = req.query?.role;
+//   const userBranch = req.query?.userBranch;
+//   const pendingCustomerList = req.query?.pendingCustomerList;
 
-  let parsedBranch = [];
-  let objectIds = [];
+//   let parsedBranch = [];
+//   let objectIds = [];
+
+//   const escapeRegex = (value = "") =>
+//     String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+//   const hasValidLicense = (value) => {
+//     return value !== undefined && value !== null && String(value).trim() !== "";
+//   };
+
+//   const filterSelectedWithLicense = (selected = []) => {
+//     return Array.isArray(selected)
+//       ? selected.filter((item) => hasValidLicense(item?.licensenumber))
+//       : [];
+//   };
+
+//   const toObjectIdExpr = (path) => ({
+//     $convert: {
+//       input: path,
+//       to: "objectId",
+//       onError: null,
+//       onNull: null
+//     }
+//   });
+
+//   const getPopulateSelectedStages = () => [
+//     {
+//       $unwind: {
+//         path: "$selected",
+//         preserveNullAndEmptyArrays: true
+//       }
+//     },
+//     {
+//       $addFields: {
+//         "selected.branchObjectId": toObjectIdExpr("$selected.branch_id"),
+//         "selected.companyObjectId": toObjectIdExpr("$selected.company_id"),
+//         "selected.productObjectId": toObjectIdExpr("$selected.product_id"),
+//         partnerObjectId: toObjectIdExpr("$partner")
+//       }
+//     },
+//     {
+//       $lookup: {
+//         from: "branches",
+//         localField: "selected.branchObjectId",
+//         foreignField: "_id",
+//         as: "branchDetails"
+//       }
+//     },
+//     {
+//       $lookup: {
+//         from: "companies",
+//         localField: "selected.companyObjectId",
+//         foreignField: "_id",
+//         as: "companyDetails"
+//       }
+//     },
+//     {
+//       $lookup: {
+//         from: "products",
+//         localField: "selected.productObjectId",
+//         foreignField: "_id",
+//         as: "productDetails"
+//       }
+//     },
+//     {
+//       $lookup: {
+//         from: "partners",
+//         localField: "partnerObjectId",
+//         foreignField: "_id",
+//         as: "partnerDetails"
+//       }
+//     },
+//     {
+//       $addFields: {
+//         partner: { $arrayElemAt: ["$partnerDetails", 0] },
+//         "selected.branch_id": {
+//           $let: {
+//             vars: { branch: { $arrayElemAt: ["$branchDetails", 0] } },
+//             in: {
+//               $cond: [
+//                 { $ifNull: ["$$branch._id", false] },
+//                 {
+//                   _id: "$$branch._id",
+//                   branchName: "$$branch.branchName"
+//                 },
+//                 "$selected.branch_id"
+//               ]
+//             }
+//           }
+//         },
+//         "selected.company_id": {
+//           $let: {
+//             vars: { company: { $arrayElemAt: ["$companyDetails", 0] } },
+//             in: {
+//               $cond: [
+//                 { $ifNull: ["$$company._id", false] },
+//                 {
+//                   _id: "$$company._id",
+//                   companyName: "$$company.companyName"
+//                 },
+//                 "$selected.company_id"
+//               ]
+//             }
+//           }
+//         },
+//         "selected.product_id": {
+//           $cond: [
+//             { $gt: [{ $size: "$productDetails" }, 0] },
+//             { $arrayElemAt: ["$productDetails", 0] },
+//             "$selected.product_id"
+//           ]
+//         }
+//       }
+//     },
+//     {
+//       $project: {
+//         branchDetails: 0,
+//         companyDetails: 0,
+//         productDetails: 0,
+//         partnerDetails: 0,
+//         partnerObjectId: 0,
+//         "selected.branchObjectId": 0,
+//         "selected.companyObjectId": 0,
+//         "selected.productObjectId": 0
+//       }
+//     },
+//     {
+//       $group: {
+//         _id: "$_id",
+//         customerName: { $first: "$customerName" },
+//         address1: { $first: "$address1" },
+//         address2: { $first: "$address2" },
+//         country: { $first: "$country" },
+//         registrationType: { $first: "$registrationType" },
+//         state: { $first: "$state" },
+//         city: { $first: "$city" },
+//         pincode: { $first: "$pincode" },
+//         email: { $first: "$email" },
+//         mobile: { $first: "$mobile" },
+//         landline: { $first: "$landline" },
+//         industry: { $first: "$industry" },
+//         contactPerson: { $first: "$contactPerson" },
+//         partner: { $first: "$partner" },
+//         createdAt: { $first: "$createdAt" },
+//         updatedAt: { $first: "$updatedAt" },
+//         selected: { $push: "$selected" }
+//       }
+//     },
+//     {
+//       $addFields: {
+//         selected: {
+//           $filter: {
+//             input: "$selected",
+//             as: "item",
+//             cond: { $ne: ["$$item", null] }
+//           }
+//         }
+//       }
+//     }
+//   ];
+
+//   const normalizeCustomers = (customers = []) => {
+//     return customers.map((customer) => ({
+//       ...customer,
+//       selected: Array.isArray(customer?.selected)
+//         ? customer.selected.filter((item) => item != null)
+//         : []
+//     }));
+//   };
+
+//   try {
+//     if (userBranch) {
+//       parsedBranch = JSON.parse(decodeURIComponent(userBranch));
+//     }
+
+//     if (Array.isArray(parsedBranch) && parsedBranch.length > 0) {
+//       objectIds = parsedBranch
+//         .filter((id) => mongoose.Types.ObjectId.isValid(id))
+//         .map((id) => new mongoose.Types.ObjectId(id));
+//     }
+
+//     if (
+//       search &&
+//       Array.isArray(parsedBranch) &&
+//       parsedBranch.length > 0 &&
+//       role !== "Admin"
+//     ) {
+//       if (!isNaN(search)) {
+//         const escapedSearch = escapeRegex(search);
+//         const searchRegex = new RegExp(`^${escapedSearch}`, "i");
+
+//         const mobileCustomerRaw = await Customer.find({
+//           mobile: searchRegex
+//         }).lean();
+
+//         const licenseCustomerRaw = await Customer.find({
+//           $expr: {
+//             $gt: [
+//               {
+//                 $size: {
+//                   $filter: {
+//                     input: { $ifNull: ["$selected", []] },
+//                     as: "item",
+//                     cond: {
+//                       $and: [
+//                         {
+//                           $ne: [
+//                             { $ifNull: ["$$item.licensenumber", null] },
+//                             null
+//                           ]
+//                         },
+//                         {
+//                           $ne: [
+//                             {
+//                               $trim: {
+//                                 input: { $toString: "$$item.licensenumber" }
+//                               }
+//                             },
+//                             ""
+//                           ]
+//                         },
+//                         {
+//                           $regexMatch: {
+//                             input: { $toString: "$$item.licensenumber" },
+//                             regex: escapedSearch,
+//                             options: "i"
+//                           }
+//                         }
+//                       ]
+//                     }
+//                   }
+//                 }
+//               },
+//               0
+//             ]
+//           }
+//         }).lean();
+
+//         const mobileCustomerIds = mobileCustomerRaw.map((c) => c._id);
+//         const licenseCustomerIds = licenseCustomerRaw.map((c) => c._id);
+
+//         const allIds = [
+//           ...new Set(
+//             [...mobileCustomerIds, ...licenseCustomerIds].map((id) => String(id))
+//           )
+//         ]
+//           .filter((id) => mongoose.Types.ObjectId.isValid(id))
+//           .map((id) => new mongoose.Types.ObjectId(id));
+
+//         if (!allIds.length) {
+//           return res.status(200).json({
+//             message: "No customer found",
+//             data: []
+//           });
+//         }
+
+//         const customers = await Customer.aggregate([
+//           {
+//             $match: {
+//               _id: { $in: allIds },
+//               "selected.branch_id": { $in: objectIds }
+//             }
+//           },
+//           ...getPopulateSelectedStages()
+//         ]);
+
+//         const mergedCustomers = normalizeCustomers(customers)
+//           .map((customer) => {
+//             const fromMobile = mobileCustomerRaw.find(
+//               (x) => String(x._id) === String(customer._id)
+//             );
+//             const fromLicense = licenseCustomerRaw.find(
+//               (x) => String(x._id) === String(customer._id)
+//             );
+
+//             let selected = customer.selected || [];
+
+//             if (fromLicense) {
+//               selected = selected.filter((item) =>
+//                 new RegExp(escapedSearch, "i").test(
+//                   String(item?.licensenumber ?? "")
+//                 )
+//               );
+//             } else if (fromMobile) {
+//               selected = filterSelectedWithLicense(selected);
+//             }
+
+//             return {
+//               ...customer,
+//               selected
+//             };
+//           })
+//           .filter((customer) => customer.selected.length > 0);
+
+//         if (!mergedCustomers.length) {
+//           return res.status(404).json({
+//             message: "No customer found",
+//             data: []
+//           });
+//         }
+
+//         return res.status(200).json({
+//           message: "Customer(s) found",
+//           data: mergedCustomers
+//         });
+//       } else {
+//         const searchRegex = new RegExp(`^${escapeRegex(search)}`, "i");
+
+//         const customers = await Customer.aggregate([
+//           {
+//             $lookup: {
+//               from: "partners",
+//               localField: "partner",
+//               foreignField: "_id",
+//               as: "partnerDetails"
+//             }
+//           },
+//           {
+//             $addFields: {
+//               partnerName: { $arrayElemAt: ["$partnerDetails.partner", 0] }
+//             }
+//           },
+//           {
+//             $match: {
+//               $or: [{ customerName: searchRegex }, { partnerName: searchRegex }],
+//               "selected.branch_id": { $in: objectIds }
+//             }
+//           },
+//           ...getPopulateSelectedStages()
+//         ]);
+
+//         const normalizedCustomers = normalizeCustomers(customers);
+
+//         if (normalizedCustomers.length > 0) {
+//           return res.status(200).json({
+//             message: "Customer(s) found",
+//             data: normalizedCustomers
+//           });
+//         }
+
+//         return res.status(200).json({
+//           message: "No customer found",
+//           data: []
+//         });
+//       }
+//     } else if (search && role === "Admin") {
+//       if (!isNaN(search)) {
+//         const escapedSearch = escapeRegex(search);
+
+//         const mobileCustomerRaw = await Customer.find({
+//           $expr: {
+//             $regexMatch: {
+//               input: { $toString: "$mobile" },
+//               regex: escapedSearch,
+//               options: "i"
+//             }
+//           }
+//         }).lean();
+
+//         const licenseCustomerRaw = await Customer.find({
+//           $expr: {
+//             $gt: [
+//               {
+//                 $size: {
+//                   $filter: {
+//                     input: { $ifNull: ["$selected", []] },
+//                     as: "item",
+//                     cond: {
+//                       $and: [
+//                         {
+//                           $ne: [
+//                             { $ifNull: ["$$item.licensenumber", null] },
+//                             null
+//                           ]
+//                         },
+//                         {
+//                           $ne: [
+//                             {
+//                               $trim: {
+//                                 input: { $toString: "$$item.licensenumber" }
+//                               }
+//                             },
+//                             ""
+//                           ]
+//                         },
+//                         {
+//                           $regexMatch: {
+//                             input: { $toString: "$$item.licensenumber" },
+//                             regex: escapedSearch,
+//                             options: "i"
+//                           }
+//                         }
+//                       ]
+//                     }
+//                   }
+//                 }
+//               },
+//               0
+//             ]
+//           }
+//         }).lean();
+
+//         const allIds = [
+//           ...new Set(
+//             [...mobileCustomerRaw, ...licenseCustomerRaw].map((c) => String(c._id))
+//           )
+//         ]
+//           .filter((id) => mongoose.Types.ObjectId.isValid(id))
+//           .map((id) => new mongoose.Types.ObjectId(id));
+
+//         if (!allIds.length) {
+//           return res.status(200).json({
+//             message: "No customer found",
+//             data: []
+//           });
+//         }
+
+//         const customers = await Customer.aggregate([
+//           {
+//             $match: {
+//               _id: { $in: allIds }
+//             }
+//           },
+//           ...getPopulateSelectedStages()
+//         ]);
+
+//         const mergedCustomers = normalizeCustomers(customers)
+//           .map((customer) => {
+//             const fromLicense = licenseCustomerRaw.find(
+//               (x) => String(x._id) === String(customer._id)
+//             );
+//             const fromMobile = mobileCustomerRaw.find(
+//               (x) => String(x._id) === String(customer._id)
+//             );
+
+//             let selected = customer.selected || [];
+
+//             if (fromLicense) {
+//               selected = filterSelectedWithLicense(selected).filter((item) =>
+//                 new RegExp(escapedSearch, "i").test(
+//                   String(item?.licensenumber ?? "")
+//                 )
+//               );
+//             } else if (fromMobile) {
+//               selected = Array.isArray(selected)
+//                 ? selected.filter((item) => item != null)
+//                 : [];
+//             }
+
+//             return {
+//               ...customer,
+//               selected
+//             };
+//           })
+//           .filter(
+//             (customer) =>
+//               customer.selected.length > 0 ||
+//               mobileCustomerRaw.some((x) => String(x._id) === String(customer._id))
+//           );
+
+//         if (!mergedCustomers.length) {
+//           return res.status(404).json({
+//             message: "No customer found",
+//             data: []
+//           });
+//         }
+
+//         return res.status(200).json({
+//           message: "Customer(s) found",
+//           data: mergedCustomers
+//         });
+//       } else {
+//         const partnerRegex = new RegExp(`^${escapeRegex(search)}`, "i");
+
+//         const partnerIds = await Partner.find(
+//           { partner: partnerRegex },
+//           { _id: 1 }
+//         ).lean();
+
+//         const matchedPartnerIds = partnerIds.map((p) => p._id);
+//         const searchRegex = new RegExp(`^${escapeRegex(search)}`, "i");
+
+//         const customers = await Customer.aggregate([
+//           {
+//             $match: {
+//               $or: [
+//                 { customerName: searchRegex },
+//                 { mobile: searchRegex },
+//                 ...(matchedPartnerIds.length
+//                   ? [{ partner: { $in: matchedPartnerIds } }]
+//                   : [])
+//               ]
+//             }
+//           },
+//           ...getPopulateSelectedStages(),
+//           {
+//             $addFields: {
+//               selected: {
+//                 $filter: {
+//                   input: "$selected",
+//                   as: "sel",
+//                   cond: {
+//                     $and: [
+//                       {
+//                         $ne: [{ $ifNull: ["$$sel.licensenumber", null] }, null]
+//                       },
+//                       {
+//                         $ne: [
+//                           {
+//                             $trim: {
+//                               input: { $toString: "$$sel.licensenumber" }
+//                             }
+//                           },
+//                           ""
+//                         ]
+//                       }
+//                     ]
+//                   }
+//                 }
+//               }
+//             }
+//           },
+//           { $limit: 20 }
+//         ]);
+
+//         if (customers.length > 0) {
+//           return res.status(200).json({
+//             message: "Customer(s) found",
+//             data: customers
+//           });
+//         }
+
+//         return res.status(200).json({
+//           message: "No customer found",
+//           data: []
+//         });
+//       }
+//     } else {
+//       let customers;
+
+//       if (role === "Admin" || pendingCustomerList) {
+//         customers = await Customer.aggregate([
+//           { $sort: { customerName: 1 } },
+//           ...getPopulateSelectedStages()
+//         ]);
+//       } else {
+//         if (!parsedBranch || parsedBranch.length === 0) {
+//           return res.status(403).json({
+//             message: "No branches assigned to staff"
+//           });
+//         }
+
+//         customers = await Customer.aggregate([
+//           {
+//             $match: {
+//               "selected.branch_id": { $in: objectIds }
+//             }
+//           },
+//           { $sort: { customerName: 1 } },
+//           ...getPopulateSelectedStages()
+//         ]);
+//       }
+
+//       const normalizedCustomers = normalizeCustomers(customers);
+
+//       if (normalizedCustomers.length === 0) {
+//         return res.status(404).json({
+//           message: "No customer found",
+//           data: []
+//         });
+//       }
+
+//       return res.status(200).json({
+//         message: "Customer(s) found",
+//         data: normalizedCustomers
+//       });
+//     }
+//   } catch (error) {
+//     console.error("Error fetching customer data:", error);
+//     return res.status(500).json({
+//       message: "An error occurred while fetching customer data.",
+//       error: error.message
+//     });
+//   }
+// };
+export const GetCustomer = async (req, res) => {
+  console.log("hhhhhhhhhhhhhhhhhhhhh")
+
+  const search = req.query?.search?.trim() || ""
+  const role = req.query?.role
+  const userBranch = req.query?.userBranch
+  const pendingCustomerList = req.query?.pendingCustomerList
+
+  let parsedBranch = []
+  let objectIds = []
 
   const escapeRegex = (value = "") =>
-    String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 
   const hasValidLicense = (value) => {
-    return value !== undefined && value !== null && String(value).trim() !== "";
-  };
+    return value !== undefined && value !== null && String(value).trim() !== ""
+  }
 
   const filterSelectedWithLicense = (selected = []) => {
     return Array.isArray(selected)
       ? selected.filter((item) => hasValidLicense(item?.licensenumber))
-      : [];
-  };
+      : []
+  }
 
   const toObjectIdExpr = (path) => ({
     $convert: {
       input: path,
       to: "objectId",
       onError: null,
-      onNull: null
-    }
-  });
+      onNull: null,
+    },
+  })
 
-  const getPopulateSelectedStages = () => [
-    {
-      $unwind: {
-        path: "$selected",
-        preserveNullAndEmptyArrays: true
-      }
-    },
-    {
-      $addFields: {
-        "selected.branchObjectId": toObjectIdExpr("$selected.branch_id"),
-        "selected.companyObjectId": toObjectIdExpr("$selected.company_id"),
-        "selected.productObjectId": toObjectIdExpr("$selected.product_id"),
-        partnerObjectId: toObjectIdExpr("$partner")
-      }
-    },
-    {
-      $lookup: {
-        from: "branches",
-        localField: "selected.branchObjectId",
-        foreignField: "_id",
-        as: "branchDetails"
-      }
-    },
-    {
-      $lookup: {
-        from: "companies",
-        localField: "selected.companyObjectId",
-        foreignField: "_id",
-        as: "companyDetails"
-      }
-    },
-    {
-      $lookup: {
-        from: "products",
-        localField: "selected.productObjectId",
-        foreignField: "_id",
-        as: "productDetails"
-      }
-    },
-    {
-      $lookup: {
-        from: "partners",
-        localField: "partnerObjectId",
-        foreignField: "_id",
-        as: "partnerDetails"
-      }
-    },
-    {
-      $addFields: {
-        partner: { $arrayElemAt: ["$partnerDetails", 0] },
-        "selected.branch_id": {
-          $let: {
-            vars: { branch: { $arrayElemAt: ["$branchDetails", 0] } },
-            in: {
-              $cond: [
-                { $ifNull: ["$$branch._id", false] },
-                {
-                  _id: "$$branch._id",
-                  branchName: "$$branch.branchName"
-                },
-                "$selected.branch_id"
-              ]
-            }
-          }
+  const shouldRestrictToPrimaryProduct = role !== "Admin"
+
+  const getPopulateSelectedStages = ({ onlyPrimaryProduct = false } = {}) => {
+    const stages = [
+      {
+        $unwind: {
+          path: "$selected",
+          preserveNullAndEmptyArrays: true,
         },
-        "selected.company_id": {
-          $let: {
-            vars: { company: { $arrayElemAt: ["$companyDetails", 0] } },
-            in: {
-              $cond: [
-                { $ifNull: ["$$company._id", false] },
-                {
-                  _id: "$$company._id",
-                  companyName: "$$company.companyName"
-                },
-                "$selected.company_id"
-              ]
-            }
-          }
+      },
+      {
+        $addFields: {
+          "selected.branchObjectId": toObjectIdExpr("$selected.branch_id"),
+          "selected.companyObjectId": toObjectIdExpr("$selected.company_id"),
+          "selected.productObjectId": toObjectIdExpr("$selected.product_id"),
+          partnerObjectId: toObjectIdExpr("$partner"),
         },
-        "selected.product_id": {
-          $cond: [
-            { $gt: [{ $size: "$productDetails" }, 0] },
-            { $arrayElemAt: ["$productDetails", 0] },
-            "$selected.product_id"
+      },
+      {
+        $lookup: {
+          from: "branches",
+          localField: "selected.branchObjectId",
+          foreignField: "_id",
+          as: "branchDetails",
+        },
+      },
+      {
+        $lookup: {
+          from: "companies",
+          localField: "selected.companyObjectId",
+          foreignField: "_id",
+          as: "companyDetails",
+        },
+      },
+      {
+        $lookup: {
+          from: "products",
+          localField: "selected.productObjectId",
+          foreignField: "_id",
+          as: "productDetails",
+        },
+      },
+      {
+        $lookup: {
+          from: "partners",
+          localField: "partnerObjectId",
+          foreignField: "_id",
+          as: "partnerDetails",
+        },
+      },
+      {
+        $addFields: {
+          partner: { $arrayElemAt: ["$partnerDetails", 0] },
+          "selected.branch_id": {
+            $let: {
+              vars: { branch: { $arrayElemAt: ["$branchDetails", 0] } },
+              in: {
+                $cond: [
+                  { $ifNull: ["$$branch._id", false] },
+                  {
+                    _id: "$$branch._id",
+                    branchName: "$$branch.branchName",
+                  },
+                  "$selected.branch_id",
+                ],
+              },
+            },
+          },
+          "selected.company_id": {
+            $let: {
+              vars: { company: { $arrayElemAt: ["$companyDetails", 0] } },
+              in: {
+                $cond: [
+                  { $ifNull: ["$$company._id", false] },
+                  {
+                    _id: "$$company._id",
+                    companyName: "$$company.companyName",
+                  },
+                  "$selected.company_id",
+                ],
+              },
+            },
+          },
+          "selected.product_id": {
+            $cond: [
+              { $gt: [{ $size: "$productDetails" }, 0] },
+              { $arrayElemAt: ["$productDetails", 0] },
+              "$selected.product_id",
+            ],
+          },
+        },
+      },
+      ...(onlyPrimaryProduct
+        ? [
+            {
+              $match: {
+                $or: [
+                  { selected: null },
+                  {
+                    "selected.product_id.productorservicetype": "Primaryproduct",
+                  },
+                ],
+              },
+            },
           ]
-        }
-      }
-    },
-    {
-      $project: {
-        branchDetails: 0,
-        companyDetails: 0,
-        productDetails: 0,
-        partnerDetails: 0,
-        partnerObjectId: 0,
-        "selected.branchObjectId": 0,
-        "selected.companyObjectId": 0,
-        "selected.productObjectId": 0
-      }
-    },
-    {
-      $group: {
-        _id: "$_id",
-        customerName: { $first: "$customerName" },
-        address1: { $first: "$address1" },
-        address2: { $first: "$address2" },
-        country: { $first: "$country" },
-        registrationType: { $first: "$registrationType" },
-        state: { $first: "$state" },
-        city: { $first: "$city" },
-        pincode: { $first: "$pincode" },
-        email: { $first: "$email" },
-        mobile: { $first: "$mobile" },
-        landline: { $first: "$landline" },
-        industry: { $first: "$industry" },
-        contactPerson: { $first: "$contactPerson" },
-        partner: { $first: "$partner" },
-        createdAt: { $first: "$createdAt" },
-        updatedAt: { $first: "$updatedAt" },
-        selected: { $push: "$selected" }
-      }
-    },
-    {
-      $addFields: {
-        selected: {
-          $filter: {
-            input: "$selected",
-            as: "item",
-            cond: { $ne: ["$$item", null] }
-          }
-        }
-      }
-    }
-  ];
+        : []),
+      {
+        $project: {
+          branchDetails: 0,
+          companyDetails: 0,
+          productDetails: 0,
+          partnerDetails: 0,
+          partnerObjectId: 0,
+          "selected.branchObjectId": 0,
+          "selected.companyObjectId": 0,
+          "selected.productObjectId": 0,
+        },
+      },
+      {
+        $group: {
+          _id: "$_id",
+          customerName: { $first: "$customerName" },
+          address1: { $first: "$address1" },
+          address2: { $first: "$address2" },
+          country: { $first: "$country" },
+          registrationType: { $first: "$registrationType" },
+          state: { $first: "$state" },
+          city: { $first: "$city" },
+          pincode: { $first: "$pincode" },
+          email: { $first: "$email" },
+          mobile: { $first: "$mobile" },
+          landline: { $first: "$landline" },
+          industry: { $first: "$industry" },
+          contactPerson: { $first: "$contactPerson" },
+          partner: { $first: "$partner" },
+          createdAt: { $first: "$createdAt" },
+          updatedAt: { $first: "$updatedAt" },
+          selected: { $push: "$selected" },
+        },
+      },
+      {
+        $addFields: {
+          selected: {
+            $filter: {
+              input: "$selected",
+              as: "item",
+              cond: { $ne: ["$$item", null] },
+            },
+          },
+        },
+      },
+    ]
+
+    return stages
+  }
 
   const normalizeCustomers = (customers = []) => {
     return customers.map((customer) => ({
       ...customer,
       selected: Array.isArray(customer?.selected)
         ? customer.selected.filter((item) => item != null)
-        : []
-    }));
-  };
+        : [],
+    }))
+  }
 
   try {
     if (userBranch) {
-      parsedBranch = JSON.parse(decodeURIComponent(userBranch));
+      parsedBranch = JSON.parse(decodeURIComponent(userBranch))
     }
 
     if (Array.isArray(parsedBranch) && parsedBranch.length > 0) {
       objectIds = parsedBranch
         .filter((id) => mongoose.Types.ObjectId.isValid(id))
-        .map((id) => new mongoose.Types.ObjectId(id));
+        .map((id) => new mongoose.Types.ObjectId(id))
     }
 
     if (
@@ -4885,12 +5498,12 @@ console.log("hhhhhhhhhhhhhhhhhhhhh")
       role !== "Admin"
     ) {
       if (!isNaN(search)) {
-        const escapedSearch = escapeRegex(search);
-        const searchRegex = new RegExp(`^${escapedSearch}`, "i");
+        const escapedSearch = escapeRegex(search)
+        const searchRegex = new RegExp(`^${escapedSearch}`, "i")
 
         const mobileCustomerRaw = await Customer.find({
-          mobile: searchRegex
-        }).lean();
+          mobile: searchRegex,
+        }).lean()
 
         const licenseCustomerRaw = await Customer.find({
           $expr: {
@@ -4905,105 +5518,107 @@ console.log("hhhhhhhhhhhhhhhhhhhhh")
                         {
                           $ne: [
                             { $ifNull: ["$$item.licensenumber", null] },
-                            null
-                          ]
+                            null,
+                          ],
                         },
                         {
                           $ne: [
                             {
                               $trim: {
-                                input: { $toString: "$$item.licensenumber" }
-                              }
+                                input: { $toString: "$$item.licensenumber" },
+                              },
                             },
-                            ""
-                          ]
+                            "",
+                          ],
                         },
                         {
                           $regexMatch: {
                             input: { $toString: "$$item.licensenumber" },
                             regex: escapedSearch,
-                            options: "i"
-                          }
-                        }
-                      ]
-                    }
-                  }
-                }
+                            options: "i",
+                          },
+                        },
+                      ],
+                    },
+                  },
+                },
               },
-              0
-            ]
-          }
-        }).lean();
+              0,
+            ],
+          },
+        }).lean()
 
-        const mobileCustomerIds = mobileCustomerRaw.map((c) => c._id);
-        const licenseCustomerIds = licenseCustomerRaw.map((c) => c._id);
+        const mobileCustomerIds = mobileCustomerRaw.map((c) => c._id)
+        const licenseCustomerIds = licenseCustomerRaw.map((c) => c._id)
 
         const allIds = [
           ...new Set(
             [...mobileCustomerIds, ...licenseCustomerIds].map((id) => String(id))
-          )
+          ),
         ]
           .filter((id) => mongoose.Types.ObjectId.isValid(id))
-          .map((id) => new mongoose.Types.ObjectId(id));
+          .map((id) => new mongoose.Types.ObjectId(id))
 
         if (!allIds.length) {
           return res.status(200).json({
             message: "No customer found",
-            data: []
-          });
+            data: [],
+          })
         }
 
         const customers = await Customer.aggregate([
           {
             $match: {
               _id: { $in: allIds },
-              "selected.branch_id": { $in: objectIds }
-            }
+              "selected.branch_id": { $in: objectIds },
+            },
           },
-          ...getPopulateSelectedStages()
-        ]);
+          ...getPopulateSelectedStages({
+            onlyPrimaryProduct: shouldRestrictToPrimaryProduct,
+          }),
+        ])
 
         const mergedCustomers = normalizeCustomers(customers)
           .map((customer) => {
             const fromMobile = mobileCustomerRaw.find(
               (x) => String(x._id) === String(customer._id)
-            );
+            )
             const fromLicense = licenseCustomerRaw.find(
               (x) => String(x._id) === String(customer._id)
-            );
+            )
 
-            let selected = customer.selected || [];
+            let selected = customer.selected || []
 
             if (fromLicense) {
               selected = selected.filter((item) =>
                 new RegExp(escapedSearch, "i").test(
                   String(item?.licensenumber ?? "")
                 )
-              );
+              )
             } else if (fromMobile) {
-              selected = filterSelectedWithLicense(selected);
+              selected = filterSelectedWithLicense(selected)
             }
 
             return {
               ...customer,
-              selected
-            };
+              selected,
+            }
           })
-          .filter((customer) => customer.selected.length > 0);
+          .filter((customer) => customer.selected.length > 0)
 
         if (!mergedCustomers.length) {
           return res.status(404).json({
             message: "No customer found",
-            data: []
-          });
+            data: [],
+          })
         }
 
         return res.status(200).json({
           message: "Customer(s) found",
-          data: mergedCustomers
-        });
+          data: mergedCustomers,
+        })
       } else {
-        const searchRegex = new RegExp(`^${escapeRegex(search)}`, "i");
+        const searchRegex = new RegExp(`^${escapeRegex(search)}`, "i")
 
         const customers = await Customer.aggregate([
           {
@@ -5011,50 +5626,52 @@ console.log("hhhhhhhhhhhhhhhhhhhhh")
               from: "partners",
               localField: "partner",
               foreignField: "_id",
-              as: "partnerDetails"
-            }
+              as: "partnerDetails",
+            },
           },
           {
             $addFields: {
-              partnerName: { $arrayElemAt: ["$partnerDetails.partner", 0] }
-            }
+              partnerName: { $arrayElemAt: ["$partnerDetails.partner", 0] },
+            },
           },
           {
             $match: {
               $or: [{ customerName: searchRegex }, { partnerName: searchRegex }],
-              "selected.branch_id": { $in: objectIds }
-            }
+              "selected.branch_id": { $in: objectIds },
+            },
           },
-          ...getPopulateSelectedStages()
-        ]);
+          ...getPopulateSelectedStages({
+            onlyPrimaryProduct: shouldRestrictToPrimaryProduct,
+          }),
+        ])
 
-        const normalizedCustomers = normalizeCustomers(customers);
+        const normalizedCustomers = normalizeCustomers(customers)
 
         if (normalizedCustomers.length > 0) {
           return res.status(200).json({
             message: "Customer(s) found",
-            data: normalizedCustomers
-          });
+            data: normalizedCustomers,
+          })
         }
 
         return res.status(200).json({
           message: "No customer found",
-          data: []
-        });
+          data: [],
+        })
       }
     } else if (search && role === "Admin") {
       if (!isNaN(search)) {
-        const escapedSearch = escapeRegex(search);
+        const escapedSearch = escapeRegex(search)
 
         const mobileCustomerRaw = await Customer.find({
           $expr: {
             $regexMatch: {
               input: { $toString: "$mobile" },
               regex: escapedSearch,
-              options: "i"
-            }
-          }
-        }).lean();
+              options: "i",
+            },
+          },
+        }).lean()
 
         const licenseCustomerRaw = await Customer.find({
           $expr: {
@@ -5069,115 +5686,117 @@ console.log("hhhhhhhhhhhhhhhhhhhhh")
                         {
                           $ne: [
                             { $ifNull: ["$$item.licensenumber", null] },
-                            null
-                          ]
+                            null,
+                          ],
                         },
                         {
                           $ne: [
                             {
                               $trim: {
-                                input: { $toString: "$$item.licensenumber" }
-                              }
+                                input: { $toString: "$$item.licensenumber" },
+                              },
                             },
-                            ""
-                          ]
+                            "",
+                          ],
                         },
                         {
                           $regexMatch: {
                             input: { $toString: "$$item.licensenumber" },
                             regex: escapedSearch,
-                            options: "i"
-                          }
-                        }
-                      ]
-                    }
-                  }
-                }
+                            options: "i",
+                          },
+                        },
+                      ],
+                    },
+                  },
+                },
               },
-              0
-            ]
-          }
-        }).lean();
+              0,
+            ],
+          },
+        }).lean()
 
         const allIds = [
           ...new Set(
             [...mobileCustomerRaw, ...licenseCustomerRaw].map((c) => String(c._id))
-          )
+          ),
         ]
           .filter((id) => mongoose.Types.ObjectId.isValid(id))
-          .map((id) => new mongoose.Types.ObjectId(id));
+          .map((id) => new mongoose.Types.ObjectId(id))
 
         if (!allIds.length) {
           return res.status(200).json({
             message: "No customer found",
-            data: []
-          });
+            data: [],
+          })
         }
 
         const customers = await Customer.aggregate([
           {
             $match: {
-              _id: { $in: allIds }
-            }
+              _id: { $in: allIds },
+            },
           },
-          ...getPopulateSelectedStages()
-        ]);
+          ...getPopulateSelectedStages({
+            onlyPrimaryProduct: false,
+          }),
+        ])
 
         const mergedCustomers = normalizeCustomers(customers)
           .map((customer) => {
             const fromLicense = licenseCustomerRaw.find(
               (x) => String(x._id) === String(customer._id)
-            );
+            )
             const fromMobile = mobileCustomerRaw.find(
               (x) => String(x._id) === String(customer._id)
-            );
+            )
 
-            let selected = customer.selected || [];
+            let selected = customer.selected || []
 
             if (fromLicense) {
               selected = filterSelectedWithLicense(selected).filter((item) =>
                 new RegExp(escapedSearch, "i").test(
                   String(item?.licensenumber ?? "")
                 )
-              );
+              )
             } else if (fromMobile) {
               selected = Array.isArray(selected)
                 ? selected.filter((item) => item != null)
-                : [];
+                : []
             }
 
             return {
               ...customer,
-              selected
-            };
+              selected,
+            }
           })
           .filter(
             (customer) =>
               customer.selected.length > 0 ||
               mobileCustomerRaw.some((x) => String(x._id) === String(customer._id))
-          );
+          )
 
         if (!mergedCustomers.length) {
           return res.status(404).json({
             message: "No customer found",
-            data: []
-          });
+            data: [],
+          })
         }
 
         return res.status(200).json({
           message: "Customer(s) found",
-          data: mergedCustomers
-        });
+          data: mergedCustomers,
+        })
       } else {
-        const partnerRegex = new RegExp(`^${escapeRegex(search)}`, "i");
+        const partnerRegex = new RegExp(`^${escapeRegex(search)}`, "i")
 
         const partnerIds = await Partner.find(
           { partner: partnerRegex },
           { _id: 1 }
-        ).lean();
+        ).lean()
 
-        const matchedPartnerIds = partnerIds.map((p) => p._id);
-        const searchRegex = new RegExp(`^${escapeRegex(search)}`, "i");
+        const matchedPartnerIds = partnerIds.map((p) => p._id)
+        const searchRegex = new RegExp(`^${escapeRegex(search)}`, "i")
 
         const customers = await Customer.aggregate([
           {
@@ -5187,11 +5806,13 @@ console.log("hhhhhhhhhhhhhhhhhhhhh")
                 { mobile: searchRegex },
                 ...(matchedPartnerIds.length
                   ? [{ partner: { $in: matchedPartnerIds } }]
-                  : [])
-              ]
-            }
+                  : []),
+              ],
+            },
           },
-          ...getPopulateSelectedStages(),
+          ...getPopulateSelectedStages({
+            onlyPrimaryProduct: false,
+          }),
           {
             $addFields: {
               selected: {
@@ -5201,87 +5822,91 @@ console.log("hhhhhhhhhhhhhhhhhhhhh")
                   cond: {
                     $and: [
                       {
-                        $ne: [{ $ifNull: ["$$sel.licensenumber", null] }, null]
+                        $ne: [{ $ifNull: ["$$sel.licensenumber", null] }, null],
                       },
                       {
                         $ne: [
                           {
                             $trim: {
-                              input: { $toString: "$$sel.licensenumber" }
-                            }
+                              input: { $toString: "$$sel.licensenumber" },
+                            },
                           },
-                          ""
-                        ]
-                      }
-                    ]
-                  }
-                }
-              }
-            }
+                          "",
+                        ],
+                      },
+                    ],
+                  },
+                },
+              },
+            },
           },
-          { $limit: 20 }
-        ]);
+          { $limit: 20 },
+        ])
 
         if (customers.length > 0) {
           return res.status(200).json({
             message: "Customer(s) found",
-            data: customers
-          });
+            data: customers,
+          })
         }
 
         return res.status(200).json({
           message: "No customer found",
-          data: []
-        });
+          data: [],
+        })
       }
     } else {
-      let customers;
+      let customers
 
       if (role === "Admin" || pendingCustomerList) {
         customers = await Customer.aggregate([
           { $sort: { customerName: 1 } },
-          ...getPopulateSelectedStages()
-        ]);
+          ...getPopulateSelectedStages({
+            onlyPrimaryProduct: false,
+          }),
+        ])
       } else {
         if (!parsedBranch || parsedBranch.length === 0) {
           return res.status(403).json({
-            message: "No branches assigned to staff"
-          });
+            message: "No branches assigned to staff",
+          })
         }
 
         customers = await Customer.aggregate([
           {
             $match: {
-              "selected.branch_id": { $in: objectIds }
-            }
+              "selected.branch_id": { $in: objectIds },
+            },
           },
           { $sort: { customerName: 1 } },
-          ...getPopulateSelectedStages()
-        ]);
+          ...getPopulateSelectedStages({
+            onlyPrimaryProduct: true,
+          }),
+        ])
       }
 
-      const normalizedCustomers = normalizeCustomers(customers);
+      const normalizedCustomers = normalizeCustomers(customers)
 
       if (normalizedCustomers.length === 0) {
         return res.status(404).json({
           message: "No customer found",
-          data: []
-        });
+          data: [],
+        })
       }
 
       return res.status(200).json({
         message: "Customer(s) found",
-        data: normalizedCustomers
-      });
+        data: normalizedCustomers,
+      })
     }
   } catch (error) {
-    console.error("Error fetching customer data:", error);
+    console.error("Error fetching customer data:", error)
     return res.status(500).json({
       message: "An error occurred while fetching customer data.",
-      error: error.message
-    });
+      error: error.message,
+    })
   }
-};
+}
 export const GetLicense = async (req, res) => {
   try {
     const licensenumber = await License.find()
