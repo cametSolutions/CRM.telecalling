@@ -156,8 +156,9 @@ import useAutoLogout from "../hooks/useAutoLogout"
 import UseFetch from "../hooks/useFetch"
 import api from "../api/api"
 import { getLocalStorageItem,setLocalStorageItem } from "../helper/localstorage"
-
+import useIdleLogout from "../components/common/useIdleLogout"
 const Layout = () => {
+useIdleLogout()
   const location = useLocation()
 const dispatch=useDispatch()
   const headerRef = useRef(null)
@@ -314,6 +315,7 @@ onavataropenClick={()=>setAvatarOpen(true)}
               <AdminHeader
                 sidebarHasProfile={shouldshowSidebar}
                 onNotificationClick={() => setNotificationPopup(true)}
+ onpasswordClick={() => setchangepasswordOpen(true)}
               />
             )}
 
@@ -321,6 +323,7 @@ onavataropenClick={()=>setAvatarOpen(true)}
               <StaffHeader
                 sidebarHasProfile={shouldshowSidebar}
                 onNotificationClick={() => setNotificationPopup(true)}
+ onpasswordClick={() => setchangepasswordOpen(true)}
               />
             )}
           </div>
