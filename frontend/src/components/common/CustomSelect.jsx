@@ -9,6 +9,7 @@ export function CustomSelect({
   className = "",
   placeholder = "Select option"
 }) {
+console.log(options)
   const [open, setOpen] = useState(false)
   const containerRef = useRef(null)
 

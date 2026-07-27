@@ -125,7 +125,7 @@ if(!action)return
 console.log(action)
 setopenannoucementpopup(true)}}
       role="status"
-      className={`relative flex h-11 w-full items-stretch overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-all duration-300 ease-out cursor-pointer ${
+      className={`relative flex mb-1 h-11 w-full items-stretch overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-all duration-300 ease-out cursor-pointer ${
         mounted ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0"
       }`}
     >
