@@ -1,5 +1,3 @@
-
-
 // import React, { useMemo, useState } from "react"
 // import { Menu, ChevronLeft, ChevronRight, X, Eye, EyeOff, LockKeyhole } from "lucide-react"
 
@@ -682,14 +680,13 @@
 
 // export default Sidebar
 
-
 import React, { useMemo, useState } from "react"
 import {
   Menu,
   ChevronLeft,
   ChevronRight,
   X,
-LogOut,
+  LogOut,
   Eye,
   EyeOff,
   LockKeyhole,
@@ -703,15 +700,15 @@ import CategoryDetailsModal from "./CategoryDetailsModal"
 
 const Sidebar = ({
   handleMoreClick,
-onpasswordClick,
-onperformanceModalClick,
+  onpasswordClick,
+  onperformanceModalClick,
   achievedPoints,
   sidebarOpen,
   toggleSidebar,
   user,
   selectedBranch,
   setselectedBranch,
-onLogoutClick,
+  onLogoutClick,
   // setselectedParentBranch,
   branchOptions,
   categorylist,
@@ -721,10 +718,10 @@ onLogoutClick,
   setAvatarOpen,
   onPasswordChange,
   isMobile,
-onavataropenClick
+  onavataropenClick
 }) => {
-console.log(selectedBranch)
-console.log(user)
+  console.log(selectedBranch)
+  console.log(user)
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState(null)
 
@@ -851,11 +848,7 @@ console.log(user)
       errors.confirmPassword = "Passwords do not match"
     }
 
-    if (
-      currentPassword &&
-      newPassword &&
-      currentPassword === newPassword
-    ) {
+    if (currentPassword && newPassword && currentPassword === newPassword) {
       errors.newPassword =
         "New password must be different from current password"
     }
@@ -920,7 +913,9 @@ console.log(user)
     },
     {
       label: "One special character",
-      valid: /[!@#$%^&*(),.?":{}|<>_\-\\[\]/+=~`]/.test(passwordForm.newPassword)
+      valid: /[!@#$%^&*(),.?":{}|<>_\-\\[\]/+=~`]/.test(
+        passwordForm.newPassword
+      )
     },
     {
       label: "No spaces",
@@ -932,7 +927,7 @@ console.log(user)
 
   const companyName = user?.activeCompany?.companyName || "CAMET"
   const companyShort = companyName?.slice(0, 1)?.toUpperCase() || "C"
-console.log(sidebarOpen)
+  console.log(sidebarOpen)
   return (
     <>
       <aside
@@ -953,11 +948,13 @@ console.log(sidebarOpen)
             {/* <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/15 text-sm font-bold ring-1 ring-white/15">
               {companyShort}
             </div> */}
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-sky-400 to-blue-600 text-lg font-bold shadow-[0_6px_18px_rgba(56,189,248,0.35)]">
-                {companyShort}
-              </div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-sky-400 to-blue-600 text-lg font-bold shadow-[0_6px_18px_rgba(56,189,248,0.35)]">
+              {companyShort}
+            </div>
             <div className="min-w-0">
-              <div className="truncate text-[13px] font-bold">{companyName}</div>
+              <div className="truncate text-[13px] font-bold">
+                {companyName}
+              </div>
 
               <div className="text-[9px] uppercase tracking-[0.18em] text-white/65">
                 CRM
@@ -979,7 +976,11 @@ console.log(sidebarOpen)
               onClick={toggleSidebar}
               className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-slate-200 shadow-sm transition hover:bg-white/15"
             >
-              {sidebarOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
+              {sidebarOpen ? (
+                <ChevronLeft size={14} />
+              ) : (
+                <ChevronRight size={14} />
+              )}
             </button>
           )}
         </div>
@@ -987,12 +988,12 @@ console.log(sidebarOpen)
         {sidebarOpen && (
           <>
             <div className="shrink-0 px-1 py-2">
-              <div className="rounded-xl bg-white/10 p-2 ring-1 ring-white/10">
-                <div className="flex items-start gap-2">
+              {/* <div className="rounded-xl bg-white/10 p-2 ring-1 ring-white/10">
+                <div className="flex items-center justify-center gap-2">
                   <button
                     type="button"
-                    onClick={() =>onavataropenClick()}
-                    className="relative h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-white/20 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
+                    onClick={() => onavataropenClick()}
+                    className="relative h-28 w-28 shrink-0 overflow-hidden rounded-xl border border-white/20 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
                   >
                     {user?.profileUrl ? (
                       <img
@@ -1019,78 +1020,63 @@ console.log(sidebarOpen)
                       {user?.department?.department || user?.role || "Staff"}
                     </p>
 
-                    {/* <div className="mt-1 flex items-center justify-between gap-1.5">
-                      <span className="inline-flex min-w-0 items-center gap-1 rounded-full bg-slate-950/55 px-2 py-1 text-[9px] font-medium text-slate-300">
-                        <Clock3 size={10} className="shrink-0" />
-                        <span className="truncate">{expiryDate}</span>
-                      </span>
+                    <div className="mt-1.5 space-y-1.5">
+                     
 
-                      <button
-                        type="button"
-                        onClick={onpasswordClick}
-                        className="inline-flex shrink-0 items-center gap-1 rounded-md border border-white/15 bg-white/10 px-2 py-1 text-[9px] font-medium text-white transition hover:bg-white/15"
-                      >
-                        <LockKeyhole size={10} />
-                        Pass
-                      </button>
-                    </div> */}
-{/* <div className="mt-1 flex items-center justify-between gap-1.5">
-  <span className="inline-flex min-w-0 items-center gap-1 rounded-full bg-slate-950/55 px-2 py-1 text-[9px] font-medium text-slate-300">
-    <Clock3 size={10} className="shrink-0" />
-    <span className="truncate">{expiryDate}</span>
-  </span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={onpasswordClick}
+                          className="flex flex-1 items-center justify-center gap-1 rounded-md border border-white/15 bg-white/10 px-2 py-1.5 text-[10px] font-medium text-white transition hover:bg-white/15"
+                        >
+                          <LockKeyhole size={11} />
+                          Password
+                        </button>
 
-  <div className="flex shrink-0 items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={onLogoutClick}
+                          className="flex flex-1 items-center justify-center gap-1 rounded-md border border-rose-400/30 bg-rose-500/15 px-2 py-1.5 text-[10px] font-medium text-rose-200 transition hover:bg-rose-500/25"
+                        >
+                          <LogOut size={11} />
+                          Logout
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div> */}
+<div className="rounded-xl bg-white/10 p-2 ring-1 ring-white/10">
+  <div className="flex items-center justify-center">
     <button
       type="button"
-      onClick={onpasswordClick}
-      className="inline-flex items-center gap-1 rounded-md border border-white/15 bg-white/10 px-2 py-1 text-[9px] font-medium text-white transition hover:bg-white/15"
+      onClick={() => onavataropenClick()}
+      className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-white/20 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
     >
-      <LockKeyhole size={10} />
-      Pass
-    </button>
+      {user?.profileUrl ? (
+        <img
+          src={user.profileUrl}
+          alt="Profile"
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center bg-[#083d43] text-sm font-bold text-white">
+          {user?.name?.charAt(0)?.toUpperCase() || "U"}
+        </div>
+      )}
 
-    <button
-      type="button"
-      // onClick={onLogoutClick}
-      className="inline-flex items-center gap-1 rounded-md border border-rose-400/30 bg-rose-500/15 px-2 py-1 text-[9px] font-medium text-rose-200 transition hover:bg-rose-500/25"
-    >
-      <LogOut size={10} />
-      Exit
-    </button>
-  </div>
-</div> */}
-<div className="mt-1.5 space-y-1.5">
-  {/* Expiry badge — full width, own line, never truncates */}
-  <span className="inline-flex w-full items-center gap-1 rounded-full bg-slate-950/55 px-2 py-1 text-[9px] font-medium text-slate-300">
-    <Clock3 size={10} className="shrink-0" />
-    <span className="truncate">Expires {expiryDate}</span>
-  </span>
-
-  {/* Pass / Exit — equal-width pair, own row */}
-  <div className="flex items-center gap-1.5">
-    <button
-      type="button"
-      onClick={onpasswordClick}
-      className="flex flex-1 items-center justify-center gap-1 rounded-md border border-white/15 bg-white/10 px-2 py-1.5 text-[10px] font-medium text-white transition hover:bg-white/15"
-    >
-      <LockKeyhole size={11} />
-      Password
-    </button>
-
-    <button
-      type="button"
-      onClick={onLogoutClick}
-      className="flex flex-1 items-center justify-center gap-1 rounded-md border border-rose-400/30 bg-rose-500/15 px-2 py-1.5 text-[10px] font-medium text-rose-200 transition hover:bg-rose-500/25"
-    >
-      <LogOut size={11} />
-      Logout
+      <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-white text-[#0f766e]">
+        <Camera size={9} />
+      </span>
+ <h3 className="truncate text-[12px] font-semibold leading-4 text-white">
+                      {user?.name?.toUpperCase() || "Staff User"}
+                    </h3>
+                    <p className="mt-0.5 truncate text-[10px] leading-4 text-slate-300">
+                      {user?.department?.department || user?.role || "Staff"}
+                    </p>
     </button>
   </div>
 </div>
-                  </div>
-                </div>
-              </div>
 
               <div className="mt-2 rounded-lg bg-white/10 p-1.5">
                 <BranchSelect
@@ -1099,7 +1085,7 @@ console.log(sidebarOpen)
                     // setselectedParentBranch(value)
                     setselectedBranch(value)
                   }}
-  className="w-[200px] shrink-0"
+                  className="w-[200px] shrink-0"
                   options={branchOptions}
                 />
               </div>
@@ -1146,7 +1132,6 @@ console.log(sidebarOpen)
                       handleMoreClick={handleMoreClick}
                       sidebarOpen={sidebarOpen}
                       onCategoryClick={handleCategoryClick}
-                      
                     />
                   )}
                 </div>

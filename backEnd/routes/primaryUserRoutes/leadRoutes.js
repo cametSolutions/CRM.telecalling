@@ -50,7 +50,7 @@ Checkduplicatecustomer,
 getBranchwiseMarketingPendingTasks,
 getTodayVerifiedCollection,
 getverifiedCollectionLeads,
-getNotificationData
+getNotificationData,
 } from "../../controller/primaryUserController/leadController.js";
 const router = express.Router();
 // router.get("/export-branch-wise-product-usage",exportBranchWiseProductUsage)

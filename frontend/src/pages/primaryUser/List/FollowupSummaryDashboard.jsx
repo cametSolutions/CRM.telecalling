@@ -61,6 +61,8 @@ export default function FollowupSummaryDashboard() {
       selectedBranch &&
       `/lead/getfollowupsummaryReport?startDate=${date.startDate}&endDate=${date.endDate}&branchId=${selectedBranch}`
   )
+
+console.log(followup)
   console.log(selectedBranch)
   console.log(date.startDate)
   console.log(date.endDate)
@@ -128,20 +130,35 @@ export default function FollowupSummaryDashboard() {
   }, [targetData])
   console.log(followup)
   // set end of current month once
-  useEffect(() => {
-    const now = new Date()
-    const startDate = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      1
-    ).toLocaleDateString("en-CA")
-    const endDate = new Date(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      0
-    ).toLocaleDateString("en-CA")
-    setdate({ startDate, endDate })
-  }, [])
+  // useEffect(() => {
+  //   const now = new Date()
+  //   const startDate = new Date(
+  //     now.getFullYear(),
+  //     now.getMonth(),
+  //     1
+  //   ).toLocaleDateString("en-CA")
+  //   const endDate = new Date(
+  //     now.getFullYear(),
+  //     now.getMonth() + 1,
+  //     0
+  //   ).toLocaleDateString("en-CA")
+  //   setdate({ startDate, endDate })
+  // }, [])
+useEffect(() => {
+  const now = new Date()
+
+  const formatDate = (date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, "0")
+    const day = String(date.getDate()).padStart(2, "0")
+    return `${year}-${month}-${day}`
+  }
+
+  const startDate = formatDate(new Date(now.getFullYear(), now.getMonth(), 1))
+  const endDate = formatDate(now)
+
+  setdate({ startDate, endDate })
+}, [])
   console.log(date)
 
   // branches
@@ -199,6 +216,7 @@ export default function FollowupSummaryDashboard() {
     const staffName = row.staffName
     console.log("hh")
     if (header === "Lost") {
+console.log(staffName)
       navigate("/lostleads", {
         state: {
           staffName,
@@ -212,6 +230,7 @@ export default function FollowupSummaryDashboard() {
       return
     } else {
       console.log("hhhh")
+console.log(header)
       // all others go to followup page
       navigate("/leadfollowup", {
         state: {
@@ -339,15 +358,19 @@ if (header === "Upcoming" && row.future <= 0) return
     ]
     if (header === "Staff") return
     if (header === "Conversion %") return
-
+console.log(header)
     if (header === "Lost") {
       console.log("jjj")
+console.log(row)
+
       navigate("/admin/transaction/lead/lostLeads", {
         state: {
           staffId: row.staffId,
           productId: row.productId,
           branchId: row?.branchIds?.[0],
-          viewMode: "lostlead"
+          viewMode: "lostlead",
+date
+// header:"Lost Leads"
         }
       })
     } else if (header === "Lead Count") {
@@ -406,6 +429,7 @@ if (header === "Upcoming" && row.future <= 0) return
           converted: true,
           branchId: row.branchIds?.[0],
           viewMode: "converted",
+header:"Converted",
           from: "followupReport",
           istotal: true,
           filterRange: date,
