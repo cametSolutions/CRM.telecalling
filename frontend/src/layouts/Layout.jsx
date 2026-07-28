@@ -162,7 +162,18 @@ useIdleLogout()
   const location = useLocation()
 const dispatch=useDispatch()
   const headerRef = useRef(null)
-
+  const now = new Date()
+ const [selectedMonth, setSelectedMonth] = useState(
+    String(now.getMonth() + 1).padStart(2, "0")
+  )
+  const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
+console.log(selectedMonth)
+ const [categorylist, setcategorylist] = useState([])
+  const [achievedproducts, setacheivedProducts] = useState([])
+  const [selectedDatapopup, setselectedDataPopup] = useState({})
+ const [periodMode, setperiodMode] = useState("all")
+console.log(periodMode)
+  const [selectedPeriod, setselectedPeriod] = useState("")
   const [headerHeight, setHeaderHeight] = useState(0)
   const [notificationPopup, setNotificationPopup] = useState(false)
   // const [loggedUser, setLoggedUser] = useState(null)
@@ -173,6 +184,7 @@ const dispatch=useDispatch()
   console.log(performanceModalOpen)
   const isAuthPage = location.pathname === "/"
   const [targetData, setTargetData] = useState([])
+console.log(targetData)
   const [avatarOpen, setAvatarOpen] = useState(false)
   useAutoLogout(!isAuthPage)
 
@@ -303,7 +315,15 @@ console.log(loggedUser)
 onavataropenClick={()=>setAvatarOpen(true)}
             setTargetData={setTargetData}
             targetData={targetData}
+selectedMonths={selectedMonth}
+yearSelected={selectedYear}
+
             setcategoryId={setcategoryId}
+parentperiodmode={periodMode}
+ onselectedPeriodChange={(val, val2) => {
+          setSelectedMonth(val2)
+          setselectedPeriod(val)
+        }}
           />
         )}
 
@@ -343,8 +363,28 @@ onavataropenClick={()=>setAvatarOpen(true)}
         open={performanceModalOpen}
         onClose={() => setperformanceModalOpen(false)}
         targetData={targetData}
+ onselectedPeriodChange={(val, val2) => {
+          setSelectedMonth(val2)
+          setselectedPeriod(val)
+        }}
         loggedUser={loggedUser}
         categoryId={categoryId}
+ onMonthChange={(val) => {
+          setcategorylist([])
+          setacheivedProducts([])
+          setselectedDataPopup([])
+          setperiodMode(val)
+
+        }}
+ onYearChange={(val) => {
+          setcategorylist([])
+          setacheivedProducts([])
+          setselectedDataPopup([])
+console.log(val)
+          setSelectedYear(val)
+        }}
+periodmode={periodMode}
+yearSelected={selectedYear}
       />
 
       <ChangePasswordModal

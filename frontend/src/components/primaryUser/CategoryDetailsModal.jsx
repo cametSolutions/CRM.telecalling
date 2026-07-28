@@ -2,6 +2,7 @@ import React from 'react';
 import { X, TrendingUp, TrendingDown, Target, Award, Calendar } from 'lucide-react';
 
 const CategoryDetailsModal = ({ isOpen, onClose, category }) => {
+console.log(isOpen)
   if (!isOpen || !category) return null;
 
   const achieved = category?.achieved || 0;
