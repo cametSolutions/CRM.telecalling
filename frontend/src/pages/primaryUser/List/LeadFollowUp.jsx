@@ -1652,6 +1652,8 @@ const LeadFollowUp = () => {
       console.log(safeState?.header)
       if (safeState?.header === "Total Leads") {
         console.log(leads)
+const lea=leads.map((item)=>item.leadId)
+console.log(lea)
         const filteredLeads = leads.filter((lead) => {
           // 1️⃣ Get only followup allocation logs
           const followupAllocations = lead.activityLog.filter(
@@ -1697,11 +1699,14 @@ const LeadFollowUp = () => {
         console.log(groupedData)
       } else {
         console.log("HH")
+console.log(safeState)
         if (safeState?.viewMode === "overDue") {
           console.log("hhh")
           const today = new Date()
           today.setHours(0, 0, 0, 0)
-
+console.log(leads)
+const as=leads.map((item)=>item.leadId)
+console.log(as)
           const overdueLeads = leads.filter((lead) => {
             // 1️⃣ Get logs having nextFollowUpDate
             const followupLogs = lead.activityLog.filter(
@@ -1847,6 +1852,8 @@ const LeadFollowUp = () => {
             return lead.leadConvertedDate && !lead.leadLost
           })
           console.log(leads)
+const a=leads.map((item)=>item.leadId)
+console.log(a)
           console.log("converted Leads:", convertedLeads.length)
           const groupedLeads = {}
           let grandTotal = 0
@@ -1865,7 +1872,8 @@ const LeadFollowUp = () => {
           setTableData(groupedData)
           console.log(groupedData)
         } else if (safeState?.viewMode === "neverfollowup") {
-          console.log("HHhh")
+          console.log("HHhdffh")
+console.log(leads)
           const neverFollowupLeads = leads.filter((lead) => {
             const logs = lead.activityLog || []
 
@@ -1893,7 +1901,7 @@ const LeadFollowUp = () => {
               !hasNextFollowupDate && !lead.leadConvertedDate && !lead.leadLost
             )
           })
-
+console.log(neverFollowupLeads)
           console.log(leads)
           console.log("neverfollowup:", neverFollowupLeads?.length)
           const groupedLeads = {}

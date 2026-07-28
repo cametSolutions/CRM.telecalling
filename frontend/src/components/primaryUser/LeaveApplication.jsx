@@ -1073,6 +1073,7 @@ const onClose = () => {
         console.log(leaveDate.getTime())
         console.log(today.getTime())
         if (leaveDate.getTime() === today.getTime()) {
+console.log(checkinTime)
           // Same-day leave - check punch-in time
           const [time, period] = checkinTime.split(" ") // "9:30", "AM"
           let [hours, minutes] = time.split(":")
