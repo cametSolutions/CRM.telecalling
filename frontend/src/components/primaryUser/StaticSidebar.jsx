@@ -1,5 +1,3 @@
-
-
 // import React, { useEffect, useMemo, useState } from "react"
 // import UseFetch from "../../hooks/useFetch"
 // import useMediaQuery from "@mui/material/useMediaQuery"
@@ -261,7 +259,7 @@ import {
   setLocalStorageItem
 } from "../../helper/localstorage"
 import { useNavigate } from "react-router-dom"
-import {setsliceselectedBranch} from "../../../slices/companyBranchSlice.js"
+import { setsliceselectedBranch } from "../../../slices/companyBranchSlice.js"
 // import {setselected}
 import { useSelector } from "react-redux"
 import AvatarEditor from "../common/AvatarEditor"
@@ -273,50 +271,54 @@ import { toast } from "react-toastify"
 import { useDispatch } from "react-redux"
 export const StaticSidebar = ({
   selectedCompanyBranch,
-setcategoryId,
+  selectedMonths,
+  yearSelected,
+  setcategoryId,
+  onselectedPeriodChange,
   // setselectedPeriod,
   // handleMoreClick,
   setselectedCompanyBranch,
   parenttargetData,
   parentyear,
   parentperiodmode,
-onpasswordClick,
-onperformanceModalClick,
-setTargetData,targetData,
-onavataropenClick
+  onpasswordClick,
+  onperformanceModalClick,
+  setTargetData,
+  targetData,
+  onavataropenClick
 }) => {
-console.log("hhd")
-// console.log(onpasswordClick)
+  console.log(targetData)
+  console.log("hhd")
+  // console.log(onpasswordClick)
   const now = new Date()
-const navigate=useNavigate()
- const dispatch = useDispatch()
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
   const [categorylist, setcategorylist] = useState([])
+  console.log(categorylist)
   // const now = new Date()
   const [selectedPeriod, setselectedPeriod] = useState("")
-  const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
-console.log(selectedYear)
-  const [periodMode, setperiodMode] = useState("all")
+  const [selectedYear, setSelectedYear] = useState(yearSelected)
+  console.log(selectedYear)
+  const [periodMode, setperiodMode] = useState(parentperiodmode)
   const [avatarOpen, setAvatarOpen] = useState(false)
   // const [user, setUser] = useState(null)
-const user=useSelector((state)=>state.auth.user)
-console.log(user)
+  const user = useSelector((state) => state.auth.user)
+  console.log(user)
   // const [selectedBranch, setselectedBranch] = useState(null)
-// console.log(selectedBranch)
+  // console.log(selectedBranch)
   // const [periodMode, setperiodMode] = useState(parentperiodmode)
   const [branchOptions, setbranchOptions] = useState([])
-  const [selectedMonth] = useState(
-    String(now.getMonth() + 1).padStart(2, "0")
-  )
-//  const [targetData, settargetData] = useState([])
+  const [selectedMonth, setSelectedMonth] = useState(selectedMonths)
+  //  const [targetData, settargetData] = useState([])
   const isMobile = useMediaQuery("(max-width:1023px)")
   const [loggedusedTarget, setloggeduserTarget] = useState([])
   // const [selectedYear, setSelectedYear] = useState(parentyear)
   const [achievedPoints, setachievedPoints] = useState(0)
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile)
-const brand=useSelector((branch)=>branch.companyBranch.branches)
-const selectedBranch=useSelector((b)=>b.companyBranch.selectedBranch)
-console.log(selectedBranch)
-console.log(brand)
+  const brand = useSelector((branch) => branch.companyBranch.branches)
+  const selectedBranch = useSelector((b) => b.companyBranch.selectedBranch)
+  console.log(selectedBranch)
+  console.log(brand)
   const { data, loading: targetLoading } = UseFetch(
     selectedBranch &&
       selectedMonth &&
@@ -324,45 +326,49 @@ console.log(brand)
       periodMode &&
       `/target/gettargetresult?month=${selectedMonth}&year=${selectedYear}&periodMode=${periodMode}&selectedBranch=${selectedBranch}`
   )
-console.log(selectedBranch)
-console.log(selectedYear)
-console.log(periodMode)
-console.log(data)
+  console.log(selectedMonth)
+  console.log(data)
+  console.log(selectedBranch)
+  console.log(selectedYear)
+  console.log(periodMode)
+  console.log(data)
   const { data: branchlist } = UseFetch("/branch/getBranch")
 
   useEffect(() => {
     setSidebarOpen(!isMobile)
   }, [isMobile])
 
-  // useEffect(() => {
-  //   setperiodMode(parentperiodmode)
-  // }, [parentperiodmode])
+  useEffect(() => {
+    setperiodMode(parentperiodmode)
+  }, [parentperiodmode])
 
-  // useEffect(() => {
-  //   setSelectedYear(parentyear)
-  // }, [parentyear])
+  useEffect(() => {
+    console.log(yearSelected)
+    setSelectedYear(yearSelected)
+  }, [yearSelected])
 
-
+  useEffect(() => {
+    setSelectedMonth(selectedMonths)
+  }, [selectedMonths])
 
   useEffect(() => {
     if (!branchlist) return
-if(!user)return
+    if (!user) return
 
-   
-console.log(user)
-      const uniqueBranches = (user.selected || []).map((branch) => ({
-        id: branch.branch_id,
-        label: branch.branchName
-      }))
-console.log(uniqueBranches)
-      setbranchOptions(uniqueBranches)
-    
-  }, [branchlist,user])
-console.log(branchOptions)
+    console.log(user)
+    const uniqueBranches = (user.selected || []).map((branch) => ({
+      id: branch.branch_id,
+      label: branch.branchName
+    }))
+    console.log(uniqueBranches)
+    setbranchOptions(uniqueBranches)
+  }, [branchlist, user])
+  console.log(branchOptions)
   useEffect(() => {
     if (data?.userWiseResults && data?.userWiseResults.length && user?._id) {
+      console.log(data)
       // parenttargetData(data)
- setTargetData(data)
+      setTargetData(data)
       setselectedPeriod(data?.selectedPeriodName)
 
       const uniqueCategories = [
@@ -416,9 +422,12 @@ console.log(branchOptions)
             b.targetamount > 0 ? b.achievedamount / b.targetamount : 0
           return bPercent - aPercent
         })
+      console.log(updatedCategories)
 
       setcategorylist(updatedCategories)
-    }
+    }else{
+setTargetData([])
+setcategorylist([])}
   }, [data, user, parenttargetData, setselectedPeriod])
 
   const handlepasswordChange = async (payload) => {
@@ -454,17 +463,20 @@ console.log(branchOptions)
       setSidebarOpen((prev) => !prev)
     }
   }
-const handleMoreClick=(categoryid)=>{
-console.log(categoryid)
-console.log("hhh")
-setcategoryId(categoryid)
-onperformanceModalClick()
-}
- const logout = async () => {
+  const handleMoreClick = (categoryid) => {
+    console.log(categoryid)
+    console.log("hhh")
+    setcategoryId(categoryid)
+    onperformanceModalClick()
+  }
+  const logout = async () => {
     try {
-console.log("hhh")
+      console.log("hhh")
       const res = await api.post("/auth/logout")
-      if (res.status === 200 && res.data?.message === "Logged out successfully") {
+      if (
+        res.status === 200 &&
+        res.data?.message === "Logged out successfully"
+      ) {
         localStorage.removeItem("authToken")
         localStorage.removeItem("user")
         localStorage.removeItem("timer")
@@ -479,158 +491,93 @@ console.log("hhh")
       toast.error("Logout failed, please try again")
     }
   }
-const handleBranchChange = (branch) => {
-  try {
-    console.log(branch);
+  const handleBranchChange = (branch) => {
+    try {
+      console.log(branch)
 
-    // setselectedBranch(branch);
+      // setselectedBranch(branch);
 
-    setLocalStorageItem("selectedBranch", branch);
+      setLocalStorageItem("selectedBranch", branch)
 
-    console.log("bbbb");
+      console.log("bbbb")
 
-    // console.log("dispatch", dispatch);
-    console.log("selectedBranch action", selectedBranch);
+      // console.log("dispatch", dispatch);
+      console.log("selectedBranch action", selectedBranch)
 
-    dispatch(setsliceselectedBranch(branch));
+      dispatch(setsliceselectedBranch(branch))
 
-    console.log("vvvv");
-  } catch (err) {
-    console.error("Dispatch error:", err);
+      console.log("vvvv")
+    } catch (err) {
+      console.error("Dispatch error:", err)
+    }
   }
-};
 
   return (
-//     <>
-//       <div
-//         className={`${
-//           isMobile ? "fixed left-0 top-0 z-40 h-screen" : "relative h-full"
-//         }`}
-//       >
-//         <div
-//           className={`h-full transition-transform duration-300 ease-in-out ${
-//             isMobile
-//               ? sidebarOpen
-//                 ? "translate-x-0"
-//                 : "-translate-x-full"
-//               : "translate-x-0"
-//           }`}
-//         >
-//           <div
-//             className={`h-full ${
-//               isMobile
-//                 ? "w-[74vw] max-w-[280px] bg-white shadow-2xl"
-//                 : "w-auto"
-//             }`}
-//           >
-//             <Sidebar
-//               handleMoreClick={handleMoreClick}
-// onpasswordClick={onpasswordClick}
-// onperformanceModalClick={onperformanceModalClick}
-//               achievedPoints={achievedPoints}
-//               sidebarOpen={sidebarOpen}
-//               toggleSidebar={toggleSidebar}
-//               user={user}
-//               selectedBranch={selectedBranch}
-//               // setselectedParentBranch={setselectedCompanyBranch}
-//               setselectedBranch={handleBranchChange}
-//               branchOptions={branchOptions}
-//               categorylist={categorylist}
-//               targetLoading={targetLoading}
-//               BranchSelect={BranchSelect}
-//               SkeletonTable={SkeletonTable}
-//               setAvatarOpen={setAvatarOpen}
-//               onPasswordChange={handlepasswordChange}
-//               isMobile={isMobile}
-//             />
-//           </div>
-//         </div>
-//       </div>
+   
+    <>
+      <div
+        className={`${
+          isMobile
+            ? `fixed left-0 top-0 z-40 h-screen ${
+                sidebarOpen ? "" : "pointer-events-none"
+              }`
+            : "relative h-full"
+        }`}
+      >
+        <div
+          className={`h-full transition-transform duration-300 ease-in-out ${
+            isMobile
+              ? sidebarOpen
+                ? "translate-x-0 pointer-events-auto"
+                : "-translate-x-full pointer-events-none"
+              : "translate-x-0"
+          }`}
+        >
+          <div
+            className={`h-full ${
+              isMobile ? "w-[74vw] max-w-[280px] bg-white shadow-2xl" : "w-auto"
+            }`}
+          >
+            {targetData && (
+              <Sidebar
+                handleMoreClick={handleMoreClick}
+                onpasswordClick={onpasswordClick}
+                onperformanceModalClick={onperformanceModalClick}
+                onLogoutClick={logout}
+selectedYear={selectedYear}
+setSelectedYear={setSelectedYear}
+                targetData={targetData}
+                onselectedPeriodChange={onselectedPeriodChange}
+                onavataropenClick={onavataropenClick}
+                achievedPoints={achievedPoints}
+                sidebarOpen={sidebarOpen}
+                toggleSidebar={toggleSidebar}
+                user={user}
+                selectedBranch={selectedBranch}
+                setselectedBranch={handleBranchChange}
+                branchOptions={branchOptions}
+                categorylist={categorylist}
+                targetLoading={targetLoading}
+                BranchSelect={BranchSelect}
+                SkeletonTable={SkeletonTable}
+                setAvatarOpen={setAvatarOpen}
+                onPasswordChange={handlepasswordChange}
+                isMobile={isMobile}
+              />
+            )}
+          </div>
+        </div>
+      </div>
 
-//       {isMobile && sidebarOpen && (
-//         <button
-//           type="button"
-//           aria-label="Close sidebar overlay"
-//           onClick={() => setSidebarOpen(false)}
-//           className="fixed inset-0 z-30 bg-black/40"
-//         />
-//       )}
-
-//       {avatarOpen && (
-//         <AvatarEditor
-//           open={avatarOpen}
-//           onClose={() => setAvatarOpen(false)}
-//           user={user}
-//           onSave={handleAvatarSave}
-//         />
-//       )}
-
-//       {loggedusedTarget && (
-//         <PerformanceModal
-//           open={false}
-//           onClose={() => {}}
-//           targetData={loggedusedTarget}
-//         />
-//       )}
-//     </>
-<>
-<div
-  className={`${
-    isMobile
-      ? `fixed left-0 top-0 z-40 h-screen ${
-          sidebarOpen ? "" : "pointer-events-none"
-        }`
-      : "relative h-full"
-  }`}
->
-  <div
-    className={`h-full transition-transform duration-300 ease-in-out ${
-      isMobile
-        ? sidebarOpen
-          ? "translate-x-0 pointer-events-auto"
-          : "-translate-x-full pointer-events-none"
-        : "translate-x-0"
-    }`}
-  >
-    <div
-      className={`h-full ${
-        isMobile ? "w-[74vw] max-w-[280px] bg-white shadow-2xl" : "w-auto"
-      }`}
-    >
-      <Sidebar
-        handleMoreClick={handleMoreClick}
-        onpasswordClick={onpasswordClick}
-        onperformanceModalClick={onperformanceModalClick}
-onLogoutClick={logout}
-onavataropenClick={onavataropenClick}
-        achievedPoints={achievedPoints}
-        sidebarOpen={sidebarOpen}
-        toggleSidebar={toggleSidebar}
-        user={user}
-        selectedBranch={selectedBranch}
-        setselectedBranch={handleBranchChange}
-        branchOptions={branchOptions}
-        categorylist={categorylist}
-        targetLoading={targetLoading}
-        BranchSelect={BranchSelect}
-        SkeletonTable={SkeletonTable}
-        setAvatarOpen={setAvatarOpen}
-        onPasswordChange={handlepasswordChange}
-        isMobile={isMobile}
-      />
-    </div>
-  </div>
-</div>
-
-{isMobile && sidebarOpen && (
-  <button
-    type="button"
-    aria-label="Close sidebar overlay"
-    onClick={() => setSidebarOpen(false)}
-    className="fixed inset-0 z-30 bg-black/40"
-  />
-)}
-</>
+      {isMobile && sidebarOpen && (
+        <button
+          type="button"
+          aria-label="Close sidebar overlay"
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 z-30 bg-black/40"
+        />
+      )}
+    </>
   )
 }
 

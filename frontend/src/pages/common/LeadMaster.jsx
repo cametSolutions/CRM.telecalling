@@ -4206,7 +4206,7 @@ console.log(originalHsn)
             //   console.log("hh")
             //   return `Lead amount is required for ${row?.productName || row?.productorServiceName} ${tag?.licensenumber},not less than 0`
             // }
-            if (Number(productAmount) <= 0) {
+            if (Number(productAmount) <= 0&&!haveprimaryProduct) {
               console.log("hh")
               return `Lead amount is required for ${
                 row?.productName || row?.productorServiceName

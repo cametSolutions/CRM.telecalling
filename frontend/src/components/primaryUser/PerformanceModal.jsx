@@ -4,6 +4,7 @@ import { FancySelect } from "../common/FancySelect"
 export function PerformanceModal({
   modalOpen,
   open,
+  periodmode,
   categoryId,
   loggedUser,
   splitType,
@@ -19,14 +20,16 @@ export function PerformanceModal({
   onMonthChange,
   onYearChange,
   targetData,
+  yearSelected,
   // loggedUser,
   category,
   handleSelectedUser,
   selectedUser,
   activeUserId
 }) {
-console.log(selectedperiod)
-console.log(selectedMonth)
+  console.log(periodmode)
+  console.log(selectedperiod)
+  console.log(selectedMonth)
   console.log(category)
   console.log(selectedUser)
   console.log(targetData)
@@ -41,16 +44,17 @@ console.log(selectedMonth)
   console.log(targetData)
   console.log(selectedperiod)
   console.log(allperiods)
-const [selectedDatapopup, setselectedDataPopup] = useState({})
+  const [selectedDatapopup, setselectedDataPopup] = useState({})
   const [activeMetric, setActiveMetric] = useState("achieved")
   const [allusersData, setallusersData] = useState([])
   const [userwisetargetData, setuserwisetargetdata] = useState({})
   const [localSelectedPeriod, setLocalSelectedPeriod] = useState(
     targetData?.selectedPeriodName || ""
   )
-const now=new Date()
-  const [periodMode, setperiodMode] = useState("all")
-  const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
+  const now = new Date()
+  const [periodMode, setperiodMode] = useState(periodmode)
+  console.log(periodMode)
+  const [selectedYear, setSelectedYear] = useState(yearSelected)
   console.log(targetData?.selectedPeriodName)
   console.log(localSelectedPeriod)
   const MONTHS = [
@@ -107,50 +111,57 @@ const now=new Date()
 
   useEffect(() => {
     setLocalSelectedPeriod(targetData?.selectedPeriodName || "")
-  }, [targetData?.selectedPeriodName])
-console.log(categoryId)
+    setperiodMode(periodmode)
+    setSelectedYear(yearSelected)
+  }, [targetData?.selectedPeriodName, periodmode, yearSelected])
+  console.log(categoryId)
+  console.log(targetData)
   useEffect(() => {
-    if (categoryId) {
- const filteredselectedCategory = targetData?.userWiseResults.flatMap(
-      (user) => user.categories || []
-    ).filter((item) => item.categoryId === categoryId)
-    console.log("Hh")
-    const summary = filteredselectedCategory.reduce(
-      (acc, cur) => {
-        acc.target += Number(cur.target || 0)
-        acc.achieved += Number(cur.achieved || 0)
-        acc.balance += Number(cur.balance || 0)
-        return acc
-      },
-      { target: 0, achieved: 0, balance: 0 }
-    )
-console.log(summary)
- setselectedDataPopup(summary)
-//  console.log(loggedUser)
-//     console.log(targetData)
-//     // const filteredloggedUserItem = targetData?.userWiseResults.filter(
-//     //   (item) => item.userId === loggedUser._id
-//     // )
-//     // console.log(filteredloggedUserItem)
-//     const filteredselectedCategory =
-//       filteredloggedUserItem[0]?.categories.filter(
-//         (item) => item.categoryId === categoryId
-//       )
-//     console.log(filteredselectedCategory)
-//     const summary = filteredselectedCategory?.reduce(
-//       (acc, cur) => {
-//         acc.target += Number(cur.target || 0)
-//         acc.achieved += Number(cur.achieved || 0)
-//         acc.balance += Number(cur.balance || 0)
-//         return acc
-//       },
-//       { target: 0, achieved: 0, balance: 0 }
-//     )
-//     console.log(summary)
-//     // setselectedDataPopup(summary)
-//     console.log(targetData)
+    if (
+      categoryId &&
+      targetData &&
+      typeof targetData === "object" &&
+      !Array.isArray(targetData)
+    ) {
+      const filteredselectedCategory = targetData?.userWiseResults
+        .flatMap((user) => user.categories || [])
+        .filter((item) => item.categoryId === categoryId)
+      console.log("Hh")
+      const summary = filteredselectedCategory.reduce(
+        (acc, cur) => {
+          acc.target += Number(cur.target || 0)
+          acc.achieved += Number(cur.achieved || 0)
+          acc.balance += Number(cur.balance || 0)
+          return acc
+        },
+        { target: 0, achieved: 0, balance: 0 }
+      )
+      console.log(summary)
+      setselectedDataPopup(summary)
+      //  console.log(loggedUser)
+      //     console.log(targetData)
+      //     // const filteredloggedUserItem = targetData?.userWiseResults.filter(
+      //     //   (item) => item.userId === loggedUser._id
+      //     // )
+      //     // console.log(filteredloggedUserItem)
+      //     const filteredselectedCategory =
+      //       filteredloggedUserItem[0]?.categories.filter(
+      //         (item) => item.categoryId === categoryId
+      //       )
+      //     console.log(filteredselectedCategory)
+      //     const summary = filteredselectedCategory?.reduce(
+      //       (acc, cur) => {
+      //         acc.target += Number(cur.target || 0)
+      //         acc.achieved += Number(cur.achieved || 0)
+      //         acc.balance += Number(cur.balance || 0)
+      //         return acc
+      //       },
+      //       { target: 0, achieved: 0, balance: 0 }
+      //     )
+      //     console.log(summary)
+      //     // setselectedDataPopup(summary)
+      //     console.log(targetData)
     }
-   
   }, [targetData])
 
   const periodOptions = useMemo(() => {
@@ -162,7 +173,7 @@ console.log(summary)
       }
     })
   }, [targetData.periods])
-console.log(periodOptions)
+  console.log(periodOptions)
   console.log(targetData.periods)
   const monthOptions = useMemo(() => {
     const parsed = getPeriodRange(localSelectedPeriod)
@@ -243,7 +254,7 @@ console.log(periodOptions)
 
   const handlePeriodChange = (value) => {
     setLocalSelectedPeriod(value)
-
+    console.log(value)
     const parsed = getPeriodRange(value)
     const firstMonthNumber = parsed?.startNum || null
 
@@ -260,11 +271,11 @@ console.log(periodOptions)
 
   const { target, achieved, balance } = selectedDatapopup || {}
   console.log(selectedDatapopup)
-console.log(open)
-console.log(targetData)
+  console.log(open)
+  console.log(targetData)
   if (!open || !targetData?.userWiseResults?.length) return null
-console.log(open)
-console.log(targetData)
+  console.log(open)
+  console.log(targetData)
 
   const isAmountMode = splitType === "amount"
 
@@ -277,7 +288,7 @@ console.log(targetData)
 
     return `Q: ${num.toLocaleString("en-IN")}`
   }
-console.log("hhh")
+  console.log("hhh")
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-3 backdrop-blur-sm">
       <div className="w-full max-w-4xl rounded-2xl bg-slate-50 shadow-2xl ring-1 ring-slate-900/10 ">
@@ -307,7 +318,7 @@ console.log("hhh")
               label="Month"
               value={String(periodMode ?? "all")}
               options={monthOptions}
-              // onChange={onMonthChange}
+              onChange={onMonthChange}
               width="min-w-[140px]"
             />
 
@@ -315,7 +326,7 @@ console.log("hhh")
               label="Year"
               value={String(selectedYear || "")}
               options={yearOptions}
-              // onChange={onYearChange}
+              onChange={onYearChange}
               width="min-w-[110px]"
             />
 

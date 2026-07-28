@@ -17,6 +17,7 @@ import {
   selectedCompany as setSelectedCompany
 } from "../../../../slices/companyBranchSlice.js"
 const Login = () => {
+console.log("hhhh")
   const [passwordVisible, setPasswordVisible] = useState(false)
   const [loading, setLoading] = useState(false)
   const dispatch = useDispatch()
@@ -49,7 +50,7 @@ const Login = () => {
             id: branch.branch_id,
             label: branch.branchName
           }))
-
+          console.log(leavemasterdata[0]?.checkIn)
           // Save to localStorage
           setLocalStorageItem("selectedCompany", selectedCompany)
           setLocalStorageItem("selectedBranch", selectedCompany.branch_id)
@@ -78,7 +79,8 @@ const Login = () => {
               activeCompany: {
                 company_id: selectedCompany.company_id,
                 branch_id: selectedCompany.branch_id
-              }
+              },
+              checkInTime: leavemasterdata[0]?.checkIn
             })
           )
 
