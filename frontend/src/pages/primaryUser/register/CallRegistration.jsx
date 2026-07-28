@@ -1162,12 +1162,13 @@ Problem:    \t${selectedText}
     } else {
       const branches = JSON.stringify(branch)
 
+    
       // url =
       //   branches &&
       //   branches.length > 0 &&
       //   `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${
       //     user.role
-      //   }&userBranch=${encodeURIComponent(branches)}`
+      //  }&userBranch=${encodeURIComponent(branches)}`
       url =
         branches &&
         branches.length > 0 &&

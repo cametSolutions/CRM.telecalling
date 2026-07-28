@@ -1633,8 +1633,8 @@ console.log(loggeduserBranch)
               {isSubmitting
                 ? "Submitting..."
                 : process === "Registration"
-                  ? "Save"
-                  : "Update"}
+                  ? "Save Customer"
+                  : "Update Customer"}
             </button>
           </div>
         </form>

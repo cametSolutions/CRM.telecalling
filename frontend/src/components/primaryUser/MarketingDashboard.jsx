@@ -395,6 +395,7 @@ console.log(storedUser)
       ])
     }
   }, [])
+console.log(selectedCategory)
   useEffect(() => {
     if (selectedCategory) {
       const filteredList = branchProduct
@@ -412,6 +413,7 @@ console.log(storedUser)
       const filteredloggedUserItem = data?.userWiseResults.filter(
         (item) => item.userId === user._id
       )
+console.log(filteredloggedUserItem)
       const filteredselectedCategory =
         filteredloggedUserItem[0]?.categories.filter(
           (item) => item.categoryId === selectedCategory?.Id
@@ -427,6 +429,7 @@ console.log(storedUser)
       )
 
       setselectedDataPopup(summary)
+console.log(summary)
       if (filteredselectedCategory && filteredselectedCategory.length) {
         setacheivedProducts((prev) => [
           ...prev,

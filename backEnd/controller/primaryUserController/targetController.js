@@ -8,1399 +8,12 @@ const { Staff, Admin } = models
 import Product from "../../model/primaryUser/productSchema.js";
 import Service from "../../model/primaryUser/servicesSchema.js";
 
-// export const gettargetResult = async (req, res) => {
-//     try {
-//         console.log("controller")
-//         const { month, year, periodMode } = req.query
 
-//         const monthNumber = Number(month)
-//         const yearNumber = Number(year)
 
-//         if (!monthNumber || !yearNumber) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "month and year are required"
-//             })
-//         }
 
-//         const startOfMonth = new Date(yearNumber, monthNumber - 1, 1)
-//         const endOfMonth = new Date(yearNumber, monthNumber, 0, 23, 59, 59, 999)
 
-//         const configQuery = {
-//             startDate: { $lte: endOfMonth },
-//             endDate: { $gte: startOfMonth }
-//         }
-//         console.log("query", configQuery)
-//         const targetConfigs = await TargetConfiguration.find(configQuery)
-//             .populate("categoryId", "category")
-//             .populate("monthlyTargets.userTargets.userId", "name email")
 
-//         if (!targetConfigs.length) {
-//             return res.json({
-//                 success: true,
-//                 data: [],
-//                 summary: {
-//                     target: 0,
-//                     achieved: 0,
-//                     balance: 0,
-//                     incentive: 0
-//                 }
-//             })
-//         }
 
-//         const leads = await LeadMaster.find({
-//             leadDate: { $gte: startOfMonth, $lte: endOfMonth }
-//         })
-
-//         const leadsByUser = {}
-//         for (const lead of leads) {
-//             const userId = String(lead.leadBy)
-//             if (!leadsByUser[userId]) leadsByUser[userId] = []
-//             leadsByUser[userId].push(lead)
-//         }
-
-//         const productIds = new Set()
-//         const serviceIds = new Set()
-
-//         for (const lead of leads) {
-//             for (const payment of lead.paymentHistory || []) {
-//                 for (const entry of payment.paymentEntries || []) {
-//                     if (!entry.productorServiceId || !entry.productorServicemodel) continue
-
-//                     if (entry.productorServicemodel === "Product") {
-//                         productIds.add(String(entry.productorServiceId))
-//                     } else if (entry.productorServicemodel === "Service") {
-//                         serviceIds.add(String(entry.productorServiceId))
-//                     }
-//                 }
-//             }
-//         }
-
-//         const [products, services] = await Promise.all([
-//             Product.find({ _id: { $in: [...productIds] } }).select("productName name selected"),
-//             Service.find({ _id: { $in: [...serviceIds] } }).select(
-//                 "serviceName name selected category_id categoryId categoryName"
-//             )
-//         ])
-
-//         const productMap = {}
-//         const serviceMap = {}
-
-//         for (const item of products) {
-//             const selectedRow = Array.isArray(item.selected) ? item.selected[0] : null
-//             const categoryId = selectedRow?.category_id ? String(selectedRow.category_id) : ""
-
-//             productMap[String(item._id)] = {
-//                 name: item.productName || item.name || "Product",
-//                 categoryId
-//             }
-//         }
-
-//         for (const item of services) {
-//             const selectedRow = Array.isArray(item.selected) ? item.selected[0] : null
-//             const categoryId = selectedRow?.category_id
-//                 ? String(selectedRow.category_id)
-//                 : item.category_id
-//                     ? String(item.category_id)
-//                     : item.categoryId
-//                         ? String(item.categoryId)
-//                         : ""
-
-//             serviceMap[String(item._id)] = {
-//                 name: item.serviceName || item.name || "Service",
-//                 categoryId
-//             }
-//         }
-
-//         const getVerifiedReceivedAmount = (lead) => {
-//             let total = 0
-
-//             for (const payment of lead.paymentHistory || []) {
-//                 if (!payment.paymentVerified) continue
-
-//                 const paymentDate = new Date(payment.paymentDate)
-//                 if (paymentDate < startOfMonth || paymentDate > endOfMonth) continue
-
-//                 for (const entry of payment.paymentEntries || []) {
-//                     total += Number(entry.receivedAmount || 0)
-//                 }
-//             }
-
-//             return total
-//         }
-
-//         const isLeadFullyVerified = (lead) => {
-//             const payments = lead.paymentHistory || []
-//             if (!payments.length) return false
-//             return payments.every((p) => p.paymentVerified)
-//         }
-
-//         const isLeadEligibleForIncentive = (lead) => {
-//             if (lead.forcefullyClosedTarget === true) return true
-//             if (Number(lead.balanceAmount || 0) === 0) return true
-//             if (isLeadFullyVerified(lead)) return true
-//             return false
-//         }
-
-
-//         const getLeadAllocationIncentive = ({ lead, config, userId }) => {
-//             if (!isLeadEligibleForIncentive(lead)) return 0
-
-//             const allocationValues = Array.isArray(config.allocationValues)
-//                 ? config.allocationValues
-//                 : []
-
-//             if (!allocationValues.length) return 0
-
-//             const leadActivityLogs = Array.isArray(lead.activityLog) ? lead.activityLog : []
-
-//             let totalIncentive = 0
-
-//             for (const log of leadActivityLogs) {
-//                 const taskById = String(log?.taskBy || "")
-//                 const submittedUserId = String(log?.submittedUser || "")
-
-//                 if (!taskById) continue
-//                 if (submittedUserId !== String(userId)) continue
-
-//                 const matchedAllocation = allocationValues.find(
-//                     (alloc) => String(alloc.allocationId) === taskById
-//                 )
-
-//                 if (!matchedAllocation) continue
-
-//                 const allocationValue = Number(matchedAllocation.value || 0)
-//                 if (allocationValue <= 0) continue
-
-//                 const mode = config.measurementType
-
-//                 if (mode === "quantity") {
-//                     totalIncentive += allocationValue
-//                     continue
-//                 }
-
-//                 let baseAmount = 0
-
-//                 if (lead.forcefullyClosedTarget === true) {
-//                     baseAmount = Number(lead.netAmount || 0)
-//                 } else {
-//                     baseAmount = getVerifiedReceivedAmount(lead)
-//                 }
-
-//                 if (baseAmount <= 0) continue
-
-//                 totalIncentive += (allocationValue / 100) * baseAmount
-//             }
-
-//             return totalIncentive
-//         }
-//         const leadBelongsToCategory = (lead, configCategoryId) => {
-//             for (const item of lead.leadFor || []) {
-//                 const itemId = item.productorServiceId ? String(item.productorServiceId) : null
-//                 const itemModel = item.productorServicemodel
-
-//                 if (!itemId || !itemModel) continue
-
-//                 const itemMeta =
-//                     itemModel === "Product" ? productMap[itemId] : serviceMap[itemId]
-
-//                 if (!itemMeta) continue
-
-//                 if (String(itemMeta.categoryId) === String(configCategoryId)) {
-//                     return true
-//                 }
-//             }
-
-//             return false
-//         }
-
-//         const userWiseMap = {}
-
-//         for (const config of targetConfigs) {
-//             const mt = config.monthlyTargets.find(
-//                 (m) => Number(m.month) === monthNumber && Number(m.year) === yearNumber
-//             )
-
-//             if (!mt) continue
-
-//             const configCategoryId = String(config.categoryId?._id || config.categoryId)
-//             const categoryName = config.categoryId?.category || "Category"
-
-//             for (const userTarget of mt.userTargets) {
-//                 const userId = String(userTarget.userId?._id || userTarget.userId)
-//                 const userName = userTarget.userId?.name || "Unknown User"
-//                 const slabs = userTarget.slabs || []
-
-//                 const userMonthlyTarget =
-//                     slabs.length > 0
-//                         ? Number(slabs[slabs.length - 1].toValue || 0)
-//                         : 0
-
-//                 const userLeads = leadsByUser[userId] || []
-
-//                 let achievedForUser = 0
-//                 let incentiveForUser = 0
-//                 const userProductWiseMap = {}
-
-//                 // if (config.measurementType === "amount") {
-//                 //     for (const lead of userLeads) {
-//                 //         const belongsToCurrentCategory = leadBelongsToCategory(lead, configCategoryId)
-
-//                 //         if (!belongsToCurrentCategory) continue
-//                 //         if (lead.forcefullyClosedTarget === true) {
-//                 //             const netAmount = Number(lead.netAmount || 0)
-//                 //             if (netAmount > 0) {
-//                 //                 achievedForUser += netAmount
-
-//                 //                 const forcedKey = `FORCED-${lead._id}`
-//                 //                 if (!userProductWiseMap[forcedKey]) {
-//                 //                     userProductWiseMap[forcedKey] = {
-//                 //                         id: String(lead._id),
-//                 //                         model: "Lead",
-//                 //                         name: "Force-closed target",
-//                 //                         achieved: 0,
-//                 //                         incentive: 0
-//                 //                     }
-//                 //                 }
-
-//                 //                 userProductWiseMap[forcedKey].achieved += netAmount
-
-//                 //                 const leadIncentive = getLeadAllocationIncentive({
-//                 //                     lead,
-//                 //                     config,
-//                 //                     userId
-//                 //                 })
-
-//                 //                 incentiveForUser += leadIncentive
-//                 //                 userProductWiseMap[forcedKey].incentive += leadIncentive
-//                 //             }
-//                 //             continue
-//                 //         }
-
-//                 //         for (const payment of lead.paymentHistory || []) {
-//                 //             if (!payment.paymentVerified) continue
-
-//                 //             const paymentDate = new Date(payment.paymentDate)
-//                 //             if (paymentDate < startOfMonth || paymentDate > endOfMonth) continue
-
-//                 //             for (const entry of payment.paymentEntries || []) {
-//                 //                 const itemId = entry.productorServiceId
-//                 //                     ? String(entry.productorServiceId)
-//                 //                     : null
-//                 //                 const itemModel = entry.productorServicemodel
-
-//                 //                 if (!itemId || !itemModel) continue
-
-//                 //                 const itemMeta =
-//                 //                     itemModel === "Product" ? productMap[itemId] : serviceMap[itemId]
-
-//                 //                 if (!itemMeta) continue
-//                 //                 if (itemMeta.categoryId !== configCategoryId) continue
-
-//                 //                 const achievedAmount = Number(entry.receivedAmount || 0)
-//                 //                 achievedForUser += achievedAmount
-
-//                 //                 const productKey = `${itemModel}-${itemId}`
-
-//                 //                 if (!userProductWiseMap[productKey]) {
-//                 //                     userProductWiseMap[productKey] = {
-//                 //                         id: itemId,
-//                 //                         model: itemModel,
-//                 //                         name: itemMeta.name,
-//                 //                         achieved: 0,
-//                 //                         incentive: 0
-//                 //                     }
-//                 //                 }
-
-//                 //                 userProductWiseMap[productKey].achieved += achievedAmount
-//                 //             }
-//                 //         }
-
-//                 //         const leadIncentive = getLeadAllocationIncentive({
-//                 //             lead,
-//                 //             config,
-//                 //             userId
-//                 //         })
-
-//                 //         incentiveForUser += leadIncentive
-//                 //     }
-//                 // } else if(config.measurementType === "amount") {
-//                 //     for (const lead of userLeads) {
-//                 //         const belongsToCurrentCategory = leadBelongsToCategory(lead, configCategoryId)
-
-//                 //         if (!belongsToCurrentCategory) continue
-//                 //         if (lead.forcefullyClosedTarget === true) {
-//                 //             achievedForUser += 1
-
-//                 //             const forcedKey = `FORCED-${lead._id}`
-//                 //             if (!userProductWiseMap[forcedKey]) {
-//                 //                 userProductWiseMap[forcedKey] = {
-//                 //                     id: String(lead._id),
-//                 //                     model: "Lead",
-//                 //                     name: "Force-closed target",
-//                 //                     achieved: 0,
-//                 //                     incentive: 0
-//                 //                 }
-//                 //             }
-
-//                 //             userProductWiseMap[forcedKey].achieved += 1
-
-//                 //             const leadIncentive = getLeadAllocationIncentive({
-//                 //                 lead,
-//                 //                 config,
-//                 //                 userId
-//                 //             })
-
-//                 //             incentiveForUser += leadIncentive
-//                 //             userProductWiseMap[forcedKey].incentive += leadIncentive
-//                 //             continue
-//                 //         }
-
-//                 //         const payments = lead.paymentHistory || []
-//                 //         if (!payments.length) continue
-
-//                 //         const allVerified = payments.every((p) => p.paymentVerified)
-
-//                 //         let totalReceived = 0
-//                 //         const leadItemKeys = new Set()
-//                 //         const leadItemMap = {}
-
-//                 //         for (const payment of payments) {
-//                 //             for (const entry of payment.paymentEntries || []) {
-//                 //                 const itemId = entry.productorServiceId
-//                 //                     ? String(entry.productorServiceId)
-//                 //                     : null
-//                 //                 const itemModel = entry.productorServicemodel
-
-//                 //                 if (!itemId || !itemModel) continue
-
-//                 //                 const itemMeta =
-//                 //                     itemModel === "Product" ? productMap[itemId] : serviceMap[itemId]
-
-//                 //                 if (!itemMeta) continue
-//                 //                 if (itemMeta.categoryId !== configCategoryId) continue
-
-//                 //                 totalReceived += Number(entry.receivedAmount || 0)
-
-//                 //                 const itemKey = `${itemModel}-${itemId}`
-//                 //                 leadItemKeys.add(itemKey)
-
-//                 //                 if (!leadItemMap[itemKey]) {
-//                 //                     leadItemMap[itemKey] = {
-//                 //                         id: itemId,
-//                 //                         model: itemModel,
-//                 //                         name: itemMeta.name
-//                 //                     }
-//                 //                 }
-//                 //             }
-//                 //         }
-
-//                 //         if (allVerified && totalReceived === Number(lead.netAmount || 0)) {
-//                 //             achievedForUser += 1
-
-//                 //             for (const itemKey of leadItemKeys) {
-//                 //                 const item = leadItemMap[itemKey]
-
-//                 //                 if (!userProductWiseMap[itemKey]) {
-//                 //                     userProductWiseMap[itemKey] = {
-//                 //                         id: item.id,
-//                 //                         model: item.model,
-//                 //                         name: item.name,
-//                 //                         achieved: 0,
-//                 //                         incentive: 0
-//                 //                     }
-//                 //                 }
-
-//                 //                 userProductWiseMap[itemKey].achieved += 1
-//                 //             }
-
-//                 //             const leadIncentive = getLeadAllocationIncentive({
-//                 //                 lead,
-//                 //                 config,
-//                 //                 userId
-//                 //             })
-
-//                 //             incentiveForUser += leadIncentive
-//                 //         }
-//                 //     }
-//                 // }
-//                 if (config.measurementType === "amount") {
-//                     for (const lead of userLeads) {
-//                         const belongsToCurrentCategory = leadBelongsToCategory(lead, configCategoryId)
-//                         if (!belongsToCurrentCategory) continue
-
-//                         // ✅ FORCE CLOSED (UPDATED)
-//                         if (lead.forcefullyClosedTarget === true) {
-//                             const netAmount = Number(lead.netAmount || 0)
-//                             if (netAmount > 0) {
-//                                 achievedForUser += netAmount
-//                             }
-
-//                             const leadItems = lead.leadFor || [] // 🔴 adjust if needed
-
-//                             for (const item of leadItems) {
-//                                 const itemId = item.productorServiceId
-//                                     ? String(item.productorServiceId)
-//                                     : null
-//                                 const itemModel = item.productorServicemodel
-
-//                                 if (!itemId || !itemModel) continue
-
-//                                 const itemMeta =
-//                                     itemModel === "Product" ? productMap[itemId] : serviceMap[itemId]
-
-//                                 if (!itemMeta) continue
-//                                 if (itemMeta.categoryId !== configCategoryId) continue
-
-//                                 const productKey = `${itemModel}-${itemId}`
-
-//                                 if (!userProductWiseMap[productKey]) {
-//                                     userProductWiseMap[productKey] = {
-//                                         id: itemId,
-//                                         model: itemModel,
-//                                         name: itemMeta.name,
-//                                         achieved: 0,
-//                                         incentive: 0
-//                                     }
-//                                 }
-
-//                                 userProductWiseMap[productKey].achieved += netAmount
-//                             }
-
-//                             const leadIncentive = getLeadAllocationIncentive({
-//                                 lead,
-//                                 config,
-//                                 userId
-//                             })
-
-//                             incentiveForUser += leadIncentive
-
-//                             for (const item of leadItems) {
-//                                 const itemId = item.productorServiceId
-//                                     ? String(item.productorServiceId)
-//                                     : null
-//                                 const itemModel = item.productorServicemodel
-
-//                                 if (!itemId || !itemModel) continue
-
-//                                 const productKey = `${itemModel}-${itemId}`
-
-//                                 if (userProductWiseMap[productKey]) {
-//                                     userProductWiseMap[productKey].incentive += leadIncentive
-//                                 }
-//                             }
-
-//                             continue
-//                         }
-
-//                         // ✅ NORMAL FLOW (UNCHANGED)
-//                         for (const payment of lead.paymentHistory || []) {
-//                             if (!payment.paymentVerified) continue
-
-//                             const paymentDate = new Date(payment.paymentDate)
-//                             if (paymentDate < startOfMonth || paymentDate > endOfMonth) continue
-
-//                             for (const entry of payment.paymentEntries || []) {
-//                                 const itemId = entry.productorServiceId
-//                                     ? String(entry.productorServiceId)
-//                                     : null
-//                                 const itemModel = entry.productorServicemodel
-
-//                                 if (!itemId || !itemModel) continue
-
-//                                 const itemMeta =
-//                                     itemModel === "Product" ? productMap[itemId] : serviceMap[itemId]
-
-//                                 if (!itemMeta) continue
-//                                 if (itemMeta.categoryId !== configCategoryId) continue
-
-//                                 const achievedAmount = Number(entry.receivedAmount || 0)
-//                                 achievedForUser += achievedAmount
-
-//                                 const productKey = `${itemModel}-${itemId}`
-
-//                                 if (!userProductWiseMap[productKey]) {
-//                                     userProductWiseMap[productKey] = {
-//                                         id: itemId,
-//                                         model: itemModel,
-//                                         name: itemMeta.name,
-//                                         achieved: 0,
-//                                         incentive: 0
-//                                     }
-//                                 }
-
-//                                 userProductWiseMap[productKey].achieved += achievedAmount
-//                             }
-//                         }
-
-//                         const leadIncentive = getLeadAllocationIncentive({
-//                             lead,
-//                             config,
-//                             userId
-//                         })
-
-//                         incentiveForUser += leadIncentive
-//                     }
-
-//                 } else {
-//                     for (const lead of userLeads) {
-//                         const belongsToCurrentCategory = leadBelongsToCategory(lead, configCategoryId)
-//                         if (!belongsToCurrentCategory) continue
-
-//                         // ✅ FORCE CLOSED (UPDATED)
-//                         if (lead.forcefullyClosedTarget === true) {
-//                             achievedForUser += 1
-
-//                             const leadItems = lead.leadFor || [] // 🔴 adjust if needed
-
-//                             for (const item of leadItems) {
-//                                 const itemId = item.productorServiceId
-//                                     ? String(item.productorServiceId)
-//                                     : null
-//                                 const itemModel = item.productorServicemodel
-
-//                                 if (!itemId || !itemModel) continue
-
-//                                 const itemMeta =
-//                                     itemModel === "Product" ? productMap[itemId] : serviceMap[itemId]
-
-//                                 if (!itemMeta) continue
-//                                 if (itemMeta.categoryId !== configCategoryId) continue
-
-//                                 const productKey = `${itemModel}-${itemId}`
-
-//                                 if (!userProductWiseMap[productKey]) {
-//                                     userProductWiseMap[productKey] = {
-//                                         id: itemId,
-//                                         model: itemModel,
-//                                         name: itemMeta.name,
-//                                         achieved: 0,
-//                                         incentive: 0
-//                                     }
-//                                 }
-
-//                                 userProductWiseMap[productKey].achieved += 1
-//                             }
-
-//                             const leadIncentive = getLeadAllocationIncentive({
-//                                 lead,
-//                                 config,
-//                                 userId
-//                             })
-
-//                             incentiveForUser += leadIncentive
-
-//                             for (const item of leadItems) {
-//                                 const itemId = item.productorServiceId
-//                                     ? String(item.productorServiceId)
-//                                     : null
-//                                 const itemModel = item.productorServicemodel
-
-//                                 if (!itemId || !itemModel) continue
-
-//                                 const productKey = `${itemModel}-${itemId}`
-
-//                                 if (userProductWiseMap[productKey]) {
-//                                     userProductWiseMap[productKey].incentive += leadIncentive
-//                                 }
-//                             }
-
-//                             continue
-//                         }
-
-//                         // ✅ NORMAL FLOW (UNCHANGED)
-//                         const payments = lead.paymentHistory || []
-//                         if (!payments.length) continue
-
-//                         const allVerified = payments.every((p) => p.paymentVerified)
-
-//                         let totalReceived = 0
-//                         const leadItemKeys = new Set()
-//                         const leadItemMap = {}
-
-//                         for (const payment of payments) {
-//                             for (const entry of payment.paymentEntries || []) {
-//                                 const itemId = entry.productorServiceId
-//                                     ? String(entry.productorServiceId)
-//                                     : null
-//                                 const itemModel = entry.productorServicemodel
-
-//                                 if (!itemId || !itemModel) continue
-
-//                                 const itemMeta =
-//                                     itemModel === "Product" ? productMap[itemId] : serviceMap[itemId]
-
-//                                 if (!itemMeta) continue
-//                                 if (itemMeta.categoryId !== configCategoryId) continue
-
-//                                 totalReceived += Number(entry.receivedAmount || 0)
-
-//                                 const itemKey = `${itemModel}-${itemId}`
-//                                 leadItemKeys.add(itemKey)
-
-//                                 if (!leadItemMap[itemKey]) {
-//                                     leadItemMap[itemKey] = {
-//                                         id: itemId,
-//                                         model: itemModel,
-//                                         name: itemMeta.name
-//                                     }
-//                                 }
-//                             }
-//                         }
-
-//                         if (allVerified && totalReceived === Number(lead.netAmount || 0)) {
-//                             achievedForUser += 1
-
-//                             for (const itemKey of leadItemKeys) {
-//                                 const item = leadItemMap[itemKey]
-
-//                                 if (!userProductWiseMap[itemKey]) {
-//                                     userProductWiseMap[itemKey] = {
-//                                         id: item.id,
-//                                         model: item.model,
-//                                         name: item.name,
-//                                         achieved: 0,
-//                                         incentive: 0
-//                                     }
-//                                 }
-
-//                                 userProductWiseMap[itemKey].achieved += 1
-//                             }
-
-//                             const leadIncentive = getLeadAllocationIncentive({
-//                                 lead,
-//                                 config,
-//                                 userId
-//                             })
-
-//                             incentiveForUser += leadIncentive
-//                         }
-//                     }
-//                 }
-
-//                 const balanceForUser = userMonthlyTarget - achievedForUser
-
-//                 if (!userWiseMap[userId]) {
-//                     userWiseMap[userId] = {
-//                         userId,
-//                         userName,
-//                         target: 0,
-//                         achieved: 0,
-//                         balance: 0,
-//                         incentive: 0,
-//                         categories: []
-//                     }
-//                 }
-
-//                 userWiseMap[userId].target += userMonthlyTarget
-//                 userWiseMap[userId].achieved += achievedForUser
-//                 userWiseMap[userId].incentive += incentiveForUser
-//                 userWiseMap[userId].balance =
-//                     userWiseMap[userId].target - userWiseMap[userId].achieved
-
-//                 userWiseMap[userId].categories.push({
-//                     categoryId: configCategoryId,
-//                     categoryName,
-//                     measurementType: config.measurementType,
-//                     // incentiveMode: config.mode || "amount",
-//                     target: userMonthlyTarget,
-//                     achieved: achievedForUser,
-//                     balance: balanceForUser,
-//                     incentive: incentiveForUser,
-//                     slabs,
-//                     products: Object.values(userProductWiseMap)
-//                 })
-//             }
-//         }
-
-//         const userWiseResults = Object.values(userWiseMap)
-
-//         const globalTarget = userWiseResults.reduce((sum, item) => sum + item.target, 0)
-//         const globalAchieved = userWiseResults.reduce((sum, item) => sum + item.achieved, 0)
-//         const globalIncentive = userWiseResults.reduce((sum, item) => sum + item.incentive, 0)
-
-//         return res.json({
-//             success: true,
-//             data: userWiseResults,
-//             summary: {
-//                 target: globalTarget,
-//                 achieved: globalAchieved,
-//                 balance: globalTarget - globalAchieved,
-//                 incentive: globalIncentive
-//             }
-//         })
-//     } catch (error) {
-//         console.log("error", error.message)
-//         return res.status(500).json({
-//             success: false,
-//             message: "Internal server error"
-//         })
-//     }
-// }
-
-
-
-
-
-// export const gettargetResult = async (req, res) => {
-//     try {
-//         const { month, year, periodMode } = req.query
-
-//         const monthNumber = Number(month)
-//         const yearNumber = Number(year)
-//         const periodModeValue = String(periodMode || "all").toLowerCase().trim()
-
-//         if (!monthNumber || !yearNumber) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "month and year are required"
-//             })
-//         }
-
-//         const startOfMonth = new Date(yearNumber, monthNumber - 1, 1)
-//         const endOfMonth = new Date(yearNumber, monthNumber, 0, 23, 59, 59, 999)
-
-//         const configQuery = {
-//             startDate: { $lte: endOfMonth },
-//             endDate: { $gte: startOfMonth }
-//         }
-
-//         const allTargetConfigs = await TargetConfiguration.find({})
-//             .select("periodName monthlyTargets startDate endDate")
-
-//         const allPeriods = [
-//             ...new Set(
-//                 allTargetConfigs
-//                     .map((item) => String(item.periodName || "").trim())
-//                     .filter(Boolean)
-//             )
-//         ]
-
-//         let targetConfigs = await TargetConfiguration.find(configQuery)
-//             .populate("categoryId", "category")
-//             .populate("monthlyTargets.userTargets.userId", "name email")
-
-//         const configHasMonthYear = (config, m, y) => {
-//             return Array.isArray(config.monthlyTargets) &&
-//                 config.monthlyTargets.some(
-//                     (mt) => Number(mt.month) === Number(m) && Number(mt.year) === Number(y)
-//                 )
-//         }
-
-//         targetConfigs = targetConfigs.filter((config) => {
-//             if (!Array.isArray(config.monthlyTargets)) return false
-
-//             if (periodModeValue === "all") {
-//                 return configHasMonthYear(config, monthNumber, yearNumber)
-//             }
-
-//             const selectedPeriodMonth = Number(periodModeValue)
-//             if (!selectedPeriodMonth) return false
-
-//             return configHasMonthYear(config, selectedPeriodMonth, yearNumber)
-//         })
-//         // console.log("targetconigsssss",targetConfigs)
-
-//         if (!targetConfigs.length) {
-//             return res.json({
-//                 success: true,
-//                 data: {
-//                     userWiseResults: [],
-//                     summary: {
-//                         target: 0,
-//                         achieved: 0,
-//                         balance: 0,
-//                         incentive: 0
-//                     },
-//                     periods: allPeriods,
-//                     selectedPeriodName: "",
-//                     selectedMonth: monthNumber,
-//                     selectedYear: yearNumber
-//                 }
-//             })
-//         }
-
-//         let effectiveStartMonthNumber
-//         let effectiveEndMonthNumber
-
-//         if (periodModeValue === "all") {
-//             let minMonth = Infinity
-//             let maxMonth = -Infinity
-
-//             for (const cfg of targetConfigs) {
-//                 for (const mt of cfg.monthlyTargets || []) {
-//                     if (Number(mt.year) !== yearNumber) continue
-//                     const mNum = Number(mt.month)
-//                     if (!mNum) continue
-
-//                     if (mNum < minMonth) minMonth = mNum
-//                     if (mNum > maxMonth) maxMonth = mNum
-//                 }
-//             }
-
-//             if (!isFinite(minMonth) || !isFinite(maxMonth)) {
-//                 minMonth = monthNumber
-//                 maxMonth = monthNumber
-//             }
-
-//             effectiveStartMonthNumber = minMonth
-//             effectiveEndMonthNumber = maxMonth
-//         } else {
-//             const selectedPeriodMonth = Number(periodModeValue)
-//             effectiveStartMonthNumber = selectedPeriodMonth
-//             effectiveEndMonthNumber = selectedPeriodMonth
-//         }
-
-//         const effectiveStartOfMonth = new Date(yearNumber, effectiveStartMonthNumber - 1, 1)
-//         const effectiveEndOfMonth = new Date(
-//             yearNumber,
-//             effectiveEndMonthNumber,
-//             0,
-//             23,
-//             59,
-//             59,
-//             999
-//         )
-
-//         const leads = await LeadMaster.find({
-//             leadDate: { $gte: effectiveStartOfMonth, $lte: effectiveEndOfMonth }
-//         })
-
-//         const leadsByUser = {}
-//         for (const lead of leads) {
-//             const userId = String(lead.leadBy)
-//             if (!leadsByUser[userId]) leadsByUser[userId] = []
-//             leadsByUser[userId].push(lead)
-//         }
-
-//         const productIds = new Set()
-//         const serviceIds = new Set()
-
-//         for (const lead of leads) {
-//             for (const item of lead.leadFor || []) {
-//                 if (!item.productorServiceId || !item.productorServicemodel) continue
-
-//                 if (item.productorServicemodel === "Product") {
-//                     productIds.add(String(item.productorServiceId))
-//                 } else if (item.productorServicemodel === "Service") {
-//                     serviceIds.add(String(item.productorServiceId))
-//                 }
-//             }
-
-//             for (const payment of lead.paymentHistory || []) {
-//                 for (const entry of payment.paymentEntries || []) {
-//                     if (!entry.productorServiceId || !entry.productorServicemodel) continue
-
-//                     if (entry.productorServicemodel === "Product") {
-//                         productIds.add(String(entry.productorServiceId))
-//                     } else if (entry.productorServicemodel === "Service") {
-//                         serviceIds.add(String(entry.productorServiceId))
-//                     }
-//                 }
-//             }
-//         }
-
-//         const [products, services] = await Promise.all([
-//             Product.find({ _id: { $in: [...productIds] } }).select("productName name selected"),
-//             Service.find({ _id: { $in: [...serviceIds] } }).select(
-//                 "serviceName name selected category_id categoryId categoryName"
-//             )
-//         ])
-
-//         const productMap = {}
-//         const serviceMap = {}
-
-//         for (const item of products) {
-//             const selectedRow = Array.isArray(item.selected) ? item.selected[0] : null
-//             const categoryId = selectedRow?.category_id ? String(selectedRow.category_id) : ""
-
-//             productMap[String(item._id)] = {
-//                 name: item.productName || item.name || "Product",
-//                 categoryId
-//             }
-//         }
-
-//         for (const item of services) {
-//             const selectedRow = Array.isArray(item.selected) ? item.selected[0] : null
-//             const categoryId = selectedRow?.category_id
-//                 ? String(selectedRow.category_id)
-//                 : item.category_id
-//                     ? String(item.category_id)
-//                     : item.categoryId
-//                         ? String(item.categoryId)
-//                         : ""
-
-//             serviceMap[String(item._id)] = {
-//                 name: item.serviceName || item.name || "Service",
-//                 categoryId
-//             }
-//         }
-
-//         const isLeadFullyVerified = (lead) => {
-//             const payments = lead.paymentHistory || []
-//             if (!payments.length) return false
-//             return payments.every((p) => p.paymentVerified)
-//         }
-
-//         const isLeadEligibleForIncentive = (lead) => {
-//             if (lead.forcefullyClosedTarget === true) return true
-//             if (Number(lead.balanceAmount || 0) === 0) return true
-//             if (isLeadFullyVerified(lead)) return true
-//             return false
-//         }
-
-//         const getLeadMonthYear = (lead) => {
-//             const d = new Date(lead.leadDate)
-//             return {
-//                 month: d.getMonth() + 1,
-//                 year: d.getFullYear()
-//             }
-//         }
-
-//         const getLeadCategoryEntries = (lead, configCategoryId) => {
-//             const entries = []
-
-//             for (const item of lead.leadFor || []) {
-//                 const itemId = item.productorServiceId ? String(item.productorServiceId) : null
-//                 const itemModel = item.productorServicemodel
-//                 if (!itemId || !itemModel) continue
-
-//                 const itemMeta =
-//                     itemModel === "Product" ? productMap[itemId] : serviceMap[itemId]
-
-//                 if (!itemMeta) continue
-//                 if (String(itemMeta.categoryId) !== String(configCategoryId)) continue
-
-//                 entries.push({
-//                     itemId,
-//                     itemModel,
-//                     name: itemMeta.name
-//                 })
-//             }
-
-//             return entries
-//         }
-
-//         const leadBelongsToCategory = (lead, configCategoryId) => {
-//             return getLeadCategoryEntries(lead, configCategoryId).length > 0
-//         }
-
-//         const getLeadVerifiedAmountForCategory = (lead, configCategoryId) => {
-//             let total = 0
-
-//             for (const payment of lead.paymentHistory || []) {
-//                 if (!payment.paymentVerified) continue
-
-//                 for (const entry of payment.paymentEntries || []) {
-//                     const itemId = entry.productorServiceId
-//                         ? String(entry.productorServiceId)
-//                         : null
-//                     const itemModel = entry.productorServicemodel
-
-//                     if (!itemId || !itemModel) continue
-
-//                     const itemMeta =
-//                         itemModel === "Product" ? productMap[itemId] : serviceMap[itemId]
-
-//                     if (!itemMeta) continue
-//                     if (String(itemMeta.categoryId) !== String(configCategoryId)) continue
-
-//                     total += Number(entry.receivedAmount || 0)
-//                 }
-//             }
-
-//             return total
-//         }
-
-//         const getLeadAllocationIncentive = ({ lead, config, userId, configCategoryId }) => {
-//             if (!isLeadEligibleForIncentive(lead)) return 0
-
-//             const allocationValues = Array.isArray(config.allocationValues)
-//                 ? config.allocationValues
-//                 : []
-
-//             if (!allocationValues.length) return 0
-
-//             const leadActivityLogs = Array.isArray(lead.activityLog) ? lead.activityLog : []
-//             let totalIncentive = 0
-
-//             let baseAmount = 0
-//             if (config.measurementType === "amount") {
-//                 if (lead.forcefullyClosedTarget === true) {
-//                     baseAmount = Number(lead.netAmount || 0)
-//                 } else {
-//                     baseAmount = getLeadVerifiedAmountForCategory(lead, configCategoryId)
-//                 }
-
-//                 if (baseAmount <= 0) return 0
-//             }
-
-//             for (const log of leadActivityLogs) {
-//                 const taskById = String(log?.taskBy || "")
-//                 const submittedUserId = String(log?.submittedUser || "")
-
-//                 if (!taskById) continue
-//                 if (submittedUserId !== String(userId)) continue
-
-//                 const matchedAllocation = allocationValues.find(
-//                     (alloc) => String(alloc.allocationId) === taskById
-//                 )
-
-//                 if (!matchedAllocation) continue
-
-//                 const allocationValue = Number(matchedAllocation.value || 0)
-//                 if (allocationValue <= 0) continue
-
-//                 if (config.measurementType === "quantity") {
-//                     totalIncentive += allocationValue
-//                 } else {
-//                     totalIncentive += (allocationValue / 100) * baseAmount
-//                 }
-//             }
-
-//             return totalIncentive
-//         }
-
-//         const userWiseMap = {}
-
-//         for (const config of targetConfigs) {
-//             const configCategoryId = String(config.categoryId?._id || config.categoryId)
-//             const categoryName = config.categoryId?.category || "Category"
-
-//             const monthlyTargetsForYear = (config.monthlyTargets || []).filter(
-//                 (m) => Number(m.year) === yearNumber
-//             )
-
-//             const monthlyTargetsToUse =
-//                 periodModeValue === "all"
-//                     ? monthlyTargetsForYear.filter(
-//                         (m) =>
-//                             Number(m.month) >= effectiveStartMonthNumber &&
-//                             Number(m.month) <= effectiveEndMonthNumber
-//                     )
-//                     : monthlyTargetsForYear.filter(
-//                         (m) => Number(m.month) === effectiveStartMonthNumber
-//                     )
-//             console.log("monthytargettouser", monthlyTargetsToUse)
-
-//             if (!monthlyTargetsToUse.length) continue
-
-//             const userAccumulator = {}
-
-//             for (const mt of monthlyTargetsToUse) {
-//                 for (const userTarget of mt.userTargets || []) {
-//                     const userId = String(userTarget.userId?._id || userTarget.userId)
-//                     const userName = userTarget.userId?.name || "Unknown User"
-//                     const slabs = Array.isArray(userTarget.slabs) ? userTarget.slabs : []
-
-//                     const userMonthlyTarget = slabs.reduce((max, slab) => {
-//                         const val = Number(slab?.toValue || 0)
-//                         return val > max ? val : max
-//                     }, 0)
-
-//                     if (!userAccumulator[userId]) {
-//                         userAccumulator[userId] = {
-//                             userId,
-//                             userName,
-//                             totalTarget: 0,
-//                             categoryRows: []
-//                         }
-//                     }
-
-//                     userAccumulator[userId].totalTarget += userMonthlyTarget
-
-//                     userAccumulator[userId].categoryRows.push({
-//                         categoryId: configCategoryId,
-//                         categoryName,
-//                         periodName: config.periodName || "",
-//                         month: mt.month,
-//                         year: mt.year,
-//                         measurementType: config.measurementType,
-//                         target: userMonthlyTarget,
-//                         slabs
-//                     })
-//                 }
-//             }
-
-//             for (const userId of Object.keys(userAccumulator)) {
-//                 const userData = userAccumulator[userId]
-//                 const userLeads = leadsByUser[userId] || []
-
-//                 if (!userWiseMap[userId]) {
-//                     userWiseMap[userId] = {
-//                         userId,
-//                         userName: userData.userName,
-//                         target: 0,
-//                         achieved: 0,
-//                         balance: 0,
-//                         incentive: 0,
-//                         categories: []
-//                     }
-//                 }
-
-//                 userWiseMap[userId].target += userData.totalTarget
-
-//                 for (const row of userData.categoryRows) {
-//                     const targetMonth = Number(row.month)
-//                     const targetYear = Number(row.year)
-
-//                     let achievedForMonth = 0
-//                     let incentiveForMonth = 0
-//                     const monthProductWiseMap = {}
-
-//                     const leadsForThisMonth = userLeads.filter((lead) => {
-//                         const { month, year } = getLeadMonthYear(lead)
-//                         return Number(month) === targetMonth && Number(year) === targetYear
-//                     })
-
-//                     if (config.measurementType === "amount") {
-//                         for (const lead of leadsForThisMonth) {
-//                             if (!leadBelongsToCategory(lead, configCategoryId)) continue
-
-//                             const categoryLeadItems = getLeadCategoryEntries(lead, configCategoryId)
-
-//                             if (lead.forcefullyClosedTarget === true) {
-//                                 const netAmount = Number(lead.netAmount || 0)
-//                                 if (netAmount > 0) {
-//                                     achievedForMonth += netAmount
-//                                 }
-
-//                                 const splitCount = categoryLeadItems.length || 1
-//                                 const splitAmount = netAmount / splitCount
-
-//                                 for (const item of categoryLeadItems) {
-//                                     const productKey = `${item.itemModel}-${item.itemId}`
-
-//                                     if (!monthProductWiseMap[productKey]) {
-//                                         monthProductWiseMap[productKey] = {
-//                                             id: item.itemId,
-//                                             model: item.itemModel,
-//                                             name: item.name,
-//                                             achieved: 0,
-//                                             incentive: 0
-//                                         }
-//                                     }
-
-//                                     monthProductWiseMap[productKey].achieved += splitAmount
-//                                 }
-//                             } else {
-//                                 const verifiedAmount = getLeadVerifiedAmountForCategory(
-//                                     lead,
-//                                     configCategoryId
-//                                 )
-
-//                                 if (verifiedAmount > 0) {
-//                                     console.log("verifiedamount", verifiedAmount)
-//                                     achievedForMonth += verifiedAmount
-//                                 }
-
-//                                 for (const payment of lead.paymentHistory || []) {
-//                                     if (!payment.paymentVerified) continue
-
-//                                     for (const entry of payment.paymentEntries || []) {
-//                                         const itemId = entry.productorServiceId
-//                                             ? String(entry.productorServiceId)
-//                                             : null
-//                                         const itemModel = entry.productorServicemodel
-
-//                                         if (!itemId || !itemModel) continue
-
-//                                         const itemMeta =
-//                                             itemModel === "Product" ? productMap[itemId] : serviceMap[itemId]
-
-//                                         if (!itemMeta) continue
-//                                         if (String(itemMeta.categoryId) !== String(configCategoryId)) continue
-
-//                                         const productKey = `${itemModel}-${itemId}`
-
-//                                         if (!monthProductWiseMap[productKey]) {
-//                                             monthProductWiseMap[productKey] = {
-//                                                 id: itemId,
-//                                                 model: itemModel,
-//                                                 name: itemMeta.name,
-//                                                 achieved: 0,
-//                                                 incentive: 0
-//                                             }
-//                                         }
-
-//                                         monthProductWiseMap[productKey].achieved += Number(
-//                                             entry.receivedAmount || 0
-//                                         )
-//                                     }
-//                                 }
-//                             }
-
-//                             const leadIncentive = getLeadAllocationIncentive({
-//                                 lead,
-//                                 config,
-//                                 userId,
-//                                 configCategoryId
-//                             })
-
-//                             incentiveForMonth += leadIncentive
-
-//                             const productKeys = Object.keys(monthProductWiseMap)
-//                             if (productKeys.length > 0 && leadIncentive > 0) {
-//                                 const totalAchievedForProducts = productKeys.reduce((sum, key) => {
-//                                     return sum + Number(monthProductWiseMap[key]?.achieved || 0)
-//                                 }, 0)
-
-//                                 if (totalAchievedForProducts > 0) {
-//                                     for (const key of productKeys) {
-//                                         const productAchieved = Number(monthProductWiseMap[key]?.achieved || 0)
-//                                         const ratio = productAchieved / totalAchievedForProducts
-//                                         monthProductWiseMap[key].incentive += leadIncentive * ratio
-//                                     }
-//                                 }
-//                             }
-//                         }
-//                     } else {
-//                         for (const lead of leadsForThisMonth) {
-//                             if (!leadBelongsToCategory(lead, configCategoryId)) continue
-
-//                             const categoryLeadItems = getLeadCategoryEntries(lead, configCategoryId)
-
-//                             if (lead.forcefullyClosedTarget === true) {
-//                                 achievedForMonth += 1
-
-//                                 for (const item of categoryLeadItems) {
-//                                     const productKey = `${item.itemModel}-${item.itemId}`
-
-//                                     if (!monthProductWiseMap[productKey]) {
-//                                         monthProductWiseMap[productKey] = {
-//                                             id: item.itemId,
-//                                             model: item.itemModel,
-//                                             name: item.name,
-//                                             achieved: 0,
-//                                             incentive: 0
-//                                         }
-//                                     }
-
-//                                     monthProductWiseMap[productKey].achieved += 1
-//                                 }
-//                             } else {
-//                                 const payments = lead.paymentHistory || []
-//                                 if (!payments.length) continue
-
-//                                 const allVerified = payments.every((p) => p.paymentVerified)
-
-//                                 let totalReceivedForCategory = 0
-//                                 const leadItemKeys = new Set()
-//                                 const leadItemMap = {}
-
-//                                 for (const payment of payments) {
-//                                     for (const entry of payment.paymentEntries || []) {
-//                                         const itemId = entry.productorServiceId
-//                                             ? String(entry.productorServiceId)
-//                                             : null
-//                                         const itemModel = entry.productorServicemodel
-
-//                                         if (!itemId || !itemModel) continue
-
-//                                         const itemMeta =
-//                                             itemModel === "Product" ? productMap[itemId] : serviceMap[itemId]
-
-//                                         if (!itemMeta) continue
-//                                         if (String(itemMeta.categoryId) !== String(configCategoryId)) continue
-
-//                                         totalReceivedForCategory += Number(entry.receivedAmount || 0)
-
-//                                         const itemKey = `${itemModel}-${itemId}`
-//                                         leadItemKeys.add(itemKey)
-
-//                                         if (!leadItemMap[itemKey]) {
-//                                             leadItemMap[itemKey] = {
-//                                                 id: itemId,
-//                                                 model: itemModel,
-//                                                 name: itemMeta.name
-//                                             }
-//                                         }
-//                                     }
-//                                 }
-
-//                                 if (allVerified && totalReceivedForCategory >= Number(lead.netAmount || 0)) {
-//                                     achievedForMonth += 1
-
-//                                     for (const itemKey of leadItemKeys) {
-//                                         const item = leadItemMap[itemKey]
-
-//                                         if (!monthProductWiseMap[itemKey]) {
-//                                             monthProductWiseMap[itemKey] = {
-//                                                 id: item.id,
-//                                                 model: item.model,
-//                                                 name: item.name,
-//                                                 achieved: 0,
-//                                                 incentive: 0
-//                                             }
-//                                         }
-
-//                                         monthProductWiseMap[itemKey].achieved += 1
-//                                     }
-//                                 }
-//                             }
-
-//                             const leadIncentive = getLeadAllocationIncentive({
-//                                 lead,
-//                                 config,
-//                                 userId,
-//                                 configCategoryId
-//                             })
-
-//                             incentiveForMonth += leadIncentive
-//                         }
-//                     }
-
-//                     userWiseMap[userId].achieved += achievedForMonth
-//                     userWiseMap[userId].incentive += incentiveForMonth
-
-//                     userWiseMap[userId].categories.push({
-//                         ...row,
-//                         achieved: achievedForMonth,
-//                         balance: row.target - achievedForMonth,
-//                         incentive: incentiveForMonth,
-//                         products: Object.values(monthProductWiseMap)
-//                     })
-//                 }
-
-//                 userWiseMap[userId].balance =
-//                     userWiseMap[userId].target - userWiseMap[userId].achieved
-//             }
-//         }
-
-//         const userWiseResults = Object.values(userWiseMap)
-
-//         const globalTarget = userWiseResults.reduce((sum, item) => sum + item.target, 0)
-//         const globalAchieved = userWiseResults.reduce((sum, item) => sum + item.achieved, 0)
-//         const globalIncentive = userWiseResults.reduce((sum, item) => sum + item.incentive, 0)
-
-//         const selectedPeriodName =
-//             userWiseResults?.[0]?.categories?.[0]?.periodName || ""
-
-//         return res.json({
-//             success: true,
-//             data: {
-//                 userWiseResults,
-//                 summary: {
-//                     target: globalTarget,
-//                     achieved: globalAchieved,
-//                     balance: globalTarget - globalAchieved,
-//                     incentive: globalIncentive
-//                 },
-//                 periods: allPeriods,
-//                 selectedPeriodName,
-//                 selectedMonth:
-//                     periodModeValue === "all" ? monthNumber : effectiveStartMonthNumber,
-//                 selectedYear: yearNumber
-//             }
-//         })
-//     } catch (error) {
-//         console.log("error", error.message)
-//         return res.status(500).json({
-//             success: false,
-//             message: "Internal server error"
-//         })
-//     }
-// }new code
 // export const gettargetResult = async (req, res) => {
 //     try {
 //         const { month, year, periodMode, selectedBranch } = req.query
@@ -1415,6 +28,17 @@ import Service from "../../model/primaryUser/servicesSchema.js";
 //                 message: "month and year are required"
 //             })
 //         }
+
+//         const closingTask = await Task.findOne({ taskName: "Follow-Up Closing" }).select("_id taskName")
+
+//         if (!closingTask) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: "Closing task not found"
+//             })
+//         }
+
+//         const closingTaskId = String(closingTask._id)
 
 //         const startOfMonth = new Date(yearNumber, monthNumber - 1, 1)
 //         const endOfMonth = new Date(yearNumber, monthNumber, 0, 23, 59, 59, 999)
@@ -1535,13 +159,6 @@ import Service from "../../model/primaryUser/servicesSchema.js";
 //         const leads = await LeadMaster.find({
 //             leadDate: { $gte: effectiveStartOfMonth, $lte: effectiveEndOfMonth }
 //         })
-
-//         const leadsByUser = {}
-//         for (const lead of leads) {
-//             const userId = String(lead.leadBy)
-//             if (!leadsByUser[userId]) leadsByUser[userId] = []
-//             leadsByUser[userId].push(lead)
-//         }
 
 //         const productIds = new Set()
 //         const serviceIds = new Set()
@@ -1688,6 +305,23 @@ import Service from "../../model/primaryUser/servicesSchema.js";
 //             return total
 //         }
 
+//         const getClosingSubmittedUserId = (lead) => {
+//             const logs = Array.isArray(lead.activityLog) ? lead.activityLog : []
+
+//             const closingLogs = logs.filter((log) => {
+//                 const taskById = String(log?.taskBy || "")
+//                 const isFollowupClosed = log?.followupClosed === true
+//                 return taskById === closingTaskId && isFollowupClosed
+//             })
+
+//             if (!closingLogs.length) return null
+
+//             const latestClosingLog = closingLogs[closingLogs.length - 1]
+//             const submittedUserId = String(latestClosingLog?.submittedUser || "")
+
+//             return submittedUserId || null
+//         }
+
 //         const getLeadAllocationIncentive = ({
 //             lead,
 //             config,
@@ -1695,6 +329,10 @@ import Service from "../../model/primaryUser/servicesSchema.js";
 //             configCategoryId
 //         }) => {
 //             if (!isLeadEligibleForIncentive(lead)) return 0
+
+//             const closerUserId = getClosingSubmittedUserId(lead)
+//             if (!closerUserId) return 0
+//             if (String(closerUserId) !== String(userId)) return 0
 
 //             const allocationValues = Array.isArray(config.allocationValues)
 //                 ? config.allocationValues
@@ -1722,8 +360,11 @@ import Service from "../../model/primaryUser/servicesSchema.js";
 //             for (const log of leadActivityLogs) {
 //                 const taskById = String(log?.taskBy || "")
 //                 const submittedUserId = String(log?.submittedUser || "")
+//                 const isFollowupClosed = log?.followupClosed === true
 
 //                 if (!taskById) continue
+//                 if (taskById !== closingTaskId) continue
+//                 if (!isFollowupClosed) continue
 //                 if (submittedUserId !== String(userId)) continue
 
 //                 const matchedAllocation = allocationValues.find(
@@ -1807,7 +448,6 @@ import Service from "../../model/primaryUser/servicesSchema.js";
 
 //             for (const userId of Object.keys(userAccumulator)) {
 //                 const userData = userAccumulator[userId]
-//                 const userLeads = leadsByUser[userId] || []
 
 //                 if (!userWiseMap[userId]) {
 //                     userWiseMap[userId] = {
@@ -1822,29 +462,42 @@ import Service from "../../model/primaryUser/servicesSchema.js";
 //                 }
 
 //                 userWiseMap[userId].target += userData.totalTarget
+//             }
 
-//                 for (const row of userData.categoryRows) {
-//                     const targetMonth = Number(row.month)
-//                     const targetYear = Number(row.year)
+//             for (const mt of monthlyTargetsToUse) {
+//                 const targetMonth = Number(mt.month)
+//                 const targetYear = Number(mt.year)
+
+//                 const leadsForThisMonth = leads.filter((lead) => {
+//                     const { month, year } = getLeadMonthYear(lead)
+//                     return Number(month) === targetMonth && Number(year) === targetYear
+//                 })
+
+//                 for (const userTarget of mt.userTargets || []) {
+//                     const userId = String(userTarget.userId?._id || userTarget.userId)
+//                     const slabs = Array.isArray(userTarget.slabs) ? userTarget.slabs : []
+
+//                     const userMonthlyTarget = slabs.reduce((max, slab) => {
+//                         const val = Number(slab?.toValue || 0)
+//                         return val > max ? val : max
+//                     }, 0)
 
 //                     let achievedForMonth = 0
 //                     let incentiveForMonth = 0
 //                     const monthProductWiseMap = {}
 
-//                     const leadsForThisMonth = userLeads.filter((lead) => {
-//                         const { month, year } = getLeadMonthYear(lead)
-//                         return Number(month) === targetMonth && Number(year) === targetYear
-//                     })
+//                     for (const lead of leadsForThisMonth) {
+//                         const closerUserId = getClosingSubmittedUserId(lead)
+//                         if (!closerUserId) continue
+//                         if (String(closerUserId) !== String(userId)) continue
+//                         if (!leadBelongsToCategory(lead, configCategoryId)) continue
 
-//                     if (config.measurementType === "amount") {
-//                         for (const lead of leadsForThisMonth) {
-//                             if (!leadBelongsToCategory(lead, configCategoryId)) continue
+//                         const categoryLeadItems = getLeadCategoryEntries(
+//                             lead,
+//                             configCategoryId
+//                         )
 
-//                             const categoryLeadItems = getLeadCategoryEntries(
-//                                 lead,
-//                                 configCategoryId
-//                             )
-
+//                         if (config.measurementType === "amount") {
 //                             if (lead.forcefullyClosedTarget === true) {
 //                                 const netAmount = Number(lead.netAmount || 0)
 //                                 if (netAmount > 0) {
@@ -1917,42 +570,7 @@ import Service from "../../model/primaryUser/servicesSchema.js";
 //                                     }
 //                                 }
 //                             }
-
-//                             const leadIncentive = getLeadAllocationIncentive({
-//                                 lead,
-//                                 config,
-//                                 userId,
-//                                 configCategoryId
-//                             })
-
-//                             incentiveForMonth += leadIncentive
-
-//                             const productKeys = Object.keys(monthProductWiseMap)
-//                             if (productKeys.length > 0 && leadIncentive > 0) {
-//                                 const totalAchievedForProducts = productKeys.reduce((sum, key) => {
-//                                     return sum + Number(monthProductWiseMap[key]?.achieved || 0)
-//                                 }, 0)
-
-//                                 if (totalAchievedForProducts > 0) {
-//                                     for (const key of productKeys) {
-//                                         const productAchieved = Number(
-//                                             monthProductWiseMap[key]?.achieved || 0
-//                                         )
-//                                         const ratio = productAchieved / totalAchievedForProducts
-//                                         monthProductWiseMap[key].incentive += leadIncentive * ratio
-//                                     }
-//                                 }
-//                             }
-//                         }
-//                     } else {
-//                         for (const lead of leadsForThisMonth) {
-//                             if (!leadBelongsToCategory(lead, configCategoryId)) continue
-
-//                             const categoryLeadItems = getLeadCategoryEntries(
-//                                 lead,
-//                                 configCategoryId
-//                             )
-
+//                         } else {
 //                             if (lead.forcefullyClosedTarget === true) {
 //                                 achievedForMonth += 1
 
@@ -2037,15 +655,36 @@ import Service from "../../model/primaryUser/servicesSchema.js";
 //                                     }
 //                                 }
 //                             }
+//                         }
 
-//                             const leadIncentive = getLeadAllocationIncentive({
-//                                 lead,
-//                                 config,
-//                                 userId,
-//                                 configCategoryId
-//                             })
+//                         const leadIncentive = getLeadAllocationIncentive({
+//                             lead,
+//                             config,
+//                             userId,
+//                             configCategoryId
+//                         })
 
-//                             incentiveForMonth += leadIncentive
+//                         incentiveForMonth += leadIncentive
+
+//                         const productKeys = Object.keys(monthProductWiseMap)
+//                         if (
+//                             config.measurementType === "amount" &&
+//                             productKeys.length > 0 &&
+//                             leadIncentive > 0
+//                         ) {
+//                             const totalAchievedForProducts = productKeys.reduce((sum, key) => {
+//                                 return sum + Number(monthProductWiseMap[key]?.achieved || 0)
+//                             }, 0)
+
+//                             if (totalAchievedForProducts > 0) {
+//                                 for (const key of productKeys) {
+//                                     const productAchieved = Number(
+//                                         monthProductWiseMap[key]?.achieved || 0
+//                                     )
+//                                     const ratio = productAchieved / totalAchievedForProducts
+//                                     monthProductWiseMap[key].incentive += leadIncentive * ratio
+//                                 }
+//                             }
 //                         }
 //                     }
 
@@ -2053,17 +692,26 @@ import Service from "../../model/primaryUser/servicesSchema.js";
 //                     userWiseMap[userId].incentive += incentiveForMonth
 
 //                     userWiseMap[userId].categories.push({
-//                         ...row,
+//                         categoryId: configCategoryId,
+//                         categoryName,
+//                         periodName: config.periodName || "",
+//                         month: mt.month,
+//                         year: mt.year,
+//                         measurementType: config.measurementType,
+//                         target: userMonthlyTarget,
+//                         slabs,
 //                         achieved: achievedForMonth,
-//                         balance: row.target - achievedForMonth,
+//                         balance: userMonthlyTarget - achievedForMonth,
 //                         incentive: incentiveForMonth,
 //                         products: Object.values(monthProductWiseMap)
 //                     })
 //                 }
-
-//                 userWiseMap[userId].balance =
-//                     userWiseMap[userId].target - userWiseMap[userId].achieved
 //             }
+//         }
+
+//         for (const userId of Object.keys(userWiseMap)) {
+//             userWiseMap[userId].balance =
+//                 userWiseMap[userId].target - userWiseMap[userId].achieved
 //         }
 
 //         const userWiseResults = Object.values(userWiseMap)
@@ -2119,756 +767,714 @@ import Service from "../../model/primaryUser/servicesSchema.js";
 //     }
 // }
 export const gettargetResult = async (req, res) => {
-    try {
-        const { month, year, periodMode, selectedBranch } = req.query
+  try {
+    const { month, year, periodMode, selectedBranch } = req.query
 
-        const monthNumber = Number(month)
-        const yearNumber = Number(year)
-        const periodModeValue = String(periodMode || "all").toLowerCase().trim()
+    const monthNumber = Number(month)
+    const yearNumber = Number(year)
+    const periodModeValue = String(periodMode || "all").toLowerCase().trim()
 
-        if (!monthNumber || !yearNumber) {
-            return res.status(400).json({
-                success: false,
-                message: "month and year are required"
-            })
+    if (!monthNumber || !yearNumber || !selectedBranch) {
+      return res.status(400).json({
+        success: false,
+        message: "month, year and selectedBranch are required",
+      })
+    }
+
+    const startOfMonth = new Date(yearNumber, monthNumber - 1, 1)
+    const endOfMonth = new Date(yearNumber, monthNumber, 0, 23, 59, 59, 999)
+
+    const configQuery = {
+      branch: selectedBranch,
+      startDate: { $lte: endOfMonth },
+      endDate: { $gte: startOfMonth },
+      "monthlyTargets.year": yearNumber,
+    }
+
+    const [closingTask, allTargetConfigs, rawTargetConfigs] = await Promise.all([
+      Task.findOne({ taskName: "Follow-Up Closing" })
+        .select("_id taskName")
+        .lean(),
+
+      TargetConfiguration.find({ branch: selectedBranch, "monthlyTargets.year": yearNumber })
+        .select("periodName measurementType monthlyTargets.month monthlyTargets.year")
+        .lean(),
+
+      TargetConfiguration.find(configQuery)
+        .select(`
+          periodName branch startDate endDate categoryId categoryName measurementType allocationValues
+          monthlyTargets.month monthlyTargets.year monthlyTargets.userTargets.userId monthlyTargets.userTargets.slabs
+        `)
+        .populate("categoryId", "category")
+        .populate("monthlyTargets.userTargets.userId", "name email")
+        .lean(),
+    ])
+
+    if (!closingTask) {
+      return res.status(404).json({
+        success: false,
+        message: "Closing task not found",
+      })
+    }
+
+    const closingTaskId = String(closingTask._id)
+
+    const allPeriods = [
+      ...new Set(
+        allTargetConfigs
+          .map((item) => String(item.periodName || "").trim())
+          .filter(Boolean)
+      ),
+    ]
+
+    const configHasMonthYear = (config, m, y) => {
+      return (
+        Array.isArray(config.monthlyTargets) &&
+        config.monthlyTargets.some(
+          (mt) => Number(mt.month) === Number(m) && Number(mt.year) === Number(y)
+        )
+      )
+    }
+
+    let targetConfigs = rawTargetConfigs.filter((config) => {
+      if (!Array.isArray(config.monthlyTargets)) return false
+
+      if (periodModeValue === "all") {
+        return configHasMonthYear(config, monthNumber, yearNumber)
+      }
+
+      const selectedPeriodMonth = Number(periodModeValue)
+      if (!selectedPeriodMonth) return false
+
+      return configHasMonthYear(config, selectedPeriodMonth, yearNumber)
+    })
+
+    if (!targetConfigs.length) {
+      return res.json({
+        success: true,
+        data: {
+          userWiseResults: [],
+          summary: {
+            target: 0,
+            achieved: 0,
+            balance: 0,
+            incentive: 0,
+          },
+          periods: allPeriods,
+          measurementTypes: [],
+          selectedMeasurementType: "",
+          selectedPeriodName: "",
+          selectedMonth: monthNumber,
+          selectedYear: yearNumber,
+        },
+      })
+    }
+
+    let effectiveStartMonthNumber
+    let effectiveEndMonthNumber
+
+    if (periodModeValue === "all") {
+      let minMonth = Infinity
+      let maxMonth = -Infinity
+
+      for (const cfg of targetConfigs) {
+        for (const mt of cfg.monthlyTargets || []) {
+          if (Number(mt.year) !== yearNumber) continue
+          const mNum = Number(mt.month)
+          if (!mNum) continue
+          if (mNum < minMonth) minMonth = mNum
+          if (mNum > maxMonth) maxMonth = mNum
         }
+      }
 
-        const closingTask = await Task.findOne({ taskName: "Follow-Up Closing" }).select("_id taskName")
+      if (!isFinite(minMonth) || !isFinite(maxMonth)) {
+        minMonth = monthNumber
+        maxMonth = monthNumber
+      }
 
-        if (!closingTask) {
-            return res.status(404).json({
-                success: false,
-                message: "Closing task not found"
-            })
+      effectiveStartMonthNumber = minMonth
+      effectiveEndMonthNumber = maxMonth
+    } else {
+      const selectedPeriodMonth = Number(periodModeValue)
+      effectiveStartMonthNumber = selectedPeriodMonth
+      effectiveEndMonthNumber = selectedPeriodMonth
+    }
+
+    const effectiveStartOfMonth = new Date(yearNumber, effectiveStartMonthNumber - 1, 1)
+    const effectiveEndOfMonth = new Date(
+      yearNumber,
+      effectiveEndMonthNumber,
+      0,
+      23,
+      59,
+      59,
+      999
+    )
+
+    const leads = await LeadMaster.find({
+      branch: selectedBranch,
+      leadDate: { $gte: effectiveStartOfMonth, $lte: effectiveEndOfMonth },
+    })
+      .select(`
+        _id branch leadDate netAmount balanceAmount forcefullyClosedTarget
+        leadFor.productorServiceId leadFor.productorServicemodel
+        paymentHistory.paymentVerified
+        paymentHistory.paymentEntries.productorServiceId
+        paymentHistory.paymentEntries.productorServicemodel
+        paymentHistory.paymentEntries.receivedAmount
+        activityLog.taskBy activityLog.followupClosed activityLog.submittedUser
+      `)
+      .lean()
+
+    const productIds = new Set()
+    const serviceIds = new Set()
+
+    for (const lead of leads) {
+      for (const item of lead.leadFor || []) {
+        if (!item.productorServiceId || !item.productorServicemodel) continue
+
+        if (item.productorServicemodel === "Product") {
+          productIds.add(String(item.productorServiceId))
+        } else if (item.productorServicemodel === "Service") {
+          serviceIds.add(String(item.productorServiceId))
         }
+      }
 
-        const closingTaskId = String(closingTask._id)
+      for (const payment of lead.paymentHistory || []) {
+        for (const entry of payment.paymentEntries || []) {
+          if (!entry.productorServiceId || !entry.productorServicemodel) continue
 
-        const startOfMonth = new Date(yearNumber, monthNumber - 1, 1)
-        const endOfMonth = new Date(yearNumber, monthNumber, 0, 23, 59, 59, 999)
-
-        const configQuery = {
-            startDate: { $lte: endOfMonth },
-            endDate: { $gte: startOfMonth },
-            branch: selectedBranch
+          if (entry.productorServicemodel === "Product") {
+            productIds.add(String(entry.productorServiceId))
+          } else if (entry.productorServicemodel === "Service") {
+            serviceIds.add(String(entry.productorServiceId))
+          }
         }
+      }
+    }
 
-        const allTargetConfigs = await TargetConfiguration.find({ branch: selectedBranch })
-            .select("periodName monthlyTargets startDate endDate measurementType")
+    const [products, services] = await Promise.all([
+      Product.find({ _id: { $in: [...productIds] } })
+        .select("productName name selected.category_id")
+        .lean(),
 
-        const allPeriods = [
-            ...new Set(
-                allTargetConfigs
-                    .map((item) => String(item.periodName || "").trim())
-                    .filter(Boolean)
-            )
-        ]
+      Service.find({ _id: { $in: [...serviceIds] } })
+        .select("serviceName name selected.category_id category_id categoryId categoryName")
+        .lean(),
+    ])
 
-        let targetConfigs = await TargetConfiguration.find(configQuery)
-            .populate("categoryId", "category")
-            .populate("monthlyTargets.userTargets.userId", "name email")
+    const productMap = {}
+    const serviceMap = {}
 
-        const configHasMonthYear = (config, m, y) => {
-            return (
-                Array.isArray(config.monthlyTargets) &&
-                config.monthlyTargets.some(
-                    (mt) =>
-                        Number(mt.month) === Number(m) &&
-                        Number(mt.year) === Number(y)
-                )
-            )
+    for (const item of products) {
+      const selectedRow = Array.isArray(item.selected) ? item.selected[0] : null
+      const categoryId = selectedRow?.category_id ? String(selectedRow.category_id) : ""
+
+      productMap[String(item._id)] = {
+        name: item.productName || item.name || "Product",
+        categoryId,
+      }
+    }
+
+    for (const item of services) {
+      const selectedRow = Array.isArray(item.selected) ? item.selected[0] : null
+      const categoryId = selectedRow?.category_id
+        ? String(selectedRow.category_id)
+        : item.category_id
+        ? String(item.category_id)
+        : item.categoryId
+        ? String(item.categoryId)
+        : ""
+
+      serviceMap[String(item._id)] = {
+        name: item.serviceName || item.name || "Service",
+        categoryId,
+      }
+    }
+
+    const isLeadFullyVerified = (lead) => {
+      const payments = lead.paymentHistory || []
+      if (!payments.length) return false
+      return payments.every((p) => p.paymentVerified)
+    }
+
+    const getClosingSubmittedUserId = (lead) => {
+      const logs = Array.isArray(lead.activityLog) ? lead.activityLog : []
+
+      for (let i = logs.length - 1; i >= 0; i--) {
+        const log = logs[i]
+        if (
+          String(log?.taskBy || "") === closingTaskId &&
+          log?.followupClosed === true &&
+          String(log?.submittedUser || "")
+        ) {
+          return String(log.submittedUser)
         }
+      }
 
-        targetConfigs = targetConfigs.filter((config) => {
-            if (!Array.isArray(config.monthlyTargets)) return false
+      return null
+    }
 
-            if (periodModeValue === "all") {
-                return configHasMonthYear(config, monthNumber, yearNumber)
-            }
+    const leadMetaMap = new Map()
+    const leadsByMonthYear = new Map()
 
-            const selectedPeriodMonth = Number(periodModeValue)
-            if (!selectedPeriodMonth) return false
+    for (const lead of leads) {
+      const d = new Date(lead.leadDate)
+      const leadMonth = d.getMonth() + 1
+      const leadYear = d.getFullYear()
+      const monthKey = `${leadYear}-${leadMonth}`
 
-            return configHasMonthYear(config, selectedPeriodMonth, yearNumber)
+      if (!leadsByMonthYear.has(monthKey)) {
+        leadsByMonthYear.set(monthKey, [])
+      }
+      leadsByMonthYear.get(monthKey).push(lead)
+
+      const fullyVerified = isLeadFullyVerified(lead)
+      const eligibleForIncentive =
+        lead.forcefullyClosedTarget === true ||
+        Number(lead.balanceAmount || 0) === 0 ||
+        fullyVerified
+
+      const categoryEntriesMap = {}
+      const verifiedAmountByCategory = {}
+
+      for (const item of lead.leadFor || []) {
+        const itemId = item.productorServiceId ? String(item.productorServiceId) : null
+        const itemModel = item.productorServicemodel
+        if (!itemId || !itemModel) continue
+
+        const itemMeta = itemModel === "Product" ? productMap[itemId] : serviceMap[itemId]
+        if (!itemMeta?.categoryId) continue
+
+        const catId = String(itemMeta.categoryId)
+        if (!categoryEntriesMap[catId]) categoryEntriesMap[catId] = []
+
+        categoryEntriesMap[catId].push({
+          itemId,
+          itemModel,
+          name: itemMeta.name,
         })
+      }
 
-        if (!targetConfigs.length) {
-            return res.json({
-                success: true,
-                data: {
-                    userWiseResults: [],
-                    summary: {
-                        target: 0,
-                        achieved: 0,
-                        balance: 0,
-                        incentive: 0
-                    },
-                    periods: allPeriods,
-                    measurementTypes: [],
-                    selectedMeasurementType: "",
-                    selectedPeriodName: "",
-                    selectedMonth: monthNumber,
-                    selectedYear: yearNumber
-                }
-            })
+      for (const payment of lead.paymentHistory || []) {
+        if (!payment.paymentVerified) continue
+
+        for (const entry of payment.paymentEntries || []) {
+          const itemId = entry.productorServiceId ? String(entry.productorServiceId) : null
+          const itemModel = entry.productorServicemodel
+          if (!itemId || !itemModel) continue
+
+          const itemMeta = itemModel === "Product" ? productMap[itemId] : serviceMap[itemId]
+          if (!itemMeta?.categoryId) continue
+
+          const catId = String(itemMeta.categoryId)
+          verifiedAmountByCategory[catId] =
+            Number(verifiedAmountByCategory[catId] || 0) + Number(entry.receivedAmount || 0)
         }
+      }
 
-        let effectiveStartMonthNumber
-        let effectiveEndMonthNumber
+      leadMetaMap.set(String(lead._id), {
+        closerUserId: getClosingSubmittedUserId(lead),
+        eligibleForIncentive,
+        categoryEntriesMap,
+        verifiedAmountByCategory,
+      })
+    }
 
-        if (periodModeValue === "all") {
-            let minMonth = Infinity
-            let maxMonth = -Infinity
+    const getLeadCategoryEntries = (lead, configCategoryId) => {
+      const meta = leadMetaMap.get(String(lead._id))
+      return meta?.categoryEntriesMap?.[String(configCategoryId)] || []
+    }
 
-            for (const cfg of targetConfigs) {
-                for (const mt of cfg.monthlyTargets || []) {
-                    if (Number(mt.year) !== yearNumber) continue
-                    const mNum = Number(mt.month)
-                    if (!mNum) continue
+    const leadBelongsToCategory = (lead, configCategoryId) => {
+      return getLeadCategoryEntries(lead, configCategoryId).length > 0
+    }
 
-                    if (mNum < minMonth) minMonth = mNum
-                    if (mNum > maxMonth) maxMonth = mNum
-                }
-            }
+    const getLeadVerifiedAmountForCategory = (lead, configCategoryId) => {
+      const meta = leadMetaMap.get(String(lead._id))
+      return Number(meta?.verifiedAmountByCategory?.[String(configCategoryId)] || 0)
+    }
 
-            if (!isFinite(minMonth) || !isFinite(maxMonth)) {
-                minMonth = monthNumber
-                maxMonth = monthNumber
-            }
+    const getLeadAllocationIncentive = ({ lead, config, userId, configCategoryId }) => {
+      const meta = leadMetaMap.get(String(lead._id))
+      if (!meta?.eligibleForIncentive) return 0
+      if (!meta.closerUserId) return 0
+      if (String(meta.closerUserId) !== String(userId)) return 0
 
-            effectiveStartMonthNumber = minMonth
-            effectiveEndMonthNumber = maxMonth
+      const allocationValues = Array.isArray(config.allocationValues)
+        ? config.allocationValues
+        : []
+
+      if (!allocationValues.length) return 0
+
+      let totalIncentive = 0
+      let baseAmount = 0
+
+      if (config.measurementType === "amount") {
+        if (lead.forcefullyClosedTarget === true) {
+          baseAmount = Number(lead.netAmount || 0)
         } else {
-            const selectedPeriodMonth = Number(periodModeValue)
-            effectiveStartMonthNumber = selectedPeriodMonth
-            effectiveEndMonthNumber = selectedPeriodMonth
+          baseAmount = getLeadVerifiedAmountForCategory(lead, configCategoryId)
         }
 
-        const effectiveStartOfMonth = new Date(
-            yearNumber,
-            effectiveStartMonthNumber - 1,
-            1
+        if (baseAmount <= 0) return 0
+      }
+
+      for (const log of lead.activityLog || []) {
+        const taskById = String(log?.taskBy || "")
+        const submittedUserId = String(log?.submittedUser || "")
+        const isFollowupClosed = log?.followupClosed === true
+
+        if (!taskById) continue
+        if (taskById !== closingTaskId) continue
+        if (!isFollowupClosed) continue
+        if (submittedUserId !== String(userId)) continue
+
+        const matchedAllocation = allocationValues.find(
+          (alloc) => String(alloc.allocationId) === taskById
         )
 
-        const effectiveEndOfMonth = new Date(
-            yearNumber,
-            effectiveEndMonthNumber,
-            0,
-            23,
-            59,
-            59,
-            999
-        )
+        if (!matchedAllocation) continue
 
-        const leads = await LeadMaster.find({
-            leadDate: { $gte: effectiveStartOfMonth, $lte: effectiveEndOfMonth }
-        })
+        const allocationValue = Number(matchedAllocation.value || 0)
+        if (allocationValue <= 0) continue
 
-        const productIds = new Set()
-        const serviceIds = new Set()
-
-        for (const lead of leads) {
-            for (const item of lead.leadFor || []) {
-                if (!item.productorServiceId || !item.productorServicemodel) continue
-
-                if (item.productorServicemodel === "Product") {
-                    productIds.add(String(item.productorServiceId))
-                } else if (item.productorServicemodel === "Service") {
-                    serviceIds.add(String(item.productorServiceId))
-                }
-            }
-
-            for (const payment of lead.paymentHistory || []) {
-                for (const entry of payment.paymentEntries || []) {
-                    if (!entry.productorServiceId || !entry.productorServicemodel) continue
-
-                    if (entry.productorServicemodel === "Product") {
-                        productIds.add(String(entry.productorServiceId))
-                    } else if (entry.productorServicemodel === "Service") {
-                        serviceIds.add(String(entry.productorServiceId))
-                    }
-                }
-            }
+        if (config.measurementType === "quantity") {
+          totalIncentive += allocationValue
+        } else {
+          totalIncentive += (allocationValue / 100) * baseAmount
         }
+      }
 
-        const [products, services] = await Promise.all([
-            Product.find({ _id: { $in: [...productIds] } }).select(
-                "productName name selected"
-            ),
-            Service.find({ _id: { $in: [...serviceIds] } }).select(
-                "serviceName name selected category_id categoryId categoryName"
+      return totalIncentive
+    }
+
+    const userWiseMap = {}
+
+    for (const config of targetConfigs) {
+      const configCategoryId = String(config.categoryId?._id || config.categoryId)
+      const categoryName = config.categoryId?.category || config.categoryName || "Category"
+
+      const monthlyTargetsForYear = (config.monthlyTargets || []).filter(
+        (m) => Number(m.year) === yearNumber
+      )
+
+      const monthlyTargetsToUse =
+        periodModeValue === "all"
+          ? monthlyTargetsForYear.filter(
+              (m) =>
+                Number(m.month) >= effectiveStartMonthNumber &&
+                Number(m.month) <= effectiveEndMonthNumber
             )
-        ])
+          : monthlyTargetsForYear.filter(
+              (m) => Number(m.month) === effectiveStartMonthNumber
+            )
 
-        const productMap = {}
-        const serviceMap = {}
+      if (!monthlyTargetsToUse.length) continue
 
-        for (const item of products) {
-            const selectedRow = Array.isArray(item.selected) ? item.selected[0] : null
-            const categoryId = selectedRow?.category_id
-                ? String(selectedRow.category_id)
-                : ""
+      for (const mt of monthlyTargetsToUse) {
+        for (const userTarget of mt.userTargets || []) {
+          const userId = String(userTarget.userId?._id || userTarget.userId)
+          const userName = userTarget.userId?.name || "Unknown User"
+          const slabs = Array.isArray(userTarget.slabs) ? userTarget.slabs : []
 
-            productMap[String(item._id)] = {
-                name: item.productName || item.name || "Product",
-                categoryId
+          const userMonthlyTarget = slabs.reduce((max, slab) => {
+            const val = Number(slab?.toValue || 0)
+            return val > max ? val : max
+          }, 0)
+
+          if (!userWiseMap[userId]) {
+            userWiseMap[userId] = {
+              userId,
+              userName,
+              target: 0,
+              achieved: 0,
+              balance: 0,
+              incentive: 0,
+              categories: [],
             }
+          }
+
+          userWiseMap[userId].target += userMonthlyTarget
         }
+      }
 
-        for (const item of services) {
-            const selectedRow = Array.isArray(item.selected) ? item.selected[0] : null
-            const categoryId = selectedRow?.category_id
-                ? String(selectedRow.category_id)
-                : item.category_id
-                    ? String(item.category_id)
-                    : item.categoryId
-                        ? String(item.categoryId)
-                        : ""
+      for (const mt of monthlyTargetsToUse) {
+        const targetMonth = Number(mt.month)
+        const targetYear = Number(mt.year)
+        const leadsForThisMonth = leadsByMonthYear.get(`${targetYear}-${targetMonth}`) || []
 
-            serviceMap[String(item._id)] = {
-                name: item.serviceName || item.name || "Service",
-                categoryId
-            }
-        }
+        for (const userTarget of mt.userTargets || []) {
+          const userId = String(userTarget.userId?._id || userTarget.userId)
+          const slabs = Array.isArray(userTarget.slabs) ? userTarget.slabs : []
 
-        const isLeadFullyVerified = (lead) => {
-            const payments = lead.paymentHistory || []
-            if (!payments.length) return false
-            return payments.every((p) => p.paymentVerified)
-        }
+          const userMonthlyTarget = slabs.reduce((max, slab) => {
+            const val = Number(slab?.toValue || 0)
+            return val > max ? val : max
+          }, 0)
 
-        const isLeadEligibleForIncentive = (lead) => {
-            if (lead.forcefullyClosedTarget === true) return true
-            if (Number(lead.balanceAmount || 0) === 0) return true
-            if (isLeadFullyVerified(lead)) return true
-            return false
-        }
+          let achievedForMonth = 0
+          let incentiveForMonth = 0
+          const monthProductWiseMap = {}
 
-        const getLeadMonthYear = (lead) => {
-            const d = new Date(lead.leadDate)
-            return {
-                month: d.getMonth() + 1,
-                year: d.getFullYear()
-            }
-        }
+          for (const lead of leadsForThisMonth) {
+            const meta = leadMetaMap.get(String(lead._id))
+            if (!meta?.closerUserId) continue
+            if (String(meta.closerUserId) !== String(userId)) continue
+            if (!leadBelongsToCategory(lead, configCategoryId)) continue
 
-        const getLeadCategoryEntries = (lead, configCategoryId) => {
-            const entries = []
+            const categoryLeadItems = getLeadCategoryEntries(lead, configCategoryId)
 
-            for (const item of lead.leadFor || []) {
-                const itemId = item.productorServiceId
-                    ? String(item.productorServiceId)
-                    : null
-                const itemModel = item.productorServicemodel
-                if (!itemId || !itemModel) continue
+            if (config.measurementType === "amount") {
+              if (lead.forcefullyClosedTarget === true) {
+                const netAmount = Number(lead.netAmount || 0)
+                if (netAmount > 0) {
+                  achievedForMonth += netAmount
+                }
 
-                const itemMeta =
-                    itemModel === "Product" ? productMap[itemId] : serviceMap[itemId]
+                const splitCount = categoryLeadItems.length || 1
+                const splitAmount = netAmount / splitCount
 
-                if (!itemMeta) continue
-                if (String(itemMeta.categoryId) !== String(configCategoryId)) continue
+                for (const item of categoryLeadItems) {
+                  const productKey = `${item.itemModel}-${item.itemId}`
 
-                entries.push({
-                    itemId,
-                    itemModel,
-                    name: itemMeta.name
-                })
-            }
+                  if (!monthProductWiseMap[productKey]) {
+                    monthProductWiseMap[productKey] = {
+                      id: item.itemId,
+                      model: item.itemModel,
+                      name: item.name,
+                      achieved: 0,
+                      incentive: 0,
+                    }
+                  }
 
-            return entries
-        }
+                  monthProductWiseMap[productKey].achieved += splitAmount
+                }
+              } else {
+                const verifiedAmount = getLeadVerifiedAmountForCategory(lead, configCategoryId)
 
-        const leadBelongsToCategory = (lead, configCategoryId) => {
-            return getLeadCategoryEntries(lead, configCategoryId).length > 0
-        }
+                if (verifiedAmount > 0) {
+                  achievedForMonth += verifiedAmount
+                }
 
-        const getLeadVerifiedAmountForCategory = (lead, configCategoryId) => {
-            let total = 0
+                for (const payment of lead.paymentHistory || []) {
+                  if (!payment.paymentVerified) continue
 
-            for (const payment of lead.paymentHistory || []) {
-                if (!payment.paymentVerified) continue
-
-                for (const entry of payment.paymentEntries || []) {
+                  for (const entry of payment.paymentEntries || []) {
                     const itemId = entry.productorServiceId
-                        ? String(entry.productorServiceId)
-                        : null
+                      ? String(entry.productorServiceId)
+                      : null
                     const itemModel = entry.productorServicemodel
-
                     if (!itemId || !itemModel) continue
 
                     const itemMeta =
-                        itemModel === "Product" ? productMap[itemId] : serviceMap[itemId]
+                      itemModel === "Product" ? productMap[itemId] : serviceMap[itemId]
 
                     if (!itemMeta) continue
                     if (String(itemMeta.categoryId) !== String(configCategoryId)) continue
 
-                    total += Number(entry.receivedAmount || 0)
+                    const productKey = `${itemModel}-${itemId}`
+
+                    if (!monthProductWiseMap[productKey]) {
+                      monthProductWiseMap[productKey] = {
+                        id: itemId,
+                        model: itemModel,
+                        name: itemMeta.name,
+                        achieved: 0,
+                        incentive: 0,
+                      }
+                    }
+
+                    monthProductWiseMap[productKey].achieved += Number(
+                      entry.receivedAmount || 0
+                    )
+                  }
                 }
+              }
+            } else {
+              if (lead.forcefullyClosedTarget === true) {
+                achievedForMonth += 1
+
+                for (const item of categoryLeadItems) {
+                  const productKey = `${item.itemModel}-${item.itemId}`
+
+                  if (!monthProductWiseMap[productKey]) {
+                    monthProductWiseMap[productKey] = {
+                      id: item.itemId,
+                      model: item.itemModel,
+                      name: item.name,
+                      achieved: 0,
+                      incentive: 0,
+                    }
+                  }
+
+                  monthProductWiseMap[productKey].achieved += 1
+                }
+              } else {
+                const payments = lead.paymentHistory || []
+                if (!payments.length) continue
+
+                const allVerified = payments.every((p) => p.paymentVerified)
+                let totalReceivedForCategory = 0
+                const leadItemKeys = new Set()
+                const leadItemMap = {}
+
+                for (const payment of payments) {
+                  for (const entry of payment.paymentEntries || []) {
+                    const itemId = entry.productorServiceId
+                      ? String(entry.productorServiceId)
+                      : null
+                    const itemModel = entry.productorServicemodel
+                    if (!itemId || !itemModel) continue
+
+                    const itemMeta =
+                      itemModel === "Product" ? productMap[itemId] : serviceMap[itemId]
+
+                    if (!itemMeta) continue
+                    if (String(itemMeta.categoryId) !== String(configCategoryId)) continue
+
+                    totalReceivedForCategory += Number(entry.receivedAmount || 0)
+
+                    const itemKey = `${itemModel}-${itemId}`
+                    leadItemKeys.add(itemKey)
+
+                    if (!leadItemMap[itemKey]) {
+                      leadItemMap[itemKey] = {
+                        id: itemId,
+                        model: itemModel,
+                        name: itemMeta.name,
+                      }
+                    }
+                  }
+                }
+
+                if (
+                  allVerified &&
+                  totalReceivedForCategory >= Number(lead.netAmount || 0)
+                ) {
+                  achievedForMonth += 1
+
+                  for (const itemKey of leadItemKeys) {
+                    const item = leadItemMap[itemKey]
+
+                    if (!monthProductWiseMap[itemKey]) {
+                      monthProductWiseMap[itemKey] = {
+                        id: item.id,
+                        model: item.model,
+                        name: item.name,
+                        achieved: 0,
+                        incentive: 0,
+                      }
+                    }
+
+                    monthProductWiseMap[itemKey].achieved += 1
+                  }
+                }
+              }
             }
 
-            return total
-        }
-
-        const getClosingSubmittedUserId = (lead) => {
-            const logs = Array.isArray(lead.activityLog) ? lead.activityLog : []
-
-            const closingLogs = logs.filter((log) => {
-                const taskById = String(log?.taskBy || "")
-                const isFollowupClosed = log?.followupClosed === true
-                return taskById === closingTaskId && isFollowupClosed
+            const leadIncentive = getLeadAllocationIncentive({
+              lead,
+              config,
+              userId,
+              configCategoryId,
             })
 
-            if (!closingLogs.length) return null
+            incentiveForMonth += leadIncentive
 
-            const latestClosingLog = closingLogs[closingLogs.length - 1]
-            const submittedUserId = String(latestClosingLog?.submittedUser || "")
+            const productKeys = Object.keys(monthProductWiseMap)
 
-            return submittedUserId || null
+            if (
+              config.measurementType === "amount" &&
+              productKeys.length > 0 &&
+              leadIncentive > 0
+            ) {
+              const totalAchievedForProducts = productKeys.reduce((sum, key) => {
+                return sum + Number(monthProductWiseMap[key]?.achieved || 0)
+              }, 0)
+
+              if (totalAchievedForProducts > 0) {
+                for (const key of productKeys) {
+                  const productAchieved = Number(
+                    monthProductWiseMap[key]?.achieved || 0
+                  )
+                  const ratio = productAchieved / totalAchievedForProducts
+                  monthProductWiseMap[key].incentive += leadIncentive * ratio
+                }
+              }
+            }
+          }
+
+          userWiseMap[userId].achieved += achievedForMonth
+          userWiseMap[userId].incentive += incentiveForMonth
+
+          userWiseMap[userId].categories.push({
+            categoryId: configCategoryId,
+            categoryName,
+            periodName: config.periodName || "",
+            month: mt.month,
+            year: mt.year,
+            measurementType: config.measurementType,
+            target: userMonthlyTarget,
+            slabs,
+            achieved: achievedForMonth,
+            balance: userMonthlyTarget - achievedForMonth,
+            incentive: incentiveForMonth,
+            products: Object.values(monthProductWiseMap),
+          })
         }
-
-        const getLeadAllocationIncentive = ({
-            lead,
-            config,
-            userId,
-            configCategoryId
-        }) => {
-            if (!isLeadEligibleForIncentive(lead)) return 0
-
-            const closerUserId = getClosingSubmittedUserId(lead)
-            if (!closerUserId) return 0
-            if (String(closerUserId) !== String(userId)) return 0
-
-            const allocationValues = Array.isArray(config.allocationValues)
-                ? config.allocationValues
-                : []
-
-            if (!allocationValues.length) return 0
-
-            const leadActivityLogs = Array.isArray(lead.activityLog)
-                ? lead.activityLog
-                : []
-
-            let totalIncentive = 0
-
-            let baseAmount = 0
-            if (config.measurementType === "amount") {
-                if (lead.forcefullyClosedTarget === true) {
-                    baseAmount = Number(lead.netAmount || 0)
-                } else {
-                    baseAmount = getLeadVerifiedAmountForCategory(lead, configCategoryId)
-                }
-
-                if (baseAmount <= 0) return 0
-            }
-
-            for (const log of leadActivityLogs) {
-                const taskById = String(log?.taskBy || "")
-                const submittedUserId = String(log?.submittedUser || "")
-                const isFollowupClosed = log?.followupClosed === true
-
-                if (!taskById) continue
-                if (taskById !== closingTaskId) continue
-                if (!isFollowupClosed) continue
-                if (submittedUserId !== String(userId)) continue
-
-                const matchedAllocation = allocationValues.find(
-                    (alloc) => String(alloc.allocationId) === taskById
-                )
-
-                if (!matchedAllocation) continue
-
-                const allocationValue = Number(matchedAllocation.value || 0)
-                if (allocationValue <= 0) continue
-
-                if (config.measurementType === "quantity") {
-                    totalIncentive += allocationValue
-                } else {
-                    totalIncentive += (allocationValue / 100) * baseAmount
-                }
-            }
-
-            return totalIncentive
-        }
-
-        const userWiseMap = {}
-
-        for (const config of targetConfigs) {
-            const configCategoryId = String(config.categoryId?._id || config.categoryId)
-            const categoryName = config.categoryId?.category || "Category"
-
-            const monthlyTargetsForYear = (config.monthlyTargets || []).filter(
-                (m) => Number(m.year) === yearNumber
-            )
-
-            const monthlyTargetsToUse =
-                periodModeValue === "all"
-                    ? monthlyTargetsForYear.filter(
-                        (m) =>
-                            Number(m.month) >= effectiveStartMonthNumber &&
-                            Number(m.month) <= effectiveEndMonthNumber
-                    )
-                    : monthlyTargetsForYear.filter(
-                        (m) => Number(m.month) === effectiveStartMonthNumber
-                    )
-
-            if (!monthlyTargetsToUse.length) continue
-
-            const userAccumulator = {}
-
-            for (const mt of monthlyTargetsToUse) {
-                for (const userTarget of mt.userTargets || []) {
-                    const userId = String(userTarget.userId?._id || userTarget.userId)
-                    const userName = userTarget.userId?.name || "Unknown User"
-                    const slabs = Array.isArray(userTarget.slabs) ? userTarget.slabs : []
-
-                    const userMonthlyTarget = slabs.reduce((max, slab) => {
-                        const val = Number(slab?.toValue || 0)
-                        return val > max ? val : max
-                    }, 0)
-
-                    if (!userAccumulator[userId]) {
-                        userAccumulator[userId] = {
-                            userId,
-                            userName,
-                            totalTarget: 0,
-                            categoryRows: []
-                        }
-                    }
-
-                    userAccumulator[userId].totalTarget += userMonthlyTarget
-
-                    userAccumulator[userId].categoryRows.push({
-                        categoryId: configCategoryId,
-                        categoryName,
-                        periodName: config.periodName || "",
-                        month: mt.month,
-                        year: mt.year,
-                        measurementType: config.measurementType,
-                        target: userMonthlyTarget,
-                        slabs
-                    })
-                }
-            }
-
-            for (const userId of Object.keys(userAccumulator)) {
-                const userData = userAccumulator[userId]
-
-                if (!userWiseMap[userId]) {
-                    userWiseMap[userId] = {
-                        userId,
-                        userName: userData.userName,
-                        target: 0,
-                        achieved: 0,
-                        balance: 0,
-                        incentive: 0,
-                        categories: []
-                    }
-                }
-
-                userWiseMap[userId].target += userData.totalTarget
-            }
-
-            for (const mt of monthlyTargetsToUse) {
-                const targetMonth = Number(mt.month)
-                const targetYear = Number(mt.year)
-
-                const leadsForThisMonth = leads.filter((lead) => {
-                    const { month, year } = getLeadMonthYear(lead)
-                    return Number(month) === targetMonth && Number(year) === targetYear
-                })
-
-                for (const userTarget of mt.userTargets || []) {
-                    const userId = String(userTarget.userId?._id || userTarget.userId)
-                    const slabs = Array.isArray(userTarget.slabs) ? userTarget.slabs : []
-
-                    const userMonthlyTarget = slabs.reduce((max, slab) => {
-                        const val = Number(slab?.toValue || 0)
-                        return val > max ? val : max
-                    }, 0)
-
-                    let achievedForMonth = 0
-                    let incentiveForMonth = 0
-                    const monthProductWiseMap = {}
-
-                    for (const lead of leadsForThisMonth) {
-                        const closerUserId = getClosingSubmittedUserId(lead)
-                        if (!closerUserId) continue
-                        if (String(closerUserId) !== String(userId)) continue
-                        if (!leadBelongsToCategory(lead, configCategoryId)) continue
-
-                        const categoryLeadItems = getLeadCategoryEntries(
-                            lead,
-                            configCategoryId
-                        )
-
-                        if (config.measurementType === "amount") {
-                            if (lead.forcefullyClosedTarget === true) {
-                                const netAmount = Number(lead.netAmount || 0)
-                                if (netAmount > 0) {
-                                    achievedForMonth += netAmount
-                                }
-
-                                const splitCount = categoryLeadItems.length || 1
-                                const splitAmount = netAmount / splitCount
-
-                                for (const item of categoryLeadItems) {
-                                    const productKey = `${item.itemModel}-${item.itemId}`
-
-                                    if (!monthProductWiseMap[productKey]) {
-                                        monthProductWiseMap[productKey] = {
-                                            id: item.itemId,
-                                            model: item.itemModel,
-                                            name: item.name,
-                                            achieved: 0,
-                                            incentive: 0
-                                        }
-                                    }
-
-                                    monthProductWiseMap[productKey].achieved += splitAmount
-                                }
-                            } else {
-                                const verifiedAmount = getLeadVerifiedAmountForCategory(
-                                    lead,
-                                    configCategoryId
-                                )
-
-                                if (verifiedAmount > 0) {
-                                    achievedForMonth += verifiedAmount
-                                }
-
-                                for (const payment of lead.paymentHistory || []) {
-                                    if (!payment.paymentVerified) continue
-
-                                    for (const entry of payment.paymentEntries || []) {
-                                        const itemId = entry.productorServiceId
-                                            ? String(entry.productorServiceId)
-                                            : null
-                                        const itemModel = entry.productorServicemodel
-
-                                        if (!itemId || !itemModel) continue
-
-                                        const itemMeta =
-                                            itemModel === "Product"
-                                                ? productMap[itemId]
-                                                : serviceMap[itemId]
-
-                                        if (!itemMeta) continue
-                                        if (String(itemMeta.categoryId) !== String(configCategoryId))
-                                            continue
-
-                                        const productKey = `${itemModel}-${itemId}`
-
-                                        if (!monthProductWiseMap[productKey]) {
-                                            monthProductWiseMap[productKey] = {
-                                                id: itemId,
-                                                model: itemModel,
-                                                name: itemMeta.name,
-                                                achieved: 0,
-                                                incentive: 0
-                                            }
-                                        }
-
-                                        monthProductWiseMap[productKey].achieved += Number(
-                                            entry.receivedAmount || 0
-                                        )
-                                    }
-                                }
-                            }
-                        } else {
-                            if (lead.forcefullyClosedTarget === true) {
-                                achievedForMonth += 1
-
-                                for (const item of categoryLeadItems) {
-                                    const productKey = `${item.itemModel}-${item.itemId}`
-
-                                    if (!monthProductWiseMap[productKey]) {
-                                        monthProductWiseMap[productKey] = {
-                                            id: item.itemId,
-                                            model: item.itemModel,
-                                            name: item.name,
-                                            achieved: 0,
-                                            incentive: 0
-                                        }
-                                    }
-
-                                    monthProductWiseMap[productKey].achieved += 1
-                                }
-                            } else {
-                                const payments = lead.paymentHistory || []
-                                if (!payments.length) continue
-
-                                const allVerified = payments.every((p) => p.paymentVerified)
-
-                                let totalReceivedForCategory = 0
-                                const leadItemKeys = new Set()
-                                const leadItemMap = {}
-
-                                for (const payment of payments) {
-                                    for (const entry of payment.paymentEntries || []) {
-                                        const itemId = entry.productorServiceId
-                                            ? String(entry.productorServiceId)
-                                            : null
-                                        const itemModel = entry.productorServicemodel
-
-                                        if (!itemId || !itemModel) continue
-
-                                        const itemMeta =
-                                            itemModel === "Product"
-                                                ? productMap[itemId]
-                                                : serviceMap[itemId]
-
-                                        if (!itemMeta) continue
-                                        if (String(itemMeta.categoryId) !== String(configCategoryId))
-                                            continue
-
-                                        totalReceivedForCategory += Number(entry.receivedAmount || 0)
-
-                                        const itemKey = `${itemModel}-${itemId}`
-                                        leadItemKeys.add(itemKey)
-
-                                        if (!leadItemMap[itemKey]) {
-                                            leadItemMap[itemKey] = {
-                                                id: itemId,
-                                                model: itemModel,
-                                                name: itemMeta.name
-                                            }
-                                        }
-                                    }
-                                }
-
-                                if (
-                                    allVerified &&
-                                    totalReceivedForCategory >= Number(lead.netAmount || 0)
-                                ) {
-                                    achievedForMonth += 1
-
-                                    for (const itemKey of leadItemKeys) {
-                                        const item = leadItemMap[itemKey]
-
-                                        if (!monthProductWiseMap[itemKey]) {
-                                            monthProductWiseMap[itemKey] = {
-                                                id: item.id,
-                                                model: item.model,
-                                                name: item.name,
-                                                achieved: 0,
-                                                incentive: 0
-                                            }
-                                        }
-
-                                        monthProductWiseMap[itemKey].achieved += 1
-                                    }
-                                }
-                            }
-                        }
-
-                        const leadIncentive = getLeadAllocationIncentive({
-                            lead,
-                            config,
-                            userId,
-                            configCategoryId
-                        })
-
-                        incentiveForMonth += leadIncentive
-
-                        const productKeys = Object.keys(monthProductWiseMap)
-                        if (
-                            config.measurementType === "amount" &&
-                            productKeys.length > 0 &&
-                            leadIncentive > 0
-                        ) {
-                            const totalAchievedForProducts = productKeys.reduce((sum, key) => {
-                                return sum + Number(monthProductWiseMap[key]?.achieved || 0)
-                            }, 0)
-
-                            if (totalAchievedForProducts > 0) {
-                                for (const key of productKeys) {
-                                    const productAchieved = Number(
-                                        monthProductWiseMap[key]?.achieved || 0
-                                    )
-                                    const ratio = productAchieved / totalAchievedForProducts
-                                    monthProductWiseMap[key].incentive += leadIncentive * ratio
-                                }
-                            }
-                        }
-                    }
-
-                    userWiseMap[userId].achieved += achievedForMonth
-                    userWiseMap[userId].incentive += incentiveForMonth
-
-                    userWiseMap[userId].categories.push({
-                        categoryId: configCategoryId,
-                        categoryName,
-                        periodName: config.periodName || "",
-                        month: mt.month,
-                        year: mt.year,
-                        measurementType: config.measurementType,
-                        target: userMonthlyTarget,
-                        slabs,
-                        achieved: achievedForMonth,
-                        balance: userMonthlyTarget - achievedForMonth,
-                        incentive: incentiveForMonth,
-                        products: Object.values(monthProductWiseMap)
-                    })
-                }
-            }
-        }
-
-        for (const userId of Object.keys(userWiseMap)) {
-            userWiseMap[userId].balance =
-                userWiseMap[userId].target - userWiseMap[userId].achieved
-        }
-
-        const userWiseResults = Object.values(userWiseMap)
-
-        const globalTarget = userWiseResults.reduce((sum, item) => sum + item.target, 0)
-        const globalAchieved = userWiseResults.reduce(
-            (sum, item) => sum + item.achieved,
-            0
-        )
-        const globalIncentive = userWiseResults.reduce(
-            (sum, item) => sum + item.incentive,
-            0
-        )
-
-        const selectedPeriodName =
-            userWiseResults?.[0]?.categories?.[0]?.periodName || ""
-
-        const measurementTypes = [
-            ...new Set(
-                targetConfigs
-                    .map((item) => String(item.measurementType || "").trim())
-                    .filter(Boolean)
-            )
-        ]
-
-        const selectedMeasurementType = targetConfigs?.[0]?.measurementType || ""
-
-        return res.json({
-            success: true,
-            data: {
-                userWiseResults,
-                summary: {
-                    target: globalTarget,
-                    achieved: globalAchieved,
-                    balance: globalTarget - globalAchieved,
-                    incentive: globalIncentive
-                },
-                periods: allPeriods,
-                selectedPeriodName,
-                measurementTypes,
-                selectedMeasurementType,
-                selectedMonth:
-                    periodModeValue === "all" ? monthNumber : effectiveStartMonthNumber,
-                selectedYear: yearNumber
-            }
-        })
-    } catch (error) {
-        console.log("error", error.message)
-        return res.status(500).json({
-            success: false,
-            message: "Internal server error"
-        })
+      }
     }
+
+    for (const userId of Object.keys(userWiseMap)) {
+      userWiseMap[userId].balance =
+        userWiseMap[userId].target - userWiseMap[userId].achieved
+    }
+
+    const userWiseResults = Object.values(userWiseMap)
+
+    const globalTarget = userWiseResults.reduce((sum, item) => sum + item.target, 0)
+    const globalAchieved = userWiseResults.reduce((sum, item) => sum + item.achieved, 0)
+    const globalIncentive = userWiseResults.reduce((sum, item) => sum + item.incentive, 0)
+
+    const selectedPeriodName = userWiseResults?.[0]?.categories?.[0]?.periodName || ""
+
+    const measurementTypes = [
+      ...new Set(
+        targetConfigs
+          .map((item) => String(item.measurementType || "").trim())
+          .filter(Boolean)
+      ),
+    ]
+
+    const selectedMeasurementType = targetConfigs?.[0]?.measurementType || ""
+
+    return res.json({
+      success: true,
+      data: {
+        userWiseResults,
+        summary: {
+          target: globalTarget,
+          achieved: globalAchieved,
+          balance: globalTarget - globalAchieved,
+          incentive: globalIncentive,
+        },
+        periods: allPeriods,
+        selectedPeriodName,
+        measurementTypes,
+        selectedMeasurementType,
+        selectedMonth:
+          periodModeValue === "all" ? monthNumber : effectiveStartMonthNumber,
+        selectedYear: yearNumber,
+      },
+    })
+  } catch (error) {
+    console.log("error", error.message)
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    })
+  }
 }
 
 /**
