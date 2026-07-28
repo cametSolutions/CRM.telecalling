@@ -61,6 +61,7 @@
 
 
 // uploadImageToCloudinary.js
+
 import { toast } from "react-toastify";
 
 const upload_preset = import.meta.env.VITE_UPLOAD_PRESET;
