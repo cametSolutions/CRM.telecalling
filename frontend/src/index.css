@@ -82,3 +82,43 @@ button:focus-visible {
     transform: translateX(-200%);
   }
 }
+.sidebar-image-select {
+  width: 100%;
+}
+
+.sidebar-image-select .select-trigger {
+  width: 100%;
+  min-height: 24px;
+  font-size: 12px;
+}
+
+.sidebar-image-select--white .select-trigger {
+  min-height: 38px;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.sidebar-image-select:not(.sidebar-image-select--white) .select-trigger {
+  background: transparent;
+  color: #ffffff;
+  border: 0;
+  box-shadow: none;
+  min-height: 20px;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sidebar-image-select:not(.sidebar-image-select--white) .select-value {
+  color: #ffffff;
+}
+
+.sidebar-image-select--white .select-value {
+  color: #111827;
+  font-weight: 600;
+}
