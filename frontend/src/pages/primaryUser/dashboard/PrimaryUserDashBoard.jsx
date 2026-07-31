@@ -266,6 +266,7 @@ const announcements =
   announcementlist?.[0]?.announcement
     ? announcementlist[0]
     : DEFAULT_ANNOUNCEMENT;
+console.log(announcements)
   return (
 //     <div className="min-h-full bg-[#ADD8E6] pt-2">
 //       {/* Birthday popup */}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import debounce from "lodash.debounce"
+import { useSelector } from "react-redux"
 import io from "socket.io-client"
 import { FaSearch, FaPhone } from "react-icons/fa"
 import Tiles from "../../../components/common/Tiles"
@@ -42,7 +43,7 @@ import { all } from "axios"
 
 const CallregistrationList = () => {
   const navigate = useNavigate()
-
+const userRole=useSelector((user)=>user.auth.user.role)
   const [activeUserId, setActiveUserId] = useState(null)
   const [loggedUserBranches, setLoggeduserBranches] = useState([])
   const [today, setToday] = useState(null)
@@ -681,6 +682,8 @@ const announcement =
  {openannoucementpopup && (
         <AnnouncementModal
           open={openannoucementpopup}
+isAdmin={userRole==="Admin"}
+announcements={announcement?.announcement}
           onClose={() => setopenannoucementpopup(false)}
  onSubmit={handleAnnouncementSubmit}
           onSuccess={(saved) =>
@@ -697,6 +700,7 @@ const announcement =
                   announcementlist={announcement}
                   setopenannoucementpopup={setopenannoucementpopup}
                   action={users?.role === "Admin"}
+show={true}
                 />
               
           </div>
