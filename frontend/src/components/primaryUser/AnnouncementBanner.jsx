@@ -56,7 +56,8 @@ const TYPE_STYLES = {
     pillText: "text-amber-700"
   }
 }
-
+console.log(
+"jj")
 // Replace with a real API call, e.g.:
 // const res = await fetch("/api/staff/announcement/active");
 // return res.json(); // return null when nothing is active
@@ -75,7 +76,8 @@ async function fetchAnnouncement() {
 export default function AnnouncementBanner({
   announcementlist: announcementProp,
 setopenannoucementpopup,
-action=true
+action=true,
+show
 
 }) {
 console.log(action)
@@ -120,8 +122,8 @@ console.log(action)
   return (
     <div
 onClick={()=>{
-console.log(action)
-if(!action)return
+console.log(show)
+
 console.log(action)
 setopenannoucementpopup(true)}}
       role="status"
@@ -153,15 +155,7 @@ setopenannoucementpopup(true)}}
         </div>
       </div>
 
-      {/* Dismiss */}
-      {/* <button
-        type="button"
-        onClick={() => setDismissedId(announcement.id)}
-        className="flex flex-none items-center px-3 text-slate-400 transition-colors hover:text-slate-600"
-        aria-label="Dismiss announcement"
-      >
-        <X className="h-4 w-4" strokeWidth={2.25} />
-      </button> */}
+   
 
       <style>{`
         .ticker-track {
