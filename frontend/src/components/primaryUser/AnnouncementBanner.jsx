@@ -56,7 +56,7 @@ const TYPE_STYLES = {
     pillText: "text-amber-700"
   }
 }
-
+console.log("hhhhh")
 // Replace with a real API call, e.g.:
 // const res = await fetch("/api/staff/announcement/active");
 // return res.json(); // return null when nothing is active
