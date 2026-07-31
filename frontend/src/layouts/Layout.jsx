@@ -270,6 +270,7 @@ console.log(loggedUser)
       selectedBranch &&
       `/lead/getnotificationData?loggedUser=${loggedUser._id}&branchSelected=${selectedBranch}`
   )
+console.log(notificationData)
 
   useEffect(() => {
     if (headerRef.current) {

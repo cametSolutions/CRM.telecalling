@@ -67,6 +67,7 @@ if(!open)return
       data: notificationData.yearlyAchievers ?? []
     }
   ]
+console.log(notifications)
  const formatDateToDDMMYYYY = (dateValue) => {
     if (!dateValue) return ""
     const date = new Date(dateValue)
@@ -235,13 +236,14 @@ console.log(notifications)
                         className="rounded-md bg-slate-700 px-2 py-1 text-xs text-slate-200"
                       >
                         {staff.name.toUpperCase()}
+<span className="ml-2 text-orange-400">{staff.leaveStatus.toUpperCase()}</span>
                       </div>
                     ))}
                   </div>
                 )}
 
                 {/* Birthday */}
-                {item.type === "birthday" && (
+                {/* {item.type === "birthday" && (
                   <div className="space-y-1">
                     {item.data.map((staff, i) => (
                       <div
@@ -253,12 +255,45 @@ console.log(notifications)
                         </span>
 
                         <span className="text-[10px] text-slate-300">
-                          {staff.dob}
+{staff?.dateofbirth
+  ? new Date(staff.dateofbirth).toLocaleDateString("en-GB")
+  : ""}
                         </span>
                       </div>
                     ))}
                   </div>
-                )}
+                )} */}
+{item.type === "birthday" && (
+  <div className="space-y-1">
+    {item.data.map((staff, i) => {
+      const dob = new Date(staff.dateofbirth);
+      const today = new Date();
+
+      const isBirthday =
+        dob.getDate() === today.getDate() &&
+        dob.getMonth() === today.getMonth();
+
+      return (
+        <div
+          key={i}
+          className="flex items-center justify-between rounded-md bg-slate-700 px-2 py-1"
+        >
+          <span className="text-xs text-white">
+            {isBirthday && "🎂 "} {staff.name.toUpperCase()}
+          </span>
+
+          <span className="text-[10px] text-slate-300">
+            {staff?.dateofbirth
+              ? new Date(staff.dateofbirth)
+                  .toLocaleDateString("en-GB")
+                  .replace(/\//g, "-")
+              : ""}
+          </span>
+        </div>
+      );
+    })}
+  </div>
+)}
 
                 {/* Holidays */}
                 {item.type === "holiday" && (

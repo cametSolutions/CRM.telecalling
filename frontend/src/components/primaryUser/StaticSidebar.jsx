@@ -445,18 +445,6 @@ setcategorylist([])}
     }
   }
 
-  // const handleAvatarSave = (updatedProfileUrl) => {
-  //   const storedUser = getLocalStorageItem("user")
-  //   const updatedUser = {
-  //     ...storedUser,
-  //     profileUrl: updatedProfileUrl
-  //   }
-
-  //   setUser(updatedUser)
-  //   setLocalStorageItem("user", updatedUser)
-  //   setAvatarOpen(false)
-  //   toast.success("Profile photo updated")
-  // }
 
   const toggleSidebar = () => {
     if (!isMobile) {
@@ -514,70 +502,140 @@ setcategorylist([])}
 
   return (
    
-    <>
+//     <>
+//       <div
+//         className={`${
+//           isMobile
+//             ? `fixed left-0 top-0 z-40 h-screen ${
+//                 sidebarOpen ? "" : "pointer-events-none"
+//               }`
+//             : "relative h-full"
+//         }`}
+//       >
+//         <div
+//           className={`h-full transition-transform duration-300 ease-in-out ${
+//             isMobile
+//               ? sidebarOpen
+//                 ? "translate-x-0 pointer-events-auto"
+//                 : "-translate-x-full pointer-events-none"
+//               : "translate-x-0"
+//           }`}
+//         >
+//           <div
+//             className={`h-full ${
+//               isMobile ? "w-[74vw] max-w-[280px] bg-white shadow-2xl" : "w-auto"
+//             }`}
+//           >
+//             {targetData && (
+//               <Sidebar
+//                 handleMoreClick={handleMoreClick}
+//                 onpasswordClick={onpasswordClick}
+//                 onperformanceModalClick={onperformanceModalClick}
+//                 onLogoutClick={logout}
+// selectedYear={selectedYear}
+// setSelectedYear={setSelectedYear}
+//                 targetData={targetData}
+//                 onselectedPeriodChange={onselectedPeriodChange}
+//                 onavataropenClick={onavataropenClick}
+//                 achievedPoints={achievedPoints}
+//                 sidebarOpen={sidebarOpen}
+//                 toggleSidebar={toggleSidebar}
+//                 user={user}
+//                 selectedBranch={selectedBranch}
+//                 setselectedBranch={handleBranchChange}
+//                 branchOptions={branchOptions}
+//                 categorylist={categorylist}
+//                 targetLoading={targetLoading}
+//                 BranchSelect={BranchSelect}
+//                 SkeletonTable={SkeletonTable}
+//                 setAvatarOpen={setAvatarOpen}
+//                 onPasswordChange={handlepasswordChange}
+//                 isMobile={isMobile}
+//               />
+//             )}
+//           </div>
+//         </div>
+//       </div>
+
+//       {isMobile && sidebarOpen && (
+//         <button
+//           type="button"
+//           aria-label="Close sidebar overlay"
+//           onClick={() => setSidebarOpen(false)}
+//           className="fixed inset-0 z-30 bg-black/40"
+//         />
+//       )}
+//     </>
+
+
+
+
+  <>
+    <div
+      className={`${
+        isMobile
+          ? `fixed left-0 top-0 z-40 h-screen ${
+              sidebarOpen ? "" : "pointer-events-none"
+            }`
+          : "relative h-full"
+      }`}
+    >
       <div
-        className={`${
+        className={`h-full transition-transform duration-300 ease-in-out ${
           isMobile
-            ? `fixed left-0 top-0 z-40 h-screen ${
-                sidebarOpen ? "" : "pointer-events-none"
-              }`
-            : "relative h-full"
+            ? sidebarOpen
+              ? "translate-x-0 pointer-events-auto"
+              : "-translate-x-full pointer-events-none"
+            : "translate-x-0"
         }`}
       >
         <div
-          className={`h-full transition-transform duration-300 ease-in-out ${
-            isMobile
-              ? sidebarOpen
-                ? "translate-x-0 pointer-events-auto"
-                : "-translate-x-full pointer-events-none"
-              : "translate-x-0"
+          className={`h-full ${
+            isMobile ? "w-[74vw] max-w-[320px]" : "w-auto"
           }`}
         >
-          <div
-            className={`h-full ${
-              isMobile ? "w-[74vw] max-w-[280px] bg-white shadow-2xl" : "w-auto"
-            }`}
-          >
-            {targetData && (
-              <Sidebar
-                handleMoreClick={handleMoreClick}
-                onpasswordClick={onpasswordClick}
-                onperformanceModalClick={onperformanceModalClick}
-                onLogoutClick={logout}
-selectedYear={selectedYear}
-setSelectedYear={setSelectedYear}
-                targetData={targetData}
-                onselectedPeriodChange={onselectedPeriodChange}
-                onavataropenClick={onavataropenClick}
-                achievedPoints={achievedPoints}
-                sidebarOpen={sidebarOpen}
-                toggleSidebar={toggleSidebar}
-                user={user}
-                selectedBranch={selectedBranch}
-                setselectedBranch={handleBranchChange}
-                branchOptions={branchOptions}
-                categorylist={categorylist}
-                targetLoading={targetLoading}
-                BranchSelect={BranchSelect}
-                SkeletonTable={SkeletonTable}
-                setAvatarOpen={setAvatarOpen}
-                onPasswordChange={handlepasswordChange}
-                isMobile={isMobile}
-              />
-            )}
-          </div>
+          {targetData && (
+            <Sidebar
+              handleMoreClick={handleMoreClick}
+              onpasswordClick={onpasswordClick}
+              onperformanceModalClick={onperformanceModalClick}
+              onLogoutClick={logout}
+              selectedYear={selectedYear}
+              setSelectedYear={setSelectedYear}
+              targetData={targetData}
+              onselectedPeriodChange={onselectedPeriodChange}
+              onavataropenClick={onavataropenClick}
+              achievedPoints={achievedPoints}
+              sidebarOpen={sidebarOpen}
+              toggleSidebar={toggleSidebar}
+              user={user}
+              selectedBranch={selectedBranch}
+              setselectedBranch={handleBranchChange}
+              branchOptions={branchOptions}
+              categorylist={categorylist}
+              targetLoading={targetLoading}
+              BranchSelect={BranchSelect}
+              SkeletonTable={SkeletonTable}
+              setAvatarOpen={setAvatarOpen}
+              onPasswordChange={handlepasswordChange}
+              isMobile={isMobile}
+            />
+          )}
         </div>
       </div>
+    </div>
 
-      {isMobile && sidebarOpen && (
-        <button
-          type="button"
-          aria-label="Close sidebar overlay"
-          onClick={() => setSidebarOpen(false)}
-          className="fixed inset-0 z-30 bg-black/40"
-        />
-      )}
-    </>
+    {isMobile && sidebarOpen && (
+      <button
+        type="button"
+        aria-label="Close sidebar overlay"
+        onClick={() => setSidebarOpen(false)}
+        className="fixed inset-0 z-30 bg-black/35 backdrop-blur-[2px]"
+      />
+    )}
+  </>
+
+
   )
 }
 
