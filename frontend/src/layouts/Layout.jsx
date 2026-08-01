@@ -194,6 +194,7 @@ console.log(targetData)
   const selectedBranch = useSelector(
     (state) => state.companyBranch.selectedBranch
   )
+console.log(selectedBranch)
 const loggedUser=useSelector((state)=>state.auth.user)
 console.log(loggedUser)
   const hideHeaderRoutes = [

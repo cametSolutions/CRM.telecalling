@@ -497,12 +497,13 @@ console.log(summary)
   }
 
   const handleFollowupCellClick = (header, count) => {
+console.log('hhh')
     if (header === "Lead Count") {
-      navigate("/admin/transaction/lead/allLeads", {
+      navigate(`/${user.role==="Admin"?"admin":"staff"}/transaction/lead/allLeads`, {
         state: { staffId: row.staffId }
       })
     } else if (header === "Due Today" && count > 0) {
-      navigate("/admin/transaction/lead/leadFollowUp", {
+      navigate(`/${user.role==="Admin"?"admin":"staff"}/transaction/lead/leadFollowUp`, {
         state: {
           staffId: user?._id,
           dueToday: true,
@@ -515,7 +516,7 @@ console.log(summary)
         }
       })
     } else if (header === "Over Due" && count > 0) {
-      navigate("/admin/transaction/lead/leadFollowUp", {
+      navigate(`/${user.role==="Admin"?"admin":"staff"}/transaction/lead/leadFollowUp`, {
         state: {
           staffId: user?._id,
           overdue: true,
@@ -528,7 +529,7 @@ console.log(summary)
         }
       })
     } else if (header === "Up Coming" && count > 0) {
-      navigate("/admin/transaction/lead/leadFollowUp", {
+      navigate(`/${user.role==="Admin"?"admin":"staff"}/transaction/lead/leadFollowUp`, {
         state: {
           staffId: user?._id,
           future: true,
@@ -542,7 +543,7 @@ console.log(summary)
         }
       })
     } else if (header === "Converted" && count > 0) {
-      navigate("/admin/transaction/lead/leadFollowUp", {
+      navigate(`/${user.role==="Admin"?"admin":"staff"}/transaction/lead/leadFollowUp`, {
         state: {
           staffId: user?._id,
           converted: true,
@@ -556,7 +557,7 @@ header:"Converted",
         }
       })
     } else if (header === "New Lead" && count > 0) {
-      navigate("/admin/transaction/lead/leadFollowUp", {
+      navigate(`/${user.role==="Admin"?"admin":"staff"}/transaction/lead/leadFollowUp`, {
         state: {
           staffId: user?._id,
           neverfollowup: true,
