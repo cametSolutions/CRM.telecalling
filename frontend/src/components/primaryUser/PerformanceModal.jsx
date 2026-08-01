@@ -27,6 +27,7 @@ export function PerformanceModal({
   selectedUser,
   activeUserId
 }) {
+console.log(products)
   console.log(periodmode)
   console.log(selectedperiod)
   console.log(selectedMonth)
