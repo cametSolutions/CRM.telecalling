@@ -3,6 +3,7 @@ import { X, Edit2, Save, DollarSign } from "lucide-react"
 import { PropagateLoader } from "react-spinners"
 import { toast } from "react-toastify"
 import api from "../../api/api"
+import { AlertTriangle, CheckCircle2, ShieldAlert, Receipt } from "lucide-react"
 export const PaymentHistoryModal = ({
   data,
   showAction = true,
@@ -16,7 +17,7 @@ export const PaymentHistoryModal = ({
   refresh,
   setdata,
   verifiedLead,
-
+selectedLead,
   setselectedLeadId,
   isdepartmentisAccountant = false
 }) => {
@@ -40,6 +41,7 @@ console.log(originalReceivedAmount)
   console.log(isChecked)
   console.log(warningMessage)
   const [message, setMessage] = useState({})
+const [excessamountWarning,setexcessAmountWarning]=useState(null)
   const [editedData, setEditedData] = useState({})
   const [checkverified, setcheckverified] = useState({})
   const [ispermissionEdit, setispermissionEdit] = useState(false)
@@ -214,265 +216,525 @@ console.log(loggedUser?._id)
   )
   console.log(data)
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 sm:px-6 py-2 md:py-3 lg:py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <DollarSign className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-            <div>
-              <h2 className="text-lg sm:text-xl font-bold text-white">
-                Payment History
-              </h2>
-              <p className="text-xs sm:text-sm text-blue-100">
-                Lead ID: {leadid}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              setMessage((prev) => ({
-                ...prev,
-                warning: ""
-              }))
-              onClose(false)
-              setselectedLeadId(null)
-setoriginalReceivedAmount(0)
-            }}
-            className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-colors"
-          >
-            <X className="w-5 h-5 sm:w-6 sm:h-6" />
-          </button>
-        </div>
-        {submitLoading && (
-          <div className="flex justify-center  py-3">
-            <PropagateLoader color="#3b82f6" size={10} />
-          </div>
-        )}
+//     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
+//       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] flex flex-col overflow-hidden">
+//         {/* Header */}
+//         <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 sm:px-6 py-2 md:py-3 lg:py-4 flex items-center justify-between">
+//           <div className="flex items-center gap-2 sm:gap-3">
+//             <DollarSign className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+//             <div>
+//               <h2 className="text-lg sm:text-xl font-bold text-white">
+//                 Payment History
+//               </h2>
+//               <p className="text-xs sm:text-sm text-blue-100">
+//                 Lead ID: {leadid}
+//               </p>
+//             </div>
+//           </div>
+//           <button
+//             onClick={() => {
+//               setMessage((prev) => ({
+//                 ...prev,
+//                 warning: ""
+//               }))
+//               onClose(false)
+//               setselectedLeadId(null)
+// setoriginalReceivedAmount(0)
+//             }}
+//             className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-colors"
+//           >
+//             <X className="w-5 h-5 sm:w-6 sm:h-6" />
+//           </button>
+//         </div>
+//         {submitLoading && (
+//           <div className="flex justify-center  py-3">
+//             <PropagateLoader color="#3b82f6" size={10} />
+//           </div>
+//         )}
 
-        {/* Total Amount Card */}
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200 px-4 sm:px-6 py-3 flex justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-sm sm:text-base font-medium text-gray-700">
-              Total Received :
-            </span>
-            <span className="text-xl sm:text-xl font-bold text-green-700">
-              {formatAmount(totalAmount)}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm sm:text-base font-medium text-gray-700">
-              Balance Amount :
-            </span>
-            <span className="text-xl sm:text-xl font-bold text-green-700">
-              {formatAmount(balanceAmount)}
-            </span>
-          </div>
-        </div>
+//         {/* Total Amount Card */}
+//         <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200 px-4 sm:px-6 py-3 flex justify-between">
+//           <div className="flex items-center justify-between">
+//             <span className="text-sm sm:text-base font-medium text-gray-700">
+//               Total Received :
+//             </span>
+//             <span className="text-xl sm:text-xl font-bold text-green-700">
+//               {formatAmount(totalAmount)}
+//             </span>
+//           </div>
+//           <div className="flex items-center justify-between">
+//             <span className="text-sm sm:text-base font-medium text-gray-700">
+//               Balance Amount :
+//             </span>
+//             <span className="text-xl sm:text-xl font-bold text-green-700">
+//               {formatAmount(balanceAmount)}
+//             </span>
+//           </div>
+//         </div>
 
-        {/* Table Container */}
-        <div className="flex-1 p-3 sm:p-6">
-          <div className="overflow-x-auto overflow-y-auto">
-            <table className="w-full border-collapse min-w-[800px]">
-              <thead className="sticky top-0 bg-blue-400 text-white">
-                <tr className=" border-b-2 border-gray-200">
-                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold  whitespace-nowrap">
-                    Payment Date
-                  </th>
-                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold whitespace-nowrap">
-                    Payment Done By
-                  </th>
-                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold  whitespace-nowrap">
-                    Payment Amount
-                  </th>
+//         {/* Table Container */}
+//         <div className="flex-1 p-3 sm:p-6">
+//           <div className="overflow-x-auto overflow-y-auto">
+//             <table className="w-full border-collapse min-w-[800px]">
+//               <thead className="sticky top-0 bg-blue-400 text-white">
+//                 <tr className=" border-b-2 border-gray-200">
+//                   <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold  whitespace-nowrap">
+//                     Payment Date
+//                   </th>
+//                   <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold whitespace-nowrap">
+//                     Payment Done By
+//                   </th>
+//                   <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold  whitespace-nowrap">
+//                     Payment Amount
+//                   </th>
 
-                  <th className="px-3 sm:px-4 py-3 text-center text-xs sm:text-sm font-semibold whitespace-nowrap">
-                    Bank Remarks
-                  </th>
-                  {!verifiedLead && showAction && (
-                    <th className="px-3 sm:px-4 py-3 text-center text-xs sm:text-sm font-semibold  whitespace-nowrap">
-                      Actions
-                    </th>
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {data.map((row, index) => {
-                  const isEditing = editingRow === index
-                  return (
-                    <tr
-                      key={row._id}
-                      className={`border-b border-r border-l border-t-0 border-gray-200 hover:bg-gray-50 transition-colors ${
-                        index % 2 === 0 ? "bg-white" : "bg-gray-100"
-                      }`}
-                    >
-                      <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-700 whitespace-nowrap">
-                        {formatDate(row.paymentDate)}
-                      </td>
-                      <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-700 whitespace-nowrap">
-                        <span className="inline-flex items-center px-2 py-1 rounded-full bg-blue-100 text-blue-800 font-medium">
-                          {row?.receivedBy?.name}
-                        </span>
-                      </td>
-                      <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm whitespace-nowrap">
-                        {isEditing && ispermissionEdit ? (
-                          <input
-                            type="number"
-                            value={editedData.receivedAmount}
-                            onChange={(e) =>
-                              handleInputChange(
-                                "receivedAmount",
-                                parseFloat(e.target.value)
-                              )
-                            }
-                            className="w-32 px-2 py-1.5 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm  [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0"
-                          />
-                        ) : (
-                          <span
-                            className={`font-semibold ${
-                              row.receivedAmount > 0
-                                ? "text-green-600"
-                                : "text-gray-400"
-                            }`}
-                          >
-                            {formatAmount(row.receivedAmount)}
-                          </span>
-                        )}
-                      </td>
+//                   <th className="px-3 sm:px-4 py-3 text-center text-xs sm:text-sm font-semibold whitespace-nowrap">
+//                     Bank Remarks
+//                   </th>
+//                   {!verifiedLead && showAction && (
+//                     <th className="px-3 sm:px-4 py-3 text-center text-xs sm:text-sm font-semibold  whitespace-nowrap">
+//                       Actions
+//                     </th>
+//                   )}
+//                 </tr>
+//               </thead>
+//               <tbody>
+//                 {data.map((row, index) => {
+//                   const isEditing = editingRow === index
+//                   return (
+//                     <tr
+//                       key={row._id}
+//                       className={`border-b border-r border-l border-t-0 border-gray-200 hover:bg-gray-50 transition-colors ${
+//                         index % 2 === 0 ? "bg-white" : "bg-gray-100"
+//                       }`}
+//                     >
+//                       <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-700 whitespace-nowrap">
+//                         {formatDate(row.paymentDate)}
+//                       </td>
+//                       <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-700 whitespace-nowrap">
+//                         <span className="inline-flex items-center px-2 py-1 rounded-full bg-blue-100 text-blue-800 font-medium">
+//                           {row?.receivedBy?.name}
+//                         </span>
+//                       </td>
+//                       <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm whitespace-nowrap">
+//                         {isEditing && ispermissionEdit ? (
+//                           <input
+//                             type="number"
+//                             value={editedData.receivedAmount}
+//                             onChange={(e) =>
+//                               handleInputChange(
+//                                 "receivedAmount",
+//                                 parseFloat(e.target.value)
+//                               )
+//                             }
+//                             className="w-32 px-2 py-1.5 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm  [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0"
+//                           />
+//                         ) : (
+//                           <span
+//                             className={`font-semibold ${
+//                               row.receivedAmount > 0
+//                                 ? "text-green-600"
+//                                 : "text-gray-400"
+//                             }`}
+//                           >
+//                             {formatAmount(row.receivedAmount)}
+//                           </span>
+//                         )}
+//                       </td>
 
-                      <td className="px-3 sm:px-4 py-3 text-sm sm:text-xs ">
-                        {isEditing && ispermissionEdit ? (
-                          <input
-                            type="text"
-                            value={editedData.bankRemarks}
-                            onChange={(e) =>
-                              handleInputChange("bankRemarks", e.target.value)
-                            }
-                            className="w-full px-2 py-1.5 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                            placeholder="Enter bank remarks"
-                          />
-                        ) : (
-                          <span className="text-gray-700  block max-w-xs whitespace-normal break-all">
-                            {row.bankRemarks || ""}
-                          </span>
-                        )}
-                      </td>
-                      {!verifiedLead && showAction && (
-                        <td className="px-3 sm:px-4 py-3  whitespace-nowrap text-center">
-                          {isEditing ? (
-                            <div className="flex items-center justify-center gap-2">
-                              <button
-                                onClick={() => handleSave()}
-                                className="p-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-                                title="Save"
-                              >
-                                <Save className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={handleCancel}
-                                className="p-1.5 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition-colors"
-                                title="Cancel"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            </div>
-                          ) : (
-                            !isdepartmentisAccountant && (
-                              <div className="flex flex-col items-center gap-1">
-                                <button
-                                  onClick={() =>
-                                    handleEdit(row, row.originalIndex, index)
-                                  }
-                                  className="p-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                                  title="Edit"
-                                >
-                                  <Edit2 className="w-4 h-4" />
-                                </button>
+//                       <td className="px-3 sm:px-4 py-3 text-sm sm:text-xs ">
+//                         {isEditing && ispermissionEdit ? (
+//                           <input
+//                             type="text"
+//                             value={editedData.bankRemarks}
+//                             onChange={(e) =>
+//                               handleInputChange("bankRemarks", e.target.value)
+//                             }
+//                             className="w-full px-2 py-1.5 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+//                             placeholder="Enter bank remarks"
+//                           />
+//                         ) : (
+//                           <span className="text-gray-700  block max-w-xs whitespace-normal break-all">
+//                             {row.bankRemarks || ""}
+//                           </span>
+//                         )}
+//                       </td>
+//                       {!verifiedLead && showAction && (
+//                         <td className="px-3 sm:px-4 py-3  whitespace-nowrap text-center">
+//                           {isEditing ? (
+//                             <div className="flex items-center justify-center gap-2">
+//                               <button
+//                                 onClick={() => handleSave()}
+//                                 className="p-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+//                                 title="Save"
+//                               >
+//                                 <Save className="w-4 h-4" />
+//                               </button>
+//                               <button
+//                                 onClick={handleCancel}
+//                                 className="p-1.5 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition-colors"
+//                                 title="Cancel"
+//                               >
+//                                 <X className="w-4 h-4" />
+//                               </button>
+//                             </div>
+//                           ) : (
+//                             !isdepartmentisAccountant && (
+//                               <div className="flex flex-col items-center gap-1">
+//                                 <button
+//                                   onClick={() =>
+//                                     handleEdit(row, row.originalIndex, index)
+//                                   }
+//                                   className="p-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+//                                   title="Edit"
+//                                 >
+//                                   <Edit2 className="w-4 h-4" />
+//                                 </button>
 
-                                {editmessage &&
-                                  messageRowIndex === row.originalIndex && (
-                                    <span className="text-sm text-red-600 font-medium">
-                                      {editmessage}
-                                    </span>
-                                  )}
-                              </div>
-                            )
-                          )}
-                          {isdepartmentisAccountant && (
-                            <button
-                              onClick={() =>
-                                handleVerify(row.originalIndex, checkverified)
-                              }
-                              className={`p-1.5 ${
-                                checkverified?.[row.originalIndex]
-                                  ? "bg-green-500"
-                                  : "bg-orange-400"
-                              }  text-white rounded-lg  transition-colors ml-2 font-semibold text-sm`}
-                            >
-                              {checkverified?.[row.originalIndex]
-                                ? "Verified"
-                                : "Not Verified"}
-                            </button>
-                          )}
-                        </td>
-                      )}
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+//                                 {editmessage &&
+//                                   messageRowIndex === row.originalIndex && (
+//                                     <span className="text-sm text-red-600 font-medium">
+//                                       {editmessage}
+//                                     </span>
+//                                   )}
+//                               </div>
+//                             )
+//                           )}
+//                           {isdepartmentisAccountant && (
+//                             <button
+//                               onClick={() =>
+//                                 handleVerify(row.originalIndex, checkverified)
+//                               }
+//                               className={`p-1.5 ${
+//                                 checkverified?.[row.originalIndex]
+//                                   ? "bg-green-500"
+//                                   : "bg-orange-400"
+//                               }  text-white rounded-lg  transition-colors ml-2 font-semibold text-sm`}
+//                             >
+//                               {checkverified?.[row.originalIndex]
+//                                 ? "Verified"
+//                                 : "Not Verified"}
+//                             </button>
+//                           )}
+//                         </td>
+//                       )}
+//                     </tr>
+//                   )
+//                 })}
+//               </tbody>
+//             </table>
+//           </div>
 
-          {data.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-gray-500 text-sm sm:text-base">
-                No payment history available
-              </p>
-            </div>
-          )}
-          <div className="flex justify-center">
-            {" "}
-            {message.warning && (
-              <p className="text-red-500">{message.warning}</p>
-            )}
-          </div>
-        </div>
+//           {data.length === 0 && (
+//             <div className="text-center py-12">
+//               <p className="text-gray-500 text-sm sm:text-base">
+//                 No payment history available
+//               </p>
+//             </div>
+//           )}
+//           <div className="flex justify-center">
+//             {" "}
+//             {message.warning && (
+//               <p className="text-red-500">{message.warning}</p>
+//             )}
+//           </div>
+//         </div>
 
-        {/* Footer */}
-        <div className="bg-gray-50 px-4 sm:px-6 py-3 border-t border-gray-200 flex justify-between items-center">
-          <p className="text-xs sm:text-sm text-gray-600">
-            Total Records:{" "}
-            <span className="font-semibold text-gray-800">{data.length}</span>
+//         {/* Footer */}
+//         <div className="bg-gray-50 px-4 sm:px-6 py-3 border-t border-gray-200 flex justify-between items-center">
+//           <p className="text-xs sm:text-sm text-gray-600">
+//             Total Records:{" "}
+//             <span className="font-semibold text-gray-800">{data.length}</span>
+//           </p>
+//           {isdepartmentisAccountant &&
+//             warningMessage &&
+//             !isforcefullyclosed && (
+//               <>
+//                 <p className="text-red-500">{warningMessage}</p>
+//                 <button
+//                   onClick={() => handleCloseTarget()}
+//                   className="px-4 py-2 bg-orange-400 text-white rounded-lg hover:bg-orange-500 transition-colors text-sm font-medium"
+//                 >
+//                   Closed Target
+//                 </button>
+//               </>
+//             )}
+//           <button
+//             onClick={() => {
+//               onClose(false)
+//               setMessage((prev) => ({
+//                 ...prev,
+//                 warning: ""
+//               }))
+//               setselectedLeadId(null)
+// setoriginalReceivedAmount(0)
+//             }}
+//             className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
+//           >
+//             Close
+//           </button>
+//         </div>
+//       </div>
+//     </div>
+<div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
+  <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] flex flex-col overflow-hidden ring-1 ring-black/5">
+    {/* Header */}
+    <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-blue-600 to-indigo-700 px-4 sm:px-6 py-3 md:py-4 flex items-center justify-between">
+      <div className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
+      <div className="relative flex items-center gap-3">
+        <span className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20">
+          <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+        </span>
+        <div>
+          <h2 className="text-lg sm:text-xl font-bold text-white leading-tight">
+            Payment History
+          </h2>
+          <p className="text-xs sm:text-sm text-blue-100">
+            Lead ID: {leadid}
           </p>
-          {isdepartmentisAccountant &&
-            warningMessage &&
-            !isforcefullyclosed && (
-              <>
-                <p className="text-red-500">{warningMessage}</p>
-                <button
-                  onClick={() => handleCloseTarget()}
-                  className="px-4 py-2 bg-orange-400 text-white rounded-lg hover:bg-orange-500 transition-colors text-sm font-medium"
-                >
-                  Closed Target
-                </button>
-              </>
-            )}
-          <button
-            onClick={() => {
-              onClose(false)
-              setMessage((prev) => ({
-                ...prev,
-                warning: ""
-              }))
-              setselectedLeadId(null)
-setoriginalReceivedAmount(0)
-            }}
-            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
-          >
-            Close
-          </button>
+        </div>
+      </div>
+      <button
+        onClick={() => {
+          setMessage((prev) => ({ ...prev, warning: "" }))
+          onClose(false)
+          setselectedLeadId(null)
+          setoriginalReceivedAmount(0)
+        }}
+        className="relative text-white/90 hover:bg-white/15 rounded-full p-2 transition-colors"
+      >
+        <X className="w-5 h-5 sm:w-6 sm:h-6" />
+      </button>
+    </div>
+
+    {submitLoading && (
+      <div className="flex justify-center py-3">
+        <PropagateLoader color="#3b82f6" size={10} />
+      </div>
+    )}
+
+    {/* Summary Card */}
+    <div className="bg-gradient-to-r from-emerald-50 via-white to-emerald-50 border-b border-emerald-100 px-4 sm:px-6 py-3.5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 justify-self-start">
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100">
+            <Receipt className="w-4 h-4 text-emerald-600" />
+          </span>
+          <div>
+            <p className="text-[11px] uppercase tracking-wide text-gray-400 font-medium">Total Received</p>
+            <p className="text-lg font-bold text-emerald-700">{formatAmount(totalAmount)}</p>
+          </div>
+        </div>
+
+        <div className="justify-self-center">
+          {excessamountWarning && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 border border-red-200 px-3 py-1.5 text-xs sm:text-sm font-medium text-red-600">
+              <AlertTriangle className="w-3.5 h-3.5 flex-none" />
+              {excessamountWarning}
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 justify-self-start sm:justify-self-end">
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-100">
+            <ShieldAlert className="w-4 h-4 text-blue-600" />
+          </span>
+          <div>
+            <p className="text-[11px] uppercase tracking-wide text-gray-400 font-medium">Balance Amount</p>
+            <p className="text-lg font-bold text-blue-700">{formatAmount(balanceAmount)}</p>
+          </div>
         </div>
       </div>
     </div>
+
+    {/* Table Container */}
+    <div className="flex-1 p-3 sm:p-6 overflow-hidden flex flex-col">
+      <div className="overflow-x-auto overflow-y-auto rounded-xl border border-gray-200">
+        <table className="w-full border-collapse min-w-[800px]">
+          <thead className="sticky top-0 bg-gradient-to-r from-blue-500 to-blue-600 text-white z-10">
+            <tr>
+              <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold whitespace-nowrap">
+                Payment Date
+              </th>
+              <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold whitespace-nowrap">
+                Payment Done By
+              </th>
+              <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold whitespace-nowrap">
+                Payment Amount
+              </th>
+              <th className="px-3 sm:px-4 py-3 text-center text-xs sm:text-sm font-semibold whitespace-nowrap">
+                Bank Remarks
+              </th>
+              {!verifiedLead && showAction && (
+                <th className="px-3 sm:px-4 py-3 text-center text-xs sm:text-sm font-semibold whitespace-nowrap">
+                  Actions
+                </th>
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((row, index) => {
+              const isEditing = editingRow === index
+              return (
+                <tr
+                  key={row._id}
+                  className={`border-b border-gray-100 hover:bg-blue-50/40 transition-colors ${
+                    index % 2 === 0 ? "bg-white" : "bg-gray-50/60"
+                  }`}
+                >
+                  <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-600 whitespace-nowrap">
+                    {formatDate(row.paymentDate)}
+                  </td>
+                  <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm whitespace-nowrap">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 font-medium ring-1 ring-blue-100">
+                      {row?.receivedBy?.name?.toUpperCase()}
+                    </span>
+                  </td>
+                  <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm whitespace-nowrap">
+                    {isEditing && ispermissionEdit ? (
+                      <input
+                        type="number"
+                        value={editedData.receivedAmount}
+                        onChange={(e) =>
+                          handleInputChange("receivedAmount", parseFloat(e.target.value))
+                        }
+                        className="w-32 px-2 py-1.5 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0"
+                      />
+                    ) : (
+                      <span
+                        className={`font-semibold ${
+                          row.receivedAmount > 0 ? "text-emerald-600" : "text-gray-400"
+                        }`}
+                      >
+                        {formatAmount(row.receivedAmount)}
+                      </span>
+                    )}
+                  </td>
+
+                  <td className="px-3 sm:px-4 py-3 text-sm sm:text-xs">
+                    {isEditing && ispermissionEdit ? (
+                      <input
+                        type="text"
+                        value={editedData.bankRemarks}
+                        onChange={(e) => handleInputChange("bankRemarks", e.target.value)}
+                        className="w-full px-2 py-1.5 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        placeholder="Enter bank remarks"
+                      />
+                    ) : (
+                      <span className="text-gray-600 block max-w-xs whitespace-normal break-all">
+                        {row.bankRemarks || ""}
+                      </span>
+                    )}
+                  </td>
+
+                  {!verifiedLead && showAction && (
+                    <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-center">
+                      {isEditing ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => handleSave()}
+                            className="p-1.5 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors shadow-sm"
+                            title="Save"
+                          >
+                            <Save className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={handleCancel}
+                            className="p-1.5 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition-colors shadow-sm"
+                            title="Cancel"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        !isdepartmentisAccountant && (
+                          <div className="flex flex-col items-center gap-1">
+                            <button
+                              onClick={() => handleEdit(row, row.originalIndex, index)}
+                              className="p-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-sm"
+                              title="Edit"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+
+                            {editmessage && messageRowIndex === row.originalIndex && (
+                              <span className="text-xs text-red-600 font-medium">
+                                {editmessage}
+                              </span>
+                            )}
+                          </div>
+                        )
+                      )}
+                      {isdepartmentisAccountant && (
+                        <button
+                          onClick={() => handleVerify(row.originalIndex, checkverified)}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-white transition-colors ml-2 font-semibold text-xs sm:text-sm shadow-sm ${
+                            checkverified?.[row.originalIndex]
+                              ? "bg-emerald-500 hover:bg-emerald-600"
+                              : "bg-orange-400 hover:bg-orange-500"
+                          }`}
+                        >
+                          {checkverified?.[row.originalIndex] ? (
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                          ) : (
+                            <AlertTriangle className="w-3.5 h-3.5" />
+                          )}
+                          {checkverified?.[row.originalIndex] ? "Verified" : "Not Verified"}
+                        </button>
+                      )}
+                    </td>
+                  )}
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {data.length === 0 && (
+        <div className="text-center py-14">
+          <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-50 ring-1 ring-gray-100">
+            <Receipt className="w-5 h-5 text-gray-300" />
+          </span>
+          <p className="text-gray-500 text-sm sm:text-base">No payment history available</p>
+        </div>
+      )}
+    </div>
+
+    {/* Footer */}
+    <div className="bg-gray-50 px-4 sm:px-6 py-3 border-t border-gray-200 flex flex-wrap justify-between items-center gap-3">
+      <p className="text-xs sm:text-sm text-gray-600">
+        Total Records: <span className="font-semibold text-gray-800">{data.length}</span>
+      </p>
+
+      {isdepartmentisAccountant && warningMessage && !isforcefullyclosed && (
+        <div className="flex items-center gap-3">
+          <p className="text-red-500 text-sm font-medium flex items-center gap-1.5">
+            <AlertTriangle className="w-4 h-4" />
+            {warningMessage}
+          </p>
+          <button
+            onClick={() => handleCloseTarget()}
+            className="px-4 py-2 bg-orange-400 text-white rounded-lg hover:bg-orange-500 transition-colors text-sm font-medium shadow-sm"
+          >
+            Closed Target
+          </button>
+        </div>
+      )}
+
+      <button
+        onClick={() => {
+          onClose(false)
+          setMessage((prev) => ({ ...prev, warning: "" }))
+          setselectedLeadId(null)
+          setoriginalReceivedAmount(0)
+        }}
+        className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium shadow-sm"
+      >
+        Close
+      </button>
+    </div>
+  </div>
+</div>
   )
 }

@@ -77,6 +77,7 @@ export default function CollectionUpdate() {
   const [targetData, settargetData] = useState([])
   console.log(targetData)
   const [openModal, setOpenModal] = useState(false)
+const [selectedCollection,setselectedCollection]=useState({})
   const [productlist, setproductList] = useState([])
   const [achievedproducts, setacheivedProducts] = useState([])
   const [selectedPeriod, setselectedPeriod] = useState("")
@@ -221,6 +222,7 @@ selectedreduxbranch&&
         (item) => item.leadId === selectedLeadId
       )
       console.log(updatedhistorylist)
+setselectedCollection(updatedhistorylist[0])
       setpaymentHistoryList(updatedhistorylist[0]?.paymentHistory)
 console.log(updatedhistorylist[0])
       setBalanceAmount(updatedhistorylist[0].balanceAmount)
@@ -1043,6 +1045,7 @@ return currentData.map(({ staffName, leads }, index) => (
       {paymenthistoryModal && (
         <PaymentHistoryModal
           data={paymentHistoryList}
+selectedLead={selectedCollection}
           isChecked={isChecked}
           isforcefullyclosed={isforcefullyclosed}
           balanceAmount={balanceAmount}
