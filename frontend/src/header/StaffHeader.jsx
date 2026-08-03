@@ -1313,7 +1313,7 @@
 
 //   return (
 //     <>
-     
+
 // <header className="sticky top-0 z-50 border-b border-slate-300/40 bg-[#ADD8E6]">
 //   <div className="mx-auto grid h-16 w-full grid-cols-[1fr_auto_1fr] items-center px-3 sm:px-4 lg:px-6">
 //     {/* Left */}
@@ -1759,10 +1759,6 @@
 //   )
 // }
 
-
-
-
-
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
@@ -1786,14 +1782,14 @@ import {
   FiClipboard,
   FiActivity,
   FiUserCheck,
-  FiUserX,
+  FiUserX
 } from "react-icons/fi"
 import {
   MessageSquareText,
   Bell,
   Settings,
   User,
-  ChevronDown,
+  ChevronDown
 } from "lucide-react"
 import { FaUserCircle } from "react-icons/fa"
 
@@ -1802,7 +1798,7 @@ export default function StaffHeader({
   onpasswordClick,
   sidebarHasProfile = true,
   notificationCount = 0,
-  messageCount = 0,
+  messageCount = 0
 }) {
   const [user, setUser] = useState(null)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -1819,6 +1815,7 @@ export default function StaffHeader({
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user")
+    console.log(storedUser)
     if (storedUser) {
       try {
         setUser(JSON.parse(storedUser))
@@ -1827,7 +1824,7 @@ export default function StaffHeader({
       }
     }
   }, [])
-
+console.log(user)
   useEffect(() => {
     if (!showUserMenu) return
 
@@ -1857,43 +1854,43 @@ export default function StaffHeader({
       {
         to: "/staff/masters/company",
         label: "Company",
-        control: permissions.Company ?? false,
+        control: permissions.Company ?? false
       },
       {
         to: "/staff/masters/branch",
         label: "Branch",
-        control: permissions.Branch ?? false,
+        control: permissions.Branch ?? false
       },
       {
         to: "/staff/masters/department",
         label: "Department",
-        control: permissions.Department ?? false,
+        control: permissions.Department ?? false
       },
       {
         label: "Product & Service",
         hasChildren: true,
-        control: permissions.ProductandServices ?? false,
+        control: permissions.ProductandServices ?? false
       },
       {
         to: "/staff/masters/customer",
         label: "Customer",
-        control: permissions.Customer ?? false,
+        control: permissions.Customer ?? false
       },
       {
         label: "Employee",
         hasChildren: true,
-        control: permissions.Employee ?? false,
+        control: permissions.Employee ?? false
       },
       {
         to: "/staff/masters/leavemaster",
         label: "Leave Master",
-        control: permissions.Leavemaster ?? false,
+        control: permissions.Leavemaster ?? false
       },
       {
         to: "/staff/masters/partners",
         label: "Partners",
-        control: permissions.Partners ?? false,
-      },
+        control: permissions.Partners ?? false
+      }
     ],
     [permissions]
   )
@@ -1903,38 +1900,38 @@ export default function StaffHeader({
       {
         to: "/staff/masters/product",
         label: "Product",
-        control: permissions.Product ?? false,
+        control: permissions.Product ?? false
       },
       {
         to: "/staff/masters/servicesRegistration",
         label: "Services",
-        control: permissions.Services ?? false,
+        control: permissions.Services ?? false
       },
       {
         to: "/staff/masters/inventory/brandRegistration",
         label: "Brand",
-        control: permissions.Brand ?? false,
+        control: permissions.Brand ?? false
       },
       {
         to: "/staff/masters/inventory/categoryRegistration",
         label: "Category",
-        control: permissions.Category ?? false,
+        control: permissions.Category ?? false
       },
       {
         to: "/staff/masters/inventory/hsnlist",
         label: "HSN",
-        control: permissions.HSN ?? false,
+        control: permissions.HSN ?? false
       },
       {
         to: "/staff/masters/callnotes",
         label: "Call Notes",
-        control: permissions.CallNotes ?? false,
+        control: permissions.CallNotes ?? false
       },
       {
         to: "/staff/masters/taskRegistration",
         label: "Task Level",
-        control: permissions.TaskLevel ?? false,
-      },
+        control: permissions.TaskLevel ?? false
+      }
     ],
     [permissions]
   )
@@ -1944,23 +1941,23 @@ export default function StaffHeader({
       {
         to: "/staff/masters/users-&-passwords",
         label: "Users & Passwords",
-        control: permissions.UsersAndPasswords ?? false,
+        control: permissions.UsersAndPasswords ?? false
       },
       {
         to: "/staff/masters/menuRights",
         label: "Menu Rights",
-        control: permissions.MenuRights ?? false,
+        control: permissions.MenuRights ?? false
       },
       {
         to: "/staff/masters/target",
         label: "Target",
-        control: permissions.Target ?? false,
+        control: permissions.Target ?? false
       },
       {
         to: "/staff/masters/voucherMaster",
         label: "Voucher Master",
-        control: permissions.VoucherMaster ?? false,
-      },
+        control: permissions.VoucherMaster ?? false
+      }
     ],
     [permissions]
   )
@@ -1970,24 +1967,24 @@ export default function StaffHeader({
       {
         to: "/staff/transaction/call-registration",
         label: "Call Registration",
-        control: permissions.CallRegistration ?? false,
+        control: permissions.CallRegistration ?? false
       },
       {
         to: "/staff/support&department",
         label: "Support Department",
-        control: permissions.SupportDepartment ?? false,
+        control: permissions.SupportDepartment ?? false
       },
       {
         to: "/staff/transaction/leave-application",
         label: "Leave Application",
-        control: permissions.LeaveApplication ?? false,
+        control: permissions.LeaveApplication ?? false
       },
       { to: "/staff/transaction/lead", label: "New Lead", control: true },
       {
         to: "/staff/transaction/lead/collectionUpdate",
         label: "Collection Update",
-        control: permissions.CollectionUpdate ?? false,
-      },
+        control: permissions.CollectionUpdate ?? false
+      }
     ],
     [permissions]
   )
@@ -1997,33 +1994,33 @@ export default function StaffHeader({
       {
         to: "/staff/transaction/lead/leadReallocation",
         label: "Task Allocation",
-        control: permissions.LeadReallocation ?? false,
+        control: permissions.LeadReallocation ?? false
       },
       {
         to: "/staff/transaction/lead/leadAllocation",
         label: "Follow-Up Allocation",
-        control: permissions.LeadAllocation ?? false,
+        control: permissions.LeadAllocation ?? false
       },
       {
         to: "/staff/transaction/lead/leadTask",
         label: "Task Pending",
-        control: true,
+        control: true
       },
       {
         to: "/staff/tasks/leaveApproval-pending",
         label: "Leave Approval Pending",
-        control: permissions.LeaveApprovalPending ?? false,
+        control: permissions.LeaveApprovalPending ?? false
       },
       {
         to: "/staff/tasks/excelconverter",
         label: "Customer Converter (Excel to JSON)",
-        control: permissions.ExcelConverter ?? false,
+        control: permissions.ExcelConverter ?? false
       },
       {
         to: "/staff/tasks/attendanceExcelconverter",
         label: "Attendance Converter",
-        control: permissions.AttendanceExcelConverter ?? false,
-      },
+        control: permissions.AttendanceExcelConverter ?? false
+      }
     ],
     [permissions]
   )
@@ -2037,39 +2034,39 @@ export default function StaffHeader({
             to: "/staff/reports/follow-up-summary",
             label: "Followup Summary",
             icon: FiRepeat,
-            control: permissions.FollowupSummary ?? false,
+            control: permissions.FollowupSummary ?? false
           },
           {
             to: "/staff/reports/product-wise-report",
             label: "Lead ( Staff / Product )",
             icon: FiBox,
-            control: permissions.ProductWiseReport ?? false,
+            control: permissions.ProductWiseReport ?? false
           },
           {
             to: "/staff/reports/sales-funel",
             label: "Sales Funnel",
             icon: FiFilter,
-            control: permissions.SalesFunnel ?? false,
+            control: permissions.SalesFunnel ?? false
           },
           {
             to: "/staff/transaction/lead/leadFollowUp",
             label: "In Follow-Up",
             icon: FiClock,
-            control: permissions.LeadFollowUp ?? false,
+            control: permissions.LeadFollowUp ?? false
           },
           {
             to: "/staff/transaction/lead/ownedLeadlist",
             label: "Own Lead",
             icon: FiUserCheck,
-            control: true,
+            control: true
           },
           {
             to: "/staff/transaction/lead/lostLeads",
             label: "Lost Leads",
             icon: FiUserX,
-            control: permissions.LostLeads ?? false,
-          },
-        ],
+            control: permissions.LostLeads ?? false
+          }
+        ]
       },
       {
         group: "Service",
@@ -2078,21 +2075,21 @@ export default function StaffHeader({
             to: "/staff/reports/summary",
             label: "Call Summary",
             icon: FiPhoneCall,
-            control: permissions.Summary ?? false,
+            control: permissions.Summary ?? false
           },
           {
             to: "/staff/reports/expiry-register",
             label: "Expiry Register",
             icon: FiCalendar,
-            control: permissions.ExpiryRegister ?? false,
+            control: permissions.ExpiryRegister ?? false
           },
           {
             to: "/staff/reports/account-search",
             label: "Account Search",
             icon: FiSearch,
-            control: permissions.AccountSearch ?? false,
-          },
-        ],
+            control: permissions.AccountSearch ?? false
+          }
+        ]
       },
       {
         group: "My Activities",
@@ -2101,16 +2098,16 @@ export default function StaffHeader({
             to: "/staff/reports/leave-summary",
             label: "Attendance Summary",
             icon: FiClipboard,
-            control: permissions.LeaveSummary ?? false,
+            control: permissions.LeaveSummary ?? false
           },
           {
             to: "/staff/reports/dailystaffactivity",
             label: "Daily Staff Activity",
             icon: FiActivity,
-            control: permissions.DailyStaffActivity ?? false,
-          },
-        ],
-      },
+            control: permissions.DailyStaffActivity ?? false
+          }
+        ]
+      }
     ],
     [permissions]
   )
@@ -2120,7 +2117,7 @@ export default function StaffHeader({
       { label: "Masters", items: masters },
       { label: "Transactions", items: transactions },
       { label: "Reports", items: reports },
-      { label: "Tasks", items: tasks },
+      { label: "Tasks", items: tasks }
     ],
     [masters, transactions, reports, tasks]
   )
@@ -2281,7 +2278,9 @@ export default function StaffHeader({
                   {ChildIcon && (
                     <ChildIcon
                       className={`h-4 w-4 shrink-0 ${
-                        isPathActive(child.to) ? "text-sky-400" : "text-slate-400"
+                        isPathActive(child.to)
+                          ? "text-sky-400"
+                          : "text-slate-400"
                       }`}
                     />
                   )}
@@ -2304,107 +2303,108 @@ export default function StaffHeader({
 
   return (
     <>
-    <header className="sticky top-0 z-50 bg-[#ADD8E6] px-4 py-1 lg:px-6">
-  <div className="grid h-16 w-full grid-cols-[auto_1fr_auto] items-center gap-4">
-    {/* Left */}
-    <div className="flex min-w-0 items-center gap-3">
-      <button
-        onClick={() => setMobileOpen(true)}
-        className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-[#162033] text-slate-200 transition hover:bg-[#1E293B] xl:hidden"
-        aria-label="Open menu"
-      >
-        <FiMenu size={18} />
-      </button>
+      <header className="sticky top-0 z-50 bg-[#ADD8E6] px-4 py-1 lg:px-6">
+        <div className="grid h-16 w-full grid-cols-[auto_1fr_auto] items-center gap-4">
+          {/* Left */}
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-[#162033] text-slate-200 transition hover:bg-[#1E293B] xl:hidden"
+              aria-label="Open menu"
+            >
+              <FiMenu size={18} />
+            </button>
 
-      {!sidebarHasProfile && (
-        <button
-          type="button"
-          onClick={() => handleSafeNavigate(getDashboardPath())}
-          className="flex min-w-0 items-center gap-2.5"
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-sky-400 to-blue-600 text-lg font-bold text-white shadow-[0_6px_18px_rgba(56,189,248,0.35)]">
-            C
-          </div>
-
-          <div className="hidden text-left sm:block">
-            <div className="text-[15px] font-bold leading-4 tracking-wide text-white">
-              CAMET
-            </div>
-            <div className="text-[10px] font-medium leading-4 text-slate-100/80">
-              CRM
-            </div>
-          </div>
-        </button>
-      )}
-    </div>
-
-    {/* Center */}
-    <div className="hidden xl:flex justify-center">
-      <nav className="flex h-10 items-center gap-1 rounded-full border border-white/10 bg-[#081224] px-2 shadow-[0_8px_24px_rgba(0,0,0,0.22)]">
-        <button
-          type="button"
-          onClick={() => handleSafeNavigate(getDashboardPath())}
-          className={`rounded-full px-5 py-1 text-[14px] font-semibold transition ${
-            isPathActive("/staff/dashBoard") || isPathActive(getDashboardPath())
-              ? "bg-[#0F3A68] text-sky-300"
-              : "text-slate-300 hover:bg-white/5 hover:text-white"
-          }`}
-        >
-          Dashboard
-        </button>
-
-        {menuGroups.map((group) => {
-          const isReports = group.label === "Reports"
-          const visibleItems = isReports
-            ? getVisibleReportItems()
-            : group.items.filter((i) => i.control)
-
-          if (!visibleItems.length) return null
-
-          const activeGroup = isReports
-            ? isReportsGroupActive()
-            : isGroupActive(group.items)
-
-          return (
-            <div key={group.label} className="group/menu relative">
+            {!sidebarHasProfile && (
               <button
                 type="button"
-                className={`flex items-center gap-1.5 rounded-full px-4 py-1 text-[14px] font-semibold transition ${
-                  activeGroup
+                onClick={() => handleSafeNavigate(getDashboardPath())}
+                className="flex min-w-0 items-center gap-2.5"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-sky-400 to-blue-600 text-lg font-bold text-white shadow-[0_6px_18px_rgba(56,189,248,0.35)]">
+                  C
+                </div>
+
+                <div className="hidden text-left sm:block">
+                  <div className="text-[15px] font-bold leading-4 tracking-wide text-white">
+                    CAMET
+                  </div>
+                  <div className="text-[10px] font-medium leading-4 text-slate-100/80">
+                    CRM
+                  </div>
+                </div>
+              </button>
+            )}
+          </div>
+
+          {/* Center */}
+          <div className="hidden xl:flex justify-center">
+            <nav className="flex h-10 items-center gap-1 rounded-full border border-white/10 bg-[#081224] px-2 shadow-[0_8px_24px_rgba(0,0,0,0.22)]">
+              <button
+                type="button"
+                onClick={() => handleSafeNavigate(getDashboardPath())}
+                className={`rounded-full px-5 py-1 text-[14px] font-semibold transition ${
+                  isPathActive("/staff/dashBoard") ||
+                  isPathActive(getDashboardPath())
                     ? "bg-[#0F3A68] text-sky-300"
                     : "text-slate-300 hover:bg-white/5 hover:text-white"
                 }`}
               >
-                <span>{group.label}</span>
-                <FiChevronDown size={13} />
+                Dashboard
               </button>
 
-              {isReports ? (
-                <DesktopReportsDropdown groups={reports} />
-              ) : (
-                <DesktopDropdown items={group.items} />
-              )}
-            </div>
-          )
-        })}
-      </nav>
-    </div>
+              {menuGroups.map((group) => {
+                const isReports = group.label === "Reports"
+                const visibleItems = isReports
+                  ? getVisibleReportItems()
+                  : group.items.filter((i) => i.control)
 
-    {/* Right */}
-    <div className="ml-auto flex items-center gap-3">
-      {/* Icons */}
-      <div className="hidden xl:flex h-10 items-center gap-1 rounded-full border border-white/10 bg-[#081224] px-2 shadow-[0_8px_24px_rgba(0,0,0,0.22)]">
-        <button
-          type="button"
-          onClick={onNotificationClick}
-          title="Notifications"
-          className="relative flex h-9 w-9 items-center justify-center rounded-full text-slate-300 transition hover:bg-white hover:text-black"
-        >
-          <Bell size={15} strokeWidth={2.2} />
-          <IconBadge count={notificationCount} />
-        </button>
+                if (!visibleItems.length) return null
 
-        {/* <button
+                const activeGroup = isReports
+                  ? isReportsGroupActive()
+                  : isGroupActive(group.items)
+
+                return (
+                  <div key={group.label} className="group/menu relative">
+                    <button
+                      type="button"
+                      className={`flex items-center gap-1.5 rounded-full px-4 py-1 text-[14px] font-semibold transition ${
+                        activeGroup
+                          ? "bg-[#0F3A68] text-sky-300"
+                          : "text-slate-300 hover:bg-white/5 hover:text-white"
+                      }`}
+                    >
+                      <span>{group.label}</span>
+                      <FiChevronDown size={13} />
+                    </button>
+
+                    {isReports ? (
+                      <DesktopReportsDropdown groups={reports} />
+                    ) : (
+                      <DesktopDropdown items={group.items} />
+                    )}
+                  </div>
+                )
+              })}
+            </nav>
+          </div>
+
+          {/* Right */}
+          <div className="ml-auto flex items-center gap-3">
+            {/* Icons */}
+            <div className="hidden xl:flex h-10 items-center gap-1 rounded-full border border-white/10 bg-[#081224] px-2 shadow-[0_8px_24px_rgba(0,0,0,0.22)]">
+              <button
+                type="button"
+                onClick={onNotificationClick}
+                title="Notifications"
+                className="relative flex h-9 w-9 items-center justify-center rounded-full text-slate-300 transition hover:bg-white hover:text-black"
+              >
+                <Bell size={15} strokeWidth={2.2} />
+                <IconBadge count={notificationCount} />
+              </button>
+
+              {/* <button
           type="button"
           title="Messages"
           className="relative flex h-9 w-9 items-center justify-center rounded-full text-slate-300 transition hover:bg-white/5 hover:text-white"
@@ -2413,13 +2413,13 @@ export default function StaffHeader({
           <IconBadge count={messageCount} />
         </button> */}
 
-        <div className="mx-1 h-5 w-px bg-white/10" />
+              <div className="mx-1 h-5 w-px bg-white/10" />
 
-        <div className="flex h-9 w-9 items-center justify-center rounded-full text-slate-300 transition hover:bg-white/5 hover:text-white">
-          <ReportBugButton api={api} />
-        </div>
+              <div className="flex h-9 w-9 items-center justify-center rounded-full text-slate-300 transition hover:bg-white/5 hover:text-white">
+                <ReportBugButton api={api} />
+              </div>
 
-        {/* <button
+              {/* <button
           type="button"
           onClick={() => handleSafeNavigate("/staff/settings")}
           title="Settings"
@@ -2427,100 +2427,100 @@ export default function StaffHeader({
         >
           <Settings size={15} strokeWidth={2.2} />
         </button> */}
-      </div>
-
-      {/* Profile */}
-      <div className="relative" ref={userMenuRef}>
-        <button
-          type="button"
-          onClick={() => setShowUserMenu((prev) => !prev)}
-          className="flex h-10 items-center gap-2 rounded-full border border-white/10 bg-[#081224] pl-1.5 pr-3 text-white shadow-[0_8px_24px_rgba(0,0,0,0.22)] transition hover:bg-[#0d1830]"
-          aria-haspopup="menu"
-          aria-expanded={showUserMenu}
-        >
-          {user?.profileUrl ? (
-            <img
-              src={user.profileUrl}
-              alt="Profile"
-              className="h-9 w-9 rounded-full object-cover ring-1 ring-white/20"
-            />
-          ) : (
-            <FaUserCircle className="text-[30px] text-slate-300" />
-          )}
-
-          <div className="hidden w-18 text-left sm:block">
-            <div className="truncate text-[12.5px] font-semibold leading-4 text-white">
-              {user?.name?.toUpperCase() || "STAFF USER"}
             </div>
-            <div className="truncate text-[10.5px] leading-4 text-slate-400">
-              {user?.department?.department || "Staff"}
+
+            {/* Profile */}
+            <div className="relative" ref={userMenuRef}>
+              <button
+                type="button"
+                onClick={() => setShowUserMenu((prev) => !prev)}
+                className="flex h-10 items-center gap-2 rounded-full border border-white/10 bg-[#081224] pl-1.5 pr-3 text-white shadow-[0_8px_24px_rgba(0,0,0,0.22)] transition hover:bg-[#0d1830]"
+                aria-haspopup="menu"
+                aria-expanded={showUserMenu}
+              >
+                {user?.profileUrl ? (
+                  <img
+                    src={user.profileUrl}
+                    alt="Profile"
+                    className="h-9 w-9 rounded-full object-cover ring-1 ring-white/20"
+                  />
+                ) : (
+                  <FaUserCircle className="text-[30px] text-slate-300" />
+                )}
+
+                <div className="hidden w-18 text-left sm:block">
+                  <div className="truncate text-[12.5px] font-semibold leading-4 text-white">
+                    {user?.name?.toUpperCase() || "STAFF USER"}
+                  </div>
+                  <div className="truncate text-[10.5px] leading-4 text-slate-400">
+                    {user?.department?.department || "Staff"}
+                  </div>
+                </div>
+
+                <ChevronDown
+                  size={14}
+                  className={`hidden text-slate-400 transition-transform sm:block ${
+                    showUserMenu ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {showUserMenu && (
+                <div className="absolute right-0 top-[calc(100%+10px)] z-[9999] w-56 overflow-hidden rounded-2xl border border-white/10 bg-[#162033] py-1.5 shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
+                  <div className="border-b border-white/10 px-3.5 py-3">
+                    <div className="truncate text-[13px] font-semibold text-white">
+                      {user?.name || "Staff User"}
+                    </div>
+                    <div className="truncate text-[11px] text-slate-400">
+                      {user?.selected?.[0]?.branchName || user?.role || "Staff"}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-medium text-slate-100 transition hover:bg-[#1E293B]"
+                  >
+                    <User size={15} className="text-slate-400" />
+                    My Profile
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSafeNavigate("/staff/settings")}
+                    className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-medium text-slate-100 transition hover:bg-[#1E293B]"
+                  >
+                    <Settings size={15} className="text-slate-400" />
+                    Settings
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={onpasswordClick}
+                    className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-medium text-slate-100 transition hover:bg-[#1E293B]"
+                  >
+                    <FiLogOut size={15} className="rotate-180 text-slate-400" />
+                    Change Password
+                  </button>
+
+                  <div className="my-1 border-t border-white/10" />
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowUserMenu(false)
+                      logout()
+                    }}
+                    className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-medium text-rose-300 transition hover:bg-rose-500/10"
+                  >
+                    <FiLogOut size={15} />
+                    Logout
+                  </button>
+                </div>
+              )}
             </div>
           </div>
-
-          <ChevronDown
-            size={14}
-            className={`hidden text-slate-400 transition-transform sm:block ${
-              showUserMenu ? "rotate-180" : ""
-            }`}
-          />
-        </button>
-
-        {showUserMenu && (
-          <div className="absolute right-0 top-[calc(100%+10px)] z-[9999] w-56 overflow-hidden rounded-2xl border border-white/10 bg-[#162033] py-1.5 shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
-            <div className="border-b border-white/10 px-3.5 py-3">
-              <div className="truncate text-[13px] font-semibold text-white">
-                {user?.name || "Staff User"}
-              </div>
-              <div className="truncate text-[11px] text-slate-400">
-                {user?.selected?.[0]?.branchName || user?.role || "Staff"}
-              </div>
-            </div>
-
-            <button
-              type="button"
-              className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-medium text-slate-100 transition hover:bg-[#1E293B]"
-            >
-              <User size={15} className="text-slate-400" />
-              My Profile
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleSafeNavigate("/staff/settings")}
-              className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-medium text-slate-100 transition hover:bg-[#1E293B]"
-            >
-              <Settings size={15} className="text-slate-400" />
-              Settings
-            </button>
-
-            <button
-              type="button"
-              onClick={onpasswordClick}
-              className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-medium text-slate-100 transition hover:bg-[#1E293B]"
-            >
-              <FiLogOut size={15} className="rotate-180 text-slate-400" />
-              Change Password
-            </button>
-
-            <div className="my-1 border-t border-white/10" />
-
-            <button
-              type="button"
-              onClick={() => {
-                setShowUserMenu(false)
-                logout()
-              }}
-              className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-medium text-rose-300 transition hover:bg-rose-500/10"
-            >
-              <FiLogOut size={15} />
-              Logout
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  </div>
-</header>
+        </div>
+      </header>
 
       {mobileOpen && (
         <>
@@ -2578,7 +2578,8 @@ export default function StaffHeader({
                 type="button"
                 onClick={() => handleSafeNavigate(getDashboardPath())}
                 className={`mb-2 block w-full rounded-2xl px-4 py-3 text-left text-[14px] font-medium ${
-                  isPathActive("/staff/dashBoard") || isPathActive(getDashboardPath())
+                  isPathActive("/staff/dashBoard") ||
+                  isPathActive(getDashboardPath())
                     ? "bg-[#243145] text-white"
                     : "text-slate-200 hover:bg-[#1E293B]"
                 }`}

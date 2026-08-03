@@ -41,11 +41,11 @@ export const ProductRegistration = async (req, res) => {
         productData.defaultservices.length > 0 && {
         defaultservices: productData.defaultservices,
       }),
-status:productData?.status
+      status: productData?.status
     };
 
     const products = new Product(payload);
-await products.save();
+    await products.save();
     res.status(200).json({
       status: true,
       message: "Products created successfully"
@@ -83,7 +83,7 @@ export const EditProduct = async (req, res) => {
       productData.description || existingProduct.description
     existingProduct.defaultservices = productData.defaultservices || [];
     existingProduct.productorservicetype = productData?.productorservicetype
-existingProduct.status=productData?.status
+    existingProduct.status = productData?.status
     // Step 3: Save the changes to the database
     await existingProduct.save()
     res.status(200).json({ message: "Product edit successfully" })
@@ -134,6 +134,7 @@ export const GetallProducts = async (req, res) => {
 
 
       const products = await Product.find({
+        
         selected: {
           $elemMatch: {
             branch_id: { $in: decodedbranches }
@@ -141,11 +142,11 @@ export const GetallProducts = async (req, res) => {
         }
       })
         .populate({
-  path: "defaultservices",
-  populate: {
-    path: "selected.hsn_id"
-  }
-})
+          path: "defaultservices",
+          populate: {
+            path: "selected.hsn_id"
+          }
+        })
 
 
 
@@ -164,17 +165,18 @@ export const GetallProducts = async (req, res) => {
       if (branchselected) {
         const decodedbranches = JSON.parse(decodeURIComponent(branchselected))
         products = await Product.find({
+ 
           selected: {
             $elemMatch: {
               branch_id: { $in: decodedbranches }
             }
           }
         }).populate({ path: "selected.hsn_id", select: "onValue" }).populate({
-  path: "defaultservices",
-  populate: {
-    path: "selected.hsn_id"
-  }
-})
+          path: "defaultservices",
+          populate: {
+            path: "selected.hsn_id"
+          }
+        })
 
 
       } else {

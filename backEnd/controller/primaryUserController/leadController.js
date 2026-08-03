@@ -1943,7 +1943,7 @@ export const getNotificationData = async (req, res) => {
     const branchObjectId = new mongoose.Types.ObjectId(branchSelected);
 
     const query = {
-      leadBranch: branchObjectId,
+      // leadBranch: branchObjectId,
       activityLog: {
         $elemMatch: {
           taskallocatedTo: userObjectId,
@@ -1959,6 +1959,7 @@ export const getNotificationData = async (req, res) => {
         select: "customerName",
       })
       .lean();
+console.log("selectedlead",selectedLeads)
 
     const taskLeads = [];
 
@@ -2112,7 +2113,7 @@ export const getNotificationData = async (req, res) => {
     ///
 
     const followupquery = {
-      leadBranch: branchObjectId,
+      // leadBranch: branchObjectId,
       activityLog: {
         $elemMatch: {
           taskallocatedTo: userObjectId,

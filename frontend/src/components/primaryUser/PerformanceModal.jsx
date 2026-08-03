@@ -12,6 +12,7 @@ export function PerformanceModal({
   allperiods,
   onselectedPeriodChange,
   productlist,
+setproductList,
   onClose,
   summary,
   products,
@@ -27,6 +28,7 @@ export function PerformanceModal({
   selectedUser,
   activeUserId
 }) {
+console.log(products)
   console.log(periodmode)
   console.log(selectedperiod)
   console.log(selectedMonth)
@@ -138,29 +140,7 @@ export function PerformanceModal({
       )
       console.log(summary)
       setselectedDataPopup(summary)
-      //  console.log(loggedUser)
-      //     console.log(targetData)
-      //     // const filteredloggedUserItem = targetData?.userWiseResults.filter(
-      //     //   (item) => item.userId === loggedUser._id
-      //     // )
-      //     // console.log(filteredloggedUserItem)
-      //     const filteredselectedCategory =
-      //       filteredloggedUserItem[0]?.categories.filter(
-      //         (item) => item.categoryId === categoryId
-      //       )
-      //     console.log(filteredselectedCategory)
-      //     const summary = filteredselectedCategory?.reduce(
-      //       (acc, cur) => {
-      //         acc.target += Number(cur.target || 0)
-      //         acc.achieved += Number(cur.achieved || 0)
-      //         acc.balance += Number(cur.balance || 0)
-      //         return acc
-      //       },
-      //       { target: 0, achieved: 0, balance: 0 }
-      //     )
-      //     console.log(summary)
-      //     // setselectedDataPopup(summary)
-      //     console.log(targetData)
+     
     }
   }, [targetData])
 

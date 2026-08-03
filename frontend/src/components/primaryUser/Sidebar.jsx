@@ -3505,6 +3505,7 @@ const SidebarBlock = ({ className = "", children }) => (
 )
 
 const CategoryCard = ({ item, index, onClick }) => {
+console.log(item)
   const theme = CATEGORY_THEMES[index % CATEGORY_THEMES.length]
   const Icon = theme.icon
   const achieved = Number(item?.achievedamount || item?.achieved || 0)
@@ -3562,7 +3563,7 @@ const CategoryListIconFirst = ({ categorylist, handleMoreClick, sidebarOpen }) =
               key={`${item.categoryId || item.categoryName}-${index}`}
               item={item}
               index={index}
-              onClick={(categoryId) => handleMoreClick?.(categoryId)}
+              onClick={(categoryId,categoryName) => handleMoreClick?.(categoryId,categoryName)}
             />
           ))
         ) : (
