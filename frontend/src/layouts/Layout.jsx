@@ -178,6 +178,9 @@ console.log(periodMode)
   const [notificationPopup, setNotificationPopup] = useState(false)
   // const [loggedUser, setLoggedUser] = useState(null)
   // console.log(loggedUser)
+  const [productlist, setproductList] = useState([])
+ const [selectedCategory, setselectedCategory] = useState(null)
+console.log(selectedCategory)
   const [changepasswordOpen, setchangepasswordOpen] = useState(false)
   const [performanceModalOpen, setperformanceModalOpen] = useState(false)
   const [categoryId, setcategoryId] = useState(null)
@@ -194,6 +197,7 @@ console.log(targetData)
   const selectedBranch = useSelector(
     (state) => state.companyBranch.selectedBranch
   )
+console.log(selectedBranch)
 const loggedUser=useSelector((state)=>state.auth.user)
 console.log(loggedUser)
   const hideHeaderRoutes = [
@@ -318,7 +322,8 @@ onavataropenClick={()=>setAvatarOpen(true)}
             targetData={targetData}
 selectedMonths={selectedMonth}
 yearSelected={selectedYear}
-
+setselectedCategory={setselectedCategory}
+setproductList={setproductList}
             setcategoryId={setcategoryId}
 parentperiodmode={periodMode}
  onselectedPeriodChange={(val, val2) => {
@@ -362,12 +367,18 @@ parentperiodmode={periodMode}
       />
       <PerformanceModal
         open={performanceModalOpen}
-        onClose={() => setperformanceModalOpen(false)}
+        onClose={() =>{setperformanceModalOpen(false)
+setselectedCategory(null)
+setproductList([])
+}}
         targetData={targetData}
  onselectedPeriodChange={(val, val2) => {
           setSelectedMonth(val2)
           setselectedPeriod(val)
         }}
+setproductList={setproductList}
+productlist={productlist}
+category={selectedCategory}
         loggedUser={loggedUser}
         categoryId={categoryId}
  onMonthChange={(val) => {
