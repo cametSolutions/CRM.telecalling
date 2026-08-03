@@ -35,8 +35,10 @@ import AdminHeader from "../../../header/AdminHeader"
 import StaffHeader from "../../../header/StaffHeader"
 import { getLocalStorageItem } from "../../../helper/localstorage"
 const ReallocationTable = () => {
-const reduxselectedBranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
-console.log(reduxselectedBranch)
+  const reduxselectedBranch = useSelector(
+    (branch) => branch.companyBranch.selectedBranch
+  )
+  console.log(reduxselectedBranch)
   console.log("hd")
   const { label } = useParams()
   console.log(label)
@@ -44,7 +46,7 @@ console.log(reduxselectedBranch)
 
   const [toggleLoading, setToggleLoading] = useState(false)
   const [isClosed, setIsclosed] = useState(false)
-console.log(isClosed)
+  console.log(isClosed)
   const [selectedLeadId, setselectedLeadId] = useState(null)
   const [selectedType, setselectedType] = useState(null)
   const [selectedData, setselectedData] = useState({})
@@ -198,8 +200,10 @@ console.log(isClosed)
 
       // Combine allusers and allAdmins
 
-      const filter = allusers.filter((staff) =>
-        staff.selected.some((s) => selectedCompanyBranch === s.branch_id)
+      const filter = allusers.filter(
+        (staff) =>
+          staff.isVerified === true &&
+          staff.selected.some((s) => selectedCompanyBranch === s.branch_id)
       )
       const combinedUsers = [...filter, ...allAdmins]
       setAllocationOptions(
@@ -810,7 +814,7 @@ console.log(isClosed)
                           >
                             <button
                               onClick={() => {
-console.log("hhh")
+                                console.log("hhh")
                                 const breadcrumb = [
                                   { label: "Lead", path: "", state: "" },
                                   {
@@ -818,7 +822,7 @@ console.log("hhh")
                                     path:
                                       loggedUser?.role === "Admin"
                                         ? "/admin/transaction/lead/leadReallocation"
-                                        : "/staff/transaction/lead/leadReallocation",
+                                        : "/staff/transaction/lead/leadReallocation"
                                     // state: {
                                     //   dates,
                                     //   ownLead,
@@ -867,19 +871,27 @@ console.log("hhh")
                                     ?.remarks
                                 }
                               </span> */}
-<span className="mx-2 relative group inline-block max-w-[220px] align-middle">
-  <span className="block truncate text-[12px] text-slate-700">
-    {item?.activityLog?.[item.activityLog.length - 1]?.remarks || "-"}
-  </span>
+                              <span className="mx-2 relative group inline-block max-w-[220px] align-middle">
+                                <span className="block truncate text-[12px] text-slate-700">
+                                  {item?.activityLog?.[
+                                    item.activityLog.length - 1
+                                  ]?.remarks || "-"}
+                                </span>
 
-  {item?.activityLog?.[item.activityLog.length - 1]?.remarks && (
-    <div className="pointer-events-none absolute left-0 top-full z-50 mt-1 hidden w-80 rounded-md border border-slate-200 bg-slate-700 px-3 py-2 shadow-lg group-hover:block">
-      <p className="text-[11px] leading-4 text-white whitespace-normal break-words">
-        {item?.activityLog?.[item.activityLog.length - 1]?.remarks}
-      </p>
-    </div>
-  )}
-</span>
+                                {item?.activityLog?.[
+                                  item.activityLog.length - 1
+                                ]?.remarks && (
+                                  <div className="pointer-events-none absolute left-0 top-full z-50 mt-1 hidden w-80 rounded-md border border-slate-200 bg-slate-700 px-3 py-2 shadow-lg group-hover:block">
+                                    <p className="text-[11px] leading-4 text-white whitespace-normal break-words">
+                                      {
+                                        item?.activityLog?.[
+                                          item.activityLog.length - 1
+                                        ]?.remarks
+                                      }
+                                    </p>
+                                  </div>
+                                )}
+                              </span>
                             </div>
                           </td>
                           {/* <td className="border border-t-0 border-gray-400 "></td> */}

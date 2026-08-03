@@ -275,6 +275,8 @@ export const StaticSidebar = ({
   yearSelected,
   setcategoryId,
   onselectedPeriodChange,
+  setselectedCategory,
+setproductList,
   // setselectedPeriod,
   // handleMoreClick,
   setselectedCompanyBranch,
@@ -325,6 +327,9 @@ export const StaticSidebar = ({
       selectedYear &&
       periodMode &&
       `/target/gettargetresult?month=${selectedMonth}&year=${selectedYear}&periodMode=${periodMode}&selectedBranch=${selectedBranch}`
+  )
+ const { data: branchProduct } = UseFetch(
+    `/product/getallbranchProduct?branch=${selectedBranch}`
   )
   console.log(selectedMonth)
   console.log(data)
@@ -425,9 +430,10 @@ export const StaticSidebar = ({
       console.log(updatedCategories)
 
       setcategorylist(updatedCategories)
-    }else{
-setTargetData([])
-setcategorylist([])}
+    } else {
+      setTargetData([])
+      setcategorylist([])
+    }
   }, [data, user, parenttargetData, setselectedPeriod])
 
   const handlepasswordChange = async (payload) => {
@@ -445,15 +451,30 @@ setcategorylist([])}
     }
   }
 
-
   const toggleSidebar = () => {
     if (!isMobile) {
       setSidebarOpen((prev) => !prev)
     }
   }
-  const handleMoreClick = (categoryid) => {
+  const handleMoreClick = (categoryid, categoryName) => {
+console.log(categoryName)
     console.log(categoryid)
     console.log("hhh")
+ const filteredList = branchProduct
+        .filter(
+          (item) =>
+            item.selected?.some(
+              (selectedItem) =>
+                String(selectedItem.category_id) ===
+                String(categoryid)
+            ) || String(item.category_id) === String(categoryid)
+        )
+        .map((item) => item.productName || item.serviceName)
+      setproductList(filteredList)
+    setselectedCategory({
+      Id: categoryid,
+      categoryName
+    })
     setcategoryId(categoryid)
     onperformanceModalClick()
   }
@@ -501,141 +522,135 @@ setcategorylist([])}
   }
 
   return (
-   
-//     <>
-//       <div
-//         className={`${
-//           isMobile
-//             ? `fixed left-0 top-0 z-40 h-screen ${
-//                 sidebarOpen ? "" : "pointer-events-none"
-//               }`
-//             : "relative h-full"
-//         }`}
-//       >
-//         <div
-//           className={`h-full transition-transform duration-300 ease-in-out ${
-//             isMobile
-//               ? sidebarOpen
-//                 ? "translate-x-0 pointer-events-auto"
-//                 : "-translate-x-full pointer-events-none"
-//               : "translate-x-0"
-//           }`}
-//         >
-//           <div
-//             className={`h-full ${
-//               isMobile ? "w-[74vw] max-w-[280px] bg-white shadow-2xl" : "w-auto"
-//             }`}
-//           >
-//             {targetData && (
-//               <Sidebar
-//                 handleMoreClick={handleMoreClick}
-//                 onpasswordClick={onpasswordClick}
-//                 onperformanceModalClick={onperformanceModalClick}
-//                 onLogoutClick={logout}
-// selectedYear={selectedYear}
-// setSelectedYear={setSelectedYear}
-//                 targetData={targetData}
-//                 onselectedPeriodChange={onselectedPeriodChange}
-//                 onavataropenClick={onavataropenClick}
-//                 achievedPoints={achievedPoints}
-//                 sidebarOpen={sidebarOpen}
-//                 toggleSidebar={toggleSidebar}
-//                 user={user}
-//                 selectedBranch={selectedBranch}
-//                 setselectedBranch={handleBranchChange}
-//                 branchOptions={branchOptions}
-//                 categorylist={categorylist}
-//                 targetLoading={targetLoading}
-//                 BranchSelect={BranchSelect}
-//                 SkeletonTable={SkeletonTable}
-//                 setAvatarOpen={setAvatarOpen}
-//                 onPasswordChange={handlepasswordChange}
-//                 isMobile={isMobile}
-//               />
-//             )}
-//           </div>
-//         </div>
-//       </div>
+    //     <>
+    //       <div
+    //         className={`${
+    //           isMobile
+    //             ? `fixed left-0 top-0 z-40 h-screen ${
+    //                 sidebarOpen ? "" : "pointer-events-none"
+    //               }`
+    //             : "relative h-full"
+    //         }`}
+    //       >
+    //         <div
+    //           className={`h-full transition-transform duration-300 ease-in-out ${
+    //             isMobile
+    //               ? sidebarOpen
+    //                 ? "translate-x-0 pointer-events-auto"
+    //                 : "-translate-x-full pointer-events-none"
+    //               : "translate-x-0"
+    //           }`}
+    //         >
+    //           <div
+    //             className={`h-full ${
+    //               isMobile ? "w-[74vw] max-w-[280px] bg-white shadow-2xl" : "w-auto"
+    //             }`}
+    //           >
+    //             {targetData && (
+    //               <Sidebar
+    //                 handleMoreClick={handleMoreClick}
+    //                 onpasswordClick={onpasswordClick}
+    //                 onperformanceModalClick={onperformanceModalClick}
+    //                 onLogoutClick={logout}
+    // selectedYear={selectedYear}
+    // setSelectedYear={setSelectedYear}
+    //                 targetData={targetData}
+    //                 onselectedPeriodChange={onselectedPeriodChange}
+    //                 onavataropenClick={onavataropenClick}
+    //                 achievedPoints={achievedPoints}
+    //                 sidebarOpen={sidebarOpen}
+    //                 toggleSidebar={toggleSidebar}
+    //                 user={user}
+    //                 selectedBranch={selectedBranch}
+    //                 setselectedBranch={handleBranchChange}
+    //                 branchOptions={branchOptions}
+    //                 categorylist={categorylist}
+    //                 targetLoading={targetLoading}
+    //                 BranchSelect={BranchSelect}
+    //                 SkeletonTable={SkeletonTable}
+    //                 setAvatarOpen={setAvatarOpen}
+    //                 onPasswordChange={handlepasswordChange}
+    //                 isMobile={isMobile}
+    //               />
+    //             )}
+    //           </div>
+    //         </div>
+    //       </div>
 
-//       {isMobile && sidebarOpen && (
-//         <button
-//           type="button"
-//           aria-label="Close sidebar overlay"
-//           onClick={() => setSidebarOpen(false)}
-//           className="fixed inset-0 z-30 bg-black/40"
-//         />
-//       )}
-//     </>
+    //       {isMobile && sidebarOpen && (
+    //         <button
+    //           type="button"
+    //           aria-label="Close sidebar overlay"
+    //           onClick={() => setSidebarOpen(false)}
+    //           className="fixed inset-0 z-30 bg-black/40"
+    //         />
+    //       )}
+    //     </>
 
-
-
-
-  <>
-    <div
-      className={`${
-        isMobile
-          ? `fixed left-0 top-0 z-40 h-screen ${
-              sidebarOpen ? "" : "pointer-events-none"
-            }`
-          : "relative h-full"
-      }`}
-    >
+    <>
       <div
-        className={`h-full transition-transform duration-300 ease-in-out ${
+        className={`${
           isMobile
-            ? sidebarOpen
-              ? "translate-x-0 pointer-events-auto"
-              : "-translate-x-full pointer-events-none"
-            : "translate-x-0"
+            ? `fixed left-0 top-0 z-40 h-screen ${
+                sidebarOpen ? "" : "pointer-events-none"
+              }`
+            : "relative h-full"
         }`}
       >
         <div
-          className={`h-full ${
-            isMobile ? "w-[74vw] max-w-[320px]" : "w-auto"
+          className={`h-full transition-transform duration-300 ease-in-out ${
+            isMobile
+              ? sidebarOpen
+                ? "translate-x-0 pointer-events-auto"
+                : "-translate-x-full pointer-events-none"
+              : "translate-x-0"
           }`}
         >
-          {targetData && (
-            <Sidebar
-              handleMoreClick={handleMoreClick}
-              onpasswordClick={onpasswordClick}
-              onperformanceModalClick={onperformanceModalClick}
-              onLogoutClick={logout}
-              selectedYear={selectedYear}
-              setSelectedYear={setSelectedYear}
-              targetData={targetData}
-              onselectedPeriodChange={onselectedPeriodChange}
-              onavataropenClick={onavataropenClick}
-              achievedPoints={achievedPoints}
-              sidebarOpen={sidebarOpen}
-              toggleSidebar={toggleSidebar}
-              user={user}
-              selectedBranch={selectedBranch}
-              setselectedBranch={handleBranchChange}
-              branchOptions={branchOptions}
-              categorylist={categorylist}
-              targetLoading={targetLoading}
-              BranchSelect={BranchSelect}
-              SkeletonTable={SkeletonTable}
-              setAvatarOpen={setAvatarOpen}
-              onPasswordChange={handlepasswordChange}
-              isMobile={isMobile}
-            />
-          )}
+          <div
+            className={`h-full ${
+              isMobile ? "w-[74vw] max-w-[320px]" : "w-auto"
+            }`}
+          >
+            {targetData && (
+              <Sidebar
+                handleMoreClick={handleMoreClick}
+                onpasswordClick={onpasswordClick}
+                onperformanceModalClick={onperformanceModalClick}
+                onLogoutClick={logout}
+                selectedYear={selectedYear}
+                setSelectedYear={setSelectedYear}
+                targetData={targetData}
+                onselectedPeriodChange={onselectedPeriodChange}
+                onavataropenClick={onavataropenClick}
+                achievedPoints={achievedPoints}
+                sidebarOpen={sidebarOpen}
+                toggleSidebar={toggleSidebar}
+                user={user}
+                selectedBranch={selectedBranch}
+                setselectedBranch={handleBranchChange}
+                branchOptions={branchOptions}
+                categorylist={categorylist}
+                targetLoading={targetLoading}
+                BranchSelect={BranchSelect}
+                SkeletonTable={SkeletonTable}
+                setAvatarOpen={setAvatarOpen}
+                onPasswordChange={handlepasswordChange}
+                isMobile={isMobile}
+              />
+            )}
+          </div>
         </div>
       </div>
-    </div>
 
-    {isMobile && sidebarOpen && (
-      <button
-        type="button"
-        aria-label="Close sidebar overlay"
-        onClick={() => setSidebarOpen(false)}
-        className="fixed inset-0 z-30 bg-black/35 backdrop-blur-[2px]"
-      />
-    )}
-  </>
-
-
+      {isMobile && sidebarOpen && (
+        <button
+          type="button"
+          aria-label="Close sidebar overlay"
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 z-30 bg-black/35 backdrop-blur-[2px]"
+        />
+      )}
+    </>
   )
 }
 

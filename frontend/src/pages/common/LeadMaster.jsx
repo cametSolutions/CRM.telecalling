@@ -2425,7 +2425,7 @@ console.log(loggeduser)
         (item) =>
           item?.productorservicetype !== null &&
           item?.productorservicetype !== undefined &&
-          String(item?.productorservicetype).trim() !== ""
+          String(item?.productorservicetype).trim() !== ""&&item?.status==="Active"
       )
       console.log(productsWithType)
       setLeadList(productsWithType)
