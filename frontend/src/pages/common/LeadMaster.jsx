@@ -2861,6 +2861,9 @@ const LeadMaster = ({
       })),
     []
   )
+console.log(countryOptions)
+const e=countryOptions.filter((item)=>item.label==="Oman")
+console.log(e)
   const addTemporaryLicense = (newLicense) => {
     setTemporaryCustomerTableData((prev) => {
       const exists = prev.some(
