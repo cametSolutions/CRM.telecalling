@@ -1932,10 +1932,9 @@ const LeadMaster = ({
   seteditLoadingState,
   showmessage,
   showpopupMessage,
-  selectedcompanyBranch,
-
+  selectedcompanyBranch
 }) => {
-console.log(process)
+  console.log(process)
   console.log(Breadcrumblist)
   console.log(from)
   console.log(Data)
@@ -1966,8 +1965,10 @@ console.log(process)
     reset: resetModal,
     watch
   } = useForm()
-const dispatch=useDispatch()
-const loggeduserBranch=useSelector((branch)=>branch.companyBranch.loggeduserbranches)
+  const dispatch = useDispatch()
+  const loggeduserBranch = useSelector(
+    (branch) => branch.companyBranch.loggeduserbranches
+  )
 
   const [productOrserviceSelections, setProductorServiceSelections] = useState(
     {}
@@ -2042,11 +2043,10 @@ const loggeduserBranch=useSelector((branch)=>branch.companyBranch.loggeduserbran
   const [loggeduser, setloggedUser] = useState(null)
   const [allstaff, setallStaffs] = useState([])
   const [selectedBranch, setSelectedBranch] = useState(selectedcompanyBranch)
-console.log(selectedBranch)
-const showInput =
-  Array.isArray(loggeduserBranch) &&
-  loggeduserBranch.includes(selectedBranch);
-console.log(showInput)
+  console.log(selectedBranch)
+  const showInput =
+    Array.isArray(loggeduserBranch) && loggeduserBranch.includes(selectedBranch)
+  console.log(showInput)
   const [tasklist, settasklist] = useState([])
   const [allcustomer, setallcustomer] = useState([])
   const [selectedUserName, setselecteduserName] = useState(null)
@@ -2242,9 +2242,7 @@ console.log(showInput)
   }
 
   const canSelfAllocate =
-    loggeduser?.department?.code === "DEPARTMENT3" ||
-    
-console.log(loggeduser)
+    loggeduser?.department?.code === "DEPARTMENT3" || console.log(loggeduser)
   useEffect(() => {
     console.log("jjjj")
     setSelectedBranch(selectedcompanyBranch)
@@ -2421,11 +2419,20 @@ console.log(loggeduser)
       )
       setPartner(filteredPartners)
       const combinedlead = [...productData]
+      // const productsWithType = productData.filter(
+      //   (item) =>
+      //     item?.productorservicetype !== null &&
+      //     item?.productorservicetype !== undefined &&
+      //     String(item?.productorservicetype).trim() !== ""&&item?.status==="Active"
+      // )
       const productsWithType = productData.filter(
         (item) =>
-          item?.productorservicetype !== null &&
-          item?.productorservicetype !== undefined &&
-          String(item?.productorservicetype).trim() !== ""&&item?.status==="Active"
+          item?.productorservicetype != null &&
+          String(item.productorservicetype).trim() !== "" &&
+          (item.status === undefined ||
+            item.status === null ||
+            item.status === "" ||
+            item.status === "Active")
       )
       console.log(productsWithType)
       setLeadList(productsWithType)
@@ -2499,8 +2506,8 @@ console.log(loggeduser)
       setValueMain("mobile", Data[0]?.customerName?.mobile)
       setValueMain("phone", Data[0]?.customerName?.phone)
       setValueMain("email", Data[0]?.customerName?.email)
-setValueMain("phone",Data[0].customerName.landline)
-console.log(Data[0].customerName.landline)
+      setValueMain("phone", Data[0].customerName.landline)
+      console.log(Data[0].customerName.landline)
       setValueMain("remark", Data[0].remark)
       setSelectedCustomer(Data[0]?.customerName)
       console.log(Data[0].leadFor)
@@ -2513,7 +2520,7 @@ console.log(Data[0].customerName.landline)
         itemType: item?.productorServicemodel,
         productPrice: item?.productPrice,
         hsn: item?.hsn,
-actualHsn:item?.actualHsn,
+        actualHsn: item?.actualHsn,
         netAmount: item?.netAmount,
         price: item?.price,
         company_id: item?.company_id,
@@ -2680,7 +2687,7 @@ actualHsn:item?.actualHsn,
             })) || []
 
         console.log("d")
-console.log(selectedcustomerlicenseandproduct)
+        console.log(selectedcustomerlicenseandproduct)
         setOriginalCustomerTableData(selectedcustomerlicenseandproduct)
         setTemporaryCustomerTableData([])
         setcustomerTableData(selectedcustomerlicenseandproduct)
@@ -3155,8 +3162,8 @@ console.log(selectedcustomerlicenseandproduct)
     console.log("hhh")
     if (defaultCountry) {
       setSelectedCountry(defaultCountry)
-console.log(defaultCountry)
-console.log(defaultCountry.value)
+      console.log(defaultCountry)
+      console.log(defaultCountry.value)
       setValueModal("country", defaultCountry.value)
     }
   }, [defaultCountry])
@@ -3192,7 +3199,7 @@ console.log(defaultCountry.value)
       setValueModal("registrationType", Data[0]?.customerName?.registrationType)
       setValueModal("gstNo", Data[0]?.customerName?.gstNo)
       setValueModal("city", Data[0]?.customerName?.city)
-setValueModal("country", Data[0]?.customerName?.country)
+      setValueModal("country", Data[0]?.customerName?.country)
       console.log("hhh")
     }
   }
@@ -3548,16 +3555,16 @@ setValueModal("country", Data[0]?.customerName?.country)
     console.log(term)
     console.log(hsn)
     console.log(productType)
-console.log(detailsForm)
+    console.log(detailsForm)
     setDetailsForm((prev) => ({
       ...prev,
       taggeddata: (prev.taggeddata || []).map((row, i) => {
         if (i !== rowIndex) return row
 
         const originalHsn = Number(
-          row?.originalHsn ??row?.actualHsn ?? row?.hsn ?? 0
+          row?.originalHsn ?? row?.actualHsn ?? row?.hsn ?? 0
         )
-// console.log(row.actualHsn)
+        // console.log(row.actualHsn)
         const currentLeadAmount = Number(row?.taxexclusiveAmount || 0)
         const currentNextDueAmount = Number(row?.nextDueAmount || 0)
         const currentTotalLeadAmount = Number(row?.taxinclusiveamount || 0)
@@ -3629,8 +3636,8 @@ console.log(detailsForm)
           console.log(checked)
           if (!checked) {
             const taxAmount = (originalHsn / 100) * currentLeadAmount
-console.log(taxAmount)
-console.log(originalHsn)
+            console.log(taxAmount)
+            console.log(originalHsn)
             console.log(taxAmount)
             console.log(currentTotalLeadAmount)
             updatedRow.leadTax = 0
@@ -4206,7 +4213,7 @@ console.log(originalHsn)
             //   console.log("hh")
             //   return `Lead amount is required for ${row?.productName || row?.productorServiceName} ${tag?.licensenumber},not less than 0`
             // }
-            if (Number(productAmount) <= 0&&!haveprimaryProduct) {
+            if (Number(productAmount) <= 0 && !haveprimaryProduct) {
               console.log("hh")
               return `Lead amount is required for ${
                 row?.productName || row?.productorServiceName
@@ -4702,7 +4709,7 @@ console.log(originalHsn)
                     String(tag?.licensenumber) === String(lic?.licenseNumber)
                 )
               : null
-console.log(existing)
+            console.log(existing)
             // 1. Pick the one WALLET product row (or all, but you showed one)
             const primaryProduct = Array.isArray(filteredproduct)
               ? filteredproduct[0] // or a .find if there are many
@@ -4780,12 +4787,10 @@ console.log(existing)
               nextDueTax:
                 existing?.nextDueTax ??
                 existingTag?.nextDueTax ??
-                
-                item?.hsn??item?.actualHsn ,
+                item?.hsn ??
+                item?.actualHsn,
               discountAmount:
-                existing?.discountAmount ??
-              
-                item?.discountAmount??0,
+                existing?.discountAmount ?? item?.discountAmount ?? 0,
               noofusers:
                 existing?.noofusers ??
                 existingTag?.noofusers ??
@@ -5121,12 +5126,12 @@ convertexcel
                       value={selectedBranch}
                       disabled={isReadOnly}
                       onChange={(e) => {
-console.log(e.target.value)
+                        console.log(e.target.value)
                         setDuplicateWarning("")
                         setSelectedBranch(e.target.value)
-console.log("hhh")
-//           dispatch(setsliceselectedBranch(e.target.value))
-// console.log("hhh")
+                        console.log("hhh")
+                        //           dispatch(setsliceselectedBranch(e.target.value))
+                        // console.log("hhh")
                         setValueMain("customerName", "")
                         setSelectedCustomer(null)
                         setcustomerTableData([])
@@ -5267,7 +5272,7 @@ console.log("hhh")
                   </div>
                 </div>
 
-                {process === "Registration" && selfAllocation && showInput&&(
+                {process === "Registration" && selfAllocation && showInput && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-1">
@@ -5919,7 +5924,7 @@ console.log("hhh")
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 pt-2">
                   {/* left: self allocation or lead id */}
                   <div className="w-full sm:w-1/2">
-                    {process === "Registration"&&showInput ? (
+                    {process === "Registration" && showInput ? (
                       <>
                         <label className="block text-xs font-semibold text-gray-600 mb-1">
                           Self Allocation / Other
@@ -5933,9 +5938,10 @@ console.log("hhh")
                               v === true || v === false
                                 ? true
                                 : "This field is required",
-                            onChange: (e) =>{
-setValueMain("allocationType","followup")
-                              setselfAllocation(e.target.value === "true")}
+                            onChange: (e) => {
+                              setValueMain("allocationType", "followup")
+                              setselfAllocation(e.target.value === "true")
+                            }
                           })}
                           defaultValue="false" // default is Allocate To Other
                           className={`w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8] ${
@@ -9018,7 +9024,9 @@ setValueMain("allocationType","followup")
                                                           rowIndex,
                                                           e.target.checked,
                                                           "leadTax",
-                                                          e.target.checked?tag?.leadTax:0,
+                                                          e.target.checked
+                                                            ? tag?.leadTax
+                                                            : 0,
                                                           detailsForm?.productType
                                                         )
                                                       }}
