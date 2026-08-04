@@ -14,6 +14,7 @@ import models from "../../model/auth/authSchema.js"
 import { sendEmail } from "../../helper/nodemailer.js"
 const { Staff, Admin } = models
 import mongoose, { isValidObjectId } from "mongoose"
+import Product from "../../model/primaryUser/productSchema.js"
 import Holymaster from "../../model/secondaryUser/holydaymasterSchema.js"
 import LeadMaster from "../../model/primaryUser/leadmasterSchema.js"
 export const duplicate = async (req, res) => {
@@ -2444,16 +2445,504 @@ class AppError extends Error {
   }
 }
 
+// export const CustomerEdit = async (req, res) => {
+//   const { customerData, tableData = [] } = req.body
+//   const { customerid } = req.query
+
+
+//   // ---- Fast-fail validation before we ever open a session ----
+//   if (!customerid || !customerData) {
+//     return res
+//       .status(400)
+//       .json({ message: "Customer ID and data are required" })
+//   }
+
+//   if (!mongoose.Types.ObjectId.isValid(customerid)) {
+//     return res.status(400).json({ message: "Invalid customer ID" })
+//   }
+
+//   const session = await mongoose.startSession()
+
+//   try {
+//     session.startTransaction()
+
+//     const objectId = new mongoose.Types.ObjectId(customerid)
+
+//     const existingCustomer = await Customer.findById(objectId).session(session)
+//     if (!existingCustomer) {
+//       throw new AppError("Customer not found", 404)
+//     }
+
+//     Object.assign(existingCustomer, customerData)
+
+//     const keyOf = (item) => String(item?.productid || item?.product_id)
+
+//     const existingMap = new Map(
+//       existingCustomer.selected.map((item) => [keyOf(item), item])
+//     )
+
+//     const incomingKeys = new Set(tableData.map((item) => keyOf(item)))
+
+//     // Anything already selected that this payload didn't touch — keep as-is.
+//     const untouchedExisting = existingCustomer.selected.filter(
+//       (item) => !incomingKeys.has(keyOf(item))
+//     )
+
+//     // Every item in the incoming payload: merge taggeddata if it already
+//     // existed, or add it outright if it's a brand-new selection (this is
+//     // the case that was silently getting dropped before — a product with
+//     // no matching existingItem never got visited by the old .map()).
+//     const mergedOrNew = tableData.map((incomingItem) => {
+//       const existingItem = existingMap.get(keyOf(incomingItem))
+
+//       if (!existingItem) return incomingItem
+
+//       const mergedTaggedData = [...(existingItem.taggeddata || [])]
+
+//       ;(incomingItem.taggeddata || []).forEach((incomingTag) => {
+//         const tagIndex = mergedTaggedData.findIndex(
+//           (tag) =>
+//             String(tag.licensenumber) === String(incomingTag.licensenumber)
+//         )
+
+//         if (tagIndex >= 0) {
+//           mergedTaggedData[tagIndex] = {
+//             ...mergedTaggedData[tagIndex],
+//             ...incomingTag
+//           }
+//         } else {
+//           mergedTaggedData.push(incomingTag)
+//         }
+//       })
+
+//       return {
+//         ...existingItem,
+//         ...incomingItem,
+//         taggeddata: mergedTaggedData
+//       }
+//     })
+// console.log("untouced",untouchedExisting)
+// console.log("merged",mergedOrNew)
+//     existingCustomer.selected = [...untouchedExisting, ...mergedOrNew]
+
+//     await existingCustomer.save({ session })
+
+//     const directLicenseNumbers = tableData
+//       .filter(
+//         (item) =>
+//           item?.licensenumber !== null &&
+//           item?.licensenumber !== undefined &&
+//           String(item?.licensenumber).trim() !== ""
+//       )
+//       .map((item) => ({
+//         licensenumber: Number(item.licensenumber),
+//         productid: item?.productid || item?.product_id || null
+//       }))
+
+//     // NOTE: kept from the original — tagged license numbers are computed
+//     // but not currently merged into `allLicenses`. Left as-is since I
+//     // don't know if that's intentional; flip the line below if you want
+//     // tagged licenses included too:
+//     // const allLicenses = [...directLicenseNumbers, ...taggedLicenseNumbers]
+//     const taggedLicenseNumbers = tableData.flatMap((item) =>
+//       Array.isArray(item?.taggeddata)
+//         ? item.taggeddata
+//             .filter(
+//               (tag) =>
+//                 tag?.licensenumber !== null &&
+//                 tag?.licensenumber !== undefined &&
+//                 String(tag?.licensenumber).trim() !== ""
+//             )
+//             .map((tag) => ({
+//               licensenumber: Number(tag.licensenumber),
+//               productid: item?.productid || item?.product_id || null
+//             }))
+//         : []
+//     )
+
+//     const allLicenses = [...directLicenseNumbers]
+
+//     const uniqueLicenseMap = new Map()
+//     for (const item of allLicenses) {
+//       if (!uniqueLicenseMap.has(String(item.licensenumber))) {
+//         uniqueLicenseMap.set(String(item.licensenumber), item)
+//       }
+//     }
+
+//     const uniqueLicenses = Array.from(uniqueLicenseMap.values())
+//     const licenseNumbers = uniqueLicenses.map((item) => item.licensenumber)
+
+//     if (licenseNumbers.length > 0) {
+//       const existingLicenses = await License.find({
+//         customerName: existingCustomer._id,
+//         licensenumber: { $in: licenseNumbers }
+//       })
+//         .session(session)
+//         .select("licensenumber")
+
+//       const existingLicenseSet = new Set(
+//         existingLicenses.map((item) => String(item.licensenumber))
+//       )
+
+//       const newLicenses = uniqueLicenses.filter(
+//         (item) => !existingLicenseSet.has(String(item.licensenumber))
+//       )
+
+//       if (newLicenses.length > 0) {
+//         const licenseDocs = newLicenses.map((item) => ({
+//           products: item.productid,
+//           customerName: existingCustomer._id,
+//           licensenumber: item.licensenumber
+//         }))
+
+//         await License.insertMany(licenseDocs, { session })
+//       }
+//     }
+
+//     await session.commitTransaction()
+
+//     return res.status(200).json({ message: "Customer updated successfully" })
+//   } catch (error) {
+//     // Roll back every write made in this session (customer save +
+//     // license inserts) so a failure never leaves partial data behind.
+//     await session.abortTransaction()
+
+//     console.error("Error updating customer:", error.message)
+
+//     if (error instanceof AppError) {
+//       return res.status(error.statusCode).json({ message: error.message })
+//     }
+
+//     // Mongoose validation errors -> 400 instead of a generic 500
+//     if (error.name === "ValidationError") {
+//       return res.status(400).json({ message: error.message })
+//     }
+
+//     // Invalid ObjectId thrown further down the pipeline -> 400
+//     if (error.name === "CastError") {
+//       return res.status(400).json({ message: "Invalid ID format" })
+//     }
+
+//     return res.status(500).json({ message: "Internal server error" })
+//   } finally {
+//     session.endSession()
+//   }
+// }
+// export const CustomerEdit = async (req, res) => {
+//   const { customerData, tableData } = req.body
+//   const { customerid } = req.query
+
+//   if (!customerid || !customerData) {
+//     return res.status(400).json({ message: "Customer ID and data are required" })
+//   }
+
+//   if (!mongoose.Types.ObjectId.isValid(customerid)) {
+//     return res.status(400).json({ message: "Invalid customer ID" })
+//   }
+
+//   const session = await mongoose.startSession()
+
+//   try {
+//     session.startTransaction()
+
+//     const objectId = new mongoose.Types.ObjectId(customerid)
+//     const existingCustomer = await Customer.findById(objectId).session(session)
+
+//     if (!existingCustomer) {
+//       throw new AppError("Customer not found", 404)
+//     }
+
+//     Object.assign(existingCustomer, customerData)
+
+//     if (Array.isArray(tableData)) {
+//       if (tableData.length === 0) {
+//         existingCustomer.selected = []
+//       } else {
+//         const keyOf = (item) => String(item?.productid || item?.product_id)
+
+//         const existingMap = new Map(
+//           (existingCustomer.selected || []).map((item) => [keyOf(item), item])
+//         )
+
+//         const incomingKeys = new Set(tableData.map((item) => keyOf(item)))
+
+//         const untouchedExisting = (existingCustomer.selected || []).filter(
+//           (item) => !incomingKeys.has(keyOf(item))
+//         )
+
+//         const mergedOrNew = tableData.map((incomingItem) => {
+//           const existingItem = existingMap.get(keyOf(incomingItem))
+
+//           if (!existingItem) return incomingItem
+
+//           const mergedTaggedData = [...(existingItem.taggeddata || [])]
+
+//           ;(incomingItem.taggeddata || []).forEach((incomingTag) => {
+//             const tagIndex = mergedTaggedData.findIndex(
+//               (tag) =>
+//                 String(tag.licensenumber) === String(incomingTag.licensenumber)
+//             )
+
+//             if (tagIndex >= 0) {
+//               mergedTaggedData[tagIndex] = {
+//                 ...mergedTaggedData[tagIndex],
+//                 ...incomingTag
+//               }
+//             } else {
+//               mergedTaggedData.push(incomingTag)
+//             }
+//           })
+
+//           return {
+//             ...existingItem,
+//             ...incomingItem,
+//             taggeddata: mergedTaggedData
+//           }
+//         })
+
+//         existingCustomer.selected = [...untouchedExisting, ...mergedOrNew]
+//       }
+//     }
+
+//     await existingCustomer.save({ session })
+
+//     const directLicenseNumbers = Array.isArray(tableData)
+//       ? tableData
+//           .filter(
+//             (item) =>
+//               item?.licensenumber !== null &&
+//               item?.licensenumber !== undefined &&
+//               String(item?.licensenumber).trim() !== ""
+//           )
+//           .map((item) => ({
+//             licensenumber: Number(item.licensenumber),
+//             productid: item?.productid || item?.product_id || null
+//           }))
+//       : []
+
+//     const uniqueLicenseMap = new Map()
+//     for (const item of directLicenseNumbers) {
+//       if (!uniqueLicenseMap.has(String(item.licensenumber))) {
+//         uniqueLicenseMap.set(String(item.licensenumber), item)
+//       }
+//     }
+
+//     const uniqueLicenses = Array.from(uniqueLicenseMap.values())
+//     const licenseNumbers = uniqueLicenses.map((item) => item.licensenumber)
+
+//     if (licenseNumbers.length > 0) {
+//       const existingLicenses = await License.find({
+//         customerName: existingCustomer._id,
+//         licensenumber: { $in: licenseNumbers }
+//       })
+//         .session(session)
+//         .select("licensenumber")
+
+//       const existingLicenseSet = new Set(
+//         existingLicenses.map((item) => String(item.licensenumber))
+//       )
+
+//       const newLicenses = uniqueLicenses.filter(
+//         (item) => !existingLicenseSet.has(String(item.licensenumber))
+//       )
+
+//       if (newLicenses.length > 0) {
+//         const licenseDocs = newLicenses.map((item) => ({
+//           products: item.productid,
+//           customerName: existingCustomer._id,
+//           licensenumber: item.licensenumber
+//         }))
+
+//         await License.insertMany(licenseDocs, { session })
+//       }
+//     }
+
+//     await session.commitTransaction()
+//     return res.status(200).json({ message: "Customer updated successfully" })
+//   } catch (error) {
+//     await session.abortTransaction()
+
+//     console.error("Error updating customer:", error.message)
+
+//     if (error instanceof AppError) {
+//       return res.status(error.statusCode).json({ message: error.message })
+//     }
+
+//     if (error.name === "ValidationError") {
+//       return res.status(400).json({ message: error.message })
+//     }
+
+//     if (error.name === "CastError") {
+//       return res.status(400).json({ message: "Invalid ID format" })
+//     }
+
+//     return res.status(500).json({ message: "Internal server error" })
+//   } finally {
+//     session.endSession()
+//   }
+// }
+// export const CustomerEdit = async (req, res) => {
+//   const { customerData, tableData } = req.body
+//   const { customerid } = req.query
+
+//   if (!customerid || !customerData) {
+//     return res.status(400).json({ message: "Customer ID and data are required" })
+//   }
+
+//   if (!mongoose.Types.ObjectId.isValid(customerid)) {
+//     return res.status(400).json({ message: "Invalid customer ID" })
+//   }
+
+//   const session = await mongoose.startSession()
+
+//   try {
+//     session.startTransaction()
+
+//     const objectId = new mongoose.Types.ObjectId(customerid)
+//     const existingCustomer = await Customer.findById(objectId).session(session)
+
+//     if (!existingCustomer) {
+//       throw new AppError("Customer not found", 404)
+//     }
+
+//     Object.assign(existingCustomer, customerData)
+
+//     if (Array.isArray(tableData)) {
+//       const keyOf = (item) => String(item?.productid || item?.product_id)
+
+//       const existingMap = new Map(
+//         (existingCustomer.selected || []).map((item) => [keyOf(item), item])
+//       )
+
+//       const nextSelected = tableData.map((incomingItem) => {
+//         const existingItem = existingMap.get(keyOf(incomingItem))
+
+//         if (!existingItem) {
+//           return {
+//             ...incomingItem,
+//             taggeddata: Array.isArray(incomingItem?.taggeddata)
+//               ? incomingItem.taggeddata
+//               : []
+//           }
+//         }
+
+//         const mergedTaggedData = [...(existingItem.taggeddata || [])]
+
+//         ;(incomingItem.taggeddata || []).forEach((incomingTag) => {
+//           const tagIndex = mergedTaggedData.findIndex(
+//             (tag) =>
+//               String(tag?.licensenumber) === String(incomingTag?.licensenumber)
+//           )
+
+//           if (tagIndex >= 0) {
+//             mergedTaggedData[tagIndex] = {
+//               ...mergedTaggedData[tagIndex],
+//               ...incomingTag
+//             }
+//           } else {
+//             mergedTaggedData.push(incomingTag)
+//           }
+//         })
+
+//         return {
+//           ...existingItem,
+//           ...incomingItem,
+//           taggeddata: mergedTaggedData
+//         }
+//       })
+
+//       existingCustomer.selected = nextSelected
+//     }
+
+//     await existingCustomer.save({ session })
+
+//     const directLicenseNumbers = Array.isArray(tableData)
+//       ? tableData
+//           .filter(
+//             (item) =>
+//               item?.licensenumber !== null &&
+//               item?.licensenumber !== undefined &&
+//               String(item?.licensenumber).trim() !== ""
+//           )
+//           .map((item) => ({
+//             licensenumber: Number(item.licensenumber),
+//             productid: item?.productid || item?.product_id || null
+//           }))
+//       : []
+
+//     const taggedLicenseNumbers = Array.isArray(tableData)
+//       ? tableData.flatMap((item) =>
+//           Array.isArray(item?.taggeddata)
+//             ? item.taggeddata
+//                 .filter(
+//                   (tag) =>
+//                     tag?.licensenumber !== null &&
+//                     tag?.licensenumber !== undefined &&
+//                     String(tag?.licensenumber).trim() !== ""
+//                 )
+//                 .map((tag) => ({
+//                   licensenumber: Number(tag.licensenumber),
+//                   productid: item?.productid || item?.product_id || null
+//                 }))
+//             : []
+//         )
+//       : []
+
+//     const allLicenses = [...directLicenseNumbers, ...taggedLicenseNumbers]
+
+//     const uniqueLicenseMap = new Map()
+//     for (const item of allLicenses) {
+//       if (!uniqueLicenseMap.has(String(item.licensenumber))) {
+//         uniqueLicenseMap.set(String(item.licensenumber), item)
+//       }
+//     }
+
+//     const uniqueLicenses = Array.from(uniqueLicenseMap.values())
+//     const licenseNumbers = uniqueLicenses.map((item) => item.licensenumber)
+
+//     await License.deleteMany({ customerName: existingCustomer._id }).session(session)
+
+//     if (licenseNumbers.length > 0) {
+//       const licenseDocs = uniqueLicenses.map((item) => ({
+//         products: item.productid,
+//         customerName: existingCustomer._id,
+//         licensenumber: item.licensenumber
+//       }))
+
+//       await License.insertMany(licenseDocs, { session })
+//     }
+
+//     await session.commitTransaction()
+
+//     return res.status(200).json({ message: "Customer updated successfully" })
+//   } catch (error) {
+//     await session.abortTransaction()
+
+//     console.error("Error updating customer:", error.message)
+
+//     if (error instanceof AppError) {
+//       return res.status(error.statusCode).json({ message: error.message })
+//     }
+
+//     if (error.name === "ValidationError") {
+//       return res.status(400).json({ message: error.message })
+//     }
+
+//     if (error.name === "CastError") {
+//       return res.status(400).json({ message: "Invalid ID format" })
+//     }
+
+//     return res.status(500).json({ message: "Internal server error" })
+//   } finally {
+//     session.endSession()
+//   }
+// }
 export const CustomerEdit = async (req, res) => {
-  const { customerData, tableData = [] } = req.body
+  const { customerData, tableData } = req.body
   const { customerid } = req.query
 
-
-  // ---- Fast-fail validation before we ever open a session ----
   if (!customerid || !customerData) {
-    return res
-      .status(400)
-      .json({ message: "Customer ID and data are required" })
+    return res.status(400).json({ message: "Customer ID and data are required" })
   }
 
   if (!mongoose.Types.ObjectId.isValid(customerid)) {
@@ -2466,99 +2955,133 @@ export const CustomerEdit = async (req, res) => {
     session.startTransaction()
 
     const objectId = new mongoose.Types.ObjectId(customerid)
-
     const existingCustomer = await Customer.findById(objectId).session(session)
+
     if (!existingCustomer) {
       throw new AppError("Customer not found", 404)
     }
 
     Object.assign(existingCustomer, customerData)
 
+    const oldSelected = Array.isArray(existingCustomer.selected)
+      ? [...existingCustomer.selected]
+      : []
+
     const keyOf = (item) => String(item?.productid || item?.product_id)
 
-    const existingMap = new Map(
-      existingCustomer.selected.map((item) => [keyOf(item), item])
-    )
+    if (Array.isArray(tableData)) {
+      const existingMap = new Map(oldSelected.map((item) => [keyOf(item), item]))
 
-    const incomingKeys = new Set(tableData.map((item) => keyOf(item)))
+      const nextSelected = tableData.map((incomingItem) => {
+        const existingItem = existingMap.get(keyOf(incomingItem))
 
-    // Anything already selected that this payload didn't touch — keep as-is.
-    const untouchedExisting = existingCustomer.selected.filter(
-      (item) => !incomingKeys.has(keyOf(item))
-    )
-
-    // Every item in the incoming payload: merge taggeddata if it already
-    // existed, or add it outright if it's a brand-new selection (this is
-    // the case that was silently getting dropped before — a product with
-    // no matching existingItem never got visited by the old .map()).
-    const mergedOrNew = tableData.map((incomingItem) => {
-      const existingItem = existingMap.get(keyOf(incomingItem))
-
-      if (!existingItem) return incomingItem
-
-      const mergedTaggedData = [...(existingItem.taggeddata || [])]
-
-      ;(incomingItem.taggeddata || []).forEach((incomingTag) => {
-        const tagIndex = mergedTaggedData.findIndex(
-          (tag) =>
-            String(tag.licensenumber) === String(incomingTag.licensenumber)
-        )
-
-        if (tagIndex >= 0) {
-          mergedTaggedData[tagIndex] = {
-            ...mergedTaggedData[tagIndex],
-            ...incomingTag
+        if (!existingItem) {
+          return {
+            ...incomingItem,
+            taggeddata: Array.isArray(incomingItem?.taggeddata)
+              ? incomingItem.taggeddata
+              : []
           }
-        } else {
-          mergedTaggedData.push(incomingTag)
+        }
+
+        const mergedTaggedData = [...(existingItem.taggeddata || [])]
+
+        ;(incomingItem.taggeddata || []).forEach((incomingTag) => {
+          const tagIndex = mergedTaggedData.findIndex(
+            (tag) =>
+              String(tag?.licensenumber) === String(incomingTag?.licensenumber)
+          )
+
+          if (tagIndex >= 0) {
+            mergedTaggedData[tagIndex] = {
+              ...mergedTaggedData[tagIndex],
+              ...incomingTag
+            }
+          } else {
+            mergedTaggedData.push(incomingTag)
+          }
+        })
+
+        return {
+          ...existingItem,
+          ...incomingItem,
+          taggeddata: mergedTaggedData
         }
       })
 
-      return {
-        ...existingItem,
-        ...incomingItem,
-        taggeddata: mergedTaggedData
-      }
-    })
+      existingCustomer.selected = nextSelected
 
-    existingCustomer.selected = [...untouchedExisting, ...mergedOrNew]
+      const incomingProductKeySet = new Set(tableData.map((item) => keyOf(item)))
+
+      const removedProducts = oldSelected.filter(
+        (item) => !incomingProductKeySet.has(keyOf(item))
+      )
+
+      const removedProductIds = [
+        ...new Set(
+          removedProducts
+            .map((item) => item?.productid || item?.product_id)
+            .filter(Boolean)
+            .map((id) => String(id))
+        )
+      ]
+
+      if (removedProductIds.length > 0) {
+        const primaryProducts = await Product.find({
+          _id: {
+            $in: removedProductIds.map((id) => new mongoose.Types.ObjectId(id))
+          },
+          productorservicetype: "Primaryproduct"
+        })
+          .session(session)
+          .select("_id")
+
+        const primaryProductIds = primaryProducts.map((item) => item._id)
+
+        if (primaryProductIds.length > 0) {
+          await License.deleteMany({
+            customerName: existingCustomer._id,
+            products: { $in: primaryProductIds }
+          }).session(session)
+        }
+      }
+    }
 
     await existingCustomer.save({ session })
 
-    const directLicenseNumbers = tableData
-      .filter(
-        (item) =>
-          item?.licensenumber !== null &&
-          item?.licensenumber !== undefined &&
-          String(item?.licensenumber).trim() !== ""
-      )
-      .map((item) => ({
-        licensenumber: Number(item.licensenumber),
-        productid: item?.productid || item?.product_id || null
-      }))
+    const directLicenseNumbers = Array.isArray(tableData)
+      ? tableData
+          .filter(
+            (item) =>
+              item?.licensenumber !== null &&
+              item?.licensenumber !== undefined &&
+              String(item?.licensenumber).trim() !== ""
+          )
+          .map((item) => ({
+            licensenumber: Number(item.licensenumber),
+            productid: item?.productid || item?.product_id || null
+          }))
+      : []
 
-    // NOTE: kept from the original — tagged license numbers are computed
-    // but not currently merged into `allLicenses`. Left as-is since I
-    // don't know if that's intentional; flip the line below if you want
-    // tagged licenses included too:
-    // const allLicenses = [...directLicenseNumbers, ...taggedLicenseNumbers]
-    const taggedLicenseNumbers = tableData.flatMap((item) =>
-      Array.isArray(item?.taggeddata)
-        ? item.taggeddata
-            .filter(
-              (tag) =>
-                tag?.licensenumber !== null &&
-                tag?.licensenumber !== undefined &&
-                String(tag?.licensenumber).trim() !== ""
-            )
-            .map((tag) => ({
-              licensenumber: Number(tag.licensenumber),
-              productid: item?.productid || item?.product_id || null
-            }))
-        : []
-    )
+    const taggedLicenseNumbers = Array.isArray(tableData)
+      ? tableData.flatMap((item) =>
+          Array.isArray(item?.taggeddata)
+            ? item.taggeddata
+                .filter(
+                  (tag) =>
+                    tag?.licensenumber !== null &&
+                    tag?.licensenumber !== undefined &&
+                    String(tag?.licensenumber).trim() !== ""
+                )
+                .map((tag) => ({
+                  licensenumber: Number(tag.licensenumber),
+                  productid: item?.productid || item?.product_id || null
+                }))
+            : []
+        )
+      : []
 
-    const allLicenses = [...directLicenseNumbers]
+    const allLicenses = [...directLicenseNumbers, ...taggedLicenseNumbers]
 
     const uniqueLicenseMap = new Map()
     for (const item of allLicenses) {
@@ -2598,11 +3121,8 @@ export const CustomerEdit = async (req, res) => {
     }
 
     await session.commitTransaction()
-
     return res.status(200).json({ message: "Customer updated successfully" })
   } catch (error) {
-    // Roll back every write made in this session (customer save +
-    // license inserts) so a failure never leaves partial data behind.
     await session.abortTransaction()
 
     console.error("Error updating customer:", error.message)
@@ -2611,12 +3131,10 @@ export const CustomerEdit = async (req, res) => {
       return res.status(error.statusCode).json({ message: error.message })
     }
 
-    // Mongoose validation errors -> 400 instead of a generic 500
     if (error.name === "ValidationError") {
       return res.status(400).json({ message: error.message })
     }
 
-    // Invalid ObjectId thrown further down the pipeline -> 400
     if (error.name === "CastError") {
       return res.status(400).json({ message: "Invalid ID format" })
     }

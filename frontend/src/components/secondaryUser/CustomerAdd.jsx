@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import Select from "react-select"
+import { Country, State } from "country-state-city"
 import { useSelector } from "react-redux"
 import { useForm, Controller } from "react-hook-form"
 import { toast } from "react-toastify"
@@ -33,8 +34,9 @@ const CustomerAdd = ({
   process,
   handleCustomerData,
   handleEditedData,
-  customer
+  customer=null
 }) => {
+console.log(customer)
   const navigate = useNavigate()
   const { setHasUnsavedChanges, requestNavigation } = useUnsavedChanges()
   const {
@@ -83,7 +85,7 @@ const CustomerAdd = ({
   const loggeduserBranch = useSelector(
     (state) => state.companyBranch.loggeduserbranches
   )
-console.log(loggeduserBranch)
+  console.log(loggeduserBranch)
   const [detailsData, setdetailsData] = useState({})
   const [isSaved, setIsSaved] = useState(false)
   console.log(isSaved)
@@ -109,6 +111,8 @@ console.log(loggeduserBranch)
   const registrationType = watch("registrationType")
   const watchedLicense = watch("licensenumber")
   const watchedTaggedLicenses = watch("taggedLicenses") || []
+const selectedCountry = watch("country");
+console.log(selectedCountry)
   const watchedTaggedLicenseDueDates = watch("taggedLicenseDueDates") || {}
   console.log(watchedTaggedLicenseDueDates)
   const hasTaggedLicenses =
@@ -220,6 +224,48 @@ console.log(loggeduserBranch)
     if (user) {
     }
   }, [])
+ 
+
+const countryOptions = useMemo(
+    () =>
+      Country.getAllCountries().map((country) => ({
+        label: country.name,
+        value: country.isoCode
+      })),
+    []
+  )
+console.log(countryOptions)
+  const stateOptions = selectedCountry
+    ? State.getStatesOfCountry(selectedCountry).map((state) => ({
+        label: state.name,
+        value: state.isoCode
+      }))
+    : []
+ const defaultCountry = useMemo(
+    () => countryOptions.find((country) => country.value === "IN"),
+    [countryOptions]
+  )
+
+  const defaultState = useMemo(
+    () => stateOptions.find((state) => state.value === "KL"),
+    [stateOptions]
+  )
+  useEffect(() => {
+    console.log("hhh")
+    if (defaultCountry&&!customer) {
+console.log(defaultCountry)
+      setValue("country",defaultCountry.value)
+      console.log(defaultCountry)
+    }
+  }, [defaultCountry])
+ useEffect(() => {
+    console.log("hhh")
+    if (defaultState&&!customer) {
+console.log(defaultCountry)
+      setValue("state",defaultState.value)
+      console.log(defaultState)
+    }
+  }, [defaultState])
 
   useEffect(() => {
     if (partners) {
@@ -293,6 +339,7 @@ console.log(loggeduserBranch)
   useEffect(() => {
     if (customer && process === "edit" && !isSaved) {
       console.log("hhhh")
+console.log(customer.country)
       reset({
         customerName: customer?.customerName || "",
         address1: customer?.address1 || "",
@@ -636,7 +683,9 @@ console.log(loggeduserBranch)
 
     setShowProductPopup(true)
   }
+  
 
+  
   const handleDelete = (index) => {
     setTableData((prev) => prev.filter((_, i) => i !== index))
   }
@@ -1322,6 +1371,126 @@ console.log(loggeduserBranch)
                   placeholder="Address line 2"
                 />
               </InfoInputCard>
+<InfoInputCard
+  icon={<FaGlobeAsia size={12} />}
+  iconBg="bg-[#fff2e8]"
+  iconColor="text-[#ef9a47]"
+  label="Country"
+>
+  <Controller
+    name="country"
+    control={control}
+    render={({ field }) => (
+      <Select
+        options={countryOptions}
+        value={
+          countryOptions.find((opt) => opt.value === field.value) || null
+        }
+        onChange={(option) => field.onChange(option?.value || "")}
+        getOptionLabel={(o) => o.label}
+        getOptionValue={(o) => o.value}
+        placeholder="Select country"
+        isSearchable
+        classNamePrefix="rs"
+        unstyled
+        menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+        menuPosition="fixed"
+        styles={{
+          control: (base) => ({
+            ...base,
+            minHeight: "auto",
+            padding: 0,
+            border: "none",
+            boxShadow: "none",
+            backgroundColor: "transparent",
+            cursor: "pointer"
+          }),
+          valueContainer: (base) => ({
+            ...base,
+            padding: 0
+          }),
+          input: (base) => ({
+            ...base,
+            margin: 0,
+            padding: 0,
+            color: "#374151",
+            fontSize: "0.8125rem"
+          }),
+          placeholder: (base) => ({
+            ...base,
+            margin: 0,
+            color: "#9ca3af",
+            fontSize: "0.8125rem"
+          }),
+          singleValue: (base) => ({
+            ...base,
+            margin: 0,
+            color: "#374151",
+            fontWeight: 600,
+            fontSize: "0.8125rem"
+          }),
+          indicatorsContainer: (base) => ({
+            ...base,
+            paddingRight: 2
+          }),
+          dropdownIndicator: (base, state) => ({
+            ...base,
+            padding: 0,
+            color: "#9ca3af",
+            transition: "transform 150ms ease",
+            transform: state.selectProps.menuIsOpen
+              ? "rotate(180deg)"
+              : "rotate(0deg)"
+          }),
+          indicatorSeparator: () => ({ display: "none" }),
+
+          // 👇 this is the fix — explicit solid background + elevation
+          menuPortal: (base) => ({
+            ...base,
+            zIndex: 9999
+          }),
+          menu: (base) => ({
+            ...base,
+            marginTop: 6,
+            backgroundColor: "#ffffff",
+            borderRadius: "0.75rem",
+            border: "1px solid #e5e7eb",
+            boxShadow:
+              "0 10px 25px -5px rgba(0,0,0,0.08), 0 8px 10px -6px rgba(0,0,0,0.05)",
+            overflow: "hidden"
+          }),
+          menuList: (base) => ({
+            ...base,
+            padding: 4,
+            maxHeight: 220,
+            backgroundColor: "#ffffff"
+          }),
+          option: (base, state) => ({
+            ...base,
+            borderRadius: "0.5rem",
+            padding: "8px 10px",
+            fontSize: "0.8125rem",
+            fontWeight: state.isSelected ? 600 : 500,
+            color: state.isSelected ? "#ef9a47" : "#374151",
+            backgroundColor: state.isSelected
+              ? "#fff2e8"
+              : state.isFocused
+              ? "#fff8f2"
+              : "#ffffff",
+            cursor: "pointer"
+          }),
+          noOptionsMessage: (base) => ({
+            ...base,
+            backgroundColor: "#ffffff",
+            fontSize: "0.8125rem",
+            color: "#9ca3af",
+            padding: "10px"
+          })
+        }}
+      />
+    )}
+  />
+</InfoInputCard>
 
               <InfoInputCard
                 icon={<FaBuilding size={12} />}
@@ -1329,37 +1498,153 @@ console.log(loggeduserBranch)
                 iconColor="text-[#4f98ff]"
                 label="State"
               >
-                <input
-                  type="text"
-                  {...register("state")}
-                  onBlur={(e) =>
-                    setValue("state", e.target.value.trim(), {
-                      shouldDirty: true
-                    })
-                  }
-                  className={tileInputClass}
-                  placeholder="State"
-                />
-              </InfoInputCard>
+               
+ <Controller
+                            name="state"
+                            control={control}
+                            render={({ field }) => (
+                              <Select
+                                options={stateOptions}
+                                value={
+                                  stateOptions.find(
+                                    (opt) => opt.value === field.value
+                                  ) || null
+                                }
+                                onChange={(option) => {
+                                  field.onChange(option?.value || "")
+                                  setSelectedState(option)
+                                }}
+                                isDisabled={!selectedCountry}
+  getOptionLabel={(o) => o.label}
+        getOptionValue={(o) => o.value}
+        placeholder="Select state"
+        isSearchable
+        classNamePrefix="rs"
+        unstyled
+        menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+        menuPosition="fixed"
+        styles={{
+          control: (base) => ({
+            ...base,
+            minHeight: "auto",
+            padding: 0,
+            border: "none",
+            boxShadow: "none",
+            backgroundColor: "transparent",
+            cursor: "pointer"
+          }),
+          valueContainer: (base) => ({
+            ...base,
+            padding: 0
+          }),
+          input: (base) => ({
+            ...base,
+            margin: 0,
+            padding: 0,
+            color: "#374151",
+            fontSize: "0.8125rem"
+          }),
+          placeholder: (base) => ({
+            ...base,
+            margin: 0,
+            color: "#9ca3af",
+            fontSize: "0.8125rem"
+          }),
+          singleValue: (base) => ({
+            ...base,
+            margin: 0,
+            color: "#374151",
+            fontWeight: 600,
+            fontSize: "0.8125rem"
+          }),
+          indicatorsContainer: (base) => ({
+            ...base,
+            paddingRight: 2
+          }),
+          dropdownIndicator: (base, state) => ({
+            ...base,
+            padding: 0,
+            color: "#9ca3af",
+            transition: "transform 150ms ease",
+            transform: state.selectProps.menuIsOpen
+              ? "rotate(180deg)"
+              : "rotate(0deg)"
+          }),
+          indicatorSeparator: () => ({ display: "none" }),
 
+          // 👇 this is the fix — explicit solid background + elevation
+          menuPortal: (base) => ({
+            ...base,
+            zIndex: 9999
+          }),
+          menu: (base) => ({
+            ...base,
+            marginTop: 6,
+            backgroundColor: "#ffffff",
+            borderRadius: "0.75rem",
+            border: "1px solid #e5e7eb",
+            boxShadow:
+              "0 10px 25px -5px rgba(0,0,0,0.08), 0 8px 10px -6px rgba(0,0,0,0.05)",
+            overflow: "hidden"
+          }),
+          menuList: (base) => ({
+            ...base,
+            padding: 4,
+            maxHeight: 220,
+            backgroundColor: "#ffffff"
+          }),
+          option: (base, state) => ({
+            ...base,
+            borderRadius: "0.5rem",
+            padding: "8px 10px",
+            fontSize: "0.8125rem",
+            fontWeight: state.isSelected ? 600 : 500,
+            color: state.isSelected ? "#ef9a47" : "#374151",
+            backgroundColor: state.isSelected
+              ? "#fff2e8"
+              : state.isFocused
+              ? "#fff8f2"
+              : "#ffffff",
+            cursor: "pointer"
+          }),
+          noOptionsMessage: (base) => ({
+            ...base,
+            backgroundColor: "#ffffff",
+            fontSize: "0.8125rem",
+            color: "#9ca3af",
+            padding: "10px"
+          })
+        }}
+                              />
+                            )}
+                          />
+              </InfoInputCard>
+{/* 
               <InfoInputCard
                 icon={<FaGlobeAsia size={12} />}
                 iconBg="bg-[#fff2e8]"
                 iconColor="text-[#ef9a47]"
                 label="Country"
               >
-                <input
-                  type="text"
-                  {...register("country")}
-                  onBlur={(e) =>
-                    setValue("country", e.target.value.trim(), {
-                      shouldDirty: true
-                    })
-                  }
-                  className={tileInputClass}
-                  placeholder="Country"
+                <Controller
+                  name="country"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      options={countryOptions}
+                      value={
+                        countryOptions.find(
+                          (opt) => opt.value === field.value
+                        ) || null
+                      }
+                      onChange={(option) => field.onChange(option?.value || "")}
+                      getOptionLabel={(o) => o.label}
+                      getOptionValue={(o) => o.value}
+                    />
+                  )}
                 />
-              </InfoInputCard>
+              </InfoInputCard> */}
+
 
               <InfoInputCard
                 icon={<FaPhone size={12} />}
