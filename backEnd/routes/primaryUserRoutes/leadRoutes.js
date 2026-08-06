@@ -51,6 +51,7 @@ getBranchwiseMarketingPendingTasks,
 getTodayVerifiedCollection,
 getverifiedCollectionLeads,
 getNotificationData,
+RejectTask
 } from "../../controller/primaryUserController/leadController.js";
 const router = express.Router();
 // router.get("/export-branch-wise-product-usage",exportBranchWiseProductUsage)
@@ -103,6 +104,7 @@ router.get("/getrespectedleadTask", authMiddleware, GetrespectedleadTask);
 router.get("/demoleadcount", authMiddleware, GetdemoleadCount);
 router.get("/collectionLeads", authMiddleware, GetcollectionLeads);
 router.post("/taskSubmission", authMiddleware, UpdateLeadTask);
+router.post("/taskRejection",authMiddleware,RejectTask)
 router.post("/check-customer-duplicate",authMiddleware,Checkduplicatecustomer)
 router.post(
   "/demosubmitbyfollower",
