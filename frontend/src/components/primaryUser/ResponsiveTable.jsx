@@ -709,15 +709,27 @@ const ResponsiveTable = ({
 
                 const isSundayAbsent = sundays.some((sunday) => {
                   const matched = date === sunday
+                  console.log(date)
                   if (!matched) return false
 
                   const matchedItem = attendee.attendancedates[date]
-                  const notMarkedEmpty = matchedItem.notMarked === ""
+                  const notMarkedEmpty =
+                    matchedItem.notMarked === "" || matchedItem.notMarked === 0
+                  // const hasLeave =
+                  //   matchedItem.compensatoryLeave !== "" ||
+                  //   matchedItem.casualLeave !== "" ||
+                  //   matchedItem.otherLeave !== "" ||
+                  //   matchedItem.privilegeLeave !== ""
                   const hasLeave =
-                    matchedItem.compensatoryLeave !== "" ||
-                    matchedItem.casualLeave !== "" ||
-                    matchedItem.otherLeave !== "" ||
-                    matchedItem.privilegeLeave !== ""
+                    [0.5, 1].includes(Number(matchedItem.compensatoryLeave)) ||
+                    [0.5, 1].includes(Number(matchedItem.casualLeave)) ||
+                    [0.5, 1].includes(Number(matchedItem.otherLeave)) ||
+                    [0.5, 1].includes(Number(matchedItem.privilegeLeave))
+                  if (date === "2026-07-05") {
+                    console.log(hasLeave)
+                    console.log(matchedItem)
+                    console.log(matchedItem.notMarked)
+                  }
                   const notMarkedOne = matchedItem.notMarked === 1
 
                   return (notMarkedEmpty && hasLeave) || notMarkedOne
@@ -951,39 +963,39 @@ const ResponsiveTable = ({
                           ))
                         : "-"}
                     </td> */}
-                   
-<td
-  className="border border-gray-400 p-2 hover:cursor-pointer max-w-[120px] w-[120px]"
-  onClick={() => {
-    if (
-      user?.role === "Admin" &&
-      details?.onsite?.length > 0
-    ) {
-      handleOnsite(date, "Onsite", details?.onsite);
-    }
-  }}
->
-  {details?.onsite?.length > 0 ? (
-    <Tooltip
-      arrow
-      title={
-        <div>
-          {details.onsite.map((item, index) => (
-            <div key={index}>{item.place || "-"}</div>
-          ))}
-        </div>
-      }
-    >
-      <span className="block truncate">
-        {details.onsite[0]?.place || "-"}
-        {details.onsite.length > 1 &&
-          ` +${details.onsite.length - 1}`}
-      </span>
-    </Tooltip>
-  ) : (
-    "-"
-  )}
-</td>
+
+                    <td
+                      className="border border-gray-400 p-2 hover:cursor-pointer max-w-[120px] w-[120px]"
+                      onClick={() => {
+                        if (
+                          user?.role === "Admin" &&
+                          details?.onsite?.length > 0
+                        ) {
+                          handleOnsite(date, "Onsite", details?.onsite)
+                        }
+                      }}
+                    >
+                      {details?.onsite?.length > 0 ? (
+                        <Tooltip
+                          arrow
+                          title={
+                            <div>
+                              {details.onsite.map((item, index) => (
+                                <div key={index}>{item.place || "-"}</div>
+                              ))}
+                            </div>
+                          }
+                        >
+                          <span className="block truncate">
+                            {details.onsite[0]?.place || "-"}
+                            {details.onsite.length > 1 &&
+                              ` +${details.onsite.length - 1}`}
+                          </span>
+                        </Tooltip>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
 
                     {/* <td className="border border-gray-400 p-2 hover:cursor-pointer">
                       {details?.onsite?.length > 0
@@ -992,28 +1004,28 @@ const ResponsiveTable = ({
                           ))
                         : "-"}
                     </td> */}
-<td className="border border-gray-400 p-2 hover:cursor-pointer max-w-[120px] w-[120px]">
-  {details?.onsite?.length > 0 ? (
-    <Tooltip
-      arrow
-      title={
-        <div>
-          {details.onsite.map((item, index) => (
-            <div key={index}>{item.siteName || "-"}</div>
-          ))}
-        </div>
-      }
-    >
-      <span className="block truncate">
-        {details.onsite[0]?.siteName || "-"}
-        {details.onsite.length > 1 &&
-          ` +${details.onsite.length - 1}`}
-      </span>
-    </Tooltip>
-  ) : (
-    "-"
-  )}
-</td>
+                    <td className="border border-gray-400 p-2 hover:cursor-pointer max-w-[120px] w-[120px]">
+                      {details?.onsite?.length > 0 ? (
+                        <Tooltip
+                          arrow
+                          title={
+                            <div>
+                              {details.onsite.map((item, index) => (
+                                <div key={index}>{item.siteName || "-"}</div>
+                              ))}
+                            </div>
+                          }
+                        >
+                          <span className="block truncate">
+                            {details.onsite[0]?.siteName || "-"}
+                            {details.onsite.length > 1 &&
+                              ` +${details.onsite.length - 1}`}
+                          </span>
+                        </Tooltip>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
 
                     <td className="border border-gray-400 p-2 hover:cursor-pointer">
                       {details?.onsite?.length > 0

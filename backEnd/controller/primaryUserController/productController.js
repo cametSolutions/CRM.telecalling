@@ -1,5 +1,6 @@
 import Product from "../../model/primaryUser/productSchema.js"
 import Service from "../../model/primaryUser/servicesSchema.js"
+import Customer from "../../model/secondaryUser/customerSchema.js"
 import mongoose from "mongoose"
 export const ProductRegistration = async (req, res) => {
   const { productData, tableData } = req.body
@@ -121,6 +122,12 @@ export const GetbranchProduct = async (req, res) => {
 export const GetallProducts = async (req, res) => {
   try {
     const { branchselected = null, branchselectedArray = null } = req.query
+
+
+   
+
+
+    console.log("Migration completed.");
     console.log("brancheselelcted", branchselected)
     console.log("branschselectedarrry", branchselectedArray)
     if (branchselectedArray) {
@@ -134,7 +141,7 @@ export const GetallProducts = async (req, res) => {
 
 
       const products = await Product.find({
-        
+
         selected: {
           $elemMatch: {
             branch_id: { $in: decodedbranches }
@@ -165,7 +172,7 @@ export const GetallProducts = async (req, res) => {
       if (branchselected) {
         const decodedbranches = JSON.parse(decodeURIComponent(branchselected))
         products = await Product.find({
- 
+
           selected: {
             $elemMatch: {
               branch_id: { $in: decodedbranches }

@@ -146,10 +146,15 @@ const LeadTask = () => {
     }
   }, [targetData])
 
-  const { data, error, loading, refreshHook } = UseFetch(
+  // const { data, error, loading, refreshHook } = UseFetch(
+  //   loggedUser &&
+  //     reduxselectedBranch &&
+  //     `/lead/getrespectedleadTask?userid=${loggedUser._id}&branchSelected=${reduxselectedBranch}&role=${loggedUser.role}&ownTask=${ownTask}`
+  // )
+ const { data, error, loading, refreshHook } = UseFetch(
     loggedUser &&
       reduxselectedBranch &&
-      `/lead/getrespectedleadTask?userid=${loggedUser._id}&branchSelected=${reduxselectedBranch}&role=${loggedUser.role}&ownTask=${ownTask}`
+      `/lead/getrespectedleadTask?userid=${loggedUser._id}&role=${loggedUser.role}&ownTask=${ownTask}`
   )
   const { data: branchProduct } = UseFetch(
     `/product/getallbranchProduct?branch=${reduxselectedBranch}`
@@ -162,44 +167,7 @@ const LeadTask = () => {
   }
   useEffect(() => {
     if (data && pending && loggedUser && dates && dates.endDate) {
-      // const finalOutput = []
-      // data.forEach((entry) => {
-      //   const activitylog = entry.activityLog
-
-      //   activitylog.forEach((log) => {
-      //     if (
-      //       log.taskClosed === false &&
-      //       log?.taskallocatedTo &&
-      //       log.taskTo &&
-      //       log.taskTo !== "followup"
-      //     ) {
-      //       console.log(log.taskallocatedTo)
-      //       finalOutput.push({
-      //         leadId: entry.leadId,
-      //         leadDocId: entry._id,
-      //         allocatedTo: log?.taskallocatedTo?._id,
-      //         leadDate: entry.leadDate,
-      //         customerName:
-      //           entry?.customerName?.customerName || entry?.customerName,
-      //         leadBy: entry?.leadBy,
-      //         dueDate: entry?.dueDate,
-      //         leadFor: entry?.leadFor,
-      //         netAmount: entry?.netAmount,
-      //         mobile: entry?.mobile,
-      //         email: entry?.email,
-      //         taskTo: log?.taskTo,
-      //         taskBy: log?.taskBy,
-      //         remarks: log.remarks,
-      //         closedDate: log?.submissionDate,
-      //         matchedlog: log,
-      //         activityLog: activitylog,
-      //         taskallocatedTo: entry.taskallocatedTo,
-      //         taskallocatedBy: entry.taskallocatedBy,
-      //         sameUser: loggedUser?._id === entry.taskallocatedTo?._id
-      //       })
-      //     }
-      //   })
-      // })
+console.log(data)
       const finalOutput = []
       data.forEach((entry) => {
         const activitylog = entry.activityLog
@@ -252,9 +220,12 @@ const LeadTask = () => {
           return total + leadTotal
         }, 0)
         .toFixed(2)
+console.log(totalNetAmount)
       setnetTotalAmount(totalNetAmount)
       let Data
       if (ownTask) {
+console.log("h")
+console.log(finalOutput)
         Data = normalizeTableData(finalOutput)
       } else {
         const groupedLeads = {}
@@ -304,7 +275,7 @@ const LeadTask = () => {
         }
       })
 
-      const totalNetAmount = data
+      const totalNetAmount = finalOutput
         .reduce((total, lead) => {
           const leadTotal =
             lead.leadFor?.reduce(
@@ -314,7 +285,7 @@ const LeadTask = () => {
           return total + leadTotal
         }, 0)
         .toFixed(2)
-
+console.log(totalNetAmount)
       // then store it in state
       setnetTotalAmount(totalNetAmount)
       let Data
@@ -462,66 +433,7 @@ const LeadTask = () => {
   return (
     <div className="h-full  bg-[#ADD8E6]">
       <div className="flex h-full flex-row">
-        {/* <StaticSidebar
-          handleMoreClick={handleMoreClick}
-          selectedCompanyBranch={selectedCompanyBranch}
-          setselectedCompanyBranch={setselectedCompanyBranch}
-          parenttargetData={settargetData}
-          parentperiodmode={periodMode}
-          parentyear={selectedYear}
-          setselectedPeriod={setselectedPeriod}
-        /> */}
         <div className="flex flex-1 flex-col overflow-hidden">
-          {/* <header className="flex items-center justify-between">
-            {loggedUser?.role?.toLowerCase() === "admin" ? (
-              <AdminHeader hide={true} />
-            ) : (
-              <StaffHeader hide={true} />
-            )}
-            <div className="flex items-center gap-1.5  pr-3 h-full">
-              <button className="rounded-full p-1.5 transition bg-slate-100">
-                <Mail size={15} strokeWidth={2.2} />
-              </button>
-              <div className="relative">
-                <button className="rounded-full p-1.5 transition bg-slate-100">
-                  <MessageSquareText size={15} strokeWidth={2.2} />
-                </button>
-                <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />
-              </div>
-              <button className="rounded-full p-1.5 transition bg-slate-100">
-                <Settings size={15} strokeWidth={2.2} />
-              </button>
-              <button className="rounded-full p-1.5 transition bg-slate-100">
-                <User size={15} strokeWidth={2.2} />
-              </button>
-
-              <div className="relative">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setShowUserMenu((prev) => !prev)
-                  }}
-                  className="rounded-full p-1.5 transition bg-slate-100"
-                >
-                  <User size={15} strokeWidth={2.2} />
-                </button>
-
-                {showUserMenu && (
-                  <div
-                    onClick={(e) => e.stopPropagation()} 
-                    className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
-                  >
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </header> */}
           {loading && (
             <BarLoader
               cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
@@ -578,18 +490,6 @@ const LeadTask = () => {
                 )}
               </div>
 
-              {/* <select
-                value={selectedCompanyBranch || ""}
-                onChange={(e) => setselectedCompanyBranch(e.target.value)}
-                className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[150px]"
-              >
-                {loggedUserBranches?.map((branch) => (
-                  <option key={branch.value} value={branch.value}>
-                    {branch.label}
-                  </option>
-                ))}
-              </select> */}
-
               {/* New Lead Button */}
               <div className="">
                 <button
@@ -605,12 +505,19 @@ const LeadTask = () => {
               </div>
             </div>
           </div>
-          <div className="flex justify-end mr-5">
-            <span className="text-blue-700">{`Total Amount - ${netTotalAmount}`}</span>
-          </div>
+          {/* <div className="flex justify-end mr-5">
+            <span className="text-blue-700">{`Total Amount -   <IndianRupee className="w-3 h-3" /> ${netTotalAmount}`}</span>
+          </div> */}
+<div className="flex justify-end mr-5 items-center">
+  <span className="text-blue-700 flex items-center gap-1 font-semibold">
+    Total Amount -
+    <IndianRupee className="w-3 h-3" />
+    {Number(netTotalAmount).toLocaleString("en-IN")}
+  </span>
+</div>
 
           {loading ? (
-<div className="p-3 rounded-md">
+            <div className="p-3 rounded-md">
               <SkeletonTable />
             </div>
           ) : error ? (
@@ -620,10 +527,8 @@ const LeadTask = () => {
               </div>
             </div>
           ) : data?.length === 0 ? (
-<NoDataAvailable/>
-            
+            <NoDataAvailable />
           ) : filteredData?.length > 0 ? (
-
             <LeadTaskComponent
               type={type}
               Data={filteredData}

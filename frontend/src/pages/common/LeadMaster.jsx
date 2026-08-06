@@ -2089,6 +2089,7 @@ const LeadMaster = ({
         JSON.stringify(selectedBranch)
       )}`
   )
+console.log(selectedBranch)
   console.log(productData)
   const filter = productData?.filter(
     (item) => item.productName === "MARG ERP NANO"
@@ -2861,6 +2862,9 @@ const LeadMaster = ({
       })),
     []
   )
+console.log(countryOptions)
+const e=countryOptions.filter((item)=>item.label==="Oman")
+console.log(e)
   const addTemporaryLicense = (newLicense) => {
     setTemporaryCustomerTableData((prev) => {
       const exists = prev.some(

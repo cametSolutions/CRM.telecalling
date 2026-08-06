@@ -1253,6 +1253,11 @@ const leadSchema = new mongoose.Schema(
           trim: true,
           default: "",
         },
+ taskrejectDescription: {
+          type: String,
+          trim: true,
+          default: "",
+        },
         reallocatedTo: {
           type: Boolean,
           default: false,

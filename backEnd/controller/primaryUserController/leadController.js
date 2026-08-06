@@ -6614,196 +6614,170 @@ export const ApprovedforcefullyClosedTarget = async (req, res) => {
 //   }
 // };//claude ai
 
+// export const SetDemoallocation = async (req, res) => {
+//   try {
+//     const { demoallocatedBy, leaddocId, editIndex } = req.query;
+//     const demoData = req.body;
+//     const { demoallocatedTo, ...balanceData } = demoData;
+//     const allocatedToObjectId = new mongoose.Types.ObjectId(demoallocatedTo);
+
+//     const allocatedByObjectId = new mongoose.Types.ObjectId(demoallocatedBy);
+
+//     let taskallocatedByModel;
+//     let taskallocatedtoModel;
+//     const isallocatedbyStaff = await Staff.findOne({
+//       _id: allocatedByObjectId,
+//     });
+//     if (isallocatedbyStaff) {
+//       taskallocatedByModel = "Staff";
+//     } else {
+//       const isallocatedbyAdmin = await Admin.findOne({
+//         _id: allocatedByObjectId,
+//       });
+//       if (isallocatedbyAdmin) {
+//         taskallocatedByModel = "Admin";
+//       }
+//     }
+//     const isallocatedtoStaff = await Staff.findOne({
+//       _id: allocatedToObjectId,
+//     });
+//     if (isallocatedtoStaff) {
+//       taskallocatedtoModel = "Staff";
+//     } else {
+//       const isallocatedtoAdmin = await Admin.findOne({
+//         _id: allocatedToObjectId,
+//       });
+//       if (isallocatedtoAdmin) {
+//         taskallocatedtoModel = "Admin";
+//       }
+//     }
+//     const allocationtask = await Task.findOne({ taskName: "Allocation" });
+    
+
+
+//     const bulkOps = [];
+
+//     // 1️⃣ First update (keep with Mongoose)
+//     if (editIndex !== undefined && editIndex !== null) {
+//       bulkOps.push({
+//         updateOne: {
+//           filter: { _id: leaddocId },
+//           update: {
+//             $set: {
+//               [`activityLog.${Number(editIndex)}.allocationChanged`]: true,
+//             },
+//           },
+//         },
+//       });
+//     }
+
+//     // 3️⃣ Third update (keep with Mongoose)
+//     bulkOps.push({
+//       updateOne: {
+//         filter: { _id: leaddocId },
+//         update: {
+//           $push: {
+//             activityLog: {
+//               submissionDate: new Date(),
+//               allocationDate: demoData.demoallocatedDate,
+//               submittedUser: demoallocatedBy,
+//               submissiondoneByModel: taskallocatedByModel,
+//               taskallocatedBy: demoallocatedBy,
+//               taskallocatedByModel: taskallocatedByModel,
+//               taskallocatedTo: demoallocatedTo,
+//               taskallocatedToModel: taskallocatedtoModel,
+//               remarks: demoData.demoDescription,
+//               taskBy: allocationtask?._id,
+//               taskTo: demoData?.selectedTypeName,
+//               taskId: demoData?.selectedType,
+//               taskfromFollowup: true,
+//               allocationChanged: false,
+//             },
+//           },
+//           $set: { taskfromFollowup: true },
+//         },
+//       },
+//     });
+//     const objId = new mongoose.Types.ObjectId(leaddocId);  // ✅ Force ObjectId
+//     const result = await LeadMaster.collection.updateOne(
+//       { _id: objId },  // Filter
+//       {
+//         $set: {
+//           "activityLog.$[log].allocationlist": true  // Creates field!
+//         }
+//       },
+//       {
+//         arrayFilters: [
+//           {
+//             "log.taskTo": "followup",
+//             "log.followupClosed": false
+//           }
+//         ]
+//       }
+//     );
+
+//     // Execute main bulkWrite
+//     await LeadMaster.bulkWrite(bulkOps);
+
+//     return res.status(200).json({ message: "Demo added succesfully" });
+//   } catch (error) {
+//     console.log("error:", error);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// };
 export const SetDemoallocation = async (req, res) => {
   try {
     const { demoallocatedBy, leaddocId, editIndex } = req.query;
     const demoData = req.body;
-    const { demoallocatedTo, ...balanceData } = demoData;
-    const allocatedToObjectId = new mongoose.Types.ObjectId(demoallocatedTo);
+    const { demoallocatedTo } = demoData;
 
+    const allocatedToObjectId = new mongoose.Types.ObjectId(demoallocatedTo);
     const allocatedByObjectId = new mongoose.Types.ObjectId(demoallocatedBy);
 
     let taskallocatedByModel;
-    let taskallocatedtoModel;
-    const isallocatedbyStaff = await Staff.findOne({
-      _id: allocatedByObjectId,
-    });
-    if (isallocatedbyStaff) {
-      taskallocatedByModel = "Staff";
-    } else {
-      const isallocatedbyAdmin = await Admin.findOne({
-        _id: allocatedByObjectId,
-      });
-      if (isallocatedbyAdmin) {
-        taskallocatedByModel = "Admin";
-      }
+    let taskallocatedToModel;
+
+    const isallocatedbyStaff = await Staff.findOne({ _id: allocatedByObjectId });
+    if (isallocatedbyStaff) taskallocatedByModel = "Staff";
+    else {
+      const isallocatedbyAdmin = await Admin.findOne({ _id: allocatedByObjectId });
+      if (isallocatedbyAdmin) taskallocatedByModel = "Admin";
     }
-    const isallocatedtoStaff = await Staff.findOne({
-      _id: allocatedToObjectId,
-    });
-    if (isallocatedtoStaff) {
-      taskallocatedtoModel = "Staff";
-    } else {
-      const isallocatedtoAdmin = await Admin.findOne({
-        _id: allocatedToObjectId,
-      });
-      if (isallocatedtoAdmin) {
-        taskallocatedtoModel = "Admin";
-      }
+
+    const isallocatedtoStaff = await Staff.findOne({ _id: allocatedToObjectId });
+    if (isallocatedtoStaff) taskallocatedToModel = "Staff";
+    else {
+      const isallocatedtoAdmin = await Admin.findOne({ _id: allocatedToObjectId });
+      if (isallocatedtoAdmin) taskallocatedToModel = "Admin";
     }
+
     const allocationtask = await Task.findOne({ taskName: "Allocation" });
-    // await LeadMaster.bulkWrite([
-    //   {
-    //     updateOne: {
-    //       filter: { _id: leaddocId },
-    //       update:
-    //         editIndex !== undefined && editIndex !== null
-    //           ? {
-    //             $set: {
-    //               [`activityLog.${Number(
-    //                 editIndex
-    //               )}.allocationChanged`]: true,
-    //             },
-    //           }
-    //           : {},
-    //     },
-    //   },
-    //   // 2️⃣ Set allocationlist = true for matching followup entry
-    //   {
-    //     updateOne: {
-    //       filter: { _id: leaddocId },
-    //       update: {
-    //         $set: {
-    //           "activityLog.$[log].allocationlist": true
-    //         }
-    //       },
-    //       arrayFilters: [
-    //         {
-    //           "log.taskTo": "followup",
-    //           "log.followupClosed": false
-    //         }
-    //       ]
-    //     }
-    //   },
 
-    //   {
-    //     updateOne: {
-    //       filter: { _id: leaddocId },
-    //       update: {
-    //         $push: {
-    //           activityLog: {
-    //             submissionDate: new Date(),
-    //             allocationDate: demoData.demoallocatedDate,
-    //             submittedUser: demoallocatedBy,
-    //             submissiondoneByModel: taskallocatedByModel,
-    //             taskallocatedBy: demoallocatedBy,
-    //             taskallocatedByModel: taskallocatedByModel,
-    //             taskallocatedTo: demoallocatedTo,
-    //             taskallocatedToModel: taskallocatedtoModel,
-    //             remarks: demoData.demoDescription,
-    //             taskBy: allocationtask,
-    //             taskTo: demoData?.selectedTypeName,
-    //             taskId: demoData?.selectedType,
-    //             taskfromFollowup: true,
-    //             allocationChanged: false,
-    //           },
-    //         },
-    //         $set: { taskfromFollowup: true },
-    //       },
-    //     },
-    //   },
-    // ]);
-    // const operations = [];
-
-    // // 1️⃣ Mark previous allocationChanged = true (ONLY if editIndex exists)
-    // if (editIndex !== undefined && editIndex !== null) {
-    //   operations.push({
-    //     updateOne: {
-    //       filter: { _id: new mongoose.Types.ObjectId(leaddocId) },
-    //       update: {
-    //         $set: {
-    //           [`activityLog.${Number(editIndex)}.allocationChanged`]: true
-    //         }
-    //       }
-    //     }
-    //   });
-    // }
-
-    // // 2️⃣ Set allocationlist = true for FOLLOWUP entry (SAFE arrayFilters)
-    // operations.push({
-    //   updateOne: {
-    //     filter: { _id: new mongoose.Types.ObjectId(leaddocId) },
-    //     update: {
-    //       $set: {
-    //         "activityLog.$[log].allocationlist": true
-    //       }
-    //     },
-    //     arrayFilters: [
-    //       {
-    //         "log.taskTo": "followup",
-    //         "log.followupClosed": false
-    //       }
-    //     ]
-    //   }
-    // });
-
-    // // 3️⃣ Push new allocation activity
-    // operations.push({
-    //   updateOne: {
-    //     filter: { _id: new mongoose.Types.ObjectId(leaddocId) },
-    //     update: {
-    //       $push: {
-    //         activityLog: {
-    //           submissionDate: new Date(),
-    //           allocationDate: demoData.demoallocatedDate,
-    //           submittedUser: demoallocatedBy,
-    //           submissiondoneByModel: taskallocatedByModel,
-    //           taskallocatedBy: demoallocatedBy,
-    //           taskallocatedByModel: taskallocatedByModel,
-    //           taskallocatedTo: demoallocatedTo,
-    //           taskallocatedToModel: taskallocatedtoModel,
-    //           remarks: demoData.demoDescription,
-    //           taskBy: allocationtask?._id,
-    //           taskTo: demoData?.selectedTypeName,
-    //           taskId: demoData?.selectedType,
-    //           taskfromFollowup: true,
-    //           allocationChanged: false
-    //         }
-    //       },
-    //       $set: {
-    //         taskfromFollowup: true
-    //       }
-    //     }
-    //   }
-    // });
-
-    // // 4️⃣ Execute bulkWrite (DISABLE timestamps to avoid conflicts)
-    // await LeadMaster.bulkWrite(operations, {
-    //   timestamps: false
-    // });
-
-
-    const bulkOps = [];
-
-    // 1️⃣ First update (keep with Mongoose)
-    if (editIndex !== undefined && editIndex !== null) {
-      bulkOps.push({
-        updateOne: {
-          filter: { _id: leaddocId },
-          update: {
-            $set: {
-              [`activityLog.${Number(editIndex)}.allocationChanged`]: true,
-            },
-          },
-        },
+    if (!taskallocatedByModel || !taskallocatedToModel) {
+      return res.status(400).json({
+        message: "Invalid allocatedBy or allocatedTo ID"
       });
     }
 
-    // 3️⃣ Third update (keep with Mongoose)
-    bulkOps.push({
-      updateOne: {
-        filter: { _id: leaddocId },
-        update: {
+    const updates = [];
+
+    if (editIndex !== undefined && editIndex !== null) {
+      updates.push(
+        LeadMaster.updateOne(
+          { _id: leaddocId },
+          {
+            $set: {
+              [`activityLog.${Number(editIndex)}.allocationChanged`]: true
+            }
+          }
+        )
+      );
+    }
+
+    updates.push(
+      LeadMaster.updateOne(
+        { _id: leaddocId },
+        {
           $push: {
             activityLog: {
               submissionDate: new Date(),
@@ -6811,43 +6785,48 @@ export const SetDemoallocation = async (req, res) => {
               submittedUser: demoallocatedBy,
               submissiondoneByModel: taskallocatedByModel,
               taskallocatedBy: demoallocatedBy,
-              taskallocatedByModel: taskallocatedByModel,
+              taskallocatedByModel,
               taskallocatedTo: demoallocatedTo,
-              taskallocatedToModel: taskallocatedtoModel,
+              taskallocatedToModel,
               remarks: demoData.demoDescription,
               taskBy: allocationtask?._id,
               taskTo: demoData?.selectedTypeName,
               taskId: demoData?.selectedType,
               taskfromFollowup: true,
-              allocationChanged: false,
-            },
+              allocationChanged: false
+            }
           },
-          $set: { taskfromFollowup: true },
-        },
-      },
-    });
-    const objId = new mongoose.Types.ObjectId(leaddocId);  // ✅ Force ObjectId
-    const result = await LeadMaster.collection.updateOne(
-      { _id: objId },  // Filter
-      {
-        $set: {
-          "activityLog.$[log].allocationlist": true  // Creates field!
+          $set: { taskfromFollowup: true }
         }
-      },
-      {
-        arrayFilters: [
-          {
-            "log.taskTo": "followup",
-            "log.followupClosed": false
-          }
-        ]
-      }
+      )
     );
 
-    // Execute main bulkWrite
-    await LeadMaster.bulkWrite(bulkOps);
+    updates.push(
+      LeadMaster.updateOne(
+        { _id: leaddocId, "activityLog.taskTo": "followup", "activityLog.followupClosed": false },
+        {
+          $set: {
+            "activityLog.$[log].allocationlist": true
+          }
+        },
+        {
+          arrayFilters: [
+            {
+              "log.taskTo": "followup",
+              "log.followupClosed": false
+            }
+          ]
+        }
+      )
+    );
 
-    return res.status(200).json({ message: "Demo added succesfully" });
+    const results = await Promise.all(updates);
+    console.log(results);
+
+    return res.status(200).json({
+      message: "Demo added successfully",
+      results
+    });
   } catch (error) {
     console.log("error:", error);
     return res.status(500).json({ message: "Internal server error" });
@@ -8771,9 +8750,151 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+// export const RejectTask=async(req,res)=>{
+// }
+// export const RejectTask = async (req, res) => {
+//   try {
+//     const taskDetails = req.body;
+//     const { leadDocId, taskName, rejectionReason } = taskDetails;
+
+//     if (!leadDocId || !taskName) {
+//       return res.status(400).json({ message: "leadDocId and taskName are required" });
+//     }
+
+//     const leadObjectId = new mongoose.Types.ObjectId(leadDocId);
+//     const lead = await LeadMaster.findById(leadObjectId);
+
+//     if (!lead) {
+//       return res.status(404).json({ message: "Lead not found" });
+//     }
+
+//     const activityLog = lead.activityLog || [];
+
+//     // Find the specific pending task entry — matched by taskId + still open
+//     const matchedIndex = activityLog.findIndex(
+//       (log) =>
+//         String(log.taskId) === String(taskName) && log.taskClosed === false
+//     );
+
+//     if (matchedIndex === -1) {
+//       return res.status(404).json({
+//         message: "Matching pending task not found, or it is already closed"
+//       });
+//     }
+// console.log(
+// "indexxxxxxxxxxxx",matchedIndex)
+//     // Only flip allocationChanged on the matched log entry
+//     const updateFields = {
+//       [`activityLog.${matchedIndex}.allocationChanged`]: true
+//     };
+
+//     // Build the new activity log entry for the rejection
+//     const activityLogEntry = {
+//       submissionDate: taskDetails.submissionDate,
+//       submittedUser: taskDetails.allocatedTo,
+//       submissiondoneByModel: taskDetails.allocatedtomodel,
+//       changeReason: taskDetails.rejectionReason,
+//       taskBy: taskDetails.taskName
+//     };
+
+//     const updatedLead = await LeadMaster.findByIdAndUpdate(leadObjectId, {
+//       $set: updateFields,
+//       $push: {
+//         activityLog: activityLogEntry
+//       }
+//     });
+
+//     if (updatedLead) {
+//       return res.status(200).json({ message: "Task rejected successfully" });
+//     } else {
+//       return res.status(404).json({ message: "Something went wrong" });
+//     }
+//   } catch (error) {
+//     console.log("error:", error);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// };
+export const RejectTask = async (req, res) => {
+  try {
+    const taskDetails = req.body;
+    const { leadDocId, taskName, rejectionReason } = taskDetails;
+
+    if (!leadDocId || !taskName) {
+      return res.status(400).json({ message: "leadDocId and taskName are required" });
+    }
+
+    if (!rejectionReason?.trim()) {
+      return res.status(400).json({ message: "rejectionReason is required" });
+    }
+
+    const leadObjectId = new mongoose.Types.ObjectId(leadDocId);
+    const lead = await LeadMaster.findById(leadObjectId);
+
+    if (!lead) {
+      return res.status(404).json({ message: "Lead not found" });
+    }
+
+    const activityLog = lead.activityLog || [];
+
+    const matchedIndex = activityLog.findIndex(
+      (log) =>
+        String(log.taskId) === String(taskName) &&
+        log.taskClosed === false
+    );
+
+    if (matchedIndex === -1) {
+      return res.status(404).json({
+        message: "Matching pending task not found, or it is already closed"
+      });
+    }
+
+    // 1) update existing log entry
+    const updateResult = await LeadMaster.updateOne(
+      { _id: leadObjectId },
+      {
+        $set: {
+          [`activityLog.${matchedIndex}.allocationChanged`]: true
+        }
+      }
+    );
+const rejectionTask=await Task.findOne({taskName:"Task Rejection"})
+
+    // 2) push rejection entry
+    const activityLogEntry = {
+      submissionDate: taskDetails.submissionDate || new Date(),
+      submittedUser: taskDetails.allocatedTo,
+      submissiondoneByModel: taskDetails.allocatedtomodel,
+      changeReason: rejectionReason,
+      taskBy: rejectionTask,
+      
+      allocationChanged: false,
+      actionType: "rejected"
+    };
+
+    const pushResult = await LeadMaster.updateOne(
+      { _id: leadObjectId },
+      {
+        $push: {
+          activityLog: activityLogEntry
+        }
+      }
+    );
+
+    if (updateResult.modifiedCount === 0 && pushResult.modifiedCount === 0) {
+      return res.status(400).json({ message: "No changes were made" });
+    }
+
+    return res.status(200).json({ message: "Task rejected successfully" });
+  } catch (error) {
+    console.log("error:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
 export const UpdateLeadTask = async (req, res) => {
   try {
     const taskDetails = req.body;
+console.log("taskdetails",taskDetails)
+return
     const leadObjectId = new mongoose.Types.ObjectId(taskDetails.leadDocId);
     const lead = await LeadMaster.findById(leadObjectId);
     const activityLog = [...lead.activityLog];
@@ -8875,9 +8996,9 @@ export const GetrespectedleadTask = async (req, res) => {
     const userObjectId = toObjectId(userid);
     const branchObjectId = toObjectId(branchSelected);
 
-    if (!branchObjectId) {
-      return res.status(400).json({ message: "Invalid branchSelected" });
-    }
+    // if (!branchObjectId) {
+    //   return res.status(400).json({ message: "Invalid branchSelected" });
+    // }
 
     if (ownTask === "true" && !userObjectId) {
       return res.status(400).json({ message: "Invalid userid" });
@@ -8892,7 +9013,7 @@ export const GetrespectedleadTask = async (req, res) => {
     };
 
     const query = {
-      leadBranch: branchObjectId,
+      // leadBranch: branchObjectId,
       activityLog: { $elemMatch: elemMatch },
     };
 
@@ -8901,6 +9022,7 @@ export const GetrespectedleadTask = async (req, res) => {
         leadId: 1,
         leadDate: 1,
         customerName: 1,
+netAmount:1,
         mobile: 1,
         phone: 1,
         email: 1,

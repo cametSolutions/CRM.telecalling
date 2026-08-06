@@ -6488,6 +6488,7 @@ const markCoverage = (target, period) => {
   }
 };
 
+
 // const getAttendanceCoverageByPunch = ({
 //   punchIn,
 //   punchOut,
@@ -6501,93 +6502,48 @@ const markCoverage = (target, period) => {
 
 //   if (punchIn == null || punchOut == null) return coverage;
 
-//   if (punchIn <= morningLimit && punchOut >= earlyLeaveLimit) {
+//   // Full day
+//   if (punchIn <= lateLimit && punchOut >= earlyLeaveLimit) {
 //     coverage.morning = true;
 //     coverage.afternoon = true;
 //     return coverage;
 //   }
 
-//   if (punchIn > morningLimit && punchIn <= lateLimit && punchOut >= earlyLeaveLimit) {
+//   // Morning half only (relax condition so 9:50–3:58 counts)
+//   if (punchIn <= noonLimit && punchOut >= minOutTime && punchOut < earlyLeaveLimit) {
 //     coverage.morning = true;
-//     coverage.afternoon = true;
 //     return coverage;
 //   }
 
-//   if (punchIn <= morningLimit && punchOut >= minOutTime && punchOut < earlyLeaveLimit) {
-//     coverage.morning = true;
-//     coverage.afternoon = true;
-//     return coverage;
-//   }
-
+//   // Afternoon half only
 //   if (punchIn > lateLimit && punchIn < noonLimit && punchOut > minOutTime) {
 //     coverage.afternoon = true;
 //     return coverage;
 //   }
 
-//   if (
-//     punchIn > morningLimit &&
-//     punchIn <= lateLimit &&
-//     punchOut >= minOutTime &&
-//     punchOut < earlyLeaveLimit
-//   ) {
+//   // Pure morning-only punches
+//   if (punchOut <= noonLimit) {
 //     coverage.morning = true;
+//     return coverage;
+//   }
+
+//   // Pure afternoon-only punches
+//   if (punchIn >= noonLimit) {
 //     coverage.afternoon = true;
-//     return coverage;
-//   }
-
-//   if (
-//     (punchIn < noonLimit && punchOut < noonLimit) ||
-//     (punchIn > noonLimit && punchOut > noonLimit)
-//   ) {
-//     if (punchIn < noonLimit && punchOut < noonLimit) {
-//       coverage.morning = true;
-//     } else if (punchIn > noonLimit && punchOut > noonLimit) {
-//       coverage.afternoon = true;
-//     }
-//     return coverage;
-//   }
-
-//   if (
-//     (punchIn === lateLimit && punchOut >= noonLimit && punchOut < minOutTime) ||
-//     (punchIn <= noonLimit && punchOut === minOutTime && punchIn > lateLimit) ||
-//     (punchIn < lateLimit && punchOut >= noonLimit && punchOut < minOutTime) ||
-//     (punchIn <= noonLimit && punchOut > minOutTime && punchIn > lateLimit)
-//   ) {
-//     if (punchIn <= noonLimit) coverage.morning = true;
-//     if (punchOut >= minOutTime) coverage.afternoon = true;
 //     return coverage;
 //   }
 
 //   return coverage;
 // };
-const getAttendanceCoverageByPunch = ({
-  punchIn,
-  punchOut,
-  noonLimit
-}) => {
-  const coverage = { morning: false, afternoon: false };
 
-  if (punchIn == null || punchOut == null) return coverage;
 
-  if (punchOut <= noonLimit) {
-    coverage.morning = true;
-    return coverage;
-  }
-
-  if (punchIn >= noonLimit) {
-    coverage.afternoon = true;
-    return coverage;
-  }
-
-  if (punchIn < noonLimit && punchOut > noonLimit) {
-    coverage.morning = true;
-    coverage.afternoon = true;
-    return coverage;
-  }
-
-  return coverage;
+const getAttendanceCoverageByPunch = ({ punchIn, punchOut, lateLimit, minOutTime }) => {
+  return {
+    morning: punchIn != null && punchIn <= lateLimit,
+    afternoon: punchOut != null && punchOut >= minOutTime
+  };
 };
-const recomputeDayFromCoverage = (day) => {
+const recomputeDayFromCoverage = (day, user, dateKey,arr) => {
   const workedMorning =
     day.coverage.attendance.morning || day.coverage.onsite.morning;
   const workedAfternoon =
@@ -6596,54 +6552,43 @@ const recomputeDayFromCoverage = (day) => {
   const leaveMorning = day.coverage.leave.morning;
   const leaveAfternoon = day.coverage.leave.afternoon;
 
-  const coveredMorning = workedMorning || leaveMorning;
-  const coveredAfternoon = workedAfternoon || leaveAfternoon;
+  let coveredMorning = workedMorning || leaveMorning;
+  let coveredAfternoon = workedAfternoon || leaveAfternoon;
+
+  if (
+    (day.coverage.attendance.morning && day.coverage.onsite.afternoon) ||
+    (day.coverage.attendance.afternoon && day.coverage.onsite.morning)
+  ) {
+    coveredMorning = true;
+    coveredAfternoon = true;
+  }
+
+  const coveredTotal =
+    (coveredMorning ? 0 : 0.5) +
+    (coveredAfternoon ? 0 : 0.5);
 
   const present =
     (workedMorning ? 0.5 : 0) +
     (workedAfternoon ? 0.5 : 0);
 
-  const coveredTotal =
-    (coveredMorning ? 0.5 : 0) +
-    (coveredAfternoon ? 0.5 : 0);
-
   day.present = present;
   day.notMarked = Math.max(0, 1 - coveredTotal);
+  if (user.name === "Abhishek EV") {
+    console.log("arr,date,converted",arr, dateKey,coveredTotal)
+//     console.log("coveredmorning", coveredMorning)
+//  console.log("coveredafter", coveredAfternoon)
+console.log("workedmorining",workedMorning)
+  }
+  if (coveredMorning && coveredAfternoon) {
+    day.notMarked = 0;
+  }
 
   if (coveredTotal > 0) {
     day.cantchange = false;
   }
-};
+}
 
-// const applyLeaveToDay = (day, leaveDoc) => {
-//   if (!day || !leaveDoc || leaveDoc.onsite === true || !APPROVED(leaveDoc)) return;
-
-//   const bucket = normalizeLeaveCategory(leaveDoc.leaveCategory);
-//   const amount = leaveDoc.leaveType === "Half Day" ? 0.5 : 1;
-
-//   day[bucket] = (day[bucket] || 0) + amount;
-//   day.reason = leaveDoc.reason || day.reason || "";
-//   day.halfDayperiod =
-//     leaveDoc.leaveType === "Half Day" ? leaveDoc.halfDayPeriod || "" : "";
-
-//   day.leaveDetails[leaveDoc._id] = {
-//     _id: leaveDoc._id,
-//     leaveDate: leaveDoc.leaveDate,
-//     leaveType: leaveDoc.leaveType,
-//     halfDayPeriod: leaveDoc.halfDayPeriod || null,
-//     leaveCategory: leaveDoc.leaveCategory || null,
-//     reason: leaveDoc.reason || null
-//   };
-
-//   if (leaveDoc.leaveType === "Full Day") {
-//     markCoverage(day.coverage.leave, "Full Day");
-//   } else {
-//     markCoverage(day.coverage.leave, leaveDoc.halfDayPeriod || "Afternoon");
-//   }
-
-//   recomputeDayFromCoverage(day);
-// };
-const applyLeaveToDay = (day, leaveDoc) => {
+const applyLeaveToDay = (day, leaveDoc,user,dateKey) => {
   if (!day || !leaveDoc || leaveDoc.onsite === true || !APPROVED(leaveDoc)) return;
 
   const bucket = normalizeLeaveCategory(leaveDoc.leaveCategory);
@@ -6682,11 +6627,12 @@ const applyLeaveToDay = (day, leaveDoc) => {
       day.coverage.onsite.afternoon = false;
     }
   }
-
-  recomputeDayFromCoverage(day);
+const arr="applyleave"
+  recomputeDayFromCoverage(day,user,dateKey,arr);
 };
 
-const applyOnsiteToDay = (day, onsiteDoc) => {
+
+const applyOnsiteToDay = (day, onsiteDoc, user, dateKey) => {
   if (!day || !onsiteDoc || !APPROVED(onsiteDoc)) return;
 
   if (Array.isArray(onsiteDoc.onsiteData)) {
@@ -6712,13 +6658,33 @@ const applyOnsiteToDay = (day, onsiteDoc) => {
   }
 
   if (onsiteDoc.onsiteType === "Full Day") {
-    markCoverage(day.coverage.onsite, "Full Day");
+    day.coverage.onsite.morning = true;
+    day.coverage.onsite.afternoon = true;
   } else {
-    markCoverage(day.coverage.onsite, onsiteDoc.halfDayPeriod || "Afternoon");
-  }
+    const period = onsiteDoc.halfDayPeriod || "Afternoon";
+if(user.name===""){
+console.log("datekeyyyyyy",dateKey,period)
+}
+    if (period === "Morning") {
+      day.coverage.onsite.morning = true;
+    }
 
-  recomputeDayFromCoverage(day);
-};
+    if (period === "Afternoon") {
+      day.coverage.onsite.afternoon = true;
+
+      // your business rule:
+      // if employee has attendance punch for first half and onsite in afternoon,
+      // the day should not remain 0.5 notMarked
+      // if (day.inTime && day.outTime) {
+      //   day.coverage.attendance.morning = true;
+      // }
+    }
+  }
+const arr="applyonsite"
+  recomputeDayFromCoverage(day, user, dateKey,arr);
+}
+
+
 
 const classifyAttendanceDay = ({
   day,
@@ -6729,9 +6695,10 @@ const classifyAttendanceDay = ({
   minOutTime,
   earlyLeaveLimit,
   morningStartLabel,
-  eveningEndLabel
+  eveningEndLabel,
+  dateKey,
+  user
 }) => {
-  console.log()
   if (!attendance) return;
 
   day.inTime = attendance.inTime || "";
@@ -6801,6 +6768,12 @@ const classifyAttendanceDay = ({
       }
     }
   }
+  // if (user.name === "Abhishek EV") {
+  //   console.log("datekyyy", dateKey)
+  //   if (dateKey === "2026-07-20") {
+  //     console.log("07-20 punchIn/punchOut/lateLimit/minOutTime:", { punchIn, punchOut, lateLimit, minOutTime });
+  //   }
+  // }
 
   const attendanceCoverage = getAttendanceCoverageByPunch({
     punchIn,
@@ -6814,8 +6787,8 @@ const classifyAttendanceDay = ({
 
   day.coverage.attendance.morning = attendanceCoverage.morning;
   day.coverage.attendance.afternoon = attendanceCoverage.afternoon;
-
-  recomputeDayFromCoverage(day);
+const arr="classifyattendance"
+  recomputeDayFromCoverage(day,user,dateKey,arr);
 
   if (!attendanceCoverage.morning && !attendanceCoverage.afternoon) {
     day.cantchange = true;
@@ -7082,7 +7055,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
         const attendance = attendanceMap.get(dateKey);
         const dayOnsites = onsiteMap.get(dateKey) || [];
         const dayLeaves = leaveMap.get(dateKey) || [];
-
+        // console.log(dateKey)
         classifyAttendanceDay({
           day,
           attendance,
@@ -7092,20 +7065,31 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
           minOutTime,
           earlyLeaveLimit,
           morningStartLabel: morningStart,
-          eveningEndLabel: eveningEnd
+          eveningEndLabel: eveningEnd,
+          dateKey,
+          user
+
         });
 
         for (const onsite of dayOnsites) {
-          applyOnsiteToDay(day, onsite);
+          applyOnsiteToDay(day, onsite, user, dateKey);
           if (onsite.onsiteType === "Full Day") stats.onsite += 1;
           else if (onsite.onsiteType === "Half Day") stats.onsite += 0.5;
         }
+        // if (user.name === "Abhishek EV") {
+        //   // ADD THIS BLOCK HERE
+        //   if (dateKey === "2026-07-20") {
+        //     console.log("07-20 onsite records:", JSON.stringify(dayOnsites));
+        //     console.log("07-20 coverage after onsite:", JSON.stringify(day.coverage));
+        //   }
+        // }
+
 
         for (const leave of dayLeaves) {
-          applyLeaveToDay(day, leave);
+          applyLeaveToDay(day, leave,user,dateKey);
         }
 
-        recomputeDayFromCoverage(day);
+        recomputeDayFromCoverage(day,user,dateKey);
 
         const leaveTotal = getLeaveTotal(day);
         if (leaveTotal === 0.5) stats.halfDayLeave += 0.5;
@@ -7179,6 +7163,11 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
   }
 };
 
+///////////////////////////////
+
+
+
+//////
 export const resetCallStatus = async (req, res) => {
   const { adminid } = req.query
 
@@ -7677,7 +7666,7 @@ export const Login = async (req, res) => {
     }
 
     const token = generateToken(res, user)
-const leavemasterdata=await Leavemaster.find({})
+    const leavemasterdata = await Leavemaster.find({})
     if (token) {
       const { password, ...userwithoutpassword } = user
 
@@ -7695,7 +7684,7 @@ const leavemasterdata=await Leavemaster.find({})
         branch,
         passwordExpired: false,
         passwordExpiryWarning,
-leavemasterdata
+        leavemasterdata
       })
     }
 
@@ -8635,9 +8624,7 @@ export const UploadImage = async (req, res) => {
     const { userId } = req.query;
     const { url } = req.body;
 
-    console.log("req.body:", req.body);
-    console.log("url:", url);
-    console.log("userId:", userId);
+
 
     if (!userId) {
       return res.status(400).json({ message: "userId is required" });
@@ -8908,8 +8895,7 @@ export const MisspunchRegister = async (req, res) => {
       });
     }
 
-    console.log("attendanceRecord from DB =>", attendanceRecord);
-    console.log("iddddddddddddddd", attendanceRecord._id)
+
 
     if (normalizedType === "in" && attendanceRecord?.inTime) {
       return res.status(400).json({
@@ -8980,7 +8966,6 @@ export const MisspunchRegister = async (req, res) => {
     // 4) Create and log saved doc
     const newMisspunch = await Misspunch.create(misspunchPayload);
 
-    console.log("saved newMisspunch =>", newMisspunch);
 
     return res.status(201).json({
       message: "Misspunch registered successfully",
@@ -9036,7 +9021,6 @@ export const OnsiteleaveApply = async (req, res) => {
 }
 export const Getallmisspunch = async (req, res) => {
   try {
-    console.log("mispunchhhhh")
     const startdate = req?.query?.startDate
     const start = new Date(startdate);
     start.setHours(0, 0, 0, 0); // Start of the day
@@ -9062,7 +9046,6 @@ export const Getallmisspunch = async (req, res) => {
     } else if (role?.toLowerCase() !== "admin") {
       query.assignedto = new mongoose.Types.ObjectId(userid);
     }
-    console.log("queryerqreewrerer", query)
     const misspunchdata = await Misspunch.find(query).populate({
       path: "userId",
       select: "name role department", // Select fields from User
@@ -9081,7 +9064,6 @@ export const Getallmisspunch = async (req, res) => {
       ]
     })
 
-    console.log("missssspucnhdata", misspunchdata)
     if (misspunchdata && misspunchdata.length) {
       return res.status(200).json({ message: "misspunchfound", data: misspunchdata })
     } else {
@@ -9157,7 +9139,6 @@ export const OnsiteApply = async (req, res) => {
     if (checkForthisonsiteusedforCompensatoryleave) {
       return res.status(201).json({ message: "Cant make date change compensatory for this onsite taken" })
     }
-    console.log("888888888888888888888888888", checkForthisonsiteusedforCompensatoryleave)
     const selectedObjectId = new mongoose.Types.ObjectId(selectedid)
     const assignedObjectId = new mongoose.Types.ObjectId(assignedto)
 
@@ -9192,7 +9173,6 @@ export const OnsiteApply = async (req, res) => {
       const currentonsiteType = onsiteType
       if (compensatoryLeave === "true") {
         if (formeronsiteType === "Full Day" && currentonsiteType === "Half Day") {
-          console.log("hhhhhhhhhhhhhhhhhhhhhhhhhhhh")
           const year = new Date(onsiteDate).getFullYear()
 
           const compensatoryLeave = await CompensatoryLeave.find({
@@ -9219,8 +9199,7 @@ export const OnsiteApply = async (req, res) => {
           formeronsiteType === "Half Day" &&
           currentonsiteType === "Full Day"
         ) {
-          console.log(
-            "tttttttttttttttttttttttt")
+
           let ValueAdded = 0.5
           const year = new Date(onsiteDate).getFullYear()
 
@@ -9249,7 +9228,6 @@ export const OnsiteApply = async (req, res) => {
 
         })
         if (checkcompenstoryUsed && checkcompenstoryUsed.length && checkcompenstoryUsed.leaveUsed) {
-          console.log("OOOOOOOOOOOOOOOOOOOO")
           return res.status(409).json({
             success: false,
             message: "Cannot update onsite. A leave is already used against this."
@@ -9285,7 +9263,6 @@ export const OnsiteApply = async (req, res) => {
         return res.status(200).json({ message: "Onsite updated" })
       }
     } else {
-      console.log("pppppppppppppppppppp")
       // If no existing record, create a new one
       const onsitedata = new Onsite({
         onsiteDate,
@@ -10802,7 +10779,6 @@ export const Getallcompensatoryleave = async (req, res) => {
       { $match: { userId: objectId } },
       { $group: { _id: null, total: { $sum: "$value" } } }
     ])
-    console.log("resulttttt", result)
 
     const totalCompensatoryLeave = result[0]?.total || 0
     return res.status(200).json({
@@ -10927,7 +10903,6 @@ export const GetallCurrentMonthbirthDay = async (req, res) => {
     const adminbirthdays = await Admin.find({
       dateofbirth: { $regex: `^\\d{4}-${currentMonth}-\\d{2}$` }
     })
-    console.log("admin", adminbirthdays)
 
     const currentmonthBirthDays = [...staffbirthdays, ...adminbirthdays].map(
       (item) => ({
@@ -11998,7 +11973,6 @@ export const ApproveOnsite = async (req, res) => {
 }
 export const RejectMisspunch = async (req, res) => {
   try {
-    console.log("hhhh")
     const selectedId = req?.query?.selectedId
     const userId = req?.query?.userId
     const startDate = req?.query?.startDate
@@ -12011,18 +11985,14 @@ export const RejectMisspunch = async (req, res) => {
     const userObjectId = new mongoose.Types.ObjectId(userId)
 
     if (!userId) {
-      console.log("useridddd")
       return res.status(400).json({ message: "User ID is required" })
     }
     const deletemisspunchRequest = await Misspunch.deleteOne({
       _id: selectedObjectId
     })
-    console.log("delterequwst", deletemisspunchRequest)
     if (deletemisspunchRequest.deletedCount === 0) {
-      console.log("Hhhhhh")
       return res.status(404).json({ messaage: "No misspunch request found to delete" })
     } else if (deletemisspunchRequest.deletedCount > 0) {
-      console.log("deltedone")
       const misspunchdata = await Misspunch.find({
         misspunchDate: {
           $gte: startDate,
@@ -12046,7 +12016,6 @@ export const RejectMisspunch = async (req, res) => {
         ]
       })
 
-      console.log("returndone")
       return res.status(200).json({ message: misspunchdata.length > 0 ? "misspunchfound" : "not found", data: misspunchdata })
 
 
@@ -12855,10 +12824,7 @@ export const EditOnsite = async (req, res) => {
     const { onsiteDate, ...updatedFeild } = formData
 
     const dateObj = new Date(onsiteDate)
-    console.log("userid", userid)
-    console.log("formdata", formData)
-    console.log("onsitedatae,", onsiteDate)
-    console.log("updatedfirle", updatedFeild)
+
     // Extract year and month (without leading zero)
     const year = dateObj.getFullYear() // "2025"
     const month = dateObj.getMonth() + 1
@@ -13348,7 +13314,8 @@ export const GetsomeAllsummary = async (
           minOutTime,
           earlyLeaveLimit,
           morningStartLabel: morningStart,
-          eveningEndLabel: eveningEnd
+          eveningEndLabel: eveningEnd,
+          dateKey
         });
 
         for (const onsite of dayOnsites) {
@@ -13361,7 +13328,7 @@ export const GetsomeAllsummary = async (
           applyLeaveToDay(day, leave);
         }
 
-        recomputeDayFromCoverage(day);
+        recomputeDayFromCoverage(day,user,dateKey);
 
         const leaveTotal = getLeaveTotal(day);
         if (leaveTotal === 0.5) stats.halfDayLeave += 0.5;
@@ -16308,7 +16275,6 @@ export const DeleteEvent = async (req, res) => {
           .json({ message: "Leaves Deleted Successfully", data: leaves })
       }
     } else if (type === "onsite") {
-      console.log("hhhhhh")
       const onsiteRequest = await Onsite.findOne({
         _id: new mongoose.Types.ObjectId(payload?.docId),
         userId: objectId,
@@ -16362,7 +16328,6 @@ export const DeleteEvent = async (req, res) => {
             data: []
           })
         }
-        console.log("dleterafeteer", onsites.length)
         // Send the leave records as a JSON response
         return res.status(200).json({ message: "Onsite Deleted Successfully", data: onsites })
       }
