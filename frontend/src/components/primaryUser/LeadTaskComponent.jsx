@@ -60,6 +60,7 @@ console.log(Data)
 console.log(Data)
   const renderTable = (data) => {
     const LeadRow = ({ item, index }) => {
+console.log(item)
       const [open, setOpen] = useState(false)
 
       const lastLog = item.activityLog[item.activityLog.length - 1]

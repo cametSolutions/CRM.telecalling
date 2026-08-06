@@ -117,7 +117,7 @@ console.log(item)
                         </div>
                       </td>
                       <td className="border border-gray-200 p-2">
-                        {item?.remarks || "N/A"}
+                        {item?.remarks || item?.changeReason}
                       </td>
                       <td className="border border-gray-200 p-2">
                         {item?.nextFollowUpDate

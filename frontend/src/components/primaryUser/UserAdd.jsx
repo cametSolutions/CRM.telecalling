@@ -816,20 +816,47 @@ console.log(url)
 
             <ImageInput onSelect={profileImage} tag={"UploadProfile"} />
             <ImageInput onSelect={documentImage} tag={"UploadDocument"} />
-            <div>
+            {/* <div>
               <label className="block mb-1 font-semibold">Staff Id</label>
               <input
                 type="Number"
                 {...register("attendanceId", { required: "Id is required" })}
                 placeholder="Enter an address"
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
+ onWheel={(e) => e.currentTarget.blur()}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0"
               />
               {errors.attendanceId && (
                 <p className="text-red-500 text-sm">
                   {errors.attendanceId.message}
                 </p>
               )}
-            </div>
+            </div> */}
+<div>
+  <label className="block mb-1 font-semibold">Staff ID</label>
+
+  <input
+    type="number"
+    {...register("attendanceId", {
+      required: "Staff ID is required",
+      valueAsNumber: true,
+      min: {
+        value: 1,
+        message: "Staff ID must be greater than 0",
+      },
+      validate: (value) =>
+        Number.isInteger(value) || "Staff ID must be a whole number",
+    })}
+    placeholder="Enter Staff ID"
+    onWheel={(e) => e.currentTarget.blur()}
+    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0"
+  />
+
+  {errors.attendanceId && (
+    <p className="text-red-500 text-sm">
+      {errors.attendanceId.message}
+    </p>
+  )}
+</div>
           </div>
 
           <div className="mt-5">

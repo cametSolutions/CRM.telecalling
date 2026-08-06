@@ -2089,6 +2089,7 @@ const LeadMaster = ({
         JSON.stringify(selectedBranch)
       )}`
   )
+console.log(selectedBranch)
   console.log(productData)
   const filter = productData?.filter(
     (item) => item.productName === "MARG ERP NANO"
