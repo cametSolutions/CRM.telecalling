@@ -202,8 +202,8 @@ const ReallocationTable = () => {
 
       const filter = allusers.filter(
         (staff) =>
-          staff.isVerified === true &&
-          staff.selected.some((s) => selectedCompanyBranch === s.branch_id)
+          staff.isVerified === true 
+          // staff.selected.some((s) => selectedCompanyBranch === s.branch_id)
       )
       const combinedUsers = [...filter, ...allAdmins]
       setAllocationOptions(

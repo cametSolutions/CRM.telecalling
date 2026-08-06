@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { Pencil } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom"
+
 import { useSelector } from "react-redux"
 import Breadcrumb from "../../../components/common/Breadcrumb"
 import { formatDate } from "../../../utils/dateUtils"
@@ -8,8 +9,10 @@ import MyDatePicker from "../../../components/common/MyDatePicker"
 import { FaSpinner } from "react-icons/fa"
 import { useQuery } from "@tanstack/react-query"
 import { LeadhistoryModal } from "../../../components/primaryUser/LeadhistoryModal"
+import NoDataAvailable from "../../../components/NodataAvailable"
 import { CollectionupdateModal } from "../../../components/primaryUser/CollectionupdateModal"
 import { BsFilterLeft } from "react-icons/bs"
+import { SearchableSelect } from "../../../components/common/SearchableSelect"
 import {
   Eye,
   Phone,
@@ -165,6 +168,7 @@ const LeadFollowUp = () => {
   const [errors, setErrors] = useState({})
   const [demosubmitError, setDemofollowersubmitError] = useState({})
   const [showModal, setShowModal] = useState(false)
+
   const [debouncedValue, setDebouncedValue] = useState("")
   const [followupDateModal, setfollowupDateModal] = useState(false)
   const [showFullName, setShowFullName] = useState(false)
@@ -1526,9 +1530,8 @@ const LeadFollowUp = () => {
       //   user.selected?.some((sel) => sel.branch_id === selectedCompanyBranch)
       // )
       const filteredSelectedBranchStaffs = allusers.filter(
-        (staff) =>
-          staff.isVerified === true &&
-          staff.selected.some((s) => selectedCompanyBranch === s.branch_id)
+        (staff) => staff.isVerified === true
+        // staff.selected.some((s) => selectedCompanyBranch === s.branch_id)
       )
       console.log(filteredSelectedBranchStaffs)
       const filtereduserandadmin = [
@@ -1652,8 +1655,8 @@ const LeadFollowUp = () => {
       console.log(safeState?.header)
       if (safeState?.header === "Total Leads") {
         console.log(leads)
-const lea=leads.map((item)=>item.leadId)
-console.log(lea)
+        const lea = leads.map((item) => item.leadId)
+        console.log(lea)
         const filteredLeads = leads.filter((lead) => {
           // 1️⃣ Get only followup allocation logs
           const followupAllocations = lead.activityLog.filter(
@@ -1699,14 +1702,14 @@ console.log(lea)
         console.log(groupedData)
       } else {
         console.log("HH")
-console.log(safeState)
+        console.log(safeState)
         if (safeState?.viewMode === "overDue") {
           console.log("hhh")
           const today = new Date()
           today.setHours(0, 0, 0, 0)
-console.log(leads)
-const as=leads.map((item)=>item.leadId)
-console.log(as)
+          console.log(leads)
+          const as = leads.map((item) => item.leadId)
+          console.log(as)
           const overdueLeads = leads.filter((lead) => {
             // 1️⃣ Get logs having nextFollowUpDate
             const followupLogs = lead.activityLog.filter(
@@ -1852,8 +1855,8 @@ console.log(as)
             return lead.leadConvertedDate && !lead.leadLost
           })
           console.log(leads)
-const a=leads.map((item)=>item.leadId)
-console.log(a)
+          const a = leads.map((item) => item.leadId)
+          console.log(a)
           console.log("converted Leads:", convertedLeads.length)
           const groupedLeads = {}
           let grandTotal = 0
@@ -1873,7 +1876,7 @@ console.log(a)
           console.log(groupedData)
         } else if (safeState?.viewMode === "neverfollowup") {
           console.log("HHhdffh")
-console.log(leads)
+          console.log(leads)
           const neverFollowupLeads = leads.filter((lead) => {
             const logs = lead.activityLog || []
 
@@ -1901,7 +1904,7 @@ console.log(leads)
               !hasNextFollowupDate && !lead.leadConvertedDate && !lead.leadLost
             )
           })
-console.log(neverFollowupLeads)
+          console.log(neverFollowupLeads)
           console.log(leads)
           console.log("neverfollowup:", neverFollowupLeads?.length)
           const groupedLeads = {}
@@ -2398,32 +2401,37 @@ console.log(neverFollowupLeads)
     allocatedTo,
     taskfromFollowup
   ) => {
+    console.log(loggedUser)
     if (!loggedUser) return // NEW: guard
+    console.log("h")
     const owner = loggedUser._id === allocatedTo
     setOwner(owner)
     const isHaveDemo = taskfromFollowup ? history[history.length - 1] : null
-    if (isHaveDemo) {
-      const demoassignedDate = formatDate(isHaveDemo.submissionDate)
-      setdemoEditIndex(history.length - 1)
-      setfollowUpDatesandRemarksEditIndex(history.length - 1)
-      setDemodata({
-        selectedType: isHaveDemo?.taskTo,
-        demoallocatedTo: isHaveDemo?.taskallocatedTo?._id,
-        demoallocatedDate: isHaveDemo?.allocationDate.toString().split("T")[0],
-        demoassignedDate,
-        demoDescription: isHaveDemo?.remarks,
-        selectedTypeName: isHaveDemo?.taskTo
-      })
-      setIsEditable(true)
-      setIsAllocated(true)
-    }
+    console.log(isHaveDemo)
+    // if (isHaveDemo) {
+    //   const demoassignedDate = formatDate(isHaveDemo.submissionDate)
+    //   setdemoEditIndex(history.length - 1)
+    //   setfollowUpDatesandRemarksEditIndex(history.length - 1)
+    //   setDemodata({
+    //     selectedType: isHaveDemo?.taskTo,
+    //     demoallocatedTo: isHaveDemo?.taskallocatedTo?._id,
+    //     demoallocatedDate: isHaveDemo?.allocationDate.toString().split("T")[0],
+    //     demoassignedDate,
+    //     demoDescription: isHaveDemo?.remarks,
+    //     selectedTypeName: isHaveDemo?.taskTo
+    //   })
+    //   setIsEditable(true)
+    //   setIsAllocated(true)
+    // }
 
     setfollowupClosed(!pending)
     setselectedDocid(docId)
     setselectedTab("History")
+    console.log("hh")
     setShowModal(true)
     setHistoryList(history)
     setSelectedLeadId(leadid)
+    console.log("hhh")
   }
 
   const handlefollowupdate = (Id, docId) => {
@@ -2503,6 +2511,10 @@ console.log(neverFollowupLeads)
 
     try {
       if (!loggedUser || !selectedDocId) return
+      console.log(demoData)
+      console.log(selectedDocId)
+      console.log(editdemoIndex)
+
       setLoader(true)
 
       const response = await api.post(
@@ -2675,7 +2687,10 @@ console.log(neverFollowupLeads)
 
   // [Keep all your existing component code - LeadRow, renderTable, etc.]
   // ... (LeadRow component and renderTable function remain the same)
-const toSafeUpper = (value) => String(value ?? "").trim().toUpperCase()
+  const toSafeUpper = (value) =>
+    String(value ?? "")
+      .trim()
+      .toUpperCase()
   const LeadRow = ({ item, index }) => {
     console.log(item)
     const [open, setOpen] = useState(false)
@@ -2704,11 +2719,13 @@ const toSafeUpper = (value) => String(value ?? "").trim().toUpperCase()
     // const shouldShowTooltipCustomer = customerName.length > 20
     // const shouldShowTooltipEmail = item?.email.length > 5
 
-const customerName = String(item?.customerName?.customerName ?? "").toUpperCase()
-const shouldShowTooltipCustomer = customerName.length > 20
+    const customerName = String(
+      item?.customerName?.customerName ?? ""
+    ).toUpperCase()
+    const shouldShowTooltipCustomer = customerName.length > 20
 
-const email = String(item?.email ?? "")
-const shouldShowTooltipEmail = email.length > 5
+    const email = String(item?.email ?? "")
+    const shouldShowTooltipEmail = email.length > 5
 
     return (
       <>
@@ -3059,72 +3076,17 @@ const shouldShowTooltipEmail = email.length > 5
   )
   const currentData = statusAllocated ? allocatedLeads : tableData
 
+  const hasLeads = () => {
+    if (!Array.isArray(currentData) || currentData.length === 0) return false
+    return currentData.some(
+      (group) => Array.isArray(group?.leads) && group.leads.length > 0
+    )
+  }
+  console.log(currentData)
   return (
     <div className="h-full  bg-[#ADD8E6] overflow-hidden">
       <div className="flex h-full  flex-row">
-        {/* <StaticSidebar
-          handleMoreClick={handleMoreClick}
-          selectedCompanyBranch={selectedCompanyBranch}
-          setselectedCompanyBranch={setselectedCompanyBranch}
-          parenttargetData={settargetData}
-          parentperiodmode={periodMode}
-          parentyear={selectedYear}
-          setselectedPeriod={setselectedPeriod}
-        /> */}
-
         <div className="flex flex-1 flex-col overflow-hidden min-h-0">
-          {/* <header className="flex items-center justify-between ">
-            {originalloggeduser?.role?.toLowerCase() === "admin" ? (
-              <AdminHeader hide={true} />
-            ) : (
-              <StaffHeader hide={true} />
-            )}
-
-            <div className="flex items-center gap-1.5   pr-3 h-full">
-              <button className="rounded-full p-1.5 transition bg-slate-100">
-                <Mail size={15} strokeWidth={2.2} />
-              </button>
-              <div className="relative">
-                <button className="rounded-full p-1.5 transition bg-slate-100">
-                  <MessageSquareText size={15} strokeWidth={2.2} />
-                </button>
-                <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />
-              </div>
-              <button className="rounded-full p-1.5 transition bg-slate-100">
-                <Settings size={15} strokeWidth={2.2} />
-              </button>
-              <button className="rounded-full p-1.5 transition bg-slate-100">
-                <User size={15} strokeWidth={2.2} />
-              </button>
-
-              <div className="relative">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setShowUserMenu((prev) => !prev)
-                  }}
-                  className="rounded-full p-1.5 transition bg-slate-100"
-                >
-                  <User size={15} strokeWidth={2.2} />
-                </button>
-
-                {showUserMenu && (
-                  <div
-                    onClick={(e) => e.stopPropagation()} 
-                    className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
-                  >
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </header> */}
-
           {(loading || productwiseloader) && (
             <BarLoader
               cssOverride={{ width: "100%", height: "4px" }}
@@ -3272,18 +3234,6 @@ const shouldShowTooltipEmail = email.length > 5
                   </div>
                 )}
 
-                {/* <select
-                value={selectedCompanyBranch || ""}
-                onChange={(e) => setselectedCompanyBranch(e.target.value)}
-                className="border border-gray-300 py-0.5 rounded-md px-2 focus:outline-none w-36 md:min-w-[120px] cursor-pointer"
-              >
-                {loggedUserBranches?.map((branch) => (
-                  <option key={branch.value} value={branch.value}>
-                    {branch.label}
-                  </option>
-                ))}
-              </select> */}
-
                 <div className="flex justify-end">
                   <button
                     onClick={() =>
@@ -3310,11 +3260,8 @@ const shouldShowTooltipEmail = email.length > 5
               </div>
             </div>
 
-            {/* <div className="h-auto overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3 bg-white">
-              {renderTable(currentData)}
-            </div> */}
-            <div className="flex-1 min-h-0 overflow-auto rounded-lg shadow-xl mx-2 md:mx-3 mb-3 bg-white">
-              {renderTable(currentData)}
+            <div className=" min-h-0 overflow-auto rounded-lg shadow-xl mx-2 md:mx-3 mb-3 bg-white">
+              {hasLeads() ? renderTable(currentData) : <NoDataAvailable />}
             </div>
           </div>
         </div>
@@ -3329,41 +3276,42 @@ const shouldShowTooltipEmail = email.length > 5
           />
         )}
 
-        {/* MODIFIED: Follow-up Modal with proper state management */}
         {showfollowupModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-[#ADD8E6] rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+          <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-[#ADD8E6] rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden border border-white/40">
               {/* Header */}
-              <div className="bg-[#ADD8E6] flex items-center justify-between px-6 py-2 border-b border-gray-200">
+              <div className="flex items-center justify-between px-7 py-4 bg-white/40 backdrop-blur-md border-b border-white/50">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-800">
+                  <h2 className="text-xl font-bold text-gray-800 tracking-tight">
                     Follow-Up
                   </h2>
-                  <p className="text-sm text-blue-600 mt-0.5 font-semibold">
+                  <p className="text-sm text-blue-700 font-semibold mt-0.5">
                     {toSafeUpper(formData?.customerName)}
                   </p>
                 </div>
-                <div className="text-lg font-semibold flex-grow text-end ">
-                  <span>Lead ID:</span>
-                  <span className="ml-1">{selectedLeadId}</span>
-                </div>
 
-                <button
-                  type="button"
-                  onClick={handleCloseFollowupModal}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <X className="w-5 h-5 text-gray-500" />
-                </button>
+                <div className="flex items-center gap-4">
+                  <div className="text-sm bg-white/70 px-3 py-1.5 rounded-full font-semibold text-gray-700 shadow-sm">
+                    Lead ID{" "}
+                    <span className="text-blue-700 ml-1">{selectedLeadId}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCloseFollowupModal}
+                    className="p-2 hover:bg-white/70 rounded-full transition-colors"
+                  >
+                    <X className="w-5 h-5 text-gray-600" />
+                  </button>
+                </div>
               </div>
 
               {/* Body - Scrollable */}
-              <div className="flex-1 overflow-y-auto px-6 py-5">
-                <div className="space-y-2">
-                  {/* Follow Up Date - Read Only */}
+              <div className="flex-1 overflow-y-auto px-7 py-6 bg-white/30">
+                <div className="space-y-4">
+                  {/* Follow Up Date + Status */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                      <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
                         Follow Up Date
                       </label>
                       <div className="relative">
@@ -3381,17 +3329,16 @@ const shouldShowTooltipEmail = email.length > 5
                                     .replace(/\//g, "-")
                                 : ""
                           }
-                          className="w-full px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium cursor-not-allowed focus:outline-none"
+                          className="w-full px-4 py-2.5 bg-white/70 border border-gray-200 rounded-xl text-gray-700 font-medium cursor-not-allowed focus:outline-none"
                         />
-                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                          <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                          <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
                         </div>
                       </div>
                     </div>
 
-                    {/* Status Dropdown */}
                     <div>
-                      <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                      <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
                         Status
                       </label>
                       <div className="relative">
@@ -3404,102 +3351,86 @@ const shouldShowTooltipEmail = email.length > 5
                               followupType: e.target.value
                             }))
                           }
-                          onFocus={() => setIsdropdownOpen(true)}
-                          onBlur={() => setIsdropdownOpen(false)}
-                          className="w-full appearance-none px-4 py-1.5 pr-10 border border-gray-300 rounded-lg bg-white text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition-all cursor-pointer"
+                          className="w-full appearance-none px-4 py-2.5 pr-10 border border-gray-200 rounded-xl bg-white text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100 disabled:cursor-not-allowed transition-all cursor-pointer"
                         >
                           <option value="infollowup">In Follow-up</option>
                           <option value="closed">Closed</option>
                           <option value="lost">Lost</option>
                         </select>
-                        <ChevronDown
-                          className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none transition-transform duration-200 ${
-                            isdropdownOpen ? "rotate-180" : ""
-                          }`}
-                        />
+                        <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                       </div>
                     </div>
                   </div>
 
                   {/* Allocation Checkbox */}
                   {formData.followupType === "infollowup" && (
-                    <div className="bg-blue-50 border-l-4 border-blue-500 rounded-r-lg p-2">
-                      <label className="flex items-start cursor-pointer group">
-                        <input
-                          type="checkbox"
-                          disabled={isdemofollownotClosed}
-                          checked={isAllocated}
-                          onChange={() => {
-                            if (
-                              formData.followupType === "closed" ||
-                              formData.followupType === "lost"
-                            )
-                              return
-                            setIsAllocated(!isAllocated)
-                            setFormData((prev) => ({
-                              ...prev,
-                              Remarks: "",
-                              nextfollowUpDate: ""
-                            }))
-                          }}
-                          className="mt-0.5 w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
-                        />
-                        <div className="ml-3">
-                          <span className="text-sm font-semibold text-gray-800 group-hover:text-blue-700 transition-colors">
-                            Enable Allocation
-                          </span>
-                          <p className="text-xs text-gray-600 mt-0.5">
-                            Assign a Task to a team member
-                          </p>
-                        </div>
-                      </label>
-                    </div>
+                    <label className="flex items-start gap-3 cursor-pointer bg-white/70 rounded-xl p-3.5 border border-white hover:bg-white transition-colors group">
+                      <input
+                        type="checkbox"
+                        disabled={isdemofollownotClosed}
+                        checked={isAllocated}
+                        onChange={() => {
+                          if (
+                            formData.followupType === "closed" ||
+                            formData.followupType === "lost"
+                          )
+                            return
+                          setIsAllocated(!isAllocated)
+                          setFormData((prev) => ({
+                            ...prev,
+                            Remarks: "",
+                            nextfollowUpDate: ""
+                          }))
+                        }}
+                        className="mt-0.5 w-4.5 h-4.5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-400 disabled:cursor-not-allowed"
+                      />
+                      <div>
+                        <span className="text-sm font-semibold text-gray-800">
+                          Enable Allocation
+                        </span>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          Assign a task to a team member
+                        </p>
+                      </div>
+                    </label>
                   )}
 
                   {/* Allocation Details */}
                   {isAllocated && (
-                    <div className="border-2 border-blue-200 rounded-xl p-5 bg-gradient-to-br from-blue-50 to-indigo-50">
-                      <h3 className="text-sm font-bold text-gray-800 mb-1 flex items-center">
-                        <div className="w-1 h-5 bg-blue-600 rounded mr-2"></div>
+                    <div className="rounded-2xl p-5 bg-white/80 border border-white shadow-sm">
+                      <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <span className="w-1.5 h-4 bg-blue-600 rounded-full"></span>
                         Allocation Details
                       </h3>
 
-                      <div className="space-y-2">
+                      <div className="space-y-4">
                         <div>
-                          <label className="block text-xs font-semibold text-gray-700 mb-1">
+                          <label className="block text-xs font-semibold text-gray-600 mb-1.5">
                             Allocation Type
                           </label>
-                          <select
-                            value={
-                              demoData.selectedType && demoData.selectedTypeName
-                                ? `${demoData.selectedType}||${demoData.selectedTypeName}`
-                                : ""
+                          <SearchableSelect
+                            placeholder="Select type..."
+                            value={demoData.selectedType}
+                            options={
+                              taskList?.map((task) => ({
+                                value: task._id,
+                                label: task.taskName
+                              })) || []
                             }
-                            onChange={(e) => {
-                              const [id, name] = e.target.value.split("||")
+                            onChange={(id) => {
+                              const task = taskList.find((t) => t._id === id)
                               setDemodata((prev) => ({
                                 ...prev,
                                 selectedType: id,
-                                selectedTypeName: name
+                                selectedTypeName: task?.taskName
                               }))
                               setDemoError((prev) => ({
                                 ...prev,
                                 allocationTyperror: ""
                               }))
                             }}
-                            className="w-full px-4 py-1.5 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                          >
-                            <option>Select Type</option>
-                            {taskList &&
-                              taskList.map((task) => (
-                                <option
-                                  key={task._id}
-                                  value={`${task._id}||${task.taskName}`}
-                                >
-                                  {task?.taskName}
-                                </option>
-                              ))}
-                          </select>
+                            error={demoerror.allocationTyperror}
+                          />
                           {demoerror.allocationTyperror && (
                             <p className="mt-1.5 text-xs text-red-600 font-medium">
                               {demoerror.allocationTyperror}
@@ -3508,30 +3439,25 @@ const shouldShowTooltipEmail = email.length > 5
                         </div>
 
                         <div>
-                          <label className="block text-xs font-semibold text-gray-700 mb-1">
+                          <label className="block text-xs font-semibold text-gray-600 mb-1.5">
                             Assign To Staff
                           </label>
-                          <select
+                          <SearchableSelect
+                            placeholder="Select staff member..."
                             value={demoData.demoallocatedTo}
-                            onChange={(e) => {
+                            options={allocationOptions}
+                            onChange={(val) => {
                               setDemodata((prev) => ({
                                 ...prev,
-                                demoallocatedTo: e.target.value
+                                demoallocatedTo: val
                               }))
                               setDemoError((prev) => ({
                                 ...prev,
                                 selectStaff: ""
                               }))
                             }}
-                            className="w-full px-4 py-1.5 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                          >
-                            <option value="">Select staff member...</option>
-                            {allocationOptions.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
+                            error={demoerror.selectStaff}
+                          />
                           {demoerror.selectStaff && (
                             <p className="mt-1.5 text-xs text-red-600 font-medium">
                               {demoerror.selectStaff}
@@ -3540,7 +3466,7 @@ const shouldShowTooltipEmail = email.length > 5
                         </div>
 
                         <div>
-                          <label className="block text-xs font-semibold text-gray-700 mb-1">
+                          <label className="block text-xs font-semibold text-gray-600 mb-1.5">
                             Completion Date
                           </label>
                           <input
@@ -3549,7 +3475,7 @@ const shouldShowTooltipEmail = email.length > 5
                             value={demoData.demoallocatedDate}
                             onChange={handleDataChange}
                             name="allocationDate"
-                            className="w-full px-4 py-1.5 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
                           />
                           {demoerror.allocationDate && (
                             <p className="mt-1.5 text-xs text-red-600 font-medium">
@@ -3564,7 +3490,7 @@ const shouldShowTooltipEmail = email.length > 5
                   {/* Next Follow Up Date */}
                   {formData.followupType === "infollowup" && !isAllocated && (
                     <div>
-                      <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
+                      <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
                         Next Follow Up Date
                       </label>
                       <input
@@ -3573,7 +3499,7 @@ const shouldShowTooltipEmail = email.length > 5
                         value={formData.nextfollowUpDate}
                         onChange={handleDataChange}
                         name="nextfollowUpDate"
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100 disabled:cursor-not-allowed"
                       />
                       {errors.nextfollowUpDate && (
                         <p className="mt-1.5 text-xs text-red-600 font-medium">
@@ -3583,10 +3509,10 @@ const shouldShowTooltipEmail = email.length > 5
                     </div>
                   )}
 
-                  {/* MODIFIED: Payment Section with updated data */}
+                  {/* Payment Section */}
                   {formData.followupType === "closed" && (
-                    <div className="border-2 border-green-200 rounded-xl p-5 bg-gradient-to-br from-green-50 to-emerald-50">
-                      <label className="flex items-start cursor-pointer group mb-4">
+                    <div className="rounded-2xl p-5 bg-white/80 border border-white shadow-sm">
+                      <label className="flex items-start gap-3 cursor-pointer group mb-1">
                         <input
                           type="checkbox"
                           checked={ishavePayment}
@@ -3594,19 +3520,16 @@ const shouldShowTooltipEmail = email.length > 5
                             setcollectionUpdateModal(true)
                             setishavePayment(!ishavePayment)
                             if (ishavePayment) {
-                              console.log("Hhh")
                               setcollectionupdateData({})
-                            } else {
-                              console.log("hhh")
                             }
                           }}
-                          className="mt-0.5 w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                          className="mt-0.5 w-4.5 h-4.5 text-emerald-600 border-gray-300 rounded focus:ring-2 focus:ring-emerald-400"
                         />
-                        <div className="ml-3">
-                          <span className="text-sm font-semibold text-gray-800 group-hover:text-green-700 transition-colors">
+                        <div>
+                          <span className="text-sm font-semibold text-gray-800">
                             Payment Received
                           </span>
-                          <p className="text-xs text-gray-600 mt-0.5">
+                          <p className="text-xs text-gray-500 mt-0.5">
                             Check if payment has been collected
                           </p>
                         </div>
@@ -3617,24 +3540,25 @@ const shouldShowTooltipEmail = email.length > 5
                         collectionupdateModal &&
                         partner &&
                         partner.length > 0 && (
-                          <CollectionupdateModal
-                            data={selectedData}
-                            from="followup"
-                            closemodal={setcollectionUpdateModal}
-                            setishavePayment={setishavePayment}
-                            partnerlist={partner}
-                            loggedUser={loggedUser}
-                            setishavePayment={setishavePayment}
-                            handleCollectionUpdate={handleCollectionUpdate}
-                            isUpdateMode={paymentUpdatedInSession}
-                          />
+                          <div className="mt-4">
+                            <CollectionupdateModal
+                              data={selectedData}
+                              from="followup"
+                              closemodal={setcollectionUpdateModal}
+                              setishavePayment={setishavePayment}
+                              partnerlist={partner}
+                              loggedUser={loggedUser}
+                              handleCollectionUpdate={handleCollectionUpdate}
+                              isUpdateMode={paymentUpdatedInSession}
+                            />
+                          </div>
                         )}
                     </div>
                   )}
 
                   {/* Remarks */}
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
+                    <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
                       Remarks
                     </label>
                     <textarea
@@ -3642,7 +3566,7 @@ const shouldShowTooltipEmail = email.length > 5
                       name="Remarks"
                       value={formData.Remarks || demoData.demoDescription}
                       onChange={handleDataChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl resize-none bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
                       placeholder="Add detailed remarks or notes here..."
                     />
                     {errors.Remarks && (
@@ -3660,11 +3584,11 @@ const shouldShowTooltipEmail = email.length > 5
               </div>
 
               {/* Footer */}
-              <div className="flex items-center justify-end gap-3 px-6 py-2 border-t border-gray-200 bg-[#ADD8E6]">
+              <div className="flex items-center justify-end gap-3 px-7 py-4 bg-white/40 backdrop-blur-md border-t border-white/50">
                 <button
                   type="button"
                   onClick={handleCloseFollowupModal}
-                  className="px-6 py-1.5 border-2 border-gray-300 rounded-lg text-white font-semibold hover:bg-gray-500 hover:border-gray-400 transition-all bg-gray-500"
+                  className="px-6 py-2 rounded-xl text-gray-700 font-semibold bg-white/80 hover:bg-white border border-gray-200 transition-all"
                 >
                   Cancel
                 </button>
@@ -3673,67 +3597,21 @@ const shouldShowTooltipEmail = email.length > 5
                   onClick={
                     isAllocated ? handleDemoSubmit : handleFollowUpDateSubmit
                   }
-                  className="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all"
+                  className="px-6 py-2 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 shadow-md hover:shadow-lg transition-all disabled:opacity-60"
                 >
                   {followupDateLoader || loader ? (
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-2">
                       Processing
-                      <FaSpinner className="animate-spin h-5 w-5 text-white ml-2" />
+                      <FaSpinner className="animate-spin h-4 w-4 text-white" />
                     </div>
                   ) : (
-                    <div>{isHaveEditchoice ? "UPDATEss" : "SUBMIT"}</div>
+                    <span>{isHaveEditchoice ? "UPDATE" : "SUBMIT"}</span>
                   )}
                 </button>
               </div>
             </div>
           </div>
         )}
-        <PerformanceModal
-          modalOpen={openModal}
-          splitType={targetData?.selectedMeasurementType}
-          selectedperiod={selectedPeriod}
-          allperiods={targetData?.periods}
-          onselectedPeriodChange={(val, val2) => {
-            setSelectedMonth(val2)
-            setselectedPeriod(val)
-          }}
-          onMonthChange={(val) => {
-            setacheivedProducts([])
-            setselectedDataPopup([])
-            setperiodMode(val)
-            setselecteduserName(null)
-          }}
-          onYearChange={(val) => {
-            setacheivedProducts([])
-            setselectedDataPopup([])
-            setSelectedYear(val)
-            setselecteduserName(null)
-          }}
-          productlist={productlist}
-          onClose={() => {
-            setselecteduserName(null)
-            setacheivedProducts([])
-            setOpenModal(false)
-            setActiveUserId(null)
-          }}
-          selectedMonth={periodMode}
-          selectedYear={selectedYear}
-          summary={{
-            target: selectedDatapopup?.target,
-            achieved: selectedDatapopup?.achieved,
-            balance:
-              selectedDatapopup?.achieved > selectedDatapopup?.target
-                ? 0
-                : selectedDatapopup?.balance
-          }}
-          products={achievedproducts}
-          targetData={targetData?.userWiseResults}
-          loggedUser={loggedUser}
-          selectedUser={selectedUserName}
-          category={selectedCategory}
-          handleSelectedUser={handleSelectedUser}
-          activeUserId={activeUserId}
-        />
       </div>
     </div>
   )
