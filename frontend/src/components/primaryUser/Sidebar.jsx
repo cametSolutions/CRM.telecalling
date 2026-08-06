@@ -3395,6 +3395,7 @@
 
 
 import React, { useEffect, useMemo, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import {
   Menu,
   ChevronLeft,
@@ -3596,6 +3597,7 @@ const Sidebar = ({
   onavataropenClick,
   isMobile
 }) => {
+const navigate=useNavigate()
   const [localSelectedPeriod, setLocalSelectedPeriod] = useState(
     targetData?.selectedPeriodName || ""
   )
@@ -3751,7 +3753,9 @@ const Sidebar = ({
             </div>
           </SidebarBlock>
 
-          <div className="rounded-[14px] bg-slate-950/78 px-2.5 py-2.5 shadow-sm">
+          <div 
+onClick={()=> navigate("/admin//reports/incentiveReport")}
+className="rounded-[14px] bg-black px-2.5 py-2.5 shadow-sm hover:cursor-pointer">
             <div className="flex items-center justify-between">
               <span className="text-[9px] font-semibold uppercase tracking-[0.08em] text-slate-300">
                 Score Board

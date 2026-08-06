@@ -58,6 +58,19 @@ const batchFetchByModel = async (modelName, ids, select = "name") => {
 
 export const GetallfollowupList = async (req, res) => {
   try {
+
+
+
+const deletedata=await LeadMaster.find(
+  {
+    activityLog: { $elemMatch: { $eq: null } }
+  },
+  {
+    leadId: 1,
+    activityLog: 1
+  }
+)
+console.log("dateeeeeeeeeeeeeeeeee",deletedata)
     const {
       loggeduserid,
       branchSelected,
@@ -286,8 +299,8 @@ console.log("hasrange",hasRange)
       .populate({ path: "partner", model: Partner, options: { lean: true } })
       .lean();
 // console.log("selectedfollowp",selectedfollowup)
-const dddd=selectedfollowup.map((item)=>item.leadId)
-console.log("ddddd",dddd)
+// const dddd=selectedfollowup.map((item)=>item.leadId)
+// console.log("ddddd",dddd)
     const followupLeads = [];
 
     const leadByBuckets = {};
@@ -7592,167 +7605,392 @@ export const GetallleadOwned = async (req, res) => {
 };
 export const GetallLead = async (req, res) => {
   try {
-    const { Status, selectedBranch, role } = req.query;
-    const branchObjectId = new mongoose.Types.ObjectId(selectedBranch);
+    const { Status, selectedBranch, role } = req.query
+    const branchObjectId = new mongoose.Types.ObjectId(selectedBranch)
 
     if (!Status && !role) {
-      return res.status(400).json({ message: "Status or role is missing " });
+      return res
+        .status(400)
+        .json({ message: "Status or role is missing " })
     }
+
     if (Status === "Pending") {
-      //for getting pending leads means leads not to be allocated to someone
-      const query = { leadBranch: branchObjectId, activityLog: { $size: 1 } };
+      // pending leads: activityLog size 1
+      const query = { leadBranch: branchObjectId, activityLog: { $size: 1 } }
 
       const pendingLeads = await LeadMaster.find(query)
         .populate({ path: "customerName", select: "customerName" })
-        .lean();
+        .lean()
 
       const populatedPendingLeads = await Promise.all(
         pendingLeads.map(async (lead) => {
           if (!lead.leadByModel || !mongoose.models[lead.leadByModel]) {
-            console.error(`Model ${lead.leadByModel} is not registered`);
-            return lead; // Return lead as-is if model is invalid
+            console.error(`Model ${lead.leadByModel} is not registered (leadId: ${lead.leadId})`)
+            return lead
           }
 
-          // Fetch the referenced document manually
-          const assignedModel = mongoose.model(lead.leadByModel);
+          const assignedModel = mongoose.model(lead.leadByModel)
           const populatedLeadBy = await assignedModel
             .findById(lead.leadBy)
-            .select("name");
+            .select("name")
 
-          return { ...lead, leadBy: populatedLeadBy }; // Merge populated data
+          return { ...lead, leadBy: populatedLeadBy }
         })
-      );
-      if (populatedPendingLeads) {
-        return res.status(200).json({
-          message: "pending leads found",
-          data: populatedPendingLeads,
-        });
-      }
-    } else if (Status === "Approved") {
+      )
+
+      return res.status(200).json({
+        message: "pending leads found",
+        data: populatedPendingLeads
+      })
+    }
+
+    if (Status === "Approved") {
       const query = {
         leadBranch: branchObjectId,
         reallocatedTo: false,
         $and: [{ leadLost: { $ne: true } }, { leadClosed: { $ne: true } }],
         activityLog: { $exists: true, $not: { $size: 0 } },
-        $expr: { $gte: [{ $size: "$activityLog" }, 2] },
-      };
+        $expr: { $gte: [{ $size: "$activityLog" }, 2] }
+      }
+
       const approvedAllocatedLeads = await LeadMaster.find(query)
         .populate({ path: "customerName", select: "customerName" })
-        .lean();
+        .lean()
+
+      const leadIds = approvedAllocatedLeads.map((item) => item.leadId)
+      console.log("Approved leadIds:", leadIds)
 
       const populatedApprovedLeads = await Promise.all(
         approvedAllocatedLeads.map(async (lead) => {
-          const lastMatchingActivity = [...(lead.activityLog || [])]
-            .reverse()
-            .find((log) => log.taskallocatedTo && log.taskallocatedBy && !log?.taskfromFollowup);
+          try {
+            // find last allocation entry (non-followup)
+            const lastMatchingActivity = [...(lead.activityLog || [])]
+              .reverse()
+              .find(
+                (log) =>
+                  log &&
+                  log.taskallocatedTo &&
+                  log.taskallocatedBy &&
+                  !log.taskfromFollowup
+              )
 
-          if (
-            !lead.leadByModel ||
-            !mongoose.models[lead.leadByModel] ||
-            !lastMatchingActivity?.taskallocatedBy ||
-            !lastMatchingActivity?.taskallocatedByModel ||
-            !lastMatchingActivity?.taskallocatedTo ||
-            !lastMatchingActivity?.taskallocatedToModel
-          ) {
-            console.error(`Model ${lead.leadByModel} is not registered`);
-            console.error(
-              `Model ${lastMatchingActivity?.taskallocatedByModel} is not registered`
-            );
-            console.error(
-              `Model ${lastMatchingActivity?.taskallocatedToModel} is not registered`
-            );
-            return lead;
-          }
+            if (
+              !lead.leadByModel ||
+              !mongoose.models[lead.leadByModel] ||
+              !lastMatchingActivity?.taskallocatedBy ||
+              !lastMatchingActivity?.taskallocatedByModel ||
+              !lastMatchingActivity?.taskallocatedTo ||
+              !lastMatchingActivity?.taskallocatedToModel
+            ) {
+              console.error(`Lead ${lead.leadId}: missing models or allocation fields`, {
+                leadByModel: lead.leadByModel,
+                lastMatchingActivity
+              })
+              return lead
+            }
 
-          // Fetch the referenced documents
-          const leadByModel = mongoose.model(lead.leadByModel);
-          const allocatedToModel = mongoose.model(
-            lastMatchingActivity.taskallocatedToModel
-          );
-          const allocatedByModel = mongoose.model(
-            lastMatchingActivity.taskallocatedByModel
-          );
+            // referenced models
+            const leadByModel = mongoose.model(lead.leadByModel)
+            const allocatedToModel = mongoose.model(
+              lastMatchingActivity.taskallocatedToModel
+            )
+            const allocatedByModel = mongoose.model(
+              lastMatchingActivity.taskallocatedByModel
+            )
 
-          const populatedLeadBy = await leadByModel
-            .findById(lead.leadBy)
-            .select("name");
-          const populatedAllocatedTo = await allocatedToModel
-            .findById(lastMatchingActivity.taskallocatedTo)
-            .select("name");
-          const populatedAllocatedBy = await allocatedByModel
-            .findById(lastMatchingActivity.taskallocatedBy)
-            .select("name");
+            const populatedLeadBy = await leadByModel
+              .findById(lead.leadBy)
+              .select("name")
+            const populatedAllocatedTo = await allocatedToModel
+              .findById(lastMatchingActivity.taskallocatedTo)
+              .select("name")
+            const populatedAllocatedBy = await allocatedByModel
+              .findById(lastMatchingActivity.taskallocatedBy)
+              .select("name")
 
-          // 🔹 Now populate every `submissiondonebyuser` in activityLog
-          const populatedActivityLog = await Promise.all(
-            (lead.activityLog || []).map(async (log) => {
-              if (!log.submissiondoneByModel || !log.submissiondoneByModel) {
-                return log; // skip if missing
-              }
+            // populate each log safely
+            const populatedActivityLog = await Promise.all(
+              (lead.activityLog || []).map(async (log, index) => {
+                // log itself might be null/undefined
+                if (!log) {
+                  console.warn("Null/undefined log found", {
+                    leadId: lead.leadId,
+                    index
+                  })
+                  return log
+                }
 
-              // Make sure the model exists before querying
-              if (!mongoose.models[log.submissiondoneByModel]) {
-                console.error(
-                  `Model ${log.submissiondoneByModel} not registered`
-                );
-                return log;
-              }
+                // debug: see raw log with taskallocatedTo
+                if (log.taskallocatedTo === null) {
+                  console.warn("log.taskallocatedTo is null", {
+                    leadId: lead.leadId,
+                    index,
+                    log
+                  })
+                }
 
-              const submissionUserModel = mongoose.model(
-                log.submissiondoneByModel
-              );
-              const populatedSubmissionUser = await submissionUserModel
-                .findById(log.submittedUser)
-                .select("name");
-              let populatetaskBy
-              let populateTask
-              let populateTaskallocatedTo
-              if (log?.taskBy) {
-                populatetaskBy = await Task.findById(log?.taskBy).select("taskName").lean()
-              }
-              if (log?.taskId) {
-                populateTask = await Task.findById(log?.taskId).select("taskName").lean()
-              }
-              if (log?.taskallocatedTo && log?.taskallocatedToModel) {
-                const taskalocatedtomodel = mongoose.model(
-                  log?.taskallocatedToModel
-                );
+                if (!log.submissiondoneByModel) {
+                  return log
+                }
 
-                populateTaskallocatedTo = await taskalocatedtomodel.findById(log?.taskallocatedTo).select("name").lean()
-              }
+                if (!mongoose.models[log.submissiondoneByModel]) {
+                  console.error(
+                    `Model ${log.submissiondoneByModel} not registered (leadId: ${lead.leadId}, logIndex: ${index})`
+                  )
+                  return log
+                }
 
-              return {
-                ...log,
-                taskBy: populatetaskBy,
-                taskId: populateTask,
-                taskallocatedTo: populateTaskallocatedTo,
-                submittedUser: populatedSubmissionUser,
-              };
+                const submissionUserModel = mongoose.model(
+                  log.submissiondoneByModel
+                )
+                const populatedSubmissionUser = await submissionUserModel
+                  .findById(log.submittedUser)
+                  .select("name")
+
+                let populatetaskBy = null
+                let populateTask = null
+                let populateTaskallocatedToUser = null
+
+                if (log.taskBy) {
+                  populatetaskBy = await Task.findById(log.taskBy)
+                    .select("taskName")
+                    .lean()
+                }
+
+                if (log.taskId) {
+                  populateTask = await Task.findById(log.taskId)
+                    .select("taskName")
+                    .lean()
+                }
+
+                if (log.taskallocatedTo && log.taskallocatedToModel) {
+                  const TaskAllocatedToModel = mongoose.model(
+                    log.taskallocatedToModel
+                  )
+
+                  populateTaskallocatedToUser = await TaskAllocatedToModel
+                    .findById(log.taskallocatedTo)
+                    .select("name")
+                    .lean()
+
+                  if (!populateTaskallocatedToUser) {
+                    console.warn("taskallocatedTo user not found", {
+                      leadId: lead.leadId,
+                      logIndex: index,
+                      taskallocatedToId: log.taskallocatedTo,
+                      taskallocatedToModel: log.taskallocatedToModel
+                    })
+                  }
+                }
+
+                // IMPORTANT: keep original taskallocatedTo (ObjectId),
+                // store populated doc separately to avoid null property errors.
+                return {
+                  ...log,
+                  taskBy: populatetaskBy,
+                  taskId: populateTask,
+                  taskallocatedToUser: populateTaskallocatedToUser,
+                  submittedUser: populatedSubmissionUser
+                }
+              })
+            )
+
+            return {
+              ...lead,
+              leadBy: populatedLeadBy,
+              allocatedTo: populatedAllocatedTo,
+              allocatedBy: populatedAllocatedBy,
+              activityLog: populatedActivityLog
+            }
+          } catch (err) {
+            console.error("Error populating approved lead", {
+              leadId: lead.leadId,
+              error: err.message
             })
-          );
-
-          return {
-            ...lead,
-            leadBy: populatedLeadBy,
-            allocatedTo: populatedAllocatedTo,
-            allocatedBy: populatedAllocatedBy,
-            activityLog: populatedActivityLog, // updated log with populated submission users
-          };
+            // rethrow to see in global catch
+            throw err
+          }
         })
-      );
-      if (populatedApprovedLeads) {
-        return res.status(200).json({
-          message: "Approved leads found",
-          data: populatedApprovedLeads,
-        });
-      }
+      )
+
+      return res.status(200).json({
+        message: "Approved leads found",
+        data: populatedApprovedLeads
+      })
     }
+
+    return res.status(400).json({ message: "Invalid Status" })
   } catch (error) {
-    console.log(error);
-    console.log("error:", error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    console.log(error)
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
   }
-};
+}
+// export const GetallLead = async (req, res) => {
+//   try {
+//     const { Status, selectedBranch, role } = req.query;
+//     const branchObjectId = new mongoose.Types.ObjectId(selectedBranch);
+
+//     if (!Status && !role) {
+//       return res.status(400).json({ message: "Status or role is missing " });
+//     }
+//     if (Status === "Pending") {
+//       //for getting pending leads means leads not to be allocated to someone
+//       const query = { leadBranch: branchObjectId, activityLog: { $size: 1 } };
+
+//       const pendingLeads = await LeadMaster.find(query)
+//         .populate({ path: "customerName", select: "customerName" })
+//         .lean();
+
+//       const populatedPendingLeads = await Promise.all(
+//         pendingLeads.map(async (lead) => {
+//           if (!lead.leadByModel || !mongoose.models[lead.leadByModel]) {
+//             console.error(`Model ${lead.leadByModel} is not registered`);
+//             return lead; // Return lead as-is if model is invalid
+//           }
+
+//           // Fetch the referenced document manually
+//           const assignedModel = mongoose.model(lead.leadByModel);
+//           const populatedLeadBy = await assignedModel
+//             .findById(lead.leadBy)
+//             .select("name");
+
+//           return { ...lead, leadBy: populatedLeadBy }; // Merge populated data
+//         })
+//       );
+//       if (populatedPendingLeads) {
+//         return res.status(200).json({
+//           message: "pending leads found",
+//           data: populatedPendingLeads,
+//         });
+//       }
+//     } else if (Status === "Approved") {
+//       const query = {
+//         leadBranch: branchObjectId,
+//         reallocatedTo: false,
+//         $and: [{ leadLost: { $ne: true } }, { leadClosed: { $ne: true } }],
+//         activityLog: { $exists: true, $not: { $size: 0 } },
+//         $expr: { $gte: [{ $size: "$activityLog" }, 2] },
+//       };
+//       const approvedAllocatedLeads = await LeadMaster.find(query)
+//         .populate({ path: "customerName", select: "customerName" })
+//         .lean();
+// // console.log("apporvedd",approvedAllocatedLeads)
+// const aaaaa=approvedAllocatedLeads.map((item)=>item.leadId)
+// console.log(aaaaa)
+//       const populatedApprovedLeads = await Promise.all(
+//         approvedAllocatedLeads.map(async (lead) => {
+//           const lastMatchingActivity = [...(lead.activityLog || [])]
+//             .reverse()
+//             .find((log) => log.taskallocatedTo && log.taskallocatedBy && !log?.taskfromFollowup);
+
+//           if (
+//             !lead.leadByModel ||
+//             !mongoose.models[lead.leadByModel] ||
+//             !lastMatchingActivity?.taskallocatedBy ||
+//             !lastMatchingActivity?.taskallocatedByModel ||
+//             !lastMatchingActivity?.taskallocatedTo ||
+//             !lastMatchingActivity?.taskallocatedToModel
+//           ) {
+//             console.error(`Model ${lead.leadByModel} is not registered`);
+//             console.error(
+//               `Model ${lastMatchingActivity?.taskallocatedByModel} is not registered`
+//             );
+//             console.error(
+//               `Model ${lastMatchingActivity?.taskallocatedToModel} is not registered`
+//             );
+//             return lead;
+//           }
+
+//           // Fetch the referenced documents
+//           const leadByModel = mongoose.model(lead.leadByModel);
+//           const allocatedToModel = mongoose.model(
+//             lastMatchingActivity.taskallocatedToModel
+//           );
+//           const allocatedByModel = mongoose.model(
+//             lastMatchingActivity.taskallocatedByModel
+//           );
+
+//           const populatedLeadBy = await leadByModel
+//             .findById(lead.leadBy)
+//             .select("name");
+//           const populatedAllocatedTo = await allocatedToModel
+//             .findById(lastMatchingActivity.taskallocatedTo)
+//             .select("name");
+//           const populatedAllocatedBy = await allocatedByModel
+//             .findById(lastMatchingActivity.taskallocatedBy)
+//             .select("name");
+
+//           // 🔹 Now populate every `submissiondonebyuser` in activityLog
+//           const populatedActivityLog = await Promise.all(
+//             (lead.activityLog || []).map(async (log) => {
+//               if (!log.submissiondoneByModel || !log.submissiondoneByModel) {
+//                 return log; // skip if missing
+//               }
+
+//               // Make sure the model exists before querying
+//               if (!mongoose.models[log.submissiondoneByModel]) {
+//                 console.error(
+//                   `Model ${log.submissiondoneByModel} not registered`
+//                 );
+//                 return log;
+//               }
+
+//               const submissionUserModel = mongoose.model(
+//                 log.submissiondoneByModel
+//               );
+//               const populatedSubmissionUser = await submissionUserModel
+//                 .findById(log.submittedUser)
+//                 .select("name");
+//               let populatetaskBy
+//               let populateTask
+//               let populateTaskallocatedTo
+//               if (log?.taskBy) {
+//                 populatetaskBy = await Task.findById(log?.taskBy).select("taskName").lean()
+//               }
+//               if (log?.taskId) {
+//                 populateTask = await Task.findById(log?.taskId).select("taskName").lean()
+//               }
+//               if (log?.taskallocatedTo && log?.taskallocatedToModel) {
+//                 const taskalocatedtomodel = mongoose.model(
+//                   log?.taskallocatedToModel
+//                 );
+
+//                 populateTaskallocatedTo = await taskalocatedtomodel.findById(log?.taskallocatedTo).select("name").lean()
+//               }
+
+//               return {
+//                 ...log,
+//                 taskBy: populatetaskBy,
+//                 taskId: populateTask,
+//                 taskallocatedTo: populateTaskallocatedTo,
+//                 submittedUser: populatedSubmissionUser,
+//               };
+//             })
+//           );
+
+//           return {
+//             ...lead,
+//             leadBy: populatedLeadBy,
+//             allocatedTo: populatedAllocatedTo,
+//             allocatedBy: populatedAllocatedBy,
+//             activityLog: populatedActivityLog, // updated log with populated submission users
+//           };
+//         })
+//       );
+//       if (populatedApprovedLeads) {
+//         return res.status(200).json({
+//           message: "Approved leads found",
+//           data: populatedApprovedLeads,
+//         });
+//       }
+//     }
+//   } catch (error) {
+//     console.log(error);
+//     console.log("error:", error.message);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// };
 // export const UpdateLeadfollowUpDate = async (req, res) => {
 //   try {
 //     const { formData, collectionupdatedata } = req.body;
