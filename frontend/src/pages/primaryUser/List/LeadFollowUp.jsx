@@ -2410,21 +2410,21 @@ const LeadFollowUp = () => {
     setOwner(owner)
     const isHaveDemo = taskfromFollowup ? history[history.length - 1] : null
     console.log(isHaveDemo)
-    if (isHaveDemo) {
-      const demoassignedDate = formatDate(isHaveDemo.submissionDate)
-      setdemoEditIndex(history.length - 1)
-      setfollowUpDatesandRemarksEditIndex(history.length - 1)
-      setDemodata({
-        selectedType: isHaveDemo?.taskTo,
-        demoallocatedTo: isHaveDemo?.taskallocatedTo?._id,
-        demoallocatedDate: isHaveDemo?.allocationDate.toString().split("T")[0],
-        demoassignedDate,
-        demoDescription: isHaveDemo?.remarks,
-        selectedTypeName: isHaveDemo?.taskTo
-      })
-      setIsEditable(true)
-      setIsAllocated(true)
-    }
+    // if (isHaveDemo) {
+    //   const demoassignedDate = formatDate(isHaveDemo.submissionDate)
+    //   setdemoEditIndex(history.length - 1)
+    //   setfollowUpDatesandRemarksEditIndex(history.length - 1)
+    //   setDemodata({
+    //     selectedType: isHaveDemo?.taskTo,
+    //     demoallocatedTo: isHaveDemo?.taskallocatedTo?._id,
+    //     demoallocatedDate: isHaveDemo?.allocationDate.toString().split("T")[0],
+    //     demoassignedDate,
+    //     demoDescription: isHaveDemo?.remarks,
+    //     selectedTypeName: isHaveDemo?.taskTo
+    //   })
+    //   setIsEditable(true)
+    //   setIsAllocated(true)
+    // }
 
     setfollowupClosed(!pending)
     setselectedDocid(docId)
@@ -2485,14 +2485,7 @@ const LeadFollowUp = () => {
     console.log(isdemofollownotClosed)
     console.log(loader)
     if (loader) return
-    // if (isdemofollownotClosed) {
-    //   setDemoError((prev) => ({
-    //     ...prev,
-    //     submiterror: "Cant submit, demo is not closed",
-    //     demoDescription: ""
-    //   }))
-    //   return
-    // }
+
 
     const newError = {}
     if (!demoData.demoallocatedDate) {

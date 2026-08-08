@@ -4809,111 +4809,395 @@ export const ApprovedforcefullyClosedTarget = async (req, res) => {
 
 
 
+// export const SetDemoallocation = async (req, res) => {
+//   try {
+// console.log("dddddddddddddddddddddddddddddddddddd")
+//     const { demoallocatedBy, leaddocId, editIndex } = req.query;
+//     const demoData = req.body;
+//     const { demoallocatedTo } = demoData;
+
+//     const allocatedToObjectId = new mongoose.Types.ObjectId(demoallocatedTo);
+//     const allocatedByObjectId = new mongoose.Types.ObjectId(demoallocatedBy);
+
+//     let taskallocatedByModel;
+//     let taskallocatedToModel;
+
+//     const isallocatedbyStaff = await Staff.findOne({ _id: allocatedByObjectId });
+//     if (isallocatedbyStaff) taskallocatedByModel = "Staff";
+//     else {
+//       const isallocatedbyAdmin = await Admin.findOne({ _id: allocatedByObjectId });
+//       if (isallocatedbyAdmin) taskallocatedByModel = "Admin";
+//     }
+
+//     const isallocatedtoStaff = await Staff.findOne({ _id: allocatedToObjectId });
+//     if (isallocatedtoStaff) taskallocatedToModel = "Staff";
+//     else {
+//       const isallocatedtoAdmin = await Admin.findOne({ _id: allocatedToObjectId });
+//       if (isallocatedtoAdmin) taskallocatedToModel = "Admin";
+//     }
+
+//     const allocationtask = await Task.findOne({ taskName: "Allocation" });
+
+//     if (!taskallocatedByModel || !taskallocatedToModel) {
+//       return res.status(400).json({
+//         message: "Invalid allocatedBy or allocatedTo ID"
+//       });
+//     }
+
+//     const updates = [];
+
+//     if (editIndex !== undefined && editIndex !== null) {
+//       updates.push(
+//         LeadMaster.updateOne(
+//           { _id: leaddocId },
+//           {
+//             $set: {
+//               [`activityLog.${Number(editIndex)}.allocationChanged`]: true
+//             }
+//           }
+//         )
+//       );
+//     }
+
+//     updates.push(
+//       LeadMaster.updateOne(
+//         { _id: leaddocId },
+//         {
+//           $push: {
+//             activityLog: {
+//               submissionDate: new Date(),
+//               allocationDate: demoData.demoallocatedDate,
+//               submittedUser: demoallocatedBy,
+//               submissiondoneByModel: taskallocatedByModel,
+//               taskallocatedBy: demoallocatedBy,
+//               taskallocatedByModel,
+//               taskallocatedTo: demoallocatedTo,
+//               taskallocatedToModel,
+//               remarks: demoData.demoDescription,
+//               taskBy: allocationtask?._id,
+//               taskTo: demoData?.selectedTypeName,
+//               taskId: demoData?.selectedType,
+//               taskfromFollowup: true,
+//               allocationChanged: false
+//             }
+//           },
+//           $set: { taskfromFollowup: true }
+//         }
+//       )
+//     );
+
+//     updates.push(
+//       LeadMaster.updateOne(
+//         { _id: leaddocId, "activityLog.taskTo": "followup", "activityLog.followupClosed": false },
+//         {
+//           $set: {
+//             "activityLog.$[log].allocationlist": true
+//           }
+//         },
+//         {
+//           arrayFilters: [
+//             {
+//               "log.taskTo": "followup",
+//               "log.followupClosed": false
+//             }
+//           ]
+//         }
+//       )
+//     );
+
+//     const results = await Promise.all(updates);
+//     console.log(results);
+
+//     return res.status(200).json({
+//       message: "Demo added successfully",
+//       results
+//     });
+//   } catch (error) {
+//     console.log("error:", error);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// };
 export const SetDemoallocation = async (req, res) => {
+  const session = await mongoose.startSession();
+
   try {
     const { demoallocatedBy, leaddocId, editIndex } = req.query;
-    const demoData = req.body;
-    const { demoallocatedTo } = demoData;
+    const {
+      demoallocatedTo,
+      demoallocatedDate,
+      demoDescription,
+      selectedTypeName,
+      selectedType,
+    } = req.body;
 
-    const allocatedToObjectId = new mongoose.Types.ObjectId(demoallocatedTo);
-    const allocatedByObjectId = new mongoose.Types.ObjectId(demoallocatedBy);
-
-    let taskallocatedByModel;
-    let taskallocatedToModel;
-
-    const isallocatedbyStaff = await Staff.findOne({ _id: allocatedByObjectId });
-    if (isallocatedbyStaff) taskallocatedByModel = "Staff";
-    else {
-      const isallocatedbyAdmin = await Admin.findOne({ _id: allocatedByObjectId });
-      if (isallocatedbyAdmin) taskallocatedByModel = "Admin";
-    }
-
-    const isallocatedtoStaff = await Staff.findOne({ _id: allocatedToObjectId });
-    if (isallocatedtoStaff) taskallocatedToModel = "Staff";
-    else {
-      const isallocatedtoAdmin = await Admin.findOne({ _id: allocatedToObjectId });
-      if (isallocatedtoAdmin) taskallocatedToModel = "Admin";
-    }
-
-    const allocationtask = await Task.findOne({ taskName: "Allocation" });
-
-    if (!taskallocatedByModel || !taskallocatedToModel) {
+    if (
+      !mongoose.Types.ObjectId.isValid(demoallocatedBy) ||
+      !mongoose.Types.ObjectId.isValid(demoallocatedTo) ||
+      !mongoose.Types.ObjectId.isValid(leaddocId) ||
+      !mongoose.Types.ObjectId.isValid(selectedType)
+    ) {
       return res.status(400).json({
-        message: "Invalid allocatedBy or allocatedTo ID"
+        message: "Invalid allocated user, lead, or task ID",
       });
     }
 
-    const updates = [];
-
-    if (editIndex !== undefined && editIndex !== null) {
-      updates.push(
-        LeadMaster.updateOne(
-          { _id: leaddocId },
-          {
-            $set: {
-              [`activityLog.${Number(editIndex)}.allocationChanged`]: true
-            }
-          }
-        )
-      );
+    if (!selectedTypeName?.trim()) {
+      return res.status(400).json({
+        message: "Demo task type is required",
+      });
     }
 
-    updates.push(
-      LeadMaster.updateOne(
-        { _id: leaddocId },
-        {
-          $push: {
-            activityLog: {
-              submissionDate: new Date(),
-              allocationDate: demoData.demoallocatedDate,
-              submittedUser: demoallocatedBy,
-              submissiondoneByModel: taskallocatedByModel,
-              taskallocatedBy: demoallocatedBy,
-              taskallocatedByModel,
-              taskallocatedTo: demoallocatedTo,
-              taskallocatedToModel,
-              remarks: demoData.demoDescription,
-              taskBy: allocationtask?._id,
-              taskTo: demoData?.selectedTypeName,
-              taskId: demoData?.selectedType,
-              taskfromFollowup: true,
-              allocationChanged: false
-            }
-          },
-          $set: { taskfromFollowup: true }
-        }
-      )
-    );
+    const allocatedByObjectId = new mongoose.Types.ObjectId(demoallocatedBy);
+    const allocatedToObjectId = new mongoose.Types.ObjectId(demoallocatedTo);
+    const leadObjectId = new mongoose.Types.ObjectId(leaddocId);
+    const taskObjectId = new mongoose.Types.ObjectId(selectedType);
 
-    updates.push(
-      LeadMaster.updateOne(
-        { _id: leaddocId, "activityLog.taskTo": "followup", "activityLog.followupClosed": false },
+    const [
+      allocatedByStaff,
+      allocatedByAdmin,
+      allocatedToStaff,
+      allocatedToAdmin,
+      allocationTask,
+    ] = await Promise.all([
+      Staff.findById(allocatedByObjectId).lean(),
+      Admin.findById(allocatedByObjectId).lean(),
+      Staff.findById(allocatedToObjectId).lean(),
+      Admin.findById(allocatedToObjectId).lean(),
+      Task.findOne({ taskName: "Allocation" }).lean(),
+    ]);
+
+    const taskallocatedByModel = allocatedByStaff
+      ? "Staff"
+      : allocatedByAdmin
+        ? "Admin"
+        : null;
+
+    const taskallocatedToModel = allocatedToStaff
+      ? "Staff"
+      : allocatedToAdmin
+        ? "Admin"
+        : null;
+
+    if (!taskallocatedByModel || !taskallocatedToModel) {
+      return res.status(400).json({
+        message: "Invalid allocatedBy or allocatedTo ID",
+      });
+    }
+
+    if (!allocationTask) {
+      return res.status(404).json({
+        message: "Allocation task not found",
+      });
+    }
+
+    await session.withTransaction(async () => {
+      const lead = await LeadMaster.findById(leadObjectId)
+        .select("activityLog")
+        .session(session);
+
+      if (!lead) {
+        throw Object.assign(new Error("Lead not found"), {
+          statusCode: 404,
+        });
+      }
+
+      let previousActivityLogId = null;
+      const hasEditIndex =
+        editIndex !== undefined && editIndex !== null && editIndex !== "";
+
+      /*
+       * Keep editIndex for now, but never use it in a MongoDB update path.
+       * Convert the verified index to the existing subdocument _id.
+       */
+      if (hasEditIndex) {
+        const index = Number(editIndex);
+console.log("indexxxxxxxxxx",index)
+
+        if (
+          !Number.isInteger(index) ||
+          index < 0 ||
+          index >= lead.activityLog.length ||
+          !lead.activityLog[index] ||
+          !lead.activityLog[index]._id
+        ) {
+          throw Object.assign(new Error("Invalid activity log index"), {
+            statusCode: 400,
+          });
+        }
+
+        previousActivityLogId = lead.activityLog[index]._id;
+      }
+
+      /*
+       * Same allocation means: same allocated user + same task, and the log
+       * is still active. Remove the taskId condition only if your business
+       * rule says the same user must overwrite even for a different task.
+       */
+      const sameAllocationLog = [...lead.activityLog]
+        .reverse()
+        .find(
+          (log) =>
+            log &&
+            log._id &&
+            String(log.taskallocatedTo) === String(allocatedToObjectId) &&
+            String(log.taskId) === String(taskObjectId) &&
+            log.allocationChanged !== true &&
+            log.taskClosed !== true &&
+            log.allocatedClosed !== true
+        );
+
+      /* Mark prior open follow-up records before updating/pushing demo data. */
+      await LeadMaster.updateOne(
+        { _id: leadObjectId },
         {
           $set: {
-            "activityLog.$[log].allocationlist": true
-          }
+            "activityLog.$[followupLog].allocationlist": true,
+          },
         },
         {
           arrayFilters: [
             {
-              "log.taskTo": "followup",
-              "log.followupClosed": false
-            }
-          ]
+              "followupLog.taskTo": "followup",
+              "followupLog.followupClosed": false,
+            },
+          ],
+          runValidators: true,
+          session,
         }
-      )
-    );
+      );
 
-    const results = await Promise.all(updates);
-    console.log(results);
+      if (sameAllocationLog) {
+        /*
+         * Do not add another activityLog item. Update the latest matching
+         * active allocation, while preserving its existing _id.
+         */
+        const result = await LeadMaster.updateOne(
+          {
+            _id: leadObjectId,
+            "activityLog._id": sameAllocationLog._id,
+          },
+          {
+            $set: {
+              taskfromFollowup: true,
+              "activityLog.$[sameLog].submissionDate": new Date(),
+              "activityLog.$[sameLog].allocationDate": demoallocatedDate || null,
+              "activityLog.$[sameLog].submittedUser": allocatedByObjectId,
+              "activityLog.$[sameLog].submissiondoneByModel": taskallocatedByModel,
+              "activityLog.$[sameLog].taskallocatedBy": allocatedByObjectId,
+              "activityLog.$[sameLog].taskallocatedByModel": taskallocatedByModel,
+              "activityLog.$[sameLog].taskallocatedTo": allocatedToObjectId,
+              "activityLog.$[sameLog].taskallocatedToModel": taskallocatedToModel,
+              "activityLog.$[sameLog].remarks": demoDescription || "",
+              "activityLog.$[sameLog].taskBy": allocationTask._id,
+              "activityLog.$[sameLog].taskTo": selectedTypeName.trim(),
+              "activityLog.$[sameLog].taskId": taskObjectId,
+              "activityLog.$[sameLog].taskfromFollowup": true,
+              "activityLog.$[sameLog].allocationChanged": false,
+            },
+          },
+          {
+            arrayFilters: [
+              {
+                "sameLog._id": sameAllocationLog._id,
+              },
+            ],
+            runValidators: true,
+            session,
+          }
+        );
+
+        if (result.matchedCount === 0) {
+          throw Object.assign(new Error("Existing allocation was not found"), {
+            statusCode: 409,
+          });
+        }
+
+        return;
+      }
+
+      /*
+       * Mark the previous selected log changed. The stored subdocument _id is
+       * used instead of activityLog.<index>, so no null array placeholders
+       * can be created.
+       */
+      if (previousActivityLogId) {
+        const previousLogResult = await LeadMaster.updateOne(
+          {
+            _id: leadObjectId,
+            "activityLog._id": previousActivityLogId,
+          },
+          {
+            $set: {
+              "activityLog.$[previousLog].allocationChanged": true,
+            },
+          },
+          {
+            arrayFilters: [
+              {
+                "previousLog._id": previousActivityLogId,
+              },
+            ],
+            runValidators: true,
+            session,
+          }
+        );
+
+        if (previousLogResult.matchedCount === 0) {
+          throw Object.assign(new Error("Previous activity log was not found"), {
+            statusCode: 409,
+          });
+        }
+      }
+
+      const newDemoActivityLog = {
+        _id: new mongoose.Types.ObjectId(),
+        submissionDate: new Date(),
+        allocationDate: demoallocatedDate || null,
+        submittedUser: allocatedByObjectId,
+        submissiondoneByModel: taskallocatedByModel,
+        taskallocatedBy: allocatedByObjectId,
+        taskallocatedByModel,
+        taskallocatedTo: allocatedToObjectId,
+        taskallocatedToModel,
+        remarks: demoDescription || "",
+        taskBy: allocationTask._id,
+        taskTo: selectedTypeName.trim(),
+        taskId: taskObjectId,
+        taskfromFollowup: true,
+        allocationChanged: false,
+      };
+
+      await LeadMaster.updateOne(
+        { _id: leadObjectId },
+        {
+          $set: {
+            taskfromFollowup: true,
+          },
+          $push: {
+            activityLog: newDemoActivityLog,
+          },
+        },
+        {
+          runValidators: true,
+          session,
+        }
+      );
+    });
+
+    const updatedLead = await LeadMaster.findById(leadObjectId).lean();
 
     return res.status(200).json({
-      message: "Demo added successfully",
-      results
+      message: "Demo allocation saved successfully",
+      data: updatedLead,
     });
   } catch (error) {
-    console.log("error:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    console.error("SetDemoallocation error:", error);
+
+    return res.status(error.statusCode || 500).json({
+      message: error.statusCode ? error.message : "Internal server error",
+    });
+  } finally {
+    await session.endSession();
   }
 };
 export const GetdemoleadCount = async (req, res) => {
