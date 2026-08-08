@@ -123,6 +123,7 @@ const LeadFollowUp = () => {
   const [isOwner, setOwner] = useState(false)
   const [statusAllocated, setstatusAllocated] = useState(false)
   const [pending, setPending] = useState(true)
+  console.log(pending)
   const [allocatedLeads, setAllocatedLeads] = useState([])
   const [loader, setLoader] = useState(false)
   const [productwiseloader, setproductwiseloader] = useState(false)
@@ -148,7 +149,7 @@ const LeadFollowUp = () => {
   console.log(safeState)
   console.log(result)
   const [ownFollowUp, setOwnFollowUp] = useState(result)
-
+  console.log(ownFollowUp)
   console.log(safeState?.ownlead)
   console.log(safeState?.ownfollowup)
   console.log(safeState?.staffId)
@@ -332,7 +333,7 @@ const LeadFollowUp = () => {
     if (safeState?.viewMode !== "product" || !loggedUser) return
 
     setselectedCompanyBranch(safeState.branchId)
-
+    console.log("hh")
     setPending(safeState.pending)
 
     setOwnFollowUp(safeState.staffId?.toString() === loggedUser._id?.toString())
@@ -1388,17 +1389,25 @@ const LeadFollowUp = () => {
       `&role=${safeState.istotal ? safeState.staffRole : loggedUser.role}` +
       `&pendingfollowup=${finalPending}` +
       `${safeState?.viewMode ? `&viewmode=true` : ""}` +
-      `&startDate=${safeState?.viewMode ? dates.startDate : null}` +
-      `&endDate=${safeState?.viewMode ? dates.endDate : null}` +
+      // `&startDate=${safeState?.viewMode ? dates.startDate : null}` +
+      // `&endDate=${safeState?.viewMode ? dates.endDate : null}` +
+      `&startDate=${safeState?.viewMode || pending === false ? dates.startDate : null}` +
+      `&endDate=${safeState?.viewMode || pending === false ? dates.endDate : null}` +
       `${safeState?.header ? `&header=${safeState.header}` : ""}` +
       `${safeState?.from ? `&from=${safeState.from}` : ""}`
     : null
+  console.log(dates)
   console.log(safeState)
   console.log(followupUrl)
   // '/lead/getallLeadFollowUp?branchSelected=66f7b26c1e7129afd9aee189&loggeduserid=67220ce51c400b86242fe178&role=undefined&pendingfollowup=true&viewmode=true&startDate=2026-07-01&endDate=2026-07-31&header=Total Leads&from=followupReport'
+
+const isQueryReady = Boolean(followupUrl);
   const {
     data: loggedusersallocatedleads,
     isLoading: loading,
+  isPending,
+  isFetching,
+isError,
     error,
     refetch: refreshHook
   } = useQuery({
@@ -1417,13 +1426,19 @@ const LeadFollowUp = () => {
       console.log(res)
       return res.data?.data
     },
-    enabled: !!followupUrl,
+    enabled: isQueryReady,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // keep cache 10 minutes
+
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false
   })
+const showInitialSkeleton =
+  !isQueryReady ||
+  isPending ||
+  (isFetching && !loggedusersallocatedleads);
+console.log(showInitialSkeleton)
   console.log(loggedusersallocatedleads)
   // console.log(url)
   console.log(loggedusersallocatedleads?.followupLeads?.length)
@@ -1456,14 +1471,11 @@ const LeadFollowUp = () => {
     const now = new Date()
     const startDate = new Date(now.getFullYear(), now.getMonth(), 1)
     const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-    console.log(safeState)
-    console.log("hhh")
+
     setDates({
       startDate: safeState?.filterRange?.startDate,
       endDate: safeState?.filterRange?.endDate
     })
-    console.log(safeState?.filterRange)
-    // setDates({ startDate, endDate })
   }, [branches, data, safeState.branchId, safeState.staffId])
   useEffect(() => {
     const userData = localStorage.getItem("user")
@@ -1515,9 +1527,30 @@ const LeadFollowUp = () => {
   // default dates
   useEffect(() => {
     if (!safeState?.staffId) {
+      //       const now = new Date()
+      //       const startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+      //       const endDate = new Date()
+      // console.log(startDate)
+      // console.log(endDate)
+      //       setDates({ startDate, endDate })
       const now = new Date()
-      const startDate = new Date(now.getFullYear(), now.getMonth(), 1)
-      const endDate = new Date()
+
+      const formatDate = (date) => {
+        const day = String(date.getDate()).padStart(2, "0")
+        const month = String(date.getMonth() + 1).padStart(2, "0")
+        const year = date.getFullYear()
+
+        return `${year}-${month}-${day}`
+      }
+
+      const startDate = formatDate(
+        new Date(now.getFullYear(), now.getMonth(), 1)
+      )
+      const endDate = formatDate(now)
+
+      console.log(startDate) // 01-08-2026
+      console.log(endDate) // 08-08-2026
+
       setDates({ startDate, endDate })
     }
   }, [statusAll])
@@ -1535,7 +1568,6 @@ const LeadFollowUp = () => {
         (staff) => staff.isVerified === true
         // staff.selected.some((s) => selectedCompanyBranch === s.branch_id)
       )
-      console.log(filteredSelectedBranchStaffs)
       const filtereduserandadmin = [
         ...filteredSelectedBranchStaffs,
         ...allAdmins
@@ -1561,7 +1593,6 @@ const LeadFollowUp = () => {
       document.removeEventListener("mousedown", handleClickOutside)
     }
   }, [])
-  console.log(loggedusersallocatedleads)
   // debounced search
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -1569,8 +1600,7 @@ const LeadFollowUp = () => {
     }, 2000)
     return () => clearTimeout(handler)
   }, [input])
-  console.log(ownFollowUp)
-  console.log(pending)
+
   const formatdate = (date) => new Date(date).toISOString().split("T")[0]
   const getLocalDate = (date) => {
     const local = new Date(date)
@@ -1578,7 +1608,6 @@ const LeadFollowUp = () => {
     return local.toISOString().split("T")[0]
   }
   const handleSelectedUser = (category, userId, userName) => {
-    console.log("hhh")
     setActiveUserId(userId)
     setselecteduserName(userName)
     setselectedCategory({
@@ -1604,7 +1633,6 @@ const LeadFollowUp = () => {
 
     setselectedDataPopup(summary)
     if (filteredselectedCategory && filteredselectedCategory.length) {
-      console.log("hh")
       setacheivedProducts(
         filteredselectedCategory.flatMap((item) =>
           (item.products || []).map((product) => ({
@@ -1613,7 +1641,6 @@ const LeadFollowUp = () => {
           }))
         )
       )
-      console.log("hhh")
     } else {
       setacheivedProducts([])
     }
@@ -1641,24 +1668,16 @@ const LeadFollowUp = () => {
     }
     return []
   }
-  console.log(!loggedusersallocatedleads || !dates.endDate || !loggedUser)
-  console.log(loggedusersallocatedleads)
-  console.log(dates.endDate)
-  console.log(loggedUser)
+
   // main followup data from loggedusersallocatedleads
   useEffect(() => {
     // if (!loggedusersallocatedleads || !dates.endDate || !loggedUser) return
     if (loggedusersallocatedleads && dates.endDate && loggedUser) {
       const leads = loggedusersallocatedleads.followupLeads
-      console.log("h")
-      console.log(pending)
-      console.log(ownFollowUp)
-      console.log(!pending && !ownFollowUp)
-      console.log(safeState?.header)
+
       if (safeState?.header === "Total Leads") {
-        console.log(leads)
         const lea = leads.map((item) => item.leadId)
-        console.log(lea)
+
         const filteredLeads = leads.filter((lead) => {
           // 1️⃣ Get only followup allocation logs
           const followupAllocations = lead.activityLog.filter(
@@ -1681,8 +1700,7 @@ const LeadFollowUp = () => {
             safeState?.staffId?.toString()
           )
         })
-        console.log(filteredLeads)
-        console.log(filteredLeads.length)
+
         const groupedLeads = {}
         let grandTotal = 0
         filteredLeads.forEach((lead) => {
@@ -1695,23 +1713,13 @@ const LeadFollowUp = () => {
           groupedLeads[assignedTo].push(lead)
         })
         const groupedData = normalizeTableData(groupedLeads)
-        // console.log(groupedData)
         setnetTotalAmount(TotalAmount(filteredLeads))
         setTableData(groupedData)
-
-        console.log(safeState)
-        console.log(loggedUser)
-        console.log(groupedData)
       } else {
-        console.log("HH")
-        console.log(safeState)
         if (safeState?.viewMode === "overDue") {
-          console.log("hhh")
           const today = new Date()
           today.setHours(0, 0, 0, 0)
-          console.log(leads)
-          const as = leads.map((item) => item.leadId)
-          console.log(as)
+
           const overdueLeads = leads.filter((lead) => {
             // 1️⃣ Get logs having nextFollowUpDate
             const followupLogs = lead.activityLog.filter(
@@ -1728,13 +1736,11 @@ const LeadFollowUp = () => {
 
             const nextDate = new Date(lastFollowup.nextFollowUpDate)
             nextDate.setHours(0, 0, 0, 0)
-            console.log(nextDate, lead.leadId)
 
             // 4️⃣ Check overdue
             return nextDate < today && !lead.leadConvertedDate && !lead.leadLost
           })
 
-          console.log("Overdue Leads:", overdueLeads)
           const groupedLeads = {}
           let grandTotal = 0
           overdueLeads.forEach((lead) => {
@@ -1747,13 +1753,9 @@ const LeadFollowUp = () => {
             groupedLeads[assignedTo].push(lead)
           })
           const groupedData = normalizeTableData(groupedLeads)
-          // console.log(groupedData)
           setnetTotalAmount(TotalAmount(overdueLeads))
           setTableData(groupedData)
-          console.log(groupedData)
         } else if (safeState?.viewMode === "dueToday") {
-          console.log("hhhh")
-          console.log("hhh")
           const today = new Date()
           today.setHours(0, 0, 0, 0)
 
@@ -1773,7 +1775,6 @@ const LeadFollowUp = () => {
 
             const nextDate = new Date(lastFollowup.nextFollowUpDate)
             nextDate.setHours(0, 0, 0, 0)
-            console.log(nextDate, lead.leadId)
 
             // 4️⃣ Check overdue
             return (
@@ -1782,8 +1783,6 @@ const LeadFollowUp = () => {
               !lead.leadLost
             )
           })
-          console.log(leads)
-          console.log("due Today Leads:", dueTodayLeads.length)
           const groupedLeads = {}
           let grandTotal = 0
           dueTodayLeads.forEach((lead) => {
@@ -1799,9 +1798,7 @@ const LeadFollowUp = () => {
           // console.log(groupedData)
           setnetTotalAmount(TotalAmount(dueTodayLeads))
           setTableData(groupedData)
-          console.log(groupedData)
         } else if (safeState?.viewMode === "future") {
-          console.log("hhh")
           const today = new Date()
           today.setHours(0, 0, 0, 0)
 
@@ -1821,14 +1818,11 @@ const LeadFollowUp = () => {
 
             const nextDate = new Date(lastFollowup.nextFollowUpDate)
             nextDate.setHours(0, 0, 0, 0)
-            console.log(nextDate, lead.leadId)
 
             // 4️⃣ Check overdue
             return nextDate > today && !lead.leadConvertedDate && !lead.leadLost
           })
 
-          console.log("Overdue Leads:", futureLeads)
-          console.log("length", futureLeads.length)
           const groupedLeads = {}
           let grandTotal = 0
           futureLeads.forEach((lead) => {
@@ -1844,11 +1838,7 @@ const LeadFollowUp = () => {
           // console.log(groupedData)
           setnetTotalAmount(TotalAmount(futureLeads))
           setTableData(groupedData)
-          console.log(groupedData)
         } else if (safeState?.viewMode === "converted") {
-          console.log("hhhh")
-          console.log("hhhh")
-          console.log("hhh")
           const today = new Date()
           today.setHours(0, 0, 0, 0)
 
@@ -1856,10 +1846,7 @@ const LeadFollowUp = () => {
             // 4️⃣ Check overdue
             return lead.leadConvertedDate && !lead.leadLost
           })
-          console.log(leads)
-          const a = leads.map((item) => item.leadId)
-          console.log(a)
-          console.log("converted Leads:", convertedLeads.length)
+
           const groupedLeads = {}
           let grandTotal = 0
           convertedLeads.forEach((lead) => {
@@ -1872,13 +1859,9 @@ const LeadFollowUp = () => {
             groupedLeads[assignedTo].push(lead)
           })
           const groupedData = normalizeTableData(groupedLeads)
-          // console.log(groupedData)
           setnetTotalAmount(TotalAmount(convertedLeads))
           setTableData(groupedData)
-          console.log(groupedData)
         } else if (safeState?.viewMode === "neverfollowup") {
-          console.log("HHhdffh")
-          console.log(leads)
           const neverFollowupLeads = leads.filter((lead) => {
             const logs = lead.activityLog || []
 
@@ -1906,9 +1889,6 @@ const LeadFollowUp = () => {
               !hasNextFollowupDate && !lead.leadConvertedDate && !lead.leadLost
             )
           })
-          console.log(neverFollowupLeads)
-          console.log(leads)
-          console.log("neverfollowup:", neverFollowupLeads?.length)
           const groupedLeads = {}
           let grandTotal = 0
           neverFollowupLeads.forEach((lead) => {
@@ -1921,23 +1901,10 @@ const LeadFollowUp = () => {
             groupedLeads[assignedTo].push(lead)
           })
           const groupedData = normalizeTableData(groupedLeads)
-          // console.log(groupedData)
           setnetTotalAmount(TotalAmount(neverFollowupLeads))
           setTableData(groupedData)
-          console.log(groupedData)
         } else {
-          console.log(loggedusersallocatedleads?.followupLeads)
-          const a = loggedusersallocatedleads.followupLeads.map(
-            (item) => item.leadId
-          )
-          console.log(a)
-          console.log(pending)
-          console.log(ownFollowUp)
           if (pending && ownFollowUp) {
-            console.log("hhhhh")
-            console.log(leads)
-            const a = leads.map((item) => item.leadId)
-            console.log(a)
             const ownFollow = leads.filter((lead) =>
               lead.activityLog?.some(
                 (log) =>
@@ -1947,7 +1914,6 @@ const LeadFollowUp = () => {
                   log.allocationChanged === false
               )
             )
-            console.log(ownFollow)
             const currentDate = new Date()
             const endDateLocal = getLocalDate(new Date(dates.endDate))
             formatdate(currentDate)
@@ -1982,14 +1948,12 @@ const LeadFollowUp = () => {
             const taskSubmittedLeads = ownFollow.filter(
               (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed
             )
-            // console.log(ownFollow)
             const nonsubmittedtakleads = ownFollow.filter(
               (lead) =>
                 lead.allocatedfollowup && lead.allocatedTaskClosed === false
             )
             const allocatedData = normalizeTableData(nonsubmittedtakleads)
             setallocatednetAmount(TotalAmount(nonsubmittedtakleads))
-            // console.log(TotalAmount(nonsubmittedtakleads))
             setAllocatedLeads(allocatedData)
 
             const mergedall = [
@@ -2001,11 +1965,9 @@ const LeadFollowUp = () => {
             const Data = normalizeTableData(mergedall)
             // then store it in state
             setnetTotalAmount(TotalAmount(mergedall))
-            // console.log(Data)
-            // mergedall.forEach((item)=>)
+
             setTableData(Data)
           } else if (pending && !ownFollowUp) {
-            console.log("Hhhh")
             if (safeState?.staffId) {
               const filterLeadsByConvertedDate = (
                 leads,
@@ -2037,15 +1999,12 @@ const LeadFollowUp = () => {
                   return hasFollowupInRange
                 })
               }
-              console.log(leads)
-              const a = leads.map((item) => item.leadId)
-              console.log(a)
+
               const filteredpending = filterLeadsByConvertedDate(
                 leads,
                 dates.startDate,
                 dates.endDate
               )
-              console.log(filteredpending)
               const groupedLeads = {}
               let grandTotal = 0
               filteredpending.forEach((lead) => {
@@ -2058,11 +2017,9 @@ const LeadFollowUp = () => {
                 groupedLeads[assignedTo].push(lead)
               })
               const groupedData = normalizeTableData(groupedLeads)
-              // console.log(groupedData)
               setnetTotalAmount(TotalAmount(filteredpending))
               setTableData(groupedData)
             } else {
-              console.log(leads)
               const currentDate = new Date()
               const endDateLocal = getLocalDate(new Date(dates.endDate))
               formatdate(currentDate)
@@ -2071,20 +2028,15 @@ const LeadFollowUp = () => {
                   ? // formatdate(dates.endDate)
                     formatdate(currentDate)
                   : endDateLocal
-              console.log(leads)
-              const mapeed = leads.map((item) => item.leadId)
-              console.log(mapeed)
+
               const neverfollowupedLeads = leads.filter(
                 (lead) => lead.neverfollowuped
               )
-              console.log(neverfollowupedLeads)
               const havenextFollowup =
                 loggedusersallocatedleads.followupLeads.filter(
                   (lead) => lead.Nextfollowup
                 )
-              console.log(havenextFollowup)
-              const edd = havenextFollowup.map((item) => item.leadId)
-              console.log(edd)
+
               const filteredcurrentdatefollowupLeads = havenextFollowup.filter(
                 (lead) => formatdate(lead.nextFollowUpDate) === fulldatecurrent
               )
@@ -2110,14 +2062,11 @@ const LeadFollowUp = () => {
                 loggedusersallocatedleads.followupLeads.filter(
                   (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed
                 )
-              console.log(leads)
               const nonsubmittedtakleads = leads.filter(
                 (lead) =>
                   lead.allocatedfollowup && lead.allocatedTaskClosed === false
               )
-              console.log(nonsubmittedtakleads)
               setallocatednetAmount(TotalAmount(nonsubmittedtakleads))
-              // console.log(nonsubmittedtakleads)
               const groupedallocatedleads = {}
               nonsubmittedtakleads.forEach((lead) => {
                 const assignedTo = lead?.allocatedTo?.name
@@ -2127,29 +2076,17 @@ const LeadFollowUp = () => {
                 }
                 groupedallocatedleads[assignedTo].push(lead)
               })
-              console.log(groupedallocatedleads)
               const groupedallocatedData = normalizeTableData(
                 groupedallocatedleads
               )
               setAllocatedLeads(groupedallocatedData)
-              console.log(groupedallocatedData)
-              // console.log(groupedallocatedData)
-              console.log(neverfollowupedLeads)
-              console.log(uniqueoverdueAndcurrentdate)
-              console.log(postdatefollowup)
-              const b = neverfollowupedLeads.map((it) => it.leadId)
-              console.log(b)
-              const c = uniqueoverdueAndcurrentdate.map((it) => it.leadId)
-              console.log(c)
-              const m = postdatefollowup.map((it) => it.leadId)
-              console.log(m)
+
               const mergedall = [
                 ...neverfollowupedLeads,
                 ...uniqueoverdueAndcurrentdate,
                 ...postdatefollowup
                 // ...taskSubmittedLeads
               ]
-              console.log(mergedall)
               const groupedLeads = {}
               let grandTotal = 0
               mergedall.forEach((lead) => {
@@ -2162,16 +2099,10 @@ const LeadFollowUp = () => {
                 groupedLeads[assignedTo].push(lead)
               })
               const groupedData = normalizeTableData(groupedLeads)
-              // console.log(groupedData)
               setnetTotalAmount(TotalAmount(mergedall))
               setTableData(groupedData)
-              console.log(groupedData)
             }
           } else if (!pending && ownFollowUp) {
-            console.log("h")
-            console.log(leads)
-            const a = leads.map((item) => item.leadId)
-            console.log(a)
             const ownFollow = leads.filter((lead) =>
               lead.activityLog?.some(
                 (log) =>
@@ -2180,10 +2111,7 @@ const LeadFollowUp = () => {
                   log.followupClosed === true
               )
             )
-            console.log(ownFollow)
-            const b = ownFollow.map((item) => item.leadId)
-            console.log(b)
-            // console.log(ownFollow)
+
             const clearedLeads = ownFollow.filter(
               (lead) =>
                 Array.isArray(lead.activityLog) &&
@@ -2192,50 +2120,33 @@ const LeadFollowUp = () => {
                     entry.taskTo === "followup" && entry.followupClosed === true
                 )
             )
-            console.log(clearedLeads)
-            const c = clearedLeads.map((it) => it.leadId)
-            console.log(c)
-            // console.log(clearedLeads)
 
             // then store it in state
             setnetTotalAmount(TotalAmount(clearedLeads))
             const Data = normalizeTableData(clearedLeads)
-            console.log(Data)
-            console.log(Data.length)
-            const t = Data[0].leads
-            console.log(t)
-            const e = Data.map((item) => item.leadId)
-            console.log(e)
+
             setTableData(Data)
           } else if (!pending && !ownFollowUp) {
-            console.log("H")
             const followupLeads = leads || []
             if (safeState?.staffId) {
-              console.log("hhh")
               const filterLeadsByConvertedDate = (
                 leads,
                 startDate,
                 endDate
               ) => {
                 const start = new Date(startDate)
-                console.log(startDate)
-                console.log(endDate)
+
                 start.setHours(0, 0, 0, 0)
 
                 const end = new Date(endDate)
                 end.setHours(23, 59, 59, 999)
-                console.log(leads)
                 return leads.filter((lead) => {
                   // 1️⃣ Check converted date
                   if (!lead.leadConvertedDate) return false
-                  console.log("h")
                   const convertedDate = new Date(lead.leadConvertedDate)
-                  console.log(convertedDate)
                   const isConvertedInRange =
                     convertedDate >= start && convertedDate <= end
-                  console.log(isConvertedInRange)
-                  console.log(start)
-                  console.log(end)
+
                   if (!isConvertedInRange) return false
 
                   // 2️⃣ Check activityLog for followup allocation within same range
@@ -2254,15 +2165,12 @@ const LeadFollowUp = () => {
                   return hasValidFollowupAllocation
                 })
               }
-              console.log(dates)
               const filteredLeads = filterLeadsByConvertedDate(
                 followupLeads,
                 dates.startDate,
                 dates.endDate
               )
-              console.log(filteredLeads.length)
-              console.log(filteredLeads)
-              console.log(loggedusersallocatedleads)
+
               // optional: group by allocatedTo
               const groupedLeads = {}
               let grandTotal = 0
@@ -2274,7 +2182,6 @@ const LeadFollowUp = () => {
                 groupedLeads[assignedTo].push(lead)
               })
               const groupedData = normalizeTableData(groupedLeads)
-              // console.log(groupedData)
               // then store it in state
               setnetTotalAmount(TotalAmount(filteredLeads))
               setTableData(groupedData)
@@ -2284,7 +2191,6 @@ const LeadFollowUp = () => {
                 log?.taskBy?.taskName === "Followup" &&
                 log?.followupClosed === true &&
                 log?.submissionDate
-              // console.log(isFollowupActivity)
               const getLatestSubmissionDate = (lead) => {
                 const dates = (lead.activityLog || [])
                   .filter(isFollowupActivity)
@@ -2296,7 +2202,6 @@ const LeadFollowUp = () => {
               const clearedLeads = []
               followupLeads.forEach((lead) => {
                 const latest = getLatestSubmissionDate(lead)
-                console.log(latest)
                 if (latest) {
                   // cleared
                   clearedLeads.push({ ...lead, latestSubmissionTime: latest })
@@ -2318,7 +2223,6 @@ const LeadFollowUp = () => {
                 groupedLeads[assignedTo].push(lead)
               })
               const groupedData = normalizeTableData(groupedLeads)
-              // console.log(groupedData)
               // then store it in state
               setnetTotalAmount(TotalAmount(clearedLeads))
               setTableData(groupedData)
@@ -2326,15 +2230,9 @@ const LeadFollowUp = () => {
           }
         }
       }
-      //       if (!safeState.staffId) {
-      // console.log("hhhh")
-      //         setOwnFollowUp(true)
-      //       }
 
-      console.log("hhhhdd")
       setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
     } else {
-      console.log("hh")
       setTableData([])
     }
   }, [
@@ -2345,7 +2243,6 @@ const LeadFollowUp = () => {
     loggedUser,
     statusAllocated
   ])
-  console.log(ownFollowUp)
   useEffect(() => {
     if (loggedUser) {
       setFormData((prev) => ({
@@ -2394,8 +2291,7 @@ const LeadFollowUp = () => {
   }
   const hasCollectionData =
     collectionData && Object.keys(collectionupdatedata).length > 0
-  console.log(collectionupdatedata)
-  console.log(hasCollectionData)
+
   const handleHistory = (
     history,
     leadid,
@@ -2403,13 +2299,10 @@ const LeadFollowUp = () => {
     allocatedTo,
     taskfromFollowup
   ) => {
-    console.log(loggedUser)
     if (!loggedUser) return // NEW: guard
-    console.log("h")
     const owner = loggedUser._id === allocatedTo
     setOwner(owner)
     const isHaveDemo = taskfromFollowup ? history[history.length - 1] : null
-    console.log(isHaveDemo)
     // if (isHaveDemo) {
     //   const demoassignedDate = formatDate(isHaveDemo.submissionDate)
     //   setdemoEditIndex(history.length - 1)
@@ -2429,15 +2322,12 @@ const LeadFollowUp = () => {
     setfollowupClosed(!pending)
     setselectedDocid(docId)
     setselectedTab("History")
-    console.log("hh")
     setShowModal(true)
     setHistoryList(history)
     setSelectedLeadId(leadid)
-    console.log("hhh")
   }
 
   const handlefollowupdate = (Id, docId) => {
-    console.log("hhh")
     setfollowupDateModal(true)
     setSelectedLeadId(Id)
     setselectedDocid(docId)
@@ -2448,10 +2338,8 @@ const LeadFollowUp = () => {
       }))
     }
   }
-  console.log(selectedData)
   // MODIFIED: Fetch updated lead data after collection update
   const fetchUpdatedLeadData = async (leadDocId) => {
-    console.log("b")
     try {
       const response = await api.get(`/lead/getLeadById/${leadDocId}`)
       if (response.status === 200) {
@@ -2486,7 +2374,6 @@ const LeadFollowUp = () => {
     console.log(loader)
     if (loader) return
 
-
     const newError = {}
     if (!demoData.demoallocatedDate) {
       newError.allocationDate = "Completion Date is Required"
@@ -2501,13 +2388,13 @@ const LeadFollowUp = () => {
     if (!demoData.selectedType) {
       newError.allocationTyperror = "Allocation Type is Required"
     }
-console.log(newError)
+    console.log(newError)
     if (Object.keys(newError).length > 0) {
       setDemoError(newError)
       return
     }
-console.log(selectedDocId)
-console.log(loggedUser)
+    console.log(selectedDocId)
+    console.log(loggedUser)
     try {
       if (!loggedUser || !selectedDocId) return
       console.log(demoData)
@@ -3266,9 +3153,54 @@ console.log(loggedUser)
               </div>
             </div>
 
-            <div className=" min-h-0 overflow-auto rounded-lg shadow-xl mx-2 md:mx-3 mb-3 bg-white">
-              {hasLeads() ? renderTable(currentData) : <NoDataAvailable />}
-            </div>
+            {/* <div className=" min-h-0 overflow-auto rounded-lg shadow-xl mx-2 md:mx-3 mb-3 bg-white">
+              {loading ? (
+                <SkeletonTable rows={7} />
+              ) : hasLeads() ? (
+                renderTable(currentData)
+              ) : (
+                <NoDataAvailable />
+              )}
+            </div> */}
+<div className="relative min-h-0 overflow-auto rounded-lg bg-white mx-2 mb-3 shadow-xl md:mx-3">
+  {showInitialSkeleton ? (
+    <SkeletonTable rows={7} />
+  ) : isError ? (
+    <div className="flex min-h-40 flex-col items-center justify-center gap-2 px-4 text-center">
+      <p className="text-sm font-semibold text-red-600">
+        Failed to load follow-up leads
+      </p>
+
+      <p className="text-xs text-gray-500">
+        {error?.response?.data?.message ||
+          error?.message ||
+          "Please try again."}
+      </p>
+
+      <button
+        type="button"
+        onClick={() => refreshHook()}
+        className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+      >
+        Retry
+      </button>
+    </div>
+  ) : hasLeads() ? (
+    renderTable(currentData)
+  ) : (
+    <NoDataAvailable />
+  )}
+
+  {/* Background refresh overlay: old data remains visible */}
+  {isFetching && !showInitialSkeleton && hasLeads() && (
+    <div className="absolute inset-0 z-20 grid place-items-center bg-white/35 backdrop-blur-[1px]">
+      <div className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-xs font-medium text-blue-700 shadow-md">
+        <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+        Refreshing leads...
+      </div>
+    </div>
+  )}
+</div>
           </div>
         </div>
         {showModal && (
