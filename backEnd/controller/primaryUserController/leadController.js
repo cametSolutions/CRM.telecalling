@@ -56,21 +56,9 @@ const batchFetchByModel = async (modelName, ids, select = "name") => {
   return new Map(docs.map((doc) => [String(doc._id), doc]));
 };
 
+
 export const GetallfollowupList = async (req, res) => {
   try {
-
-
-
-    const deletedata = await LeadMaster.find(
-      {
-        activityLog: { $elemMatch: { $eq: null } }
-      },
-      {
-        leadId: 1,
-        activityLog: 1
-      }
-    )
-    console.log("dateeeeeeeeeeeeeeeeee", deletedata)
     const {
       loggeduserid,
       branchSelected,
@@ -84,148 +72,132 @@ export const GetallfollowupList = async (req, res) => {
     } = req.query;
 
     if (!isValidObjectId(loggeduserid) || !isValidObjectId(branchSelected)) {
-      return res.status(400).json({ message: "Invalid loggeduserid or branchSelected" });
+      return res.status(400).json({
+        message: "Invalid loggeduserid or branchSelected",
+      });
     }
 
     const userObjectId = new mongoose.Types.ObjectId(loggeduserid);
-    console.log("userobjectiddd", userObjectId)
     const branchObjectId = new mongoose.Types.ObjectId(branchSelected);
 
-    const start = startDate ? new Date(startDate) : null;
-    const end = endDate ? addEndOfDay(endDate) : null;
-    console.log("start", start)
-    console.log("end", end)
-    const isViewMode = viewmode === "true";
-    const hasValidHeader = header && header !== "null" && header !== "undefined";
-    const hasValidDates =
-      startDate &&
-      endDate &&
-      startDate !== "null" &&
-      endDate !== "null" &&
-      startDate !== "undefined" &&
-      endDate !== "undefined";
+    const parsedStart = startDate ? new Date(startDate) : null;
+    const parsedEnd = endDate ? addEndOfDay(endDate) : null;
 
-    const isNewMode = isViewMode || hasValidHeader || hasValidDates;
+    const start =
+      parsedStart && !Number.isNaN(parsedStart.getTime()) ? parsedStart : null;
+
+    const end = parsedEnd && !Number.isNaN(parsedEnd.getTime()) ? parsedEnd : null;
+
+    const isViewMode = viewmode === "true";
+    const hasValidHeader = Boolean(
+      header && header !== "null" && header !== "undefined"
+    );
+    const hasValidDates = Boolean(start && end);
+    console.log("hasvalidates", hasValidDates)
+    const hasFrom = Boolean(from && from !== "null" && from !== "undefined");
+    const isNewMode = isViewMode || hasValidHeader 
+    const isClosedFollowupMode = pendingfollowup === "false" && !isViewMode;
 
     let query = {};
-    console.log("isviewmodoe", isViewMode)
 
     if (isViewMode) {
-      const hasRange = !!(start && end);
-
       const baseElemMatch = {
         taskTo: "followup",
         taskallocatedTo: userObjectId,
         allocationChanged: false,
-        // $or: [{ submittedUser: userObjectId }, { taskallocatedTo: userObjectId }],
-        // allocatedClosed: false,
       };
 
       query = {
         activityLog: { $elemMatch: baseElemMatch },
         leadBranch: branchObjectId,
       };
-      console.log("headernamee", header)
+
       if (header === "Converted") {
-        // Only leads that actually converted, and — if a date range was given —
-        // only if the conversion itself happened inside that range. Ignores
-        // leadLost entirely since a converted lead can't also be lost.
-        console.log("hasrange", hasRange)
-        query.leadConvertedDate = hasRange
+        query.leadConvertedDate = hasValidDates
           ? { $ne: null, $gte: start, $lte: end }
           : { $ne: null };
       } else if (header === "Lost Leads" || header === "Lost") {
-        // Symmetric to Converted, but on leadLostDate.
-        query.leadLostDate = hasRange
+        query.leadLostDate = hasValidDates
           ? { $ne: null, $gte: start, $lte: end }
           : { $ne: null };
         query.leadLost = true;
       } else if (header === "Total Leads") {
-        // Show everything assigned to me, but if a date range is given, a
-        // converted/lost lead should only count in that range if ITS OWN
-        // conversion/loss date falls inside it — a still-pending lead (neither
-        // converted nor lost) is unaffected by the date range and always shows.
-        if (hasRange) {
+        if (hasValidDates) {
           query.$or = [
-            { leadConvertedDate: null, leadLostDate: null }, // still pending
-            { leadConvertedDate: { $gte: start, $lte: end } }, // converted in range
-            { leadLostDate: { $gte: start, $lte: end } }, // lost in range
+            { leadConvertedDate: null, leadLostDate: null },
+            { leadConvertedDate: { $gte: start, $lte: end } },
+            { leadLostDate: { $gte: start, $lte: end } },
           ];
         }
-        // no range → no extra filter, matches everything ever assigned (as before)
       } else {
-        // Default / "Pending": only leads that are genuinely still open —
-        // never converted, never lost. Date range doesn't apply here since
-        // there's no conversion/loss event to range-check; the assignment
-        // itself is what matters.
         query.leadConvertedDate = null;
         query.leadLost = false;
       }
-    } else {
-      if (pendingfollowup === "true") {
-        if (role === "Admin") {
-          query = {
-            activityLog: {
-              $elemMatch: {
-                taskTo: "followup",
-                allocationChanged: false,
-                allocatedClosed: false,
-                taskClosed: false,
-                followupClosed: false,
-              },
-            },
-            leadBranch: branchObjectId,
-            reallocatedTo: false,
-            leadLost: false,
-          };
-        } else {
-          query = {
-            activityLog: {
-              $elemMatch: {
-                taskTo: "followup",
-                $or: [{ submittedUser: userObjectId }, { taskallocatedTo: userObjectId }],
-                allocationChanged: false,
-                allocatedClosed: false,
-                taskClosed: false,
-                followupClosed: false,
-              },
-            },
-            leadBranch: branchObjectId,
-            reallocatedTo: false,
-            leadLost: false,
-          };
-        }
-      } else if (pendingfollowup === "false") {
-        if (role === "Admin") {
-          query = {
-            activityLog: {
-              $elemMatch: {
-                taskTo: "followup",
-                allocationChanged: false,
-                allocatedClosed: false,
-                taskClosed: true,
-                followupClosed: true,
-              },
-            },
-            leadBranch: branchObjectId,
-            leadLost: false,
-          };
-        } else {
-          query = {
-            activityLog: {
-              $elemMatch: {
-                taskTo: "followup",
-                $or: [{ submittedUser: userObjectId }, { taskallocatedTo: userObjectId }],
-                taskClosed: true,
-              },
-            },
-            leadBranch: branchObjectId,
-            leadLost: false,
-          };
-        }
+    } else if (pendingfollowup === "true") {
+      const followupMatch = {
+        taskTo: "followup",
+        allocationChanged: false,
+        allocatedClosed: false,
+        taskClosed: false,
+        followupClosed: false,
+      };
+
+      if (role !== "Admin") {
+        followupMatch.$or = [
+          { submittedUser: userObjectId },
+          { taskallocatedTo: userObjectId },
+        ];
       }
+
+      /* Pending report date = follow-up allocation date. */
+      if (hasValidDates) {
+        followupMatch.submissionDate = { $gte: start, $lte: end };
+      }
+
+      query = {
+        activityLog: { $elemMatch: followupMatch },
+        leadBranch: branchObjectId,
+        reallocatedTo: false,
+        leadLost: false,
+      };
+    } else if (pendingfollowup === "false") {
+      const followupMatch = {
+        taskTo: "followup",
+        allocationChanged: false,
+        // allocatedClosed: false,
+        followupClosed: true,
+      };
+
+      if (role !== "Admin") {
+        followupMatch.$or = [
+          { submittedUser: userObjectId },
+          { taskallocatedTo: userObjectId },
+        ];
+      }
+
+
+
+      query = {
+        activityLog: { $elemMatch: followupMatch },
+        leadBranch: branchObjectId,
+        leadLost: false,
+      };
+      /* Closed report date = actual follow-up closing date. */
+      if (hasValidDates) {
+        query.leadConvertedDate = hasValidDates
+          ? { $ne: null, $gte: start, $lte: end }
+          : { $ne: null };
+      }
+    } else {
+      return res.status(400).json({
+        message: "pendingfollowup must be true or false",
+      });
     }
-    console.log("quwery", query)
+    // console.log("queryyy", query)
+    // console.dir(query, {
+    //   depth: null,
+    //   colors: true,
+    // });
     const selectedfollowup = await LeadMaster.find(query)
       .select([
         "leadId",
@@ -270,14 +242,20 @@ export const GetallfollowupList = async (req, res) => {
         "selfAllocation",
         "taskfromFollowup",
       ].join(" "))
-      .populate({ path: "customerName", model: Customer, options: { lean: true } })
-      .populate({ path: "partner", model: Partner, options: { lean: true } })
+      .populate({
+        path: "customerName",
+        model: Customer,
+        options: { lean: true },
+      })
+      .populate({
+        path: "partner",
+        model: Partner,
+        options: { lean: true },
+      })
       .lean();
-    // console.log("selectedfollowp",selectedfollowup)
-    // const dddd=selectedfollowup.map((item)=>item.leadId)
-    // console.log("ddddd",dddd)
-    const followupLeads = [];
+    console.log("selecefolloowp", selectedfollowup.length)
 
+    const followupLeads = [];
     const leadByBuckets = {};
     const allocatedToBuckets = {};
     const allocatedByBuckets = {};
@@ -287,54 +265,73 @@ export const GetallfollowupList = async (req, res) => {
     const leadForBuckets = {};
     const paymentEntryBuckets = {};
     const receivedByBuckets = {};
-
     const preprocessedLeads = [];
-    // console.log("selectedfolowps",selectedfollowup)
+
+    const isDateInRange = (value) => {
+      if (!hasValidDates) return true;
+      if (!value) return false;
+
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return false;
+
+      return date >= start && date <= end;
+    };
+
     for (const lead of selectedfollowup) {
-      const activity = Array.isArray(lead.activityLog) ? lead.activityLog : [];
+      const activity = Array.isArray(lead.activityLog)
+        ? lead.activityLog.filter(Boolean)
+        : [];
 
-      let matchedAllocations;
+      let matchedAllocations = activity
+        .map((item, index) => ({ ...item, index }))
+        .filter((item) => {
+          if (item.taskTo !== "followup") return false;
+          if (item.allocationChanged !== false) return false;
 
-      if (isNewMode) {
-        matchedAllocations = activity
-          .map((item, index) => ({ ...item, index }))
-          .filter((item) => {
-            if (item.taskTo !== "followup") return false;
-            if (item.allocationChanged !== false) return false;
-            if (!item.submissionDate) return false;
+          /*
+            In normal closed-follow-up mode, use followupClosedDate.
+            submissionDate is the original allocation date and must not be
+            used for a closed report date range.
+          */
+          // if (isClosedFollowupMode) {
+          //   if (item.taskClosed !== true || item.followupClosed !== true) {
+          //     return false;
+          //   }
 
-            const hasFrom = from && from !== "null" && from !== "undefined";
-            if (hasFrom) return true;
+          //   return isDateInRange(item.followupClosedDate);
+          // }
 
-            if (start && end) {
-              const subDate = new Date(item.submissionDate);
-              return subDate >= start && subDate <= end;
-            }
+          /*
+            Pending follow-up report date = assignment/submission date.
+            View/dashboard mode retains its original submission-date behavior.
+          */
+          if (isNewMode && !hasFrom && hasValidDates) {
+            return isDateInRange(item.submissionDate);
+          }
 
-            return true;
-          });
-      } else {
-        matchedAllocations = activity
-          .map((item, index) => ({ ...item, index }))
-          .filter((item) => item.taskTo === "followup");
-      }
-
+          return true;
+        });
+console.log("length",matchedAllocations.length)
       if (matchedAllocations.length === 0) continue;
-
+console.log("matcchedallocationsss",matchedAllocations)
       const lastAlloc = matchedAllocations[matchedAllocations.length - 1];
       const lastIndex = lastAlloc.index;
 
       if (isNewMode) {
         if (header === "Pending") {
-          if (lead.leadConvertedDate || lead.leadLostDate || lead.leadLost === true) {
+          if (lead.leadConvertedDate || lead.leadLostDate || lead.leadLost) {
             continue;
           }
         }
 
         if (header === "Converted") {
           if (!lead.leadConvertedDate) continue;
-          const convDate = new Date(lead.leadConvertedDate);
-          if (start && end && (convDate < start || convDate > end)) continue;
+          if (!isDateInRange(lead.leadConvertedDate)) continue;
+        }
+
+        if (header === "Lost" || header === "Lost Leads") {
+          if (!lead.leadLostDate) continue;
+          if (!isDateInRange(lead.leadLostDate)) continue;
         }
       }
 
@@ -343,30 +340,40 @@ export const GetallfollowupList = async (req, res) => {
         leadByBuckets[lead.leadByModel].add(String(lead.leadBy));
       }
 
-      if (lastAlloc?.taskallocatedToModel && lastAlloc?.taskallocatedTo) {
+      if (lastAlloc.taskallocatedToModel && lastAlloc.taskallocatedTo) {
         allocatedToBuckets[lastAlloc.taskallocatedToModel] ||= new Set();
-        allocatedToBuckets[lastAlloc.taskallocatedToModel].add(String(lastAlloc.taskallocatedTo));
+        allocatedToBuckets[lastAlloc.taskallocatedToModel].add(
+          String(lastAlloc.taskallocatedTo)
+        );
       }
 
-      if (lastAlloc?.taskallocatedByModel && lastAlloc?.taskallocatedBy) {
+      if (lastAlloc.taskallocatedByModel && lastAlloc.taskallocatedBy) {
         allocatedByBuckets[lastAlloc.taskallocatedByModel] ||= new Set();
-        allocatedByBuckets[lastAlloc.taskallocatedByModel].add(String(lastAlloc.taskallocatedBy));
+        allocatedByBuckets[lastAlloc.taskallocatedByModel].add(
+          String(lastAlloc.taskallocatedBy)
+        );
       }
 
       for (const log of activity) {
         if (log.submissiondoneByModel && log.submittedUser) {
           submittedUserBuckets[log.submissiondoneByModel] ||= new Set();
-          submittedUserBuckets[log.submissiondoneByModel].add(String(log.submittedUser));
+          submittedUserBuckets[log.submissiondoneByModel].add(
+            String(log.submittedUser)
+          );
         }
 
         if (log.taskallocatedToModel && log.taskallocatedTo) {
           submittedUserBuckets[log.taskallocatedToModel] ||= new Set();
-          submittedUserBuckets[log.taskallocatedToModel].add(String(log.taskallocatedTo));
+          submittedUserBuckets[log.taskallocatedToModel].add(
+            String(log.taskallocatedTo)
+          );
         }
 
         if (log.taskallocatedByModel && log.taskallocatedBy) {
           submittedUserBuckets[log.taskallocatedByModel] ||= new Set();
-          submittedUserBuckets[log.taskallocatedByModel].add(String(log.taskallocatedBy));
+          submittedUserBuckets[log.taskallocatedByModel].add(
+            String(log.taskallocatedBy)
+          );
         }
 
         if (log.taskId) taskIds.add(String(log.taskId));
@@ -376,25 +383,37 @@ export const GetallfollowupList = async (req, res) => {
       for (const item of lead.leadFor || []) {
         if (item.productorServicemodel && item.productorServiceId) {
           leadForBuckets[item.productorServicemodel] ||= new Set();
-          leadForBuckets[item.productorServicemodel].add(String(item.productorServiceId));
+          leadForBuckets[item.productorServicemodel].add(
+            String(item.productorServiceId)
+          );
         }
       }
 
       for (const history of lead.paymentHistory || []) {
         if (history.receivedModel && history.receivedBy) {
           receivedByBuckets[history.receivedModel] ||= new Set();
-          receivedByBuckets[history.receivedModel].add(String(history.receivedBy));
+          receivedByBuckets[history.receivedModel].add(
+            String(history.receivedBy)
+          );
         }
 
         for (const entry of history.paymentEntries || []) {
           if (entry.productorServicemodel && entry.productorServiceId) {
             paymentEntryBuckets[entry.productorServicemodel] ||= new Set();
-            paymentEntryBuckets[entry.productorServicemodel].add(String(entry.productorServiceId));
+            paymentEntryBuckets[entry.productorServicemodel].add(
+              String(entry.productorServiceId)
+            );
           }
         }
       }
 
-      preprocessedLeads.push({ lead, activity, matchedAllocations, lastAlloc, lastIndex });
+      preprocessedLeads.push({
+        lead,
+        activity,
+        matchedAllocations,
+        lastAlloc,
+        lastIndex,
+      });
     }
 
     const bucketFetcher = async (buckets, select = "name") => {
@@ -404,6 +423,7 @@ export const GetallfollowupList = async (req, res) => {
           return [modelName, map];
         })
       );
+
       return new Map(entries);
     };
 
@@ -426,44 +446,58 @@ export const GetallfollowupList = async (req, res) => {
       bucketFetcher(paymentEntryBuckets, "productName name"),
       bucketFetcher(receivedByBuckets, "name"),
       Task.find({ _id: { $in: [...taskIds] } }).select("taskName").lean(),
-      Task.find({ _id: { $in: [...taskByIds] } }).lean(),
+      Task.find({ _id: { $in: [...taskByIds] } }).select("taskName").lean(),
     ]);
 
     const taskIdMap = new Map(taskMap.map((doc) => [String(doc._id), doc]));
-    const taskByIdMap = new Map(taskByMap.map((doc) => [String(doc._id), doc]));
+    const taskByIdMap = new Map(
+      taskByMap.map((doc) => [String(doc._id), doc])
+    );
 
     for (const row of preprocessedLeads) {
       const { lead, activity, lastAlloc, lastIndex } = row;
 
       const leadBy =
-        leadByMaps.get(lead.leadByModel)?.get(String(lead.leadBy)) || lead.leadBy || null;
+        leadByMaps.get(lead.leadByModel)?.get(String(lead.leadBy)) ||
+        lead.leadBy ||
+        null;
 
       const allocatedTo =
-        allocatedToMaps.get(lastAlloc.taskallocatedToModel)?.get(String(lastAlloc.taskallocatedTo)) ||
-        null;
+        allocatedToMaps
+          .get(lastAlloc.taskallocatedToModel)
+          ?.get(String(lastAlloc.taskallocatedTo)) || null;
 
       const allocatedBy =
-        allocatedByMaps.get(lastAlloc.taskallocatedByModel)?.get(String(lastAlloc.taskallocatedBy)) ||
-        null;
+        allocatedByMaps
+          .get(lastAlloc.taskallocatedByModel)
+          ?.get(String(lastAlloc.taskallocatedBy)) || null;
 
       let populatedActivityLog = activity;
 
       if (!isNewMode) {
         populatedActivityLog = activity.map((log) => {
           const submittedUser =
-            submittedUserMaps.get(log.submissiondoneByModel)?.get(String(log.submittedUser)) ||
-            log.submittedUser;
+            submittedUserMaps
+              .get(log.submissiondoneByModel)
+              ?.get(String(log.submittedUser)) || log.submittedUser;
 
           const taskallocatedTo =
-            submittedUserMaps.get(log.taskallocatedToModel)?.get(String(log.taskallocatedTo)) ||
-            log.taskallocatedTo;
+            submittedUserMaps
+              .get(log.taskallocatedToModel)
+              ?.get(String(log.taskallocatedTo)) || log.taskallocatedTo;
 
           const taskallocatedBy =
-            submittedUserMaps.get(log.taskallocatedByModel)?.get(String(log.taskallocatedBy)) ||
-            log.taskallocatedBy;
+            submittedUserMaps
+              .get(log.taskallocatedByModel)
+              ?.get(String(log.taskallocatedBy)) || log.taskallocatedBy;
 
-          const taskId = log.taskId ? taskIdMap.get(String(log.taskId)) || null : null;
-          const taskBy = log.taskBy ? taskByIdMap.get(String(log.taskBy)) || null : null;
+          const taskId = log.taskId
+            ? taskIdMap.get(String(log.taskId)) || null
+            : null;
+
+          const taskBy = log.taskBy
+            ? taskByIdMap.get(String(log.taskBy)) || null
+            : null;
 
           return {
             ...log,
@@ -478,7 +512,9 @@ export const GetallfollowupList = async (req, res) => {
 
       const populatedLeadFor = (lead.leadFor || []).map((item) => {
         const populated =
-          leadForMaps.get(item.productorServicemodel)?.get(String(item.productorServiceId)) || null;
+          leadForMaps
+            .get(item.productorServicemodel)
+            ?.get(String(item.productorServiceId)) || null;
 
         return {
           ...item,
@@ -486,59 +522,63 @@ export const GetallfollowupList = async (req, res) => {
         };
       });
 
-      const populatedpaymentHistory = (lead.paymentHistory || []).map((history) => {
-        const populatedhistory = { ...history };
+      const populatedpaymentHistory = (lead.paymentHistory || []).map(
+        (history) => {
+          const populatedhistory = { ...history };
 
-        if (history.receivedModel && history.receivedBy) {
-          populatedhistory.receivedBy =
-            receivedByMaps.get(history.receivedModel)?.get(String(history.receivedBy)) || null;
+          if (history.receivedModel && history.receivedBy) {
+            populatedhistory.receivedBy =
+              receivedByMaps
+                .get(history.receivedModel)
+                ?.get(String(history.receivedBy)) || null;
+          }
+
+          if (Array.isArray(history.paymentEntries)) {
+            populatedhistory.paymentEntries = history.paymentEntries.map(
+              (entry) => {
+                const populatedEntry = { ...entry };
+
+                if (entry.productorServicemodel && entry.productorServiceId) {
+                  populatedEntry.productorServiceId =
+                    paymentEntryMaps
+                      .get(entry.productorServicemodel)
+                      ?.get(String(entry.productorServiceId)) || null;
+                }
+
+                return populatedEntry;
+              }
+            );
+          }
+
+          return populatedhistory;
         }
-
-        if (Array.isArray(history.paymentEntries)) {
-          populatedhistory.paymentEntries = history.paymentEntries.map((entry) => {
-            const populatedEntry = { ...entry };
-
-            if (entry.productorServicemodel && entry.productorServiceId) {
-              populatedEntry.productorServiceId =
-                paymentEntryMaps
-                  .get(entry.productorServicemodel)
-                  ?.get(String(entry.productorServiceId)) || null;
-            }
-
-            return populatedEntry;
-          });
-        }
-
-        return populatedhistory;
-      });
+      );
 
       const lastActivity = activity[activity.length - 1] || {};
-
       let neverfollowuped = false;
       let Nextfollowup = false;
       let allocatedfollowup = false;
       let allocatedTaskClosed = false;
 
       if (!isNewMode) {
-        const lastMatched = lastAlloc;
-        const lastMatchedClosed = !!lastMatched.followupClosed;
+        const lastMatchedClosed = Boolean(lastAlloc.followupClosed);
 
         if (lastMatchedClosed) {
           neverfollowuped = true;
         } else {
           const afterLogs = activity.slice(lastIndex + 1);
-          const foundNextFollowUp = afterLogs.some((log) => !!log.nextFollowUpDate);
+          const foundNextFollowUp = afterLogs.some(
+            (log) => Boolean(log.nextFollowUpDate)
+          );
 
-          if (foundNextFollowUp) {
-            neverfollowuped = false;
-          } else {
-            neverfollowuped = !lastMatched.nextFollowUpDate;
-          }
+          neverfollowuped = foundNextFollowUp
+            ? false
+            : !lastAlloc.nextFollowUpDate;
         }
 
-        Nextfollowup = !!lastActivity.nextFollowUpDate;
-        allocatedfollowup = !!lastActivity.taskfromFollowup;
-        allocatedTaskClosed = !!lastActivity.allocatedClosed;
+        Nextfollowup = Boolean(lastActivity.nextFollowUpDate);
+        allocatedfollowup = Boolean(lastActivity.taskfromFollowup);
+        allocatedTaskClosed = Boolean(lastActivity.allocatedClosed);
       }
 
       const leadObject = {
@@ -548,6 +588,7 @@ export const GetallfollowupList = async (req, res) => {
         leadFor: populatedLeadFor,
         allocatedTo,
         allocatedBy,
+        matchedlog: lastAlloc,
         nextFollowUpDate: lastActivity.nextFollowUpDate ?? null,
       };
 
@@ -563,25 +604,554 @@ export const GetallfollowupList = async (req, res) => {
     }
 
     const ischekCollegueLeads = followupLeads.some(
-      (item) => item.allocatedBy?._id?.toString() === userObjectId.toString()
+      (item) =>
+        item.allocatedBy?._id?.toString() === userObjectId.toString()
     );
 
     if (followupLeads.length > 0) {
       return res.status(201).json({
-        messge: "leadfollowup found",
+        message: "leadfollowup found",
         data: { followupLeads, ischekCollegueLeads },
       });
     }
 
     return res.status(200).json({
-      message: "leadfollowp not found",
+      message: "leadfollowup not found",
       data: { followupLeads, ischekCollegueLeads },
     });
   } catch (error) {
-    console.log("error:", error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    console.error("GetallfollowupList error:", error);
+
+    return res.status(500).json({
+      message: "Internal server error",
+    });
   }
-};//new code
+};//datewise converted leads
+
+// export const GetallfollowupList = async (req, res) => {
+//   try {
+
+//     const deletedata = await LeadMaster.find(
+//       {
+//         activityLog: { $elemMatch: { $eq: null } }
+//       },
+//       {
+//         leadId: 1,
+//         activityLog: 1
+//       }
+//     )
+//     console.log("dateeeeeeeeeeeeeeeeee", deletedata)
+//     const {
+//       loggeduserid,
+//       branchSelected,
+//       role,
+//       pendingfollowup,
+//       viewmode,
+//       startDate,
+//       endDate,
+//       header,
+//       from = null,
+//     } = req.query;
+
+//     if (!isValidObjectId(loggeduserid) || !isValidObjectId(branchSelected)) {
+//       return res.status(400).json({ message: "Invalid loggeduserid or branchSelected" });
+//     }
+
+//     const userObjectId = new mongoose.Types.ObjectId(loggeduserid);
+//     console.log("userobjectiddd", userObjectId)
+//     const branchObjectId = new mongoose.Types.ObjectId(branchSelected);
+
+//     const start = startDate ? new Date(startDate) : null;
+//     const end = endDate ? addEndOfDay(endDate) : null;
+//     console.log("start", start)
+//     console.log("end", end)
+//     const isViewMode = viewmode === "true";
+//     const hasValidHeader = header && header !== "null" && header !== "undefined";
+//     const hasValidDates =
+//       startDate &&
+//       endDate &&
+//       startDate !== "null" &&
+//       endDate !== "null" &&
+//       startDate !== "undefined" &&
+//       endDate !== "undefined";
+
+//     const isNewMode = isViewMode || hasValidHeader || hasValidDates;
+
+//     let query = {};
+//     console.log("isviewmodoe", isViewMode)
+
+//     if (isViewMode) {
+//       const hasRange = !!(start && end);
+
+//       const baseElemMatch = {
+//         taskTo: "followup",
+//         taskallocatedTo: userObjectId,
+//         allocationChanged: false,
+//         // $or: [{ submittedUser: userObjectId }, { taskallocatedTo: userObjectId }],
+//         // allocatedClosed: false,
+//       };
+
+//       query = {
+//         activityLog: { $elemMatch: baseElemMatch },
+//         leadBranch: branchObjectId,
+//       };
+//       console.log("headernamee", header)
+//       if (header === "Converted") {
+//         // Only leads that actually converted, and — if a date range was given —
+//         // only if the conversion itself happened inside that range. Ignores
+//         // leadLost entirely since a converted lead can't also be lost.
+//         console.log("hasrange", hasRange)
+//         query.leadConvertedDate = hasRange
+//           ? { $ne: null, $gte: start, $lte: end }
+//           : { $ne: null };
+//       } else if (header === "Lost Leads" || header === "Lost") {
+//         // Symmetric to Converted, but on leadLostDate.
+//         query.leadLostDate = hasRange
+//           ? { $ne: null, $gte: start, $lte: end }
+//           : { $ne: null };
+//         query.leadLost = true;
+//       } else if (header === "Total Leads") {
+//         // Show everything assigned to me, but if a date range is given, a
+//         // converted/lost lead should only count in that range if ITS OWN
+//         // conversion/loss date falls inside it — a still-pending lead (neither
+//         // converted nor lost) is unaffected by the date range and always shows.
+//         if (hasRange) {
+//           query.$or = [
+//             { leadConvertedDate: null, leadLostDate: null }, // still pending
+//             { leadConvertedDate: { $gte: start, $lte: end } }, // converted in range
+//             { leadLostDate: { $gte: start, $lte: end } }, // lost in range
+//           ];
+//         }
+//         // no range → no extra filter, matches everything ever assigned (as before)
+//       } else {
+//         // Default / "Pending": only leads that are genuinely still open —
+//         // never converted, never lost. Date range doesn't apply here since
+//         // there's no conversion/loss event to range-check; the assignment
+//         // itself is what matters.
+//         query.leadConvertedDate = null;
+//         query.leadLost = false;
+//       }
+//     } else {
+//       if (pendingfollowup === "true") {
+//         if (role === "Admin") {
+//           query = {
+//             activityLog: {
+//               $elemMatch: {
+//                 taskTo: "followup",
+//                 allocationChanged: false,
+//                 allocatedClosed: false,
+//                 taskClosed: false,
+//                 followupClosed: false,
+//               },
+//             },
+//             leadBranch: branchObjectId,
+//             reallocatedTo: false,
+//             leadLost: false,
+//           };
+//         } else {
+//           query = {
+//             activityLog: {
+//               $elemMatch: {
+//                 taskTo: "followup",
+//                 $or: [{ submittedUser: userObjectId }, { taskallocatedTo: userObjectId }],
+//                 allocationChanged: false,
+//                 allocatedClosed: false,
+//                 taskClosed: false,
+//                 followupClosed: false,
+//               },
+//             },
+//             leadBranch: branchObjectId,
+//             reallocatedTo: false,
+//             leadLost: false,
+//           };
+//         }
+//       } else if (pendingfollowup === "false") {
+//         if (role === "Admin") {
+//           query = {
+//             activityLog: {
+//               $elemMatch: {
+//                 taskTo: "followup",
+//                 allocationChanged: false,
+//                 allocatedClosed: false,
+//                 taskClosed: true,
+//                 followupClosed: true,
+//               },
+//             },
+//             leadBranch: branchObjectId,
+//             leadLost: false,
+//           };
+//         } else {
+//           query = {
+//             activityLog: {
+//               $elemMatch: {
+//                 taskTo: "followup",
+//                 $or: [{ submittedUser: userObjectId }, { taskallocatedTo: userObjectId }],
+//                 taskClosed: true,
+//               },
+//             },
+//             leadBranch: branchObjectId,
+//             leadLost: false,
+//           };
+//         }
+//       }
+//     }
+//     console.log("quwery", query)
+//     const selectedfollowup = await LeadMaster.find(query)
+//       .select([
+//         "leadId",
+//         "leadDate",
+//         "customerName",
+//         "mobile",
+//         "phone",
+//         "email",
+//         "location",
+//         "pincode",
+//         "trade",
+//         "partner",
+//         "leadConfirmed",
+//         "leadClosed",
+//         "leadClosedDate",
+//         "leadLostDate",
+//         "leadConvertedDate",
+//         "forcefullyClosedTarget",
+//         "leadLost",
+//         "leadBranch",
+//         "dueDate",
+//         "paymentVerified",
+//         "source",
+//         "excessPaidAmount",
+//         "leadFor",
+//         "leadBy",
+//         "leadByModel",
+//         "taxableAmount",
+//         "taxAmount",
+//         "netAmount",
+//         "discountAmount",
+//         "balanceAmount",
+//         "totalPaidAmount",
+//         "remark",
+//         "paymentHistory",
+//         "reallocatedTo",
+//         "activityLog",
+//         "followupClosed",
+//         "allocationType",
+//         "selfAllocationType",
+//         "selfAllocationDueDate",
+//         "selfAllocation",
+//         "taskfromFollowup",
+//       ].join(" "))
+//       .populate({ path: "customerName", model: Customer, options: { lean: true } })
+//       .populate({ path: "partner", model: Partner, options: { lean: true } })
+//       .lean();
+//     // console.log("selectedfollowp",selectedfollowup)
+//     // const dddd=selectedfollowup.map((item)=>item.leadId)
+//     // console.log("ddddd",dddd)
+//     const followupLeads = [];
+
+//     const leadByBuckets = {};
+//     const allocatedToBuckets = {};
+//     const allocatedByBuckets = {};
+//     const submittedUserBuckets = {};
+//     const taskIds = new Set();
+//     const taskByIds = new Set();
+//     const leadForBuckets = {};
+//     const paymentEntryBuckets = {};
+//     const receivedByBuckets = {};
+
+//     const preprocessedLeads = [];
+//     // console.log("selectedfolowps",selectedfollowup)
+//     for (const lead of selectedfollowup) {
+//       const activity = Array.isArray(lead.activityLog) ? lead.activityLog : [];
+
+//       let matchedAllocations;
+
+//       if (isNewMode) {
+//         matchedAllocations = activity
+//           .map((item, index) => ({ ...item, index }))
+//           .filter((item) => {
+//             if (item.taskTo !== "followup") return false;
+//             if (item.allocationChanged !== false) return false;
+//             if (!item.submissionDate) return false;
+
+//             const hasFrom = from && from !== "null" && from !== "undefined";
+//             if (hasFrom) return true;
+
+//             if (start && end) {
+//               const subDate = new Date(item.submissionDate);
+//               return subDate >= start && subDate <= end;
+//             }
+
+//             return true;
+//           });
+//       } else {
+//         matchedAllocations = activity
+//           .map((item, index) => ({ ...item, index }))
+//           .filter((item) => item.taskTo === "followup");
+//       }
+
+//       if (matchedAllocations.length === 0) continue;
+
+//       const lastAlloc = matchedAllocations[matchedAllocations.length - 1];
+//       const lastIndex = lastAlloc.index;
+
+//       if (isNewMode) {
+//         if (header === "Pending") {
+//           if (lead.leadConvertedDate || lead.leadLostDate || lead.leadLost === true) {
+//             continue;
+//           }
+//         }
+
+//         if (header === "Converted") {
+//           if (!lead.leadConvertedDate) continue;
+//           const convDate = new Date(lead.leadConvertedDate);
+//           if (start && end && (convDate < start || convDate > end)) continue;
+//         }
+//       }
+
+//       if (lead.leadByModel && lead.leadBy) {
+//         leadByBuckets[lead.leadByModel] ||= new Set();
+//         leadByBuckets[lead.leadByModel].add(String(lead.leadBy));
+//       }
+
+//       if (lastAlloc?.taskallocatedToModel && lastAlloc?.taskallocatedTo) {
+//         allocatedToBuckets[lastAlloc.taskallocatedToModel] ||= new Set();
+//         allocatedToBuckets[lastAlloc.taskallocatedToModel].add(String(lastAlloc.taskallocatedTo));
+//       }
+
+//       if (lastAlloc?.taskallocatedByModel && lastAlloc?.taskallocatedBy) {
+//         allocatedByBuckets[lastAlloc.taskallocatedByModel] ||= new Set();
+//         allocatedByBuckets[lastAlloc.taskallocatedByModel].add(String(lastAlloc.taskallocatedBy));
+//       }
+
+//       for (const log of activity) {
+//         if (log.submissiondoneByModel && log.submittedUser) {
+//           submittedUserBuckets[log.submissiondoneByModel] ||= new Set();
+//           submittedUserBuckets[log.submissiondoneByModel].add(String(log.submittedUser));
+//         }
+
+//         if (log.taskallocatedToModel && log.taskallocatedTo) {
+//           submittedUserBuckets[log.taskallocatedToModel] ||= new Set();
+//           submittedUserBuckets[log.taskallocatedToModel].add(String(log.taskallocatedTo));
+//         }
+
+//         if (log.taskallocatedByModel && log.taskallocatedBy) {
+//           submittedUserBuckets[log.taskallocatedByModel] ||= new Set();
+//           submittedUserBuckets[log.taskallocatedByModel].add(String(log.taskallocatedBy));
+//         }
+
+//         if (log.taskId) taskIds.add(String(log.taskId));
+//         if (log.taskBy) taskByIds.add(String(log.taskBy));
+//       }
+
+//       for (const item of lead.leadFor || []) {
+//         if (item.productorServicemodel && item.productorServiceId) {
+//           leadForBuckets[item.productorServicemodel] ||= new Set();
+//           leadForBuckets[item.productorServicemodel].add(String(item.productorServiceId));
+//         }
+//       }
+
+//       for (const history of lead.paymentHistory || []) {
+//         if (history.receivedModel && history.receivedBy) {
+//           receivedByBuckets[history.receivedModel] ||= new Set();
+//           receivedByBuckets[history.receivedModel].add(String(history.receivedBy));
+//         }
+
+//         for (const entry of history.paymentEntries || []) {
+//           if (entry.productorServicemodel && entry.productorServiceId) {
+//             paymentEntryBuckets[entry.productorServicemodel] ||= new Set();
+//             paymentEntryBuckets[entry.productorServicemodel].add(String(entry.productorServiceId));
+//           }
+//         }
+//       }
+
+//       preprocessedLeads.push({ lead, activity, matchedAllocations, lastAlloc, lastIndex });
+//     }
+
+//     const bucketFetcher = async (buckets, select = "name") => {
+//       const entries = await Promise.all(
+//         Object.entries(buckets).map(async ([modelName, idsSet]) => {
+//           const map = await batchFetchByModel(modelName, [...idsSet], select);
+//           return [modelName, map];
+//         })
+//       );
+//       return new Map(entries);
+//     };
+
+//     const [
+//       leadByMaps,
+//       allocatedToMaps,
+//       allocatedByMaps,
+//       submittedUserMaps,
+//       leadForMaps,
+//       paymentEntryMaps,
+//       receivedByMaps,
+//       taskMap,
+//       taskByMap,
+//     ] = await Promise.all([
+//       bucketFetcher(leadByBuckets, "name"),
+//       bucketFetcher(allocatedToBuckets, "name"),
+//       bucketFetcher(allocatedByBuckets, "name"),
+//       bucketFetcher(submittedUserBuckets, "name"),
+//       bucketFetcher(leadForBuckets, "productName name"),
+//       bucketFetcher(paymentEntryBuckets, "productName name"),
+//       bucketFetcher(receivedByBuckets, "name"),
+//       Task.find({ _id: { $in: [...taskIds] } }).select("taskName").lean(),
+//       Task.find({ _id: { $in: [...taskByIds] } }).lean(),
+//     ]);
+
+//     const taskIdMap = new Map(taskMap.map((doc) => [String(doc._id), doc]));
+//     const taskByIdMap = new Map(taskByMap.map((doc) => [String(doc._id), doc]));
+
+//     for (const row of preprocessedLeads) {
+//       const { lead, activity, lastAlloc, lastIndex } = row;
+
+//       const leadBy =
+//         leadByMaps.get(lead.leadByModel)?.get(String(lead.leadBy)) || lead.leadBy || null;
+
+//       const allocatedTo =
+//         allocatedToMaps.get(lastAlloc.taskallocatedToModel)?.get(String(lastAlloc.taskallocatedTo)) ||
+//         null;
+
+//       const allocatedBy =
+//         allocatedByMaps.get(lastAlloc.taskallocatedByModel)?.get(String(lastAlloc.taskallocatedBy)) ||
+//         null;
+
+//       let populatedActivityLog = activity;
+
+//       if (!isNewMode) {
+//         populatedActivityLog = activity.map((log) => {
+//           const submittedUser =
+//             submittedUserMaps.get(log.submissiondoneByModel)?.get(String(log.submittedUser)) ||
+//             log.submittedUser;
+
+//           const taskallocatedTo =
+//             submittedUserMaps.get(log.taskallocatedToModel)?.get(String(log.taskallocatedTo)) ||
+//             log.taskallocatedTo;
+
+//           const taskallocatedBy =
+//             submittedUserMaps.get(log.taskallocatedByModel)?.get(String(log.taskallocatedBy)) ||
+//             log.taskallocatedBy;
+
+//           const taskId = log.taskId ? taskIdMap.get(String(log.taskId)) || null : null;
+//           const taskBy = log.taskBy ? taskByIdMap.get(String(log.taskBy)) || null : null;
+
+//           return {
+//             ...log,
+//             taskBy,
+//             submittedUser,
+//             taskallocatedBy,
+//             taskallocatedTo,
+//             taskId,
+//           };
+//         });
+//       }
+
+//       const populatedLeadFor = (lead.leadFor || []).map((item) => {
+//         const populated =
+//           leadForMaps.get(item.productorServicemodel)?.get(String(item.productorServiceId)) || null;
+
+//         return {
+//           ...item,
+//           productorServiceId: populated,
+//         };
+//       });
+
+//       const populatedpaymentHistory = (lead.paymentHistory || []).map((history) => {
+//         const populatedhistory = { ...history };
+
+//         if (history.receivedModel && history.receivedBy) {
+//           populatedhistory.receivedBy =
+//             receivedByMaps.get(history.receivedModel)?.get(String(history.receivedBy)) || null;
+//         }
+
+//         if (Array.isArray(history.paymentEntries)) {
+//           populatedhistory.paymentEntries = history.paymentEntries.map((entry) => {
+//             const populatedEntry = { ...entry };
+
+//             if (entry.productorServicemodel && entry.productorServiceId) {
+//               populatedEntry.productorServiceId =
+//                 paymentEntryMaps
+//                   .get(entry.productorServicemodel)
+//                   ?.get(String(entry.productorServiceId)) || null;
+//             }
+
+//             return populatedEntry;
+//           });
+//         }
+
+//         return populatedhistory;
+//       });
+
+//       const lastActivity = activity[activity.length - 1] || {};
+
+//       let neverfollowuped = false;
+//       let Nextfollowup = false;
+//       let allocatedfollowup = false;
+//       let allocatedTaskClosed = false;
+
+//       if (!isNewMode) {
+//         const lastMatched = lastAlloc;
+//         const lastMatchedClosed = !!lastMatched.followupClosed;
+
+//         if (lastMatchedClosed) {
+//           neverfollowuped = true;
+//         } else {
+//           const afterLogs = activity.slice(lastIndex + 1);
+//           const foundNextFollowUp = afterLogs.some((log) => !!log.nextFollowUpDate);
+
+//           if (foundNextFollowUp) {
+//             neverfollowuped = false;
+//           } else {
+//             neverfollowuped = !lastMatched.nextFollowUpDate;
+//           }
+//         }
+
+//         Nextfollowup = !!lastActivity.nextFollowUpDate;
+//         allocatedfollowup = !!lastActivity.taskfromFollowup;
+//         allocatedTaskClosed = !!lastActivity.allocatedClosed;
+//       }
+
+//       const leadObject = {
+//         ...lead,
+//         leadBy,
+//         paymentHistory: populatedpaymentHistory,
+//         leadFor: populatedLeadFor,
+//         allocatedTo,
+//         allocatedBy,
+//         nextFollowUpDate: lastActivity.nextFollowUpDate ?? null,
+//       };
+
+//       if (!isNewMode) {
+//         leadObject.activityLog = populatedActivityLog;
+//         leadObject.neverfollowuped = neverfollowuped;
+//         leadObject.Nextfollowup = Nextfollowup;
+//         leadObject.allocatedfollowup = allocatedfollowup;
+//         leadObject.allocatedTaskClosed = allocatedTaskClosed;
+//       }
+
+//       followupLeads.push(leadObject);
+//     }
+
+//     const ischekCollegueLeads = followupLeads.some(
+//       (item) => item.allocatedBy?._id?.toString() === userObjectId.toString()
+//     );
+
+//     if (followupLeads.length > 0) {
+//       return res.status(201).json({
+//         messge: "leadfollowup found",
+//         data: { followupLeads, ischekCollegueLeads },
+//       });
+//     }
+
+//     return res.status(200).json({
+//       message: "leadfollowp not found",
+//       data: { followupLeads, ischekCollegueLeads },
+//     });
+//   } catch (error) {
+//     console.log("error:", error.message);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// };//new code
 
 // export const exportBranchWiseProductUsage = async (req, res) => {
 //   try {
@@ -5011,7 +5581,7 @@ export const SetDemoallocation = async (req, res) => {
        */
       if (hasEditIndex) {
         const index = Number(editIndex);
-     
+
 
         if (
           !Number.isInteger(index) ||

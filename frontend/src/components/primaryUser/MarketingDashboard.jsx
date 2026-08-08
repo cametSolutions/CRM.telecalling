@@ -83,11 +83,13 @@ const getBarStyle = (value, colorA, colorB) => ({
 })
 
 const MarketingDashboard = () => {
-const reduxselectedBranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
-console.log(reduxselectedBranch)
+  const reduxselectedBranch = useSelector(
+    (branch) => branch.companyBranch.selectedBranch
+  )
+  console.log(reduxselectedBranch)
   const [user, setUser] = useState(null)
-const [openannoucementpopup, setopenannoucementpopup] = useState(false);
-console.log(openannoucementpopup)
+  const [openannoucementpopup, setopenannoucementpopup] = useState(false)
+  console.log(openannoucementpopup)
   const [branchOptions, setbranchOptions] = useState([])
   const [selectedUserName, setselecteduserName] = useState(null)
   const [selectedCategory, setselectedCategory] = useState(null)
@@ -107,7 +109,7 @@ console.log(openannoucementpopup)
   console.log(selectedBranch)
   const [achievedPoints, setachievedPoints] = useState(0)
   const [todaysCollection, settodaysCollection] = useState([])
-console.log(todaysCollection)
+  console.log(todaysCollection)
   const now = new Date()
   const navigate = useNavigate()
   const [date, setdate] = useState({
@@ -120,39 +122,39 @@ console.log(todaysCollection)
   const [showUserMenu, setShowUserMenu] = useState(false)
   console.log(showUserMenu)
   const [periodMode, setperiodMode] = useState("all")
-console.log(periodMode)
+  console.log(periodMode)
   const [loggedusedTarget, setloggeduserTarget] = useState([])
   const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
-const year = now.getFullYear()
-const month = now.getMonth()
+  const year = now.getFullYear()
+  const month = now.getMonth()
 
-const defaultStartDate = `${year}-${String(month + 1).padStart(2, "0")}-01`
-const defaultEndDate = `${year}-${String(month + 1).padStart(2, "0")}-${String(
-  now.getDate()
-).padStart(2, "0")}`
+  const defaultStartDate = `${year}-${String(month + 1).padStart(2, "0")}-01`
+  const defaultEndDate = `${year}-${String(month + 1).padStart(2, "0")}-${String(
+    now.getDate()
+  ).padStart(2, "0")}`
 
-console.log(defaultEndDate) // e.g. "2026-07-25"
-console.log(date)
+  console.log(defaultEndDate) // e.g. "2026-07-25"
+  console.log(date)
 
-const start = defaultStartDate
-const end = defaultEndDate
-console.log(end)
+  const start = defaultStartDate
+  const end = defaultEndDate
+  console.log(end)
   const { data: followup } = UseFetch(
     `/lead/getfollowupsummaryReport?branchId=${reduxselectedBranch}&startDate=${start}&endDate=${end}`
   )
   const { data: collectiondata, loading: collectionloader } = UseFetch(
-selectedBranch&&
-    `/lead/getTodayVerifiedCollection?selectedBranch=${selectedBranch}`
+    selectedBranch &&
+      `/lead/getTodayVerifiedCollection?selectedBranch=${selectedBranch}`
   )
-console.log(selectedBranch)
-console.log(collectiondata)
+  console.log(selectedBranch)
+  console.log(collectiondata)
   const { data: notificationData } = UseFetch(
     `/lead/getnotificationData?loggedUser=${user?._id}&branchSelected=${reduxselectedBranch}`
   )
- const { data: announcementlist } = UseFetch(
+  const { data: announcementlist } = UseFetch(
     "/dashboard/getcurrentAnnouncement"
   )
-console.log(announcementlist)
+  console.log(announcementlist)
   console.log(notificationData)
   console.log(collectiondata)
   console.log(reduxselectedBranch)
@@ -173,23 +175,22 @@ console.log(announcementlist)
   )
   console.log(pendingTask)
   useEffect(() => {
-console.log(collectiondata)
-    
-console.log(collectiondata)
-      settodaysCollection([
-        {
-          key: "today",
-          startDate: new Date(),
-          endDate: new Date(),
-          label: "Today's Collection",
-          subtext: "Payments verified today",
-          amount: collectiondata,
-          count: 6,
-          icon: CalendarDays,
-          accent: "teal"
-        }
-      ])
-    
+    console.log(collectiondata)
+
+    console.log(collectiondata)
+    settodaysCollection([
+      {
+        key: "today",
+        startDate: new Date(),
+        endDate: new Date(),
+        label: "Today's Collection",
+        subtext: "Payments verified today",
+        amount: collectiondata,
+        count: 6,
+        icon: CalendarDays,
+        accent: "teal"
+      }
+    ])
   }, [collectiondata])
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -205,14 +206,13 @@ console.log(collectiondata)
     }
   }, [])
 
- 
   useEffect(() => {
     if (followup && followup.length && user) {
       const filteredleadcounts = followup.filter(
         (item) => item.staffId === user._id
       )
-console.log(followup)
-console.log(filteredleadcounts)
+      console.log(followup)
+      console.log(filteredleadcounts)
       const item = filteredleadcounts?.[0]
 
       if (item) {
@@ -381,7 +381,7 @@ console.log(filteredleadcounts)
   useEffect(() => {
     const storedUser = getLocalStorageItem("user")
 
-console.log(storedUser)
+    console.log(storedUser)
     if (storedUser) {
       setUser(storedUser)
       setselecteduserName(storedUser.name)
@@ -395,7 +395,7 @@ console.log(storedUser)
       ])
     }
   }, [])
-console.log(selectedCategory)
+  console.log(selectedCategory)
   useEffect(() => {
     if (selectedCategory) {
       const filteredList = branchProduct
@@ -413,7 +413,7 @@ console.log(selectedCategory)
       const filteredloggedUserItem = data?.userWiseResults.filter(
         (item) => item.userId === user._id
       )
-console.log(filteredloggedUserItem)
+      console.log(filteredloggedUserItem)
       const filteredselectedCategory =
         filteredloggedUserItem[0]?.categories.filter(
           (item) => item.categoryId === selectedCategory?.Id
@@ -429,7 +429,7 @@ console.log(filteredloggedUserItem)
       )
 
       setselectedDataPopup(summary)
-console.log(summary)
+      console.log(summary)
       if (filteredselectedCategory && filteredselectedCategory.length) {
         setacheivedProducts((prev) => [
           ...prev,
@@ -458,6 +458,8 @@ console.log(summary)
       now.getMonth() + 1,
       0
     ).toLocaleDateString("en-CA")
+    console.log(startDate)
+    console.log(endDate)
     setdate({ startDate, endDate })
   }, [])
   const pendingTasks = [
@@ -497,79 +499,108 @@ console.log(summary)
   }
 
   const handleFollowupCellClick = (header, count) => {
-console.log('hhh')
+    console.log("hhh")
+ const breadcrumb = [
+      { label: "Report", path: "" },
+      { label: "Marketing Dashboard", path: "/staff/reports/markettingdashboard" },
+      { label: "Lead Follow-Up", path: "" }
+    ]
     if (header === "Lead Count") {
-      navigate(`/${user.role==="Admin"?"admin":"staff"}/transaction/lead/allLeads`, {
-        state: { staffId: row.staffId }
-      })
+      navigate(
+        `/${user.role === "Admin" ? "admin" : "staff"}/transaction/lead/allLeads`,
+        {
+          state: { staffId: row.staffId,breadcrumb }
+        }
+      )
     } else if (header === "Due Today" && count > 0) {
-      navigate(`/${user.role==="Admin"?"admin":"staff"}/transaction/lead/leadFollowUp`, {
-        state: {
-          staffId: user?._id,
-          dueToday: true,
-          ownlead: true,
-          branchId: reduxselectedBranch,
-          viewMode: "dueToday",
-          from: "followupReport",
-          istotal: true,
-          filterRange: date
+      navigate(
+        `/${user.role === "Admin" ? "admin" : "staff"}/transaction/lead/leadFollowUp`,
+        {
+          state: {
+            staffId: user?._id,
+            dueToday: true,
+            ownlead: true,
+            branchId: reduxselectedBranch,
+            viewMode: "dueToday",
+            from: "followupReport",
+            istotal: true,
+            filterRange: date,
+breadcrumb
+          }
         }
-      })
+      )
     } else if (header === "Over Due" && count > 0) {
-      navigate(`/${user.role==="Admin"?"admin":"staff"}/transaction/lead/leadFollowUp`, {
-        state: {
-          staffId: user?._id,
-          overdue: true,
-          ownlead: true,
-          branchId: reduxselectedBranch,
-          viewMode: "overDue",
-          from: "followupReport",
-          istotal: true,
-          filterRange: date
+      navigate(
+        `/${user.role === "Admin" ? "admin" : "staff"}/transaction/lead/leadFollowUp`,
+        {
+          state: {
+            staffId: user?._id,
+            overdue: true,
+            ownlead: true,
+            branchId: reduxselectedBranch,
+            viewMode: "overDue",
+            from: "followupReport",
+            istotal: true,
+            filterRange: date,
+breadcrumb
+          }
         }
-      })
+      )
     } else if (header === "Up Coming" && count > 0) {
-      navigate(`/${user.role==="Admin"?"admin":"staff"}/transaction/lead/leadFollowUp`, {
-        state: {
-          staffId: user?._id,
-          future: true,
-          ownlead: true,
+      navigate(
+        `/${user.role === "Admin" ? "admin" : "staff"}/transaction/lead/leadFollowUp`,
+        {
+          state: {
+            staffId: user?._id,
+            future: true,
+            ownlead: true,
 
-          branchId: reduxselectedBranch,
-          viewMode: "future",
-          from: "followupReport",
-          istotal: true,
-          filterRange: date
+            branchId: reduxselectedBranch,
+            viewMode: "future",
+            from: "followupReport",
+            istotal: true,
+            filterRange: date,
+breadcrumb
+          }
         }
-      })
+      )
     } else if (header === "Converted" && count > 0) {
-      navigate(`/${user.role==="Admin"?"admin":"staff"}/transaction/lead/leadFollowUp`, {
-        state: {
-          staffId: user?._id,
-          converted: true,
-          branchId: reduxselectedBranch,
-          viewMode: "converted",
-          from: "followupReport",
-          ownlead: true,
-header:"Converted",
-          istotal: true,
-          filterRange: date
+      navigate(
+        `/${user.role === "Admin" ? "admin" : "staff"}/transaction/lead/leadFollowUp`,
+        {
+          state: {
+            staffId: user?._id,
+            converted: true,
+            branchId: reduxselectedBranch,
+            viewMode: "converted",
+            from: "followupReport",
+            ownlead: true,
+            header: "Converted",
+            pending: false,
+            istotal: true,
+            filterRange: date,
+breadcrumb
+          }
         }
-      })
+      )
     } else if (header === "New Lead" && count > 0) {
-      navigate(`/${user.role==="Admin"?"admin":"staff"}/transaction/lead/leadFollowUp`, {
-        state: {
-          staffId: user?._id,
-          neverfollowup: true,
-          branchId: reduxselectedBranch,
-          viewMode: "neverfollowup",
-          from: "followupReport",
-          ownlead: true,
+      navigate(
+        `/${user.role === "Admin" ? "admin" : "staff"}/transaction/lead/leadFollowUp`,
+        {
+          state: {
+            staffId: user?._id,
+            neverfollowup: true,
+            branchId: reduxselectedBranch,
+            viewMode: "neverfollowup",
+            from: "followupReport",
+            ownlead: true,
 
-          istotal: true,
-          filterRange: date
+            istotal: true,
+            filterRange: date,
+breadcrumb
+          }
         }
-      })
+      )
     } else if (header === "All Leads" && count > 0) {
       navigate("/staff/transaction/lead/leadFollowUp", {
         state: {
@@ -581,13 +612,14 @@ header:"Converted",
           header: "Total Leads",
           ownlead: true,
 
-          branchId: reduxselectedBranch
+          branchId: reduxselectedBranch,
+breadcrumb
         }
       })
     }
   }
   const toggleSidebar = () => setSidebarOpen((prev) => !prev)
- 
+
   const handleSelectedUser = (category, userId, userName) => {
     setselecteduserName(userName)
     setselectedCategory({
@@ -689,7 +721,7 @@ header:"Converted",
     }
     setOpenModal(true)
   }
- const handleAvatarUploaded = async (url) => {
+  const handleAvatarUploaded = async (url) => {
     try {
       const updateurl = await api.post(
         `/auth/uploadimage?userId=${user?._id}`,
@@ -723,19 +755,18 @@ header:"Converted",
   console.log(reduxselectedBranch)
   // console.log(BranchSelect)
 
-const DEFAULT_ANNOUNCEMENT = {
-  announcementTitle: "Announcements",
-  announcement: "There are no announcements at the moment.",
-  announcementType: "general",
-  badge: "",
-  postedBy: "CAMET CRM",
-};
+  const DEFAULT_ANNOUNCEMENT = {
+    announcementTitle: "Announcements",
+    announcement: "There are no announcements at the moment.",
+    announcementType: "general",
+    badge: "",
+    postedBy: "CAMET CRM"
+  }
 
-const announcement =
-  announcementlist?.[0]?.announcement
+  const announcement = announcementlist?.[0]?.announcement
     ? announcementlist[0]
-    : DEFAULT_ANNOUNCEMENT;
-console.log(announcement)
+    : DEFAULT_ANNOUNCEMENT
+  console.log(announcement)
   return (
     <div
       className="h-full overflow-hidden bg-[#ADD8E6] text-slate-800"
@@ -867,48 +898,48 @@ console.log(announcement)
             />
           )}
           <div className="px-4">
-
- <AnnouncementBanner announcementlist={announcement} setopenannoucementpopup={setopenannoucementpopup}/>
-
-           
+            <AnnouncementBanner
+              announcementlist={announcement}
+              setopenannoucementpopup={setopenannoucementpopup}
+            />
           </div>
           <main className="min-h-0 flex-1 overflow-y-auto">
             <section className="p-3 sm:p-4 lg:p-4">
-             
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
+                {cardDisplay.slice(0, 6).map((card) => (
+                  <div
+                    key={card.title}
+                    onClick={() =>
+                      handleFollowupCellClick(card.title, card.value)
+                    }
+                    className="min-w-0 cursor-pointer rounded-lg border border-slate-200/90 bg-white px-2.5 py-2 shadow-sm transition hover:shadow-md"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-50">
+                          {card.icon}
+                        </div>
 
-<div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
-  {cardDisplay.slice(0, 6).map((card) => (
-    <div
-      key={card.title}
-      onClick={() => handleFollowupCellClick(card.title, card.value)}
-      className="min-w-0 cursor-pointer rounded-lg border border-slate-200/90 bg-white px-2.5 py-2 shadow-sm transition hover:shadow-md"
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-50">
-            {card.icon}
-          </div>
+                        <h3 className="text-[22px] font-bold leading-none text-slate-900">
+                          {card.value}
+                        </h3>
+                      </div>
 
-          <h3 className="text-[22px] font-bold leading-none text-slate-900">
-            {card.value}
-          </h3>
-        </div>
+                      <div className="text-right text-[12px] font-semibold leading-4 text-slate-900 tabular-nums whitespace-nowrap">
+                        {card.right}
+                      </div>
+                    </div>
 
-        <div className="text-right text-[12px] font-semibold leading-4 text-slate-900 tabular-nums whitespace-nowrap">
-          {card.right}
-        </div>
-      </div>
+                    <p className="mt-2 text-[13px] font-semibold leading-4 text-slate-700">
+                      {card.title}
+                    </p>
 
-      <p className="mt-2 text-[13px] font-semibold leading-4 text-slate-700">
-        {card.title}
-      </p>
-
-      <p className="mt-0.5 line-clamp-2 text-[10px] leading-3.5 text-slate-500">
-        {card.detail}
-      </p>
-    </div>
-  ))}
-</div>
+                    <p className="mt-0.5 line-clamp-2 text-[10px] leading-3.5 text-slate-500">
+                      {card.detail}
+                    </p>
+                  </div>
+                ))}
+              </div>
               <div
                 className="
     mt-4 grid gap-4
@@ -1405,7 +1436,7 @@ function NotificationPopup({ onClose, notificationData }) {
       data: notificationData.yearlyAchievers ?? []
     }
   ]
- const formatDateToDDMMYYYY = (dateValue) => {
+  const formatDateToDDMMYYYY = (dateValue) => {
     if (!dateValue) return ""
     const date = new Date(dateValue)
     if (Number.isNaN(date.getTime())) return ""
@@ -1414,7 +1445,7 @@ function NotificationPopup({ onClose, notificationData }) {
     const year = date.getFullYear()
     return `${day}-${month}-${year}`
   }
-console.log(notifications)
+  console.log(notifications)
 
   return (
     <div className="fixed bottom-3 right-3 z-50 flex w-72 max-h-[calc(100vh-24px)] flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
@@ -1815,7 +1846,7 @@ function CollectionDetails({
 
   function handleNavigate(item) {
     console.log(item)
-if(item.amount<=0)return
+    if (item.amount <= 0) return
     navigate(basePath, {
       state: {
         startDate: item?.startDate,
