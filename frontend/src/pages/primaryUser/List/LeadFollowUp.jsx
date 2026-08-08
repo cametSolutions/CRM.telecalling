@@ -67,6 +67,7 @@ const LeadFollowUp = () => {
   console.log(safeState)
 
   const [selectedLeadId, setSelectedLeadId] = useState(null)
+  console.log(selectedLeadId)
   const [demoerror, setDemoError] = useState({
     selectStaff: "",
     allocationDate: "",
@@ -130,6 +131,7 @@ const LeadFollowUp = () => {
   console.log(selectedCompanyBranch)
   const [isHaveEditchoice, setIsEditable] = useState(false)
   const [selectedDocId, setselectedDocid] = useState(null)
+  console.log(selectedDocId)
   const [selectedTab, setselectedTab] = useState("")
   const [hasOwnLeads, setHasownLeads] = useState(false)
   // const result =
@@ -2481,14 +2483,9 @@ const LeadFollowUp = () => {
   const handleDemoSubmit = async () => {
     console.log("hhh")
     console.log(isdemofollownotClosed)
-    // if (isdemofollownotClosed) {
-    //   setDemoError((prev) => ({
-    //     ...prev,
-    //     submiterror: "Cant submit, demo is not closed",
-    //     demoDescription: ""
-    //   }))
-    //   return
-    // }
+    console.log(loader)
+    if (loader) return
+
 
     const newError = {}
     if (!demoData.demoallocatedDate) {
@@ -2504,11 +2501,13 @@ const LeadFollowUp = () => {
     if (!demoData.selectedType) {
       newError.allocationTyperror = "Allocation Type is Required"
     }
+console.log(newError)
     if (Object.keys(newError).length > 0) {
       setDemoError(newError)
       return
     }
-
+console.log(selectedDocId)
+console.log(loggedUser)
     try {
       if (!loggedUser || !selectedDocId) return
       console.log(demoData)
@@ -2556,7 +2555,7 @@ const LeadFollowUp = () => {
   const handleFollowUpDateSubmit = async () => {
     console.log(formData)
     console.log(collectionupdatedata)
-
+    console.log(followupDateLoader)
     if (followupDateLoader) return
     try {
       let newErrors = {}
@@ -2568,11 +2567,13 @@ const LeadFollowUp = () => {
         }
       }
       if (!formData.Remarks) newErrors.Remarks = "Remarks is Required"
-
+      console.log(newErrors)
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors)
         return
       }
+      console.log(loggedUser)
+      console.log(selectedDocId)
       if (!loggedUser || !selectedDocId) return
 
       setfollowupDateLoader(true)
@@ -2620,6 +2621,7 @@ const LeadFollowUp = () => {
 
   const handleFollowUp = (Item) => {
     console.log(Item)
+
     setshowFollowupModal(true)
     setFormData((prev) => ({
       ...prev,
@@ -2633,7 +2635,7 @@ const LeadFollowUp = () => {
 
     // Reset payment session flag when opening new follow-up
     setPaymentUpdatedInSession(false)
-
+    console.log(Item.taskfromFollowup)
     const ishaveAllocation = Item.taskfromFollowup
       ? (Array.isArray(Item.activityLog) &&
           Item.activityLog[Item.activityLog.length - 1]) ||
@@ -2693,6 +2695,10 @@ const LeadFollowUp = () => {
       .toUpperCase()
   const LeadRow = ({ item, index }) => {
     console.log(item)
+    if (item.leadId === "00108") {
+      console.log("hhh")
+      console.log(item?.taskfromFollowup)
+    }
     const [open, setOpen] = useState(false)
 
     const lastLog =

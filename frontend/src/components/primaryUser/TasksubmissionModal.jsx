@@ -324,6 +324,7 @@ export default function TasksubmissionModal({
 
       const endpoint =
         status === "submitted" ? "/lead/taskSubmission" : "/lead/taskRejection"
+console.log(endpoint)
 console.log(payload)
       const response = await api.post(endpoint, payload)
       toast.success(response.data.message)

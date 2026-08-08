@@ -211,7 +211,7 @@ console.log(loggedUser)
     "/admin/transaction/lead/leadAllocation",
     "/staff/transaction/lead/leadFollowUp",
     "/admin/transaction/lead/leadFollowUp",
-
+"/admin//reports/incentiveReport",
     "/staff/transaction/lead/leadTask",
     "/admin/transaction/lead/leadTask",
     "/staff/transaction/lead/leadReallocation",
