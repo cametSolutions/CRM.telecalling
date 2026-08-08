@@ -109,7 +109,7 @@ export const GetallfollowupList = async (req, res) => {
 
     let query = {};
     console.log("isviewmodoe", isViewMode)
-    
+
     if (isViewMode) {
       const hasRange = !!(start && end);
 
@@ -5003,7 +5003,7 @@ export const SetDemoallocation = async (req, res) => {
 
       let previousActivityLogId = null;
       const hasEditIndex =
-        editIndex !== undefined && editIndex !== null && editIndex !== "";
+        editIndex !== undefined && editIndex !== "undefined" && editIndex !== null && editIndex !== "null" && editIndex !== "";
 
       /*
        * Keep editIndex for now, but never use it in a MongoDB update path.
@@ -5011,7 +5011,7 @@ export const SetDemoallocation = async (req, res) => {
        */
       if (hasEditIndex) {
         const index = Number(editIndex);
-console.log("indexxxxxxxxxx",index)
+     
 
         if (
           !Number.isInteger(index) ||
@@ -6922,7 +6922,7 @@ export const UpdateLeadTask = async (req, res) => {
   try {
     const taskDetails = req.body;
     console.log("taskdetails", taskDetails)
-    
+
     const leadObjectId = new mongoose.Types.ObjectId(taskDetails.leadDocId);
     const lead = await LeadMaster.findById(leadObjectId);
     const activityLog = [...lead.activityLog];
@@ -7024,7 +7024,7 @@ export const GetrespectedleadTask = async (req, res) => {
     const userObjectId = toObjectId(userid);
     const branchObjectId = toObjectId(branchSelected);
 
-   
+
 
     if (ownTask === "true" && !userObjectId) {
       return res.status(400).json({ message: "Invalid userid" });
