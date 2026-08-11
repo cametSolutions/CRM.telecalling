@@ -393,8 +393,11 @@ setproductList,
       const selectedUser = data.userWiseResults.find(
         (item) => item.userId === user._id
       )
-
+console.log(data.userWiseResults)
+const aa=data.userWiseResults.map((item)=>item.incentive)
+console.log(aa)
       setloggeduserTarget(selectedUser || null)
+console.log(selectedUser)
       setachievedPoints(selectedUser?.incentive || 0)
 
       const updatedCategories = uniqueCategories

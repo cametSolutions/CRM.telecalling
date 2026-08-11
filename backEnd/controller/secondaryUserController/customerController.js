@@ -2733,42 +2733,89 @@ export const GetLicense = async (req, res) => {
     res.status(500).send("server error")
   }
 }
+// export const ChecklicenseForlead = async (req, res) => {
+//   try {
+//     const { licenseNumber,leadDocId } = req.query
+
+//     if (!licenseNumber) {
+//       return res.status(400).json({
+//         message: "License number is required"
+//       });
+//     }
+
+//     const licenseNo = Number(licenseNumber);
+//     // console.log("licneseno,licenseNo", licenseNo)
+
+//     const [leadExists, licenseExists] = await Promise.all([
+//       Lead.findOne({
+//         "leadFor.licenseNumber": licenseNo
+//       }).select("_id"),
+
+//       License.findOne({
+//         licensenumber: licenseNo
+//       }).select("_id")
+//     ]);
+
+//     return res.json({
+//       exists: !!(leadExists || licenseExists),
+//       source: leadExists
+//         ? "Lead"
+//         : licenseExists
+//           ? "License"
+//           : null
+//     });
+//   } catch (error) {
+//     console.log("error", error.message)
+//     return res.status(500).json({ message: "Internal server error" })
+//   }
+// }
 export const ChecklicenseForlead = async (req, res) => {
   try {
-    const { licenseNumber } = req.query
+    const { licenseNumber, leadDocId } = req.query;
 
     if (!licenseNumber) {
       return res.status(400).json({
-        message: "License number is required"
+        message: "License number is required",
+      });
+    }
+
+    if (leadDocId && !mongoose.Types.ObjectId.isValid(leadDocId)) {
+      return res.status(400).json({
+        message: "Invalid lead document id",
       });
     }
 
     const licenseNo = Number(licenseNumber);
-    // console.log("licneseno,licenseNo", licenseNo)
+
+    const leadQuery = {
+      "leadFor.licenseNumber": licenseNo,
+    };
+
+    // In edit mode: search other lead documents only.
+    if (leadDocId) {
+      leadQuery._id = { $ne: new mongoose.Types.ObjectId(leadDocId) };
+    }
 
     const [leadExists, licenseExists] = await Promise.all([
-      Lead.findOne({
-        "leadFor.licenseNumber": licenseNo
-      }).select("_id"),
+      Lead.findOne(leadQuery).select("_id"),
 
       License.findOne({
-        licensenumber: licenseNo
-      }).select("_id")
+        licensenumber: licenseNo,
+      }).select("_id"),
     ]);
 
     return res.json({
-      exists: !!(leadExists || licenseExists),
-      source: leadExists
-        ? "Lead"
-        : licenseExists
-          ? "License"
-          : null
+      exists: Boolean(leadExists || licenseExists),
+      source: leadExists ? "Lead" : licenseExists ? "License" : null,
     });
   } catch (error) {
-    console.log("error", error.message)
-    return res.status(500).json({ message: "Internal server error" })
+    console.error("ChecklicenseForlead error:", error.message);
+
+    return res.status(500).json({
+      message: "Internal server error",
+    });
   }
-}
+};
 
 export const customerCallRegistration = async (req, res) => {
   try {
