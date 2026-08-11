@@ -9373,7 +9373,7 @@ export const GetcollectionLeads = async (req, res) => {
       data: finalLeads
     });
   } catch (error) {
-    console.log("error", error.message);
+    console.log("error", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
