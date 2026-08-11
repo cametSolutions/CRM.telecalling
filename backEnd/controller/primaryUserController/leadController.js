@@ -9162,9 +9162,28 @@ export const GetcollectionLeads = async (req, res) => {
   try {
     const { selectedBranch, isAccountant, loggeduserby, verified } = req.query;
 
+    if (!mongoose.Types.ObjectId.isValid(selectedBranch)) {
+      return res.status(400).json({
+        message: "Invalid branch id"
+      });
+    }
+
     const branchId = new mongoose.Types.ObjectId(selectedBranch);
     const accountantMode = isAccountant === "true";
     const verifiedBool = verified === "true";
+
+    // Removes null, undefined, strings, numbers, etc. from arrays.
+    const validObjects = (value) => {
+      if (!Array.isArray(value)) return [];
+
+      return value.filter(
+        (item) =>
+          item !== null &&
+          item !== undefined &&
+          typeof item === "object" &&
+          !Array.isArray(item)
+      );
+    };
 
     const leads = await LeadMaster.find({
       leadBranch: branchId,
@@ -9196,7 +9215,10 @@ export const GetcollectionLeads = async (req, res) => {
       .lean();
 
     if (!leads.length) {
-      return res.status(200).json({ message: "lead not found", data: [] });
+      return res.status(200).json({
+        message: "lead not found",
+        data: []
+      });
     }
 
     const ids = {
@@ -9210,45 +9232,124 @@ export const GetcollectionLeads = async (req, res) => {
     };
 
     for (const lead of leads) {
+      if (!lead) continue;
+
       if (lead.customerName) ids.customers.add(String(lead.customerName));
       if (lead.partner) ids.partners.add(String(lead.partner));
-      if (lead.leadBy && lead.leadByModel === "Staff") ids.staff.add(String(lead.leadBy));
-      if (lead.leadBy && lead.leadByModel === "Admin") ids.admin.add(String(lead.leadBy));
 
-      for (const item of lead.leadFor || []) {
-        if (item.productorServiceId && item.productorServicemodel === "Product") {
+      if (lead.leadBy && lead.leadByModel === "Staff") {
+        ids.staff.add(String(lead.leadBy));
+      }
+
+      if (lead.leadBy && lead.leadByModel === "Admin") {
+        ids.admin.add(String(lead.leadBy));
+      }
+
+      const leadFor = validObjects(lead.leadFor);
+
+      for (const item of leadFor) {
+        if (
+          item.productorServiceId &&
+          item.productorServicemodel === "Product"
+        ) {
           ids.products.add(String(item.productorServiceId));
         }
-        if (item.productorServiceId && item.productorServicemodel === "Service") {
+
+        if (
+          item.productorServiceId &&
+          item.productorServicemodel === "Service"
+        ) {
           ids.services.add(String(item.productorServiceId));
         }
       }
 
-      for (const act of lead.activityLog || []) {
+      // Null activityLog entries are ignored safely here.
+      const activityLogs = validObjects(lead.activityLog);
+
+      for (const act of activityLogs) {
         if (act.taskBy) ids.tasks.add(String(act.taskBy));
         if (act.taskId) ids.tasks.add(String(act.taskId));
 
-        if (act.submittedUser && act.submissiondoneByModel === "Staff") ids.staff.add(String(act.submittedUser));
-        if (act.submittedUser && act.submissiondoneByModel === "Admin") ids.admin.add(String(act.submittedUser));
+        if (
+          act.submittedUser &&
+          act.submissiondoneByModel === "Staff"
+        ) {
+          ids.staff.add(String(act.submittedUser));
+        }
 
-        if (act.taskallocatedBy && act.taskallocatedByModel === "Staff") ids.staff.add(String(act.taskallocatedBy));
-        if (act.taskallocatedBy && act.taskallocatedByModel === "Admin") ids.admin.add(String(act.taskallocatedBy));
+        if (
+          act.submittedUser &&
+          act.submissiondoneByModel === "Admin"
+        ) {
+          ids.admin.add(String(act.submittedUser));
+        }
 
-        if (act.taskallocatedTo && act.taskallocatedToModel === "Staff") ids.staff.add(String(act.taskallocatedTo));
-        if (act.taskallocatedTo && act.taskallocatedToModel === "Admin") ids.admin.add(String(act.taskallocatedTo));
+        if (
+          act.taskallocatedBy &&
+          act.taskallocatedByModel === "Staff"
+        ) {
+          ids.staff.add(String(act.taskallocatedBy));
+        }
+
+        if (
+          act.taskallocatedBy &&
+          act.taskallocatedByModel === "Admin"
+        ) {
+          ids.admin.add(String(act.taskallocatedBy));
+        }
+
+        if (
+          act.taskallocatedTo &&
+          act.taskallocatedToModel === "Staff"
+        ) {
+          ids.staff.add(String(act.taskallocatedTo));
+        }
+
+        if (
+          act.taskallocatedTo &&
+          act.taskallocatedToModel === "Admin"
+        ) {
+          ids.admin.add(String(act.taskallocatedTo));
+        }
       }
 
-      for (const pay of lead.paymentHistory || []) {
-        if (pay.receivedBy && pay.receivedModel === "Staff") ids.staff.add(String(pay.receivedBy));
-        if (pay.receivedBy && pay.receivedModel === "Admin") ids.admin.add(String(pay.receivedBy));
-        if (pay.paymentVerifiedBy && pay.paymentverifiedModel === "Staff") ids.staff.add(String(pay.paymentVerifiedBy));
-        if (pay.paymentVerifiedBy && pay.paymentverifiedModel === "Admin") ids.admin.add(String(pay.paymentVerifiedBy));
+      const paymentHistory = validObjects(lead.paymentHistory);
 
-        for (const entry of pay.paymentEntries || []) {
-          if (entry.productorServiceId && entry.productorServicemodel === "Product") {
+      for (const pay of paymentHistory) {
+        if (pay.receivedBy && pay.receivedModel === "Staff") {
+          ids.staff.add(String(pay.receivedBy));
+        }
+
+        if (pay.receivedBy && pay.receivedModel === "Admin") {
+          ids.admin.add(String(pay.receivedBy));
+        }
+
+        if (
+          pay.paymentVerifiedBy &&
+          pay.paymentverifiedModel === "Staff"
+        ) {
+          ids.staff.add(String(pay.paymentVerifiedBy));
+        }
+
+        if (
+          pay.paymentVerifiedBy &&
+          pay.paymentverifiedModel === "Admin"
+        ) {
+          ids.admin.add(String(pay.paymentVerifiedBy));
+        }
+
+        for (const entry of validObjects(pay.paymentEntries)) {
+          if (
+            entry.productorServiceId &&
+            entry.productorServicemodel === "Product"
+          ) {
             ids.products.add(String(entry.productorServiceId));
           }
-          if (entry.productorServiceId && entry.productorServicemodel === "Service") {
+
+          if (
+            entry.productorServiceId &&
+            entry.productorServicemodel === "Service"
+          ) {
             ids.services.add(String(entry.productorServiceId));
           }
         }
@@ -9264,16 +9365,38 @@ export const GetcollectionLeads = async (req, res) => {
       products,
       services
     ] = await Promise.all([
-      Customer.find({ _id: { $in: [...ids.customers] } }).select("customerName").lean(),
-      Partner.find({ _id: { $in: [...ids.partners] } }).select("name").lean(),
-      Task.find({ _id: { $in: [...ids.tasks] } }).select("taskName").lean(),
-      Staff.find({ _id: { $in: [...ids.staff] } }).select("name").lean(),
-      Admin.find({ _id: { $in: [...ids.admin] } }).select("name").lean(),
-      Product.find({ _id: { $in: [...ids.products] } }).select("productName name title").lean(),
-      Service.find({ _id: { $in: [...ids.services] } }).select("productName name title").lean()
+      Customer.find({ _id: { $in: [...ids.customers] } })
+        .select("customerName")
+        .lean(),
+
+      Partner.find({ _id: { $in: [...ids.partners] } })
+        .select("name")
+        .lean(),
+
+      Task.find({ _id: { $in: [...ids.tasks] } })
+        .select("taskName")
+        .lean(),
+
+      Staff.find({ _id: { $in: [...ids.staff] } })
+        .select("name")
+        .lean(),
+
+      Admin.find({ _id: { $in: [...ids.admin] } })
+        .select("name")
+        .lean(),
+
+      Product.find({ _id: { $in: [...ids.products] } })
+        .select("productName name title")
+        .lean(),
+
+      Service.find({ _id: { $in: [...ids.services] } })
+        .select("productName name title")
+        .lean()
     ]);
 
-    const toMap = (arr) => new Map(arr.map((x) => [String(x._id), x]));
+    const toMap = (items) =>
+      new Map(items.map((item) => [String(item._id), item]));
+
     const customerMap = toMap(customers);
     const partnerMap = toMap(partners);
     const taskMap = toMap(tasks);
@@ -9283,100 +9406,369 @@ export const GetcollectionLeads = async (req, res) => {
     const serviceMap = toMap(services);
 
     const getUser = (id, model) => {
-      if (!id || !model) return null;
+      if (!id) return null;
+
       const key = String(id);
-      return model === "Staff" ? staffMap.get(key) || null : adminMap.get(key) || null;
+
+      if (model === "Staff") return staffMap.get(key) || null;
+      if (model === "Admin") return adminMap.get(key) || null;
+
+      return null;
     };
 
     const getServiceProduct = (id, model) => {
-      if (!id || !model) return null;
+      if (!id) return null;
+
       const key = String(id);
-      return model === "Product"
-        ? productMap.get(key) || null
-        : serviceMap.get(key) || null;
+
+      if (model === "Product") return productMap.get(key) || null;
+      if (model === "Service") return serviceMap.get(key) || null;
+
+      return null;
     };
 
-    const finalLeads = leads.map((lead) => {
-      const latestFollowup = [...(lead.activityLog || [])]
-        .filter((a) => a?.taskTo === "followup")
-        .at(-1);
+    const finalLeads = leads
+      .map((lead) => {
+        const activityLogs = validObjects(lead.activityLog);
+        const paymentHistory = validObjects(lead.paymentHistory);
+        const leadFor = validObjects(lead.leadFor);
 
-      if (!latestFollowup || latestFollowup.followupClosed !== true) return null;
+        const latestFollowup = activityLogs
+          .filter((activity) => activity.taskTo === "followup")
+          .at(-1);
 
+        if (!latestFollowup?.followupClosed) return null;
 
-      const filteredPaymentHistory = (lead.paymentHistory || [])
-        .map((history, originalIndex) => ({
+        const filteredPaymentHistory = paymentHistory
+          .map((history, originalIndex) => ({
+            ...history,
+            originalIndex
+          }))
+          .filter((history) => {
+            if (accountantMode) {
+              return history.paymentVerified === verifiedBool;
+            }
+
+            return loggeduserby
+              ? String(history.receivedBy) === String(loggeduserby)
+              : true;
+          });
+
+        const hydratedActivityLog = activityLogs.map((activity) => ({
+          ...activity,
+          submittedUser: getUser(
+            activity.submittedUser,
+            activity.submissiondoneByModel
+          ),
+          taskallocatedBy: getUser(
+            activity.taskallocatedBy,
+            activity.taskallocatedByModel
+          ),
+          taskallocatedTo: getUser(
+            activity.taskallocatedTo,
+            activity.taskallocatedToModel
+          ),
+          taskBy: activity.taskBy
+            ? taskMap.get(String(activity.taskBy)) || null
+            : null,
+          taskId: activity.taskId
+            ? taskMap.get(String(activity.taskId)) || null
+            : null
+        }));
+
+        const hydratedLeadFor = leadFor.map((item) => ({
+          ...item,
+          productorServiceId: getServiceProduct(
+            item.productorServiceId,
+            item.productorServicemodel
+          )
+        }));
+
+        const hydratedPayments = filteredPaymentHistory.map((history) => ({
           ...history,
-          originalIndex
-        }))
-        .filter((history) => {
-          if (accountantMode) return history?.paymentVerified === verifiedBool;
-          return loggeduserby ? String(history?.receivedBy) === String(loggeduserby) : true;
-        });
+          receivedBy: getUser(history.receivedBy, history.receivedModel),
+          paymentVerifiedBy: getUser(
+            history.paymentVerifiedBy,
+            history.paymentverifiedModel
+          ),
+          paymentEntries: validObjects(history.paymentEntries).map((entry) => ({
+            ...entry,
+            productorServiceId: getServiceProduct(
+              entry.productorServiceId,
+              entry.productorServicemodel
+            )
+          }))
+        }));
 
-      const hydratedActivityLog = (lead.activityLog || []).map((activity) => ({
-        ...activity,
-        submittedUser: getUser(activity.submittedUser, activity.submissiondoneByModel),
-        taskallocatedBy: getUser(activity.taskallocatedBy, activity.taskallocatedByModel),
-        taskallocatedTo: getUser(activity.taskallocatedTo, activity.taskallocatedToModel),
-        taskBy: activity.taskBy ? taskMap.get(String(activity.taskBy)) || null : null,
-        taskId: activity.taskId ? taskMap.get(String(activity.taskId)) || null : null
-      }));
+        const lastActivity = hydratedActivityLog.at(-1);
 
-      const hydratedLeadFor = (lead.leadFor || []).map((item) => ({
-        ...item,
-        productorServiceId: getServiceProduct(item.productorServiceId, item.productorServicemodel)
-      }));
+        const lastAllocatedActivity = [...hydratedActivityLog]
+          .reverse()
+          .find(
+            (activity) =>
+              activity.taskallocatedTo || activity.taskallocatedBy
+          );
 
-      // const hydratedPayments = filteredPaymentHistory.map((history, index) => ({
-      //   ...history,
-      //   originalIndex: index,
-      //   receivedBy: getUser(history.receivedBy, history.receivedModel),
-      //   paymentVerifiedBy: getUser(history.paymentVerifiedBy, history.paymentverifiedModel),
-      //   paymentEntries: (history.paymentEntries || []).map((entry) => ({
-      //     ...entry,
-      //     productorServiceId: getServiceProduct(entry.productorServiceId, entry.productorServicemodel)
-      //   }))
-      // }));
-      const hydratedPayments = filteredPaymentHistory.map((history) => ({
-        ...history,
-        receivedBy: getUser(history.receivedBy, history.receivedModel),
-        paymentVerifiedBy: getUser(history.paymentVerifiedBy, history.paymentverifiedModel),
-        paymentEntries: (history.paymentEntries || []).map((entry) => ({
-          ...entry,
-          productorServiceId: getServiceProduct(entry.productorServiceId, entry.productorServicemodel)
-        }))
-      }));
+        return {
+          ...lead,
+          customerName: customerMap.get(String(lead.customerName)) || null,
+          partner: partnerMap.get(String(lead.partner)) || null,
+          leadBy: getUser(lead.leadBy, lead.leadByModel),
+          leadFor: hydratedLeadFor,
+          paymentHistory: hydratedPayments,
+          activityLog: hydratedActivityLog,
+          taskallocatedTo: lastAllocatedActivity?.taskallocatedTo || null,
+          taskallocatedBy: lastAllocatedActivity?.taskallocatedBy || null,
+          leadclosedBy: lastActivity?.submittedUser || null,
+          followupClosed: true
+        };
+      })
+      .filter(Boolean);
 
-      const lastActivity = hydratedActivityLog.at(-1);
-      const lastAllocatedActivity = [...hydratedActivityLog]
-        .reverse()
-        .find((a) => a?.taskallocatedTo || a?.taskallocatedBy);
-
-      return {
-        ...lead,
-        customerName: customerMap.get(String(lead.customerName)) || null,
-        partner: partnerMap.get(String(lead.partner)) || null,
-        leadBy: getUser(lead.leadBy, lead.leadByModel),
-        leadFor: hydratedLeadFor,
-        paymentHistory: hydratedPayments,
-        activityLog: hydratedActivityLog,
-        taskallocatedTo: lastAllocatedActivity?.taskallocatedTo || null,
-        taskallocatedBy: lastAllocatedActivity?.taskallocatedBy || null,
-        leadclosedBy: lastActivity?.submittedUser || null,
-        followupClosed: true
-      };
-    }).filter(Boolean);
-
-    return res.status(finalLeads.length ? 201 : 200).json({
+    return res.status(200).json({
       message: finalLeads.length ? "lead found" : "lead not found",
       data: finalLeads
     });
   } catch (error) {
-    console.log("error", error);
-    return res.status(500).json({ message: "Internal server error" });
+    console.error("GetcollectionLeads error:", error);
+    return res.status(500).json({
+      message: "Internal server error"
+    });
   }
-};
+};//safer version ,even any index of the activitylog have null values ,its wont care to discontinue the code
+
+// export const GetcollectionLeads = async (req, res) => {
+//   try {
+//     const { selectedBranch, isAccountant, loggeduserby, verified } = req.query;
+
+//     const branchId = new mongoose.Types.ObjectId(selectedBranch);
+//     const accountantMode = isAccountant === "true";
+//     const verifiedBool = verified === "true";
+
+//     const leads = await LeadMaster.find({
+//       leadBranch: branchId,
+//       activityLog: {
+//         $elemMatch: {
+//           taskTo: "followup",
+//           followupClosed: true
+//         }
+//       }
+//     })
+
+//       .select({
+//         leadId: 1,
+//         leadDate: 1,
+//         customerName: 1,
+//         partner: 1,
+//         balanceAmount: 1,
+//         leadBy: 1,
+//         leadByModel: 1,
+//         leadFor: 1,
+//         paymentHistory: 1,
+//         activityLog: 1,
+//         leadBranch: 1,
+//         mobile: 1,
+//         email: 1,
+//         location: 1,
+//         remark: 1,
+//         createdAt: 1
+//       })
+//       .lean();
+
+//     if (!leads.length) {
+//       return res.status(200).json({ message: "lead not found", data: [] });
+//     }
+
+//     const ids = {
+//       customers: new Set(),
+//       partners: new Set(),
+//       tasks: new Set(),
+//       staff: new Set(),
+//       admin: new Set(),
+//       products: new Set(),
+//       services: new Set()
+//     };
+
+//     for (const lead of leads) {
+//       if (lead.customerName) ids.customers.add(String(lead.customerName));
+//       if (lead.partner) ids.partners.add(String(lead.partner));
+//       if (lead.leadBy && lead.leadByModel === "Staff") ids.staff.add(String(lead.leadBy));
+//       if (lead.leadBy && lead.leadByModel === "Admin") ids.admin.add(String(lead.leadBy));
+
+//       for (const item of lead.leadFor || []) {
+//         if (item.productorServiceId && item.productorServicemodel === "Product") {
+//           ids.products.add(String(item.productorServiceId));
+//         }
+//         if (item.productorServiceId && item.productorServicemodel === "Service") {
+//           ids.services.add(String(item.productorServiceId));
+//         }
+//       }
+
+//       for (const act of lead.activityLog || []) {
+//         if (act.taskBy) ids.tasks.add(String(act.taskBy));
+//         if (act.taskId) ids.tasks.add(String(act.taskId));
+
+//         if (act.submittedUser && act.submissiondoneByModel === "Staff") ids.staff.add(String(act.submittedUser));
+//         if (act.submittedUser && act.submissiondoneByModel === "Admin") ids.admin.add(String(act.submittedUser));
+
+//         if (act.taskallocatedBy && act.taskallocatedByModel === "Staff") ids.staff.add(String(act.taskallocatedBy));
+//         if (act.taskallocatedBy && act.taskallocatedByModel === "Admin") ids.admin.add(String(act.taskallocatedBy));
+
+//         if (act.taskallocatedTo && act.taskallocatedToModel === "Staff") ids.staff.add(String(act.taskallocatedTo));
+//         if (act.taskallocatedTo && act.taskallocatedToModel === "Admin") ids.admin.add(String(act.taskallocatedTo));
+//       } for (const act of lead.activityLog || []) {
+//         if (act.taskBy) ids.tasks.add(String(act.taskBy));
+//         if (act.taskId) ids.tasks.add(String(act.taskId));
+
+//         if (act.submittedUser && act.submissiondoneByModel === "Staff") ids.staff.add(String(act.submittedUser));
+//         if (act.submittedUser && act.submissiondoneByModel === "Admin") ids.admin.add(String(act.submittedUser));
+
+//         if (act.taskallocatedBy && act.taskallocatedByModel === "Staff") ids.staff.add(String(act.taskallocatedBy));
+//         if (act.taskallocatedBy && act.taskallocatedByModel === "Admin") ids.admin.add(String(act.taskallocatedBy));
+
+//         if (act.taskallocatedTo && act.taskallocatedToModel === "Staff") ids.staff.add(String(act.taskallocatedTo));
+//         if (act.taskallocatedTo && act.taskallocatedToModel === "Admin") ids.admin.add(String(act.taskallocatedTo));
+//       }
+
+//       for (const pay of lead.paymentHistory || []) {
+//         if (pay.receivedBy && pay.receivedModel === "Staff") ids.staff.add(String(pay.receivedBy));
+//         if (pay.receivedBy && pay.receivedModel === "Admin") ids.admin.add(String(pay.receivedBy));
+//         if (pay.paymentVerifiedBy && pay.paymentverifiedModel === "Staff") ids.staff.add(String(pay.paymentVerifiedBy));
+//         if (pay.paymentVerifiedBy && pay.paymentverifiedModel === "Admin") ids.admin.add(String(pay.paymentVerifiedBy));
+
+//         for (const entry of pay.paymentEntries || []) {
+//           if (entry.productorServiceId && entry.productorServicemodel === "Product") {
+//             ids.products.add(String(entry.productorServiceId));
+//           }
+//           if (entry.productorServiceId && entry.productorServicemodel === "Service") {
+//             ids.services.add(String(entry.productorServiceId));
+//           }
+//         }
+//       }
+//     }
+
+//     const [
+//       customers,
+//       partners,
+//       tasks,
+//       staffs,
+//       admins,
+//       products,
+//       services
+//     ] = await Promise.all([
+//       Customer.find({ _id: { $in: [...ids.customers] } }).select("customerName").lean(),
+//       Partner.find({ _id: { $in: [...ids.partners] } }).select("name").lean(),
+//       Task.find({ _id: { $in: [...ids.tasks] } }).select("taskName").lean(),
+//       Staff.find({ _id: { $in: [...ids.staff] } }).select("name").lean(),
+//       Admin.find({ _id: { $in: [...ids.admin] } }).select("name").lean(),
+//       Product.find({ _id: { $in: [...ids.products] } }).select("productName name title").lean(),
+//       Service.find({ _id: { $in: [...ids.services] } }).select("productName name title").lean()
+//     ]);
+
+//     const toMap = (arr) => new Map(arr.map((x) => [String(x._id), x]));
+//     const customerMap = toMap(customers);
+//     const partnerMap = toMap(partners);
+//     const taskMap = toMap(tasks);
+//     const staffMap = toMap(staffs);
+//     const adminMap = toMap(admins);
+//     const productMap = toMap(products);
+//     const serviceMap = toMap(services);
+
+//     const getUser = (id, model) => {
+//       if (!id || !model) return null;
+//       const key = String(id);
+//       return model === "Staff" ? staffMap.get(key) || null : adminMap.get(key) || null;
+//     };
+
+//     const getServiceProduct = (id, model) => {
+//       if (!id || !model) return null;
+//       const key = String(id);
+//       return model === "Product"
+//         ? productMap.get(key) || null
+//         : serviceMap.get(key) || null;
+//     };
+
+//     const finalLeads = leads.map((lead) => {
+//       const latestFollowup = [...(lead.activityLog || [])]
+//         .filter((a) => a?.taskTo === "followup")
+//         .at(-1);
+
+//       if (!latestFollowup || latestFollowup.followupClosed !== true) return null;
+
+
+//       const filteredPaymentHistory = (lead.paymentHistory || [])
+//         .map((history, originalIndex) => ({
+//           ...history,
+//           originalIndex
+//         }))
+//         .filter((history) => {
+//           if (accountantMode) return history?.paymentVerified === verifiedBool;
+//           return loggeduserby ? String(history?.receivedBy) === String(loggeduserby) : true;
+//         });
+
+//       const hydratedActivityLog = (lead.activityLog || []).map((activity) => ({
+//         ...activity,
+//         submittedUser: getUser(activity.submittedUser, activity.submissiondoneByModel),
+//         taskallocatedBy: getUser(activity.taskallocatedBy, activity.taskallocatedByModel),
+//         taskallocatedTo: getUser(activity.taskallocatedTo, activity.taskallocatedToModel),
+//         taskBy: activity.taskBy ? taskMap.get(String(activity.taskBy)) || null : null,
+//         taskId: activity.taskId ? taskMap.get(String(activity.taskId)) || null : null
+//       }));
+
+//       const hydratedLeadFor = (lead.leadFor || []).map((item) => ({
+//         ...item,
+//         productorServiceId: getServiceProduct(item.productorServiceId, item.productorServicemodel)
+//       }));
+
+//       // const hydratedPayments = filteredPaymentHistory.map((history, index) => ({
+//       //   ...history,
+//       //   originalIndex: index,
+//       //   receivedBy: getUser(history.receivedBy, history.receivedModel),
+//       //   paymentVerifiedBy: getUser(history.paymentVerifiedBy, history.paymentverifiedModel),
+//       //   paymentEntries: (history.paymentEntries || []).map((entry) => ({
+//       //     ...entry,
+//       //     productorServiceId: getServiceProduct(entry.productorServiceId, entry.productorServicemodel)
+//       //   }))
+//       // }));
+//       const hydratedPayments = filteredPaymentHistory.map((history) => ({
+//         ...history,
+//         receivedBy: getUser(history.receivedBy, history.receivedModel),
+//         paymentVerifiedBy: getUser(history.paymentVerifiedBy, history.paymentverifiedModel),
+//         paymentEntries: (history.paymentEntries || []).map((entry) => ({
+//           ...entry,
+//           productorServiceId: getServiceProduct(entry.productorServiceId, entry.productorServicemodel)
+//         }))
+//       }));
+
+//       const lastActivity = hydratedActivityLog.at(-1);
+//       const lastAllocatedActivity = [...hydratedActivityLog]
+//         .reverse()
+//         .find((a) => a?.taskallocatedTo || a?.taskallocatedBy);
+
+//       return {
+//         ...lead,
+//         customerName: customerMap.get(String(lead.customerName)) || null,
+//         partner: partnerMap.get(String(lead.partner)) || null,
+//         leadBy: getUser(lead.leadBy, lead.leadByModel),
+//         leadFor: hydratedLeadFor,
+//         paymentHistory: hydratedPayments,
+//         activityLog: hydratedActivityLog,
+//         taskallocatedTo: lastAllocatedActivity?.taskallocatedTo || null,
+//         taskallocatedBy: lastAllocatedActivity?.taskallocatedBy || null,
+//         leadclosedBy: lastActivity?.submittedUser || null,
+//         followupClosed: true
+//       };
+//     }).filter(Boolean);
+
+//     return res.status(finalLeads.length ? 201 : 200).json({
+//       message: finalLeads.length ? "lead found" : "lead not found",
+//       data: finalLeads
+//     });
+//   } catch (error) {
+//     console.log("error", error);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// };
 
 export const GetlostLeads = async (req, res) => {
   try {

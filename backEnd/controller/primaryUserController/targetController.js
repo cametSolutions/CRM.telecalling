@@ -766,6 +766,7 @@ import Service from "../../model/primaryUser/servicesSchema.js";
 //         })
 //     }
 // }
+
 export const gettargetResult = async (req, res) => {
   try {
     const { month, year, periodMode, selectedBranch } = req.query

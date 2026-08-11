@@ -300,28 +300,28 @@
 //             </div>
 //           </div>
 
-          // <div className="px-3">
-          //   <div className="mt-1 rounded-lg bg-slate-950/80 px-3 py-2.5 shadow-sm">
-          //     <div className="flex items-center justify-between">
-          //       <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-300">
-          //         Score Board
-          //       </span>
-          //       <span className="text-[10px] font-medium text-slate-400">
-          //         {categorylist?.length || 0} categories
-          //       </span>
-          //     </div>
+// <div className="px-3">
+//   <div className="mt-1 rounded-lg bg-slate-950/80 px-3 py-2.5 shadow-sm">
+//     <div className="flex items-center justify-between">
+//       <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-300">
+//         Score Board
+//       </span>
+//       <span className="text-[10px] font-medium text-slate-400">
+//         {categorylist?.length || 0} categories
+//       </span>
+//     </div>
 
-          //     <div className="mt-1.5 flex items-center justify-between">
-          //       <span className="text-[11px] font-medium leading-4 text-slate-200">
-          //         Achieved Points
-          //       </span>
-          //       <span className="text-[16px] font-semibold leading-none text-white">
-          //         {achievedPoints}
-          //       </span>
-          //     </div>
-          //   </div>
-          // </div>
-        // </div>
+//     <div className="mt-1.5 flex items-center justify-between">
+//       <span className="text-[11px] font-medium leading-4 text-slate-200">
+//         Achieved Points
+//       </span>
+//       <span className="text-[16px] font-semibold leading-none text-white">
+//         {achievedPoints}
+//       </span>
+//     </div>
+//   </div>
+// </div>
+// </div>
 
 //         <div
 //           className={`
@@ -1026,7 +1026,7 @@
 //   console.log(sidebarOpen)
 //   return (
 //     <>
-     
+
 // <aside
 //   className={`
 //     flex h-full flex-col overflow-hidden border-r border-white/10
@@ -1204,18 +1204,12 @@
 //     </>
 //   )}
 // </aside>
- 
 
-    
 //     </>
 //   )
 // }
 
-
-
 // export default Sidebar
-
-
 
 // import React, { useEffect, useMemo, useState } from "react"
 // import {
@@ -1527,7 +1521,6 @@
 // }
 
 // export default Sidebar
-
 
 // import React, { useEffect, useMemo, useState } from "react"
 // import {
@@ -1963,14 +1956,6 @@
 // }
 
 // export default Sidebar
-
-
-
-
-
-
-
-
 
 // import React, { useEffect, useMemo, useState } from "react"
 // import {
@@ -2466,8 +2451,6 @@
 
 // export default Sidebar
 
-
-
 // import React, { useEffect, useMemo, useState } from "react"
 // import {
 //   Menu,
@@ -2951,8 +2934,6 @@
 
 // export default Sidebar
 
-
-
 // import React, { useEffect, useMemo, useState } from "react"
 // import {
 //   Menu,
@@ -3325,9 +3306,6 @@
 //             </div>
 //           </div>
 
-         
-
-
 //           <SidebarBlock className="overflow-visible px-3 py-3">
 //             <div className="mb-3 flex items-center gap-2 text-[13px] font-semibold text-white">
 //               <CalendarRange size={18} className="text-white/90" />
@@ -3384,7 +3362,6 @@
 //             )}
 //           </SidebarBlock>
 
-     
 //         </div>
 //       )}
 //     </aside>
@@ -3392,8 +3369,6 @@
 // }
 
 // export default Sidebar
-
-
 
 //////
 ///new code in git
@@ -3509,7 +3484,7 @@ const SidebarBlock = ({ className = "", children }) => (
 )
 
 const CategoryCard = ({ item, index, onClick }) => {
-console.log(item)
+  console.log(item)
   const theme = CATEGORY_THEMES[index % CATEGORY_THEMES.length]
   const Icon = theme.icon
   const achieved = Number(item?.achievedamount || item?.achieved || 0)
@@ -3522,7 +3497,9 @@ console.log(item)
       onClick={() => onClick?.(item?.categoryId, item?.categoryName)}
       className="group flex w-full items-center gap-2.5 rounded-[14px] bg-white px-2.5 py-2.5 text-left shadow-[0_6px_14px_rgba(3,58,64,0.08)] transition hover:-translate-y-[1px]"
     >
-      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${theme.softBg}`}>
+      <div
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${theme.softBg}`}
+      >
         <Icon size={16} className={theme.iconColor} strokeWidth={2} />
       </div>
 
@@ -3531,7 +3508,9 @@ console.log(item)
           <div className="truncate text-[12px] font-semibold text-slate-800">
             {item?.categoryName}
           </div>
-          <div className={`rounded-full px-2 py-0.5 text-[9px] font-semibold ${theme.pill}`}>
+          <div
+            className={`rounded-full px-2 py-0.5 text-[9px] font-semibold ${theme.pill}`}
+          >
             {percentage.toFixed(0)}%
           </div>
         </div>
@@ -3553,7 +3532,11 @@ console.log(item)
   )
 }
 
-const CategoryListIconFirst = ({ categorylist, handleMoreClick, sidebarOpen }) => {
+const CategoryListIconFirst = ({
+  categorylist,
+  handleMoreClick,
+  sidebarOpen
+}) => {
   return (
     <div
       className={`min-h-0 flex-1 overflow-y-auto overflow-x-hidden pr-0.5 ${
@@ -3567,7 +3550,9 @@ const CategoryListIconFirst = ({ categorylist, handleMoreClick, sidebarOpen }) =
               key={`${item.categoryId || item.categoryName}-${index}`}
               item={item}
               index={index}
-              onClick={(categoryId,categoryName) => handleMoreClick?.(categoryId,categoryName)}
+              onClick={(categoryId, categoryName) =>
+                handleMoreClick?.(categoryId, categoryName)
+              }
             />
           ))
         ) : (
@@ -3600,7 +3585,7 @@ const Sidebar = ({
   onavataropenClick,
   isMobile
 }) => {
-const navigate=useNavigate()
+  const navigate = useNavigate()
   const [localSelectedPeriod, setLocalSelectedPeriod] = useState(
     targetData?.selectedPeriodName || ""
   )
@@ -3719,7 +3704,7 @@ const navigate=useNavigate()
 
               <div className="min-w-0 flex-1">
                 <div className="truncate text-[12.5px] font-bold text-white">
-                  {user?.name?.toUpperCase()|| "User"}
+                  {user?.name?.toUpperCase() || "User"}
                 </div>
                 <div className="mt-0.5 truncate text-[10px] text-white/68">
                   {user?.role || user?.designation || "Administrator"}
@@ -3756,9 +3741,10 @@ const navigate=useNavigate()
             </div>
           </SidebarBlock>
 
-          <div 
-// onClick={()=> navigate("/admin//reports/incentiveReport")}
-className="rounded-[14px] bg-black px-2.5 py-2.5 shadow-sm hover:cursor-pointer">
+          <div
+            // onClick={()=> navigate("/admin//reports/incentiveReport")}
+            className="rounded-[14px] bg-black px-2.5 py-2.5 shadow-sm hover:cursor-pointer"
+          >
             <div className="flex items-center justify-between">
               <span className="text-[9px] font-semibold uppercase tracking-[0.08em] text-slate-300">
                 Score Board
