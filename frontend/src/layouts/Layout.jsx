@@ -139,7 +139,7 @@
 // export default Layout
 
 import { useEffect, useRef, useState } from "react"
-import { useSelector,useDispatch } from "react-redux"
+import { useSelector, useDispatch } from "react-redux"
 import { useLocation, matchPath } from "react-router-dom"
 import { toast } from "react-toastify"
 import AdminHeader from "../header/AdminHeader"
@@ -155,39 +155,46 @@ import { PerformanceModal } from "../components/primaryUser/PerformanceModal"
 import useAutoLogout from "../hooks/useAutoLogout"
 import UseFetch from "../hooks/useFetch"
 import api from "../api/api"
-import { getLocalStorageItem,setLocalStorageItem } from "../helper/localstorage"
+import {
+  getLocalStorageItem,
+  setLocalStorageItem
+} from "../helper/localstorage"
 import useIdleLogout from "../components/common/useIdleLogout"
 const Layout = () => {
-useIdleLogout()
+  useIdleLogout()
   const location = useLocation()
-const dispatch=useDispatch()
+  const dispatch = useDispatch()
   const headerRef = useRef(null)
   const now = new Date()
- const [selectedMonth, setSelectedMonth] = useState(
+  const [selectedMonth, setSelectedMonth] = useState(
     String(now.getMonth() + 1).padStart(2, "0")
   )
   const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
-console.log(selectedMonth)
- const [categorylist, setcategorylist] = useState([])
+  console.log(selectedMonth)
+  const [categorylist, setcategorylist] = useState([])
   const [achievedproducts, setacheivedProducts] = useState([])
+console.log(achievedproducts)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
- const [periodMode, setperiodMode] = useState("all")
-console.log(periodMode)
+  const [periodMode, setperiodMode] = useState("all")
+  console.log(periodMode)
   const [selectedPeriod, setselectedPeriod] = useState("")
   const [headerHeight, setHeaderHeight] = useState(0)
   const [notificationPopup, setNotificationPopup] = useState(false)
   // const [loggedUser, setLoggedUser] = useState(null)
   // console.log(loggedUser)
   const [productlist, setproductList] = useState([])
- const [selectedCategory, setselectedCategory] = useState(null)
-console.log(selectedCategory)
+console.log(productlist)
+  const [selectedCategory, setselectedCategory] = useState(null)
+  console.log(selectedCategory)
   const [changepasswordOpen, setchangepasswordOpen] = useState(false)
   const [performanceModalOpen, setperformanceModalOpen] = useState(false)
   const [categoryId, setcategoryId] = useState(null)
+console.log(categoryId)
+console.log(selectedCategory)
   console.log(performanceModalOpen)
   const isAuthPage = location.pathname === "/"
   const [targetData, setTargetData] = useState([])
-console.log(targetData)
+  console.log(targetData)
   const [avatarOpen, setAvatarOpen] = useState(false)
   useAutoLogout(!isAuthPage)
 
@@ -197,9 +204,9 @@ console.log(targetData)
   const selectedBranch = useSelector(
     (state) => state.companyBranch.selectedBranch
   )
-console.log(selectedBranch)
-const loggedUser=useSelector((state)=>state.auth.user)
-console.log(loggedUser)
+  console.log(selectedBranch)
+  const loggedUser = useSelector((state) => state.auth.user)
+  console.log(loggedUser)
   const hideHeaderRoutes = [
     "/staff/home",
     "/admin/home",
@@ -211,7 +218,7 @@ console.log(loggedUser)
     "/admin/transaction/lead/leadAllocation",
     "/staff/transaction/lead/leadFollowUp",
     "/admin/transaction/lead/leadFollowUp",
-"/admin//reports/incentiveReport",
+    "/admin//reports/incentiveReport",
     "/staff/transaction/lead/leadTask",
     "/admin/transaction/lead/leadTask",
     "/staff/transaction/lead/leadReallocation",
@@ -261,20 +268,20 @@ console.log(loggedUser)
     matchPath({ path: route, end: true }, location.pathname)
   )
   console.log(shouldshowSidebar)
-//   useEffect(() => {
-// const a=localStorage.getItem("user")
-// console.log(a)
-// const c=getLocalStorageItem("user")
-// console.log(c)
-//     setLoggedUser(getLocalStorageItem("user"))
-//   }, [])
+  //   useEffect(() => {
+  // const a=localStorage.getItem("user")
+  // console.log(a)
+  // const c=getLocalStorageItem("user")
+  // console.log(c)
+  //     setLoggedUser(getLocalStorageItem("user"))
+  //   }, [])
 
   const { data: notificationData } = UseFetch(
     loggedUser &&
       selectedBranch &&
       `/lead/getnotificationData?loggedUser=${loggedUser._id}&branchSelected=${selectedBranch}`
   )
-console.log(notificationData)
+  console.log(notificationData)
 
   useEffect(() => {
     if (headerRef.current) {
@@ -285,7 +292,7 @@ console.log(notificationData)
   if (isAuthPage) {
     return <Mainrouter />
   }
-console.log(loggedUser)
+  console.log(loggedUser)
   const handleAvatarUploaded = async (url) => {
     try {
       const updateurl = await api.post(
@@ -295,14 +302,14 @@ console.log(loggedUser)
 
       if (updateurl.status === 200) {
         toast.success("Profile updated successfully")
-//         setLoggedUser((prev) => {
-//           const updated = { ...(prev || {}), profileUrl: url }
-//           // setLocalStorageItem("user", JSON.stringify(updated))
-// setLocalStorageItem("user", updated)   // ✅ no JSON.stringify here
-//           return updated
-//         })
-  const updated = { ...(loggedUser || {}), profileUrl: url }
-        dispatch(updateUser(updated))   // ✅ updates Redux state AND localStorage together
+        //         setLoggedUser((prev) => {
+        //           const updated = { ...(prev || {}), profileUrl: url }
+        //           // setLocalStorageItem("user", JSON.stringify(updated))
+        // setLocalStorageItem("user", updated)   // ✅ no JSON.stringify here
+        //           return updated
+        //         })
+        const updated = { ...(loggedUser || {}), profileUrl: url }
+        dispatch(updateUser(updated)) // ✅ updates Redux state AND localStorage together
       }
     } catch (error) {
       console.log("error", error)
@@ -317,19 +324,22 @@ console.log(loggedUser)
           <StaticSidebar
             onpasswordClick={() => setchangepasswordOpen(true)}
             onperformanceModalClick={() => setperformanceModalOpen(true)}
-onavataropenClick={()=>setAvatarOpen(true)}
+            onavataropenClick={() => setAvatarOpen(true)}
             setTargetData={setTargetData}
             targetData={targetData}
-selectedMonths={selectedMonth}
-yearSelected={selectedYear}
-setselectedCategory={setselectedCategory}
-setproductList={setproductList}
+            selectedMonths={selectedMonth}
+            yearSelected={selectedYear}
+            setselectedCategory={setselectedCategory}
+selectedCategory={selectedCategory}
+            setproductList={setproductList}
             setcategoryId={setcategoryId}
-parentperiodmode={periodMode}
- onselectedPeriodChange={(val, val2) => {
-          setSelectedMonth(val2)
-          setselectedPeriod(val)
-        }}
+            parentperiodmode={periodMode}
+            onselectedPeriodChange={(val, val2) => {
+              setSelectedMonth(val2)
+              setselectedPeriod(val)
+            }}
+setacheivedProducts={setacheivedProducts}
+achievedproducts={achievedproducts}
           />
         )}
 
@@ -341,7 +351,7 @@ parentperiodmode={periodMode}
               <AdminHeader
                 sidebarHasProfile={shouldshowSidebar}
                 onNotificationClick={() => setNotificationPopup(true)}
- onpasswordClick={() => setchangepasswordOpen(true)}
+                onpasswordClick={() => setchangepasswordOpen(true)}
               />
             )}
 
@@ -349,7 +359,7 @@ parentperiodmode={periodMode}
               <StaffHeader
                 sidebarHasProfile={shouldshowSidebar}
                 onNotificationClick={() => setNotificationPopup(true)}
- onpasswordClick={() => setchangepasswordOpen(true)}
+                onpasswordClick={() => setchangepasswordOpen(true)}
               />
             )}
           </div>
@@ -367,36 +377,38 @@ parentperiodmode={periodMode}
       />
       <PerformanceModal
         open={performanceModalOpen}
-        onClose={() =>{setperformanceModalOpen(false)
-setselectedCategory(null)
-setproductList([])
-}}
+        onClose={() => {
+          setperformanceModalOpen(false)
+          setselectedCategory(null)
+          setproductList([])
+setacheivedProducts([])
+        }}
         targetData={targetData}
- onselectedPeriodChange={(val, val2) => {
+        onselectedPeriodChange={(val, val2) => {
           setSelectedMonth(val2)
           setselectedPeriod(val)
         }}
-setproductList={setproductList}
-productlist={productlist}
-category={selectedCategory}
+        setproductList={setproductList}
+        productlist={productlist}
+  products={achievedproducts}
+        category={selectedCategory}
         loggedUser={loggedUser}
         categoryId={categoryId}
- onMonthChange={(val) => {
+        onMonthChange={(val) => {
           setcategorylist([])
           setacheivedProducts([])
           setselectedDataPopup([])
           setperiodMode(val)
-
         }}
- onYearChange={(val) => {
+        onYearChange={(val) => {
           setcategorylist([])
           setacheivedProducts([])
           setselectedDataPopup([])
-console.log(val)
+          console.log(val)
           setSelectedYear(val)
         }}
-periodmode={periodMode}
-yearSelected={selectedYear}
+        periodmode={periodMode}
+        yearSelected={selectedYear}
       />
 
       <ChangePasswordModal
@@ -405,7 +417,6 @@ yearSelected={selectedYear}
       />
       <AvatarEditor
         open={avatarOpen}
-
         onClose={() => setAvatarOpen(false)}
         onUploaded={handleAvatarUploaded}
       />

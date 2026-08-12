@@ -28,6 +28,7 @@ setproductList,
   selectedUser,
   activeUserId
 }) {
+console.log(productlist)
 console.log(products)
   console.log(periodmode)
   console.log(selectedperiod)
