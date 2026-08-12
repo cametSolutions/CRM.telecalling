@@ -277,6 +277,7 @@ export const StaticSidebar = ({
   onselectedPeriodChange,
   setselectedCategory,
 setproductList,
+selectedCategory,
   // setselectedPeriod,
   // handleMoreClick,
   setselectedCompanyBranch,
@@ -287,8 +288,12 @@ setproductList,
   onperformanceModalClick,
   setTargetData,
   targetData,
-  onavataropenClick
+  onavataropenClick,
+setacheivedProducts,
+achievedproducts
 }) => {
+console.log(selectedCategory)
+// console.log(setselectedCategory)
   console.log(targetData)
   console.log("hhd")
   // console.log(onpasswordClick)
@@ -338,7 +343,61 @@ setproductList,
   console.log(periodMode)
   console.log(data)
   const { data: branchlist } = UseFetch("/branch/getBranch")
+useEffect(() => {
+console.log("hhhhh")
+console.log(selectedCategory)
+    if (selectedCategory) {
+console.log('hhhh')
+      const filteredList = branchProduct
+        .filter(
+          (item) =>
+            item.selected?.some(
+              (selectedItem) =>
+                String(selectedItem.category_id) ===
+                String(selectedCategory?.Id)
+            ) || String(item.category_id) === String(selectedCategory?.Id)
+        )
+        .map((item) => item.productName || item.serviceName)
+      setproductList(filteredList)
 
+      const filteredloggedUserItem = data?.userWiseResults.filter(
+        (item) => item.userId === user._id
+      )
+      console.log(filteredloggedUserItem)
+      const filteredselectedCategory =
+        filteredloggedUserItem[0]?.categories.filter(
+          (item) => item.categoryId === selectedCategory?.Id
+        )
+      const summary = filteredselectedCategory?.reduce(
+        (acc, cur) => {
+          acc.target += Number(cur.target || 0)
+          acc.achieved += Number(cur.achieved || 0)
+          acc.balance += Number(cur.balance || 0)
+          return acc
+        },
+        { target: 0, achieved: 0, balance: 0 }
+      )
+console.log(filteredselectedCategory)
+      // setselectedDataPopup(summary)
+      console.log(summary)
+      if (filteredselectedCategory && filteredselectedCategory.length) {
+console.log("hhhhha")
+console.log(achievedproducts)
+        setacheivedProducts((prev) => [
+          ...prev,
+          ...filteredselectedCategory.flatMap((item) =>
+            (item?.products || []).map((product) => ({
+              productname: product.name,
+              amount: product.achieved
+            }))
+          )
+        ])
+      } else {
+        setacheivedProducts([])
+      }
+    }
+  }, [data,selectedCategory])
+console.log(achievedPoints)
   useEffect(() => {
     setSidebarOpen(!isMobile)
   }, [isMobile])

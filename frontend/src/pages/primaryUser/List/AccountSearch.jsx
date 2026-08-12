@@ -289,7 +289,7 @@ console.log(selectedbranch)
   //     const url = `http://localhost:9000/api/customer/getCustomer?search=${encodeURIComponent(
   //       query
   //     )}`
-  //     // const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${encodeURIComponent(
+  //     // const url = `https://crm.camet.in/api/customer/getCustomer?search=${encodeURIComponent(
   //     //   query
   //     // )}`
 
@@ -355,7 +355,7 @@ console.log(value)
         //   user.role
         // }&userBranch=${encodeURIComponent(branch)}`
 
-        const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${value}&role=${
+        const url = `https://crm.camet.in/api/customer/getCustomer?search=${value}&role=${
           user.role
         }&userBranch=${encodeURIComponent(branch)}`
 
