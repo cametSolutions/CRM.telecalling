@@ -3742,7 +3742,7 @@ const Sidebar = ({
           </SidebarBlock>
 
           <div
-            // onClick={()=> navigate("/admin//reports/incentiveReport")}
+            onClick={()=> navigate("/admin//reports/incentiveReport")}
             className="rounded-[14px] bg-black px-2.5 py-2.5 shadow-sm hover:cursor-pointer"
           >
             <div className="flex items-center justify-between">

@@ -180,6 +180,7 @@ const LeadFollowUp = () => {
   const dropdownRef = useRef(null)
   const [taskList, settaskList] = useState([])
   const [tableData, setTableData] = useState([])
+
   const [activeUserId, setActiveUserId] = useState(null)
   // NEW: Track if payment was updated in current session
   const [paymentUpdatedInSession, setPaymentUpdatedInSession] = useState(false)
@@ -1674,7 +1675,9 @@ console.log(showInitialSkeleton)
     // if (!loggedusersallocatedleads || !dates.endDate || !loggedUser) return
     if (loggedusersallocatedleads && dates.endDate && loggedUser) {
       const leads = loggedusersallocatedleads.followupLeads
-
+console.log(leads)
+const aaa=leads.filter((item)=>item.leadId==="00085")
+console.log(aaa)
       if (safeState?.header === "Total Leads") {
         const lea = leads.map((item) => item.leadId)
 
@@ -1714,6 +1717,7 @@ console.log(showInitialSkeleton)
         })
         const groupedData = normalizeTableData(groupedLeads)
         setnetTotalAmount(TotalAmount(filteredLeads))
+console.log("Hhh")
         setTableData(groupedData)
       } else {
         if (safeState?.viewMode === "overDue") {
@@ -1754,6 +1758,7 @@ console.log(showInitialSkeleton)
           })
           const groupedData = normalizeTableData(groupedLeads)
           setnetTotalAmount(TotalAmount(overdueLeads))
+console.log("h")
           setTableData(groupedData)
         } else if (safeState?.viewMode === "dueToday") {
           const today = new Date()
@@ -1795,7 +1800,7 @@ console.log(showInitialSkeleton)
             groupedLeads[assignedTo].push(lead)
           })
           const groupedData = normalizeTableData(groupedLeads)
-          // console.log(groupedData)
+          console.log(groupedData)
           setnetTotalAmount(TotalAmount(dueTodayLeads))
           setTableData(groupedData)
         } else if (safeState?.viewMode === "future") {
@@ -1835,7 +1840,7 @@ console.log(showInitialSkeleton)
             groupedLeads[assignedTo].push(lead)
           })
           const groupedData = normalizeTableData(groupedLeads)
-          // console.log(groupedData)
+          console.log(groupedData)
           setnetTotalAmount(TotalAmount(futureLeads))
           setTableData(groupedData)
         } else if (safeState?.viewMode === "converted") {
@@ -1965,7 +1970,7 @@ console.log(showInitialSkeleton)
             const Data = normalizeTableData(mergedall)
             // then store it in state
             setnetTotalAmount(TotalAmount(mergedall))
-
+console.log("Hhh")
             setTableData(Data)
           } else if (pending && !ownFollowUp) {
             if (safeState?.staffId) {
@@ -2328,6 +2333,7 @@ console.log(showInitialSkeleton)
   }
 
   const handlefollowupdate = (Id, docId) => {
+console.log("hhh")
     setfollowupDateModal(true)
     setSelectedLeadId(Id)
     setselectedDocid(docId)
@@ -2548,6 +2554,7 @@ console.log(showInitialSkeleton)
       setIsAllocated(true)
     }
     setfollowupClosed(!pending)
+console.log("hh")
     setselectedDocid(Item._id)
     setSelectedLeadId(Item.leadId)
   }
@@ -2968,6 +2975,7 @@ console.log(showInitialSkeleton)
     </table>
   )
   const currentData = statusAllocated ? allocatedLeads : tableData
+
 
   const hasLeads = () => {
     if (!Array.isArray(currentData) || currentData.length === 0) return false

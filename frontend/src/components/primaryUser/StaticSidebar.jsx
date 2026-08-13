@@ -359,10 +359,13 @@ console.log('hhhh')
         )
         .map((item) => item.productName || item.serviceName)
       setproductList(filteredList)
-
+console.log(data.userWiseResults)
+const rt=data.userWiseResults.map((item)=>item.userName)
+console.log(rt)
       const filteredloggedUserItem = data?.userWiseResults.filter(
         (item) => item.userId === user._id
       )
+console.log(user)
       console.log(filteredloggedUserItem)
       const filteredselectedCategory =
         filteredloggedUserItem[0]?.categories.filter(

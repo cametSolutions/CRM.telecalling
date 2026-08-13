@@ -1648,6 +1648,9 @@ export const gettargetResult = async (req, res) => {
     const productIds = new Set();
     const serviceIds = new Set();
 
+const staffIds = new Set();
+const adminIds = new Set();
+
     for (const lead of leads) {
       const leadItems = objects(lead.leadFor);
 
@@ -1668,9 +1671,32 @@ export const gettargetResult = async (req, res) => {
           serviceIds.add(String(item.productorServiceId));
         }
       }
+
+
+
+
+  /*
+    Collect every user who submitted an activity.
+
+    These users can receive incentive even when they
+    are not configured in monthlyTargets.userTargets.
+  */
+  for (const activity of objects(lead.activityLog)) {
+    if (!activity?.submittedUser) continue;
+
+    if (activity.submissiondoneByModel === "Admin") {
+      adminIds.add(
+        String(activity.submittedUser)
+      );
+    } else {
+      staffIds.add(
+        String(activity.submittedUser)
+      );
+    }
+  }
     }
 
-    const [products, services] = await Promise.all([
+    const [products, services,staffs,admins] = await Promise.all([
       Product.find({
         _id: { $in: [...productIds] },
       })
@@ -1685,6 +1711,17 @@ export const gettargetResult = async (req, res) => {
           category_id categoryId
         `)
         .lean(),
+   Staff.find({
+      _id: { $in: [...staffIds] },
+    })
+      .select("name designation")
+      .lean(),
+
+    Admin.find({
+      _id: { $in: [...adminIds] },
+    })
+      .select("name designation")
+      .lean(),
     ]);
 
     const productMap = new Map(
@@ -1722,6 +1759,66 @@ export const gettargetResult = async (req, res) => {
         ];
       })
     );
+
+const staffMap = new Map(
+  staffs.map((staff) => [
+    String(staff._id),
+    staff,
+  ])
+);
+
+const adminMap = new Map(
+  admins.map((admin) => [
+    String(admin._id),
+    admin,
+  ])
+);
+
+const resolveUser = (userId, userModel) => {
+  if (!userId) return null;
+
+  const id = String(userId);
+
+  if (
+    userModel === "Admin" &&
+    adminMap.has(id)
+  ) {
+    return {
+      ...adminMap.get(id),
+      model: "Admin",
+    };
+  }
+
+  if (
+    userModel === "Staff" &&
+    staffMap.has(id)
+  ) {
+    return {
+      ...staffMap.get(id),
+      model: "Staff",
+    };
+  }
+
+  // Handles legacy logs with missing/wrong model.
+  if (staffMap.has(id)) {
+    return {
+      ...staffMap.get(id),
+      model: "Staff",
+    };
+  }
+
+  if (adminMap.has(id)) {
+    return {
+      ...adminMap.get(id),
+      model: "Admin",
+    };
+  }
+
+  return null;
+};
+
+
+
 
     const getItemMeta = (item) => {
       if (!item?.productorServiceId) return null;
@@ -1794,11 +1891,70 @@ export const gettargetResult = async (req, res) => {
       );
     };
 
+    // const isLeadEligibleForIncentive = (lead) => {
+    //   return (
+    //     lead.forcefullyClosedTarget === true ||
+    //     num(lead.balanceAmount) === 0 ||
+    //     isLeadFullyVerified(lead)
+    //   );
+    // };
+    // const isLeadEligibleForIncentive = (lead) => {
+    //   const netAmount = Number(lead.netAmount || 0);
+
+    //   const hasValidBillAmount = netAmount > 0;
+
+    //   const hasZeroBalance =
+    //     lead.balanceAmount !== null &&
+    //     lead.balanceAmount !== undefined &&
+    //     lead.balanceAmount !== "" &&
+    //     Number(lead.balanceAmount) === 0;
+
+    //   const isFullyPaid = hasValidBillAmount && hasZeroBalance;
+
+    //   const isForcefullyClosedWithAmount =
+    //     lead.forcefullyClosedTarget === true &&
+    //     hasValidBillAmount;
+
+    //   const isFullyVerifiedWithAmount =
+    //     hasValidBillAmount &&
+    //     isLeadFullyVerified(lead);
+
+    //   return (
+    //     isForcefullyClosedWithAmount ||
+    //     isFullyPaid ||
+    //     isFullyVerifiedWithAmount
+    //   );
+    // };
     const isLeadEligibleForIncentive = (lead) => {
+      const netAmount = Number(lead.netAmount || 0);
+      const totalPaidAmount = Number(lead.totalPaidAmount || 0);
+
+      // Main protection:
+      // zero-value leads never count as achievement.
+      if (netAmount <= 0) {
+        return false;
+      }
+
+      const hasZeroBalance =
+        lead.balanceAmount !== null &&
+        lead.balanceAmount !== undefined &&
+        lead.balanceAmount !== "" &&
+        Number(lead.balanceAmount) === 0;
+
+      const isFullyPaid =
+        hasZeroBalance &&
+        totalPaidAmount >= netAmount;
+
+      const isForcefullyClosed =
+        lead.forcefullyClosedTarget === true;
+
+      const isFullyVerified =
+        isLeadFullyVerified(lead);
+
       return (
-        lead.forcefullyClosedTarget === true ||
-        num(lead.balanceAmount) === 0 ||
-        isLeadFullyVerified(lead)
+        isFullyPaid ||
+        isForcefullyClosed ||
+        isFullyVerified
       );
     };
 
@@ -1838,24 +1994,92 @@ export const gettargetResult = async (req, res) => {
 
     const userWiseMap = new Map();
 
-    const ensureUser = (userId, userName = "Unknown User") => {
-      const id = String(userId);
+//     const ensureUser = (userId, userName = "Unknown User") => {
+// // console.log("uddddddddddddddd",userName)
+//       const id = String(userId);
 
-      if (!userWiseMap.has(id)) {
-        userWiseMap.set(id, {
-          userId: id,
-          userName,
-          target: 0,
-          achieved: 0,
-          balance: 0,
-          incentive: 0,
-          categories: [],
-        });
-      }
+//       if (!userWiseMap.has(id)) {
+//         userWiseMap.set(id, {
+//           userId: id,
+//           userName,
+//           target: 0,
+//           achieved: 0,
+//           balance: 0,
+//           incentive: 0,
+//           categories: [],
+//         });
+//       }
 
-      return userWiseMap.get(id);
-    };
+//       return userWiseMap.get(id);
+//     };
 
+
+
+const ensureUser = (
+  userId,
+  suppliedName = null,
+  userModel = null
+) => {
+  const id = String(userId);
+
+  const resolvedUser = resolveUser(
+    id,
+    userModel
+  );
+
+  const resolvedName =
+    suppliedName ||
+    resolvedUser?.name ||
+    `Unknown User (${id})`;
+
+  const resolvedDesignation =
+    resolvedUser?.designation ||
+    resolvedUser?.model ||
+    userModel ||
+    "Unknown";
+
+  const existingUser = userWiseMap.get(id);
+
+  if (existingUser) {
+    const existingName = String(
+      existingUser.userName || ""
+    );
+
+    const wasUnknown =
+      existingName.toLowerCase().startsWith(
+        "unknown user"
+      ) ||
+      existingName === "un";
+
+    const hasRealName =
+      !resolvedName.toLowerCase().startsWith(
+        "unknown user"
+      );
+
+    if (wasUnknown && hasRealName) {
+      existingUser.userName = resolvedName;
+      existingUser.designation =
+        resolvedDesignation;
+    }
+
+    return existingUser;
+  }
+
+  const user = {
+    userId: id,
+    userName: resolvedName,
+    designation: resolvedDesignation,
+    target: 0,
+    achieved: 0,
+    balance: 0,
+    incentive: 0,
+    categories: [],
+  };
+
+  userWiseMap.set(id, user);
+
+  return user;
+};
     // Prevents duplicate incentive for the same:
     // configuration + lead + task + user.
     const awardedIncentives = new Set();
@@ -1898,7 +2122,7 @@ export const gettargetResult = async (req, res) => {
           if (!userId) continue;
 
           const userName =
-            userTarget.userId?.name || "Unknown User";
+            userTarget.userId?.name || "un"
 
           const slabs = objects(userTarget.slabs);
 
@@ -1906,7 +2130,7 @@ export const gettargetResult = async (req, res) => {
             return Math.max(highest, num(slab.toValue));
           }, 0);
 
-          const user = ensureUser(userId, userName);
+          const user = ensureUser(userId, userName,"Staff");
 
           user.target += target;
 
@@ -2025,23 +2249,239 @@ export const gettargetResult = async (req, res) => {
                 configCategoryId
               );
 
-          for (const activity of objects(lead.activityLog)) {
-            const completed =
-              activity.taskClosed === true ||
-              activity.followupClosed === true ||
-              activity.allocatedClosed === true;
+          // for (const activity of objects(lead.activityLog)) {
+          //   const completed =
+          //     activity.taskClosed === true ||
+          //     activity.followupClosed === true ||
+          //     activity.allocatedClosed === true;
 
-            if (!completed) continue;
+          //   if (!completed) continue;
 
-            const userId = String(
-              activity.submittedUser || ""
-            );
+          //   const userId = String(
+          //     activity.submittedUser || ""
+          //   );
+
+          //   if (!userId) continue;
+
+          //   const taskById = String(activity.taskBy || "");
+          //   const taskId = String(activity.taskId || "");
+
+          //   const allocationRule = objects(
+          //     config.allocationValues
+          //   ).find((allocation) => {
+          //     const allocationId = String(
+          //       allocation.allocationId || ""
+          //     );
+
+          //     return (
+          //       allocationId === taskById ||
+          //       allocationId === taskId
+          //     );
+          //   });
+
+          //   if (!allocationRule) continue;
+
+          //   const rewardValue = num(allocationRule.value);
+
+          //   if (rewardValue <= 0) continue;
+
+          //   const incentiveType = String(
+          //     allocationRule.incentiveType || "fixed"
+          //   )
+          //     .toLowerCase()
+          //     .trim();
+
+          //   let incentive = 0;
+
+          //   if (incentiveType === "percentage") {
+          //     if (percentageBaseAmount <= 0) continue;
+
+          //     incentive =
+          //       (rewardValue / 100) * percentageBaseAmount;
+          //   } else {
+          //     incentive = rewardValue;
+          //   }
+
+          //   if (incentive <= 0) continue;
+
+          //   const rewardTaskId = String(
+          //     allocationRule.allocationId || taskById || taskId
+          //   );
+
+          //   const rewardKey = [
+          //     String(config._id),
+          //     String(lead._id),
+          //     userId,
+          //     rewardTaskId,
+          //   ].join("-");
+
+          //   if (awardedIncentives.has(rewardKey)) {
+          //     continue;
+          //   }
+
+          //   awardedIncentives.add(rewardKey);
+
+          //   const user = ensureUser(userId);
+
+          //   user.incentive += incentive;
+
+          //   user.categories.push({
+          //     categoryId: configCategoryId,
+          //     categoryName,
+          //     periodName: config.periodName || "",
+          //     month: targetMonth,
+          //     year: yearNumber,
+          //     measurementType: "incentive",
+          //     target: 0,
+          //     slabs: [],
+          //     achieved: 0,
+          //     balance: 0,
+          //     incentive,
+          //     products: [],
+          //   });
+          // }//old code
+
+
+          // for (const activity of objects(lead.activityLog)) {
+          //   const userId = String(activity.submittedUser || "");
+
+          //   if (!userId) continue;
+
+          //   const taskById = String(activity.taskBy || "");
+          //   const taskId = String(activity.taskId || "");
+
+          //   // First: check whether this activity task exists
+          //   // in TargetConfiguration allocationValues.
+          //   const allocationRule = objects(
+          //     config.allocationValues
+          //   ).find((allocation) => {
+          //     const allocationId = String(
+          //       allocation.allocationId || ""
+          //     );
+
+          //     return (
+          //       allocationId === taskById ||
+          //       allocationId === taskId
+          //     );
+          //   });
+
+          //   // No configured incentive rule for this task.
+          //   if (!allocationRule) continue;
+
+          //   const completed =
+          //     activity.taskClosed === true ||
+          //     activity.followupClosed === true ||
+          //     activity.allocatedClosed === true;
+
+          //   /*
+          //     Default: task must be completed.
+
+          //     For Lead By / first lead activity, set:
+          //     requiresCompletion: false
+
+          //     in the Target Configuration allocationValues item.
+          //   */
+          //   const requiresCompletion =
+          //     allocationRule.requiresCompletion !== false;
+
+          //   if (requiresCompletion && !completed) {
+          //     continue;
+          //   }
+
+          //   const rewardValue = num(allocationRule.value);
+
+          //   if (rewardValue <= 0) continue;
+
+          //   /*
+          //     Your DB currently has `mode: "amount"`.
+
+          //     amount/fixed = exact incentive amount
+          //     percentage/percent = percentage of eligible lead amount
+          //   */
+          //   const rewardMode = String(
+          //     allocationRule.incentiveType ||
+          //     allocationRule.mode ||
+          //     "amount"
+          //   )
+          //     .toLowerCase()
+          //     .trim();
+
+          //   const isPercentage =
+          //     rewardMode === "percentage" ||
+          //     rewardMode === "percent";
+
+          //   let incentive = 0;
+
+          //   if (isPercentage) {
+          //     if (percentageBaseAmount <= 0) continue;
+
+          //     incentive =
+          //       (rewardValue / 100) * percentageBaseAmount;
+          //   } else {
+          //     // mode: "amount" gives a fixed amount.
+          //     incentive = rewardValue;
+          //   }
+
+          //   if (incentive <= 0) continue;
+
+          //   const rewardTaskId = String(
+          //     allocationRule.allocationId || taskById || taskId
+          //   );
+
+          //   const rewardKey = [
+          //     String(config._id),
+          //     String(lead._id),
+          //     userId,
+          //     rewardTaskId,
+          //   ].join("-");
+
+          //   // One user gets one reward for one configured task in one lead.
+          //   if (awardedIncentives.has(rewardKey)) {
+          //     continue;
+          //   }
+
+          //   awardedIncentives.add(rewardKey);
+
+          //   const user = ensureUser(userId);
+
+          //   user.incentive += incentive;
+
+          //   user.categories.push({
+          //     categoryId: configCategoryId,
+          //     categoryName,
+          //     periodName: config.periodName || "",
+          //     month: targetMonth,
+          //     year: yearNumber,
+          //     measurementType: "incentive",
+          //     target: 0,
+          //     slabs: [],
+          //     achieved: 0,
+          //     balance: 0,
+          //     incentive,
+
+          //     // Helpful for checking which lead received incentive
+          //     leadId: lead.leadId,
+          //     leadMongoId: String(lead._id),
+          //     taskById,
+          //     taskId,
+          //     allocationId: rewardTaskId,
+          //     incentiveMode: rewardMode,
+
+          //     products: [],
+          //   });
+          // }new code
+
+          for (const [activityIndex, activity] of objects(
+            lead.activityLog
+          ).entries()) {
+            const userId = String(activity.submittedUser || "");
 
             if (!userId) continue;
 
             const taskById = String(activity.taskBy || "");
             const taskId = String(activity.taskId || "");
 
+            // Match the activity task with Target Configuration allocationValues.
             const allocationRule = objects(
               config.allocationValues
             ).find((allocation) => {
@@ -2055,35 +2495,83 @@ export const gettargetResult = async (req, res) => {
               );
             });
 
+            // No allocation rule configured for this task.
             if (!allocationRule) continue;
+
+            const completed =
+              activity.taskClosed === true ||
+              activity.followupClosed === true ||
+              activity.allocatedClosed === true;
+
+            /*
+              First activity log is Lead By / lead-created activity.
+          
+              For index 0:
+              Do not check taskClosed, followupClosed,
+              or allocatedClosed.
+          
+              For every other index:
+              At least one completion flag must be true.
+            */
+            const isFirstActivity = activityIndex === 0;
+
+            if (!isFirstActivity && !completed) {
+              continue;
+            }
 
             const rewardValue = num(allocationRule.value);
 
             if (rewardValue <= 0) continue;
 
-            const incentiveType = String(
-              allocationRule.incentiveType || "fixed"
+            /*
+              Your current database uses:
+          
+              mode: "amount"
+          
+              amount / fixed = direct incentive amount
+              percentage / percent = percentage incentive
+            */
+            const rewardMode = String(
+              allocationRule.incentiveType ||
+              allocationRule.mode ||
+              "amount"
             )
               .toLowerCase()
               .trim();
 
+            const isPercentage =
+              rewardMode === "percentage" ||
+              rewardMode === "percent";
+
             let incentive = 0;
 
-            if (incentiveType === "percentage") {
+            if (isPercentage) {
               if (percentageBaseAmount <= 0) continue;
 
               incentive =
                 (rewardValue / 100) * percentageBaseAmount;
             } else {
+              // `mode: "amount"` means fixed incentive amount.
               incentive = rewardValue;
             }
 
             if (incentive <= 0) continue;
 
             const rewardTaskId = String(
-              allocationRule.allocationId || taskById || taskId
+              allocationRule.allocationId ||
+              taskById ||
+              taskId
             );
 
+            /*
+              Prevent duplicate incentive.
+          
+              Example:
+              The Coding & QC allocation ID may appear once as
+              activity.taskId and again as activity.taskBy.
+          
+              User gets that task incentive only once per lead.
+            */
             const rewardKey = [
               String(config._id),
               String(lead._id),
@@ -2097,7 +2585,7 @@ export const gettargetResult = async (req, res) => {
 
             awardedIncentives.add(rewardKey);
 
-            const user = ensureUser(userId);
+            const user = ensureUser(userId,null,activity.submissiondoneByModel);
 
             user.incentive += incentive;
 
@@ -2113,9 +2601,22 @@ export const gettargetResult = async (req, res) => {
               achieved: 0,
               balance: 0,
               incentive,
+
+              // Helps identify exactly which lead/task received incentive.
+              leadId: lead.leadId,
+              leadMongoId: String(lead._id),
+
+              activityIndex,
+              taskById,
+              taskId,
+
+              allocationId: rewardTaskId,
+              incentiveMode: rewardMode,
+
               products: [],
             });
           }
+
         }
       }
     }
@@ -2174,54 +2675,54 @@ export const gettargetResult = async (req, res) => {
       message: "Internal server error",
     });
   }
-};
+}
 
 ////////////
 /**
  * Generate months array between start and end dates
  */
 const generateMonthsArray = (startDate, endDate) => {
-    const months = [];
-    const current = new Date(startDate);
-    const end = new Date(endDate);
+  const months = [];
+  const current = new Date(startDate);
+  const end = new Date(endDate);
 
-    while (current <= end) {
-        months.push({
-            month: current.getMonth() + 1,
-            year: current.getFullYear()
-        });
-        current.setMonth(current.getMonth() + 1);
-    }
+  while (current <= end) {
+    months.push({
+      month: current.getMonth() + 1,
+      year: current.getFullYear()
+    });
+    current.setMonth(current.getMonth() + 1);
+  }
 
-    return months;
+  return months;
 };
 
 /**
  * Validate slab continuity
  */
 const validateSlabs = (slabs) => {
-    if (!slabs || slabs.length === 0) {
-        throw new Error('At least one slab is required');
+  if (!slabs || slabs.length === 0) {
+    throw new Error('At least one slab is required');
+  }
+
+  // Sort slabs by order
+  slabs.sort((a, b) => a.slabOrder - b.slabOrder);
+
+  // First slab must start from 0
+  if (slabs[0].fromValue !== 0) {
+    throw new Error('First slab must start from 0');
+  }
+
+  // Validate continuity
+  for (let i = 0;i < slabs.length - 1;i++) {
+    if (slabs[i].toValue !== slabs[i + 1].fromValue) {
+      throw new Error(
+        `Slab discontinuity found between slab ${i + 1} and ${i + 2}`
+      );
     }
+  }
 
-    // Sort slabs by order
-    slabs.sort((a, b) => a.slabOrder - b.slabOrder);
-
-    // First slab must start from 0
-    if (slabs[0].fromValue !== 0) {
-        throw new Error('First slab must start from 0');
-    }
-
-    // Validate continuity
-    for (let i = 0;i < slabs.length - 1;i++) {
-        if (slabs[i].toValue !== slabs[i + 1].fromValue) {
-            throw new Error(
-                `Slab discontinuity found between slab ${i + 1} and ${i + 2}`
-            );
-        }
-    }
-
-    return true;
+  return true;
 };
 
 // =====================================================
@@ -2233,155 +2734,155 @@ const validateSlabs = (slabs) => {
  * @route POST /api/targets
  */
 const createOrUpdateTargetConfiguration = async (req, res) => {
-    const session = await mongoose.startSession()
-    session.startTransaction()
+  const session = await mongoose.startSession()
+  session.startTransaction()
 
-    try {
-        const {
-            periodName,
-            branchId,
-            year,
-            startDate,
-            endDate,
-            categoryId,
-            measurementType,
-            allocations,
-            monthlyTargets
-        } = req.body
+  try {
+    const {
+      periodName,
+      branchId,
+      year,
+      startDate,
+      endDate,
+      categoryId,
+      measurementType,
+      allocations,
+      monthlyTargets
+    } = req.body
 
-        if (!periodName || !startDate || !endDate || !categoryId || !measurementType) {
-            await session.abortTransaction()
-            return res.status(400).json({
-                success: false,
-                message: "Missing required fields"
-            })
-        }
-
-        const category = await Category.findById(categoryId).session(session)
-        if (!category) {
-            await session.abortTransaction()
-            return res.status(404).json({
-                success: false,
-                message: "Category not found"
-            })
-        }
-
-        // Build allocationValues from allocations
-        const allocationValues = []
-        for (const alloc of allocations || []) {
-            const allocation = await Task.findById(alloc.allocationId).session(session)
-            if (!allocation) {
-                throw new Error(`Allocation ${alloc.allocationId} not found`)
-            }
-
-            allocationValues.push({
-                allocationId: alloc.allocationId,
-                allocationName: allocation.name,
-                value: alloc.value,
-                mode: alloc.mode
-            })
-        }
-
-        // Build monthlyTargets with user validation + slab validation
-        const preparedMonthlyTargets = []
-        for (const mt of monthlyTargets || []) {
-            const userTargets = []
-
-            for (const ut of mt.userTargets || []) {
-                const user = await Staff.findById(ut.userId).session(session)
-                if (!user) {
-                    throw new Error(`User ${ut.userId} not found`)
-                }
-
-                validateSlabs(ut.slabs)
-
-                userTargets.push({
-                    userId: ut.userId,
-                    slabs: ut.slabs
-                })
-            }
-
-            preparedMonthlyTargets.push({
-                month: mt.month,
-                year: mt.year,
-                userTargets
-            })
-        }
-
-        const normalizedStartDate = new Date(startDate)
-        const normalizedEndDate = new Date(endDate)
-
-        // 1) Find any overlapping config for this branch + category + year
-        // Overlap rule: existing.startDate <= newEnd && existing.endDate >= newStart
-        let config = await TargetConfiguration.findOne({
-            branch: branchId,
-            categoryId,
-            year,
-            startDate: { $lte: normalizedEndDate },
-            endDate: { $gte: normalizedStartDate }
-        }).session(session)
-
-        let message
-        let statusCode
-
-        if (config) {
-            // Overlap found → always update this existing config
-            // Example: existing April–May, new April–June → this doc becomes April–June
-            config.periodName = periodName
-            config.startDate = normalizedStartDate
-            config.endDate = normalizedEndDate
-            config.categoryId = categoryId
-            config.categoryName = category.category || category.name
-            config.measurementType = measurementType
-            config.allocationValues = allocationValues
-            config.monthlyTargets = preparedMonthlyTargets
-            config.status = "draft"
-            config.updatedBy = req.user?.id
-
-            await config.save({ session })
-
-            message = "Target configuration updated successfully"
-            statusCode = 200
-        } else {
-            // 2) No overlapping config at all → create brand new period
-            config = new TargetConfiguration({
-                periodName,
-                year,
-                branch: branchId,
-                startDate: normalizedStartDate,
-                endDate: normalizedEndDate,
-                categoryId,
-                categoryName: category.category || category.name,
-                measurementType,
-                allocationValues,
-                monthlyTargets: preparedMonthlyTargets,
-                status: "draft",
-                createdBy: req.user?.id
-            })
-
-            await config.save({ session })
-
-            message = "Target configuration created successfully"
-            statusCode = 201
-        }
-
-        await session.commitTransaction()
-
-        return res.status(statusCode).json({
-            success: true,
-            message,
-            data: config
-        })
-    } catch (error) {
-        await session.abortTransaction()
-        console.error("Error creating/updating target configuration:", error)
-        return res.status(500).json({
-            success: false,
-            message: error.message || "Failed to save target configuration"
-        })
-    } finally {
-        session.endSession()
+    if (!periodName || !startDate || !endDate || !categoryId || !measurementType) {
+      await session.abortTransaction()
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields"
+      })
     }
+
+    const category = await Category.findById(categoryId).session(session)
+    if (!category) {
+      await session.abortTransaction()
+      return res.status(404).json({
+        success: false,
+        message: "Category not found"
+      })
+    }
+
+    // Build allocationValues from allocations
+    const allocationValues = []
+    for (const alloc of allocations || []) {
+      const allocation = await Task.findById(alloc.allocationId).session(session)
+      if (!allocation) {
+        throw new Error(`Allocation ${alloc.allocationId} not found`)
+      }
+
+      allocationValues.push({
+        allocationId: alloc.allocationId,
+        allocationName: allocation.name,
+        value: alloc.value,
+        mode: alloc.mode
+      })
+    }
+
+    // Build monthlyTargets with user validation + slab validation
+    const preparedMonthlyTargets = []
+    for (const mt of monthlyTargets || []) {
+      const userTargets = []
+
+      for (const ut of mt.userTargets || []) {
+        const user = await Staff.findById(ut.userId).session(session)
+        if (!user) {
+          throw new Error(`User ${ut.userId} not found`)
+        }
+
+        validateSlabs(ut.slabs)
+
+        userTargets.push({
+          userId: ut.userId,
+          slabs: ut.slabs
+        })
+      }
+
+      preparedMonthlyTargets.push({
+        month: mt.month,
+        year: mt.year,
+        userTargets
+      })
+    }
+
+    const normalizedStartDate = new Date(startDate)
+    const normalizedEndDate = new Date(endDate)
+
+    // 1) Find any overlapping config for this branch + category + year
+    // Overlap rule: existing.startDate <= newEnd && existing.endDate >= newStart
+    let config = await TargetConfiguration.findOne({
+      branch: branchId,
+      categoryId,
+      year,
+      startDate: { $lte: normalizedEndDate },
+      endDate: { $gte: normalizedStartDate }
+    }).session(session)
+
+    let message
+    let statusCode
+
+    if (config) {
+      // Overlap found → always update this existing config
+      // Example: existing April–May, new April–June → this doc becomes April–June
+      config.periodName = periodName
+      config.startDate = normalizedStartDate
+      config.endDate = normalizedEndDate
+      config.categoryId = categoryId
+      config.categoryName = category.category || category.name
+      config.measurementType = measurementType
+      config.allocationValues = allocationValues
+      config.monthlyTargets = preparedMonthlyTargets
+      config.status = "draft"
+      config.updatedBy = req.user?.id
+
+      await config.save({ session })
+
+      message = "Target configuration updated successfully"
+      statusCode = 200
+    } else {
+      // 2) No overlapping config at all → create brand new period
+      config = new TargetConfiguration({
+        periodName,
+        year,
+        branch: branchId,
+        startDate: normalizedStartDate,
+        endDate: normalizedEndDate,
+        categoryId,
+        categoryName: category.category || category.name,
+        measurementType,
+        allocationValues,
+        monthlyTargets: preparedMonthlyTargets,
+        status: "draft",
+        createdBy: req.user?.id
+      })
+
+      await config.save({ session })
+
+      message = "Target configuration created successfully"
+      statusCode = 201
+    }
+
+    await session.commitTransaction()
+
+    return res.status(statusCode).json({
+      success: true,
+      message,
+      data: config
+    })
+  } catch (error) {
+    await session.abortTransaction()
+    console.error("Error creating/updating target configuration:", error)
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to save target configuration"
+    })
+  } finally {
+    session.endSession()
+  }
 }
 const deleteTargetConfiguration = async (req, res) => {
   try {
@@ -2568,66 +3069,66 @@ const deleteTargetConfiguration = async (req, res) => {
  * @route PUT /api/targets/:id/months/:monthId/users/:userId/slabs
  */
 const updateUserSlabs = async (req, res) => {
-    const session = await mongoose.startSession();
-    session.startTransaction();
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-    try {
-        const { id, monthId, userId } = req.params;
-        const { slabs } = req.body;
+  try {
+    const { id, monthId, userId } = req.params;
+    const { slabs } = req.body;
 
-        // Validate slabs
-        validateSlabs(slabs);
+    // Validate slabs
+    validateSlabs(slabs);
 
-        // Find target configuration
-        const targetConfig = await TargetConfiguration.findById(id);
-        if (!targetConfig) {
-            return res.status(404).json({
-                success: false,
-                message: 'Target configuration not found'
-            });
-        }
-
-        // Find monthly target
-        const monthlyTarget = targetConfig.monthlyTargets.id(monthId);
-        if (!monthlyTarget) {
-            return res.status(404).json({
-                success: false,
-                message: 'Monthly target not found'
-            });
-        }
-
-        // Find or create user target
-        let userTarget = monthlyTarget.userTargets.find(
-            (ut) => ut.userId.toString() === userId
-        );
-
-        if (userTarget) {
-            userTarget.slabs = slabs;
-        } else {
-            monthlyTarget.userTargets.push({
-                userId,
-                slabs
-            });
-        }
-
-        await targetConfig.save({ session });
-        await session.commitTransaction();
-
-        res.json({
-            success: true,
-            message: 'User slabs updated successfully',
-            data: targetConfig
-        });
-    } catch (error) {
-        await session.abortTransaction();
-        console.error('Error updating user slabs:', error);
-        res.status(500).json({
-            success: false,
-            message: error.message || 'Failed to update user slabs'
-        });
-    } finally {
-        session.endSession();
+    // Find target configuration
+    const targetConfig = await TargetConfiguration.findById(id);
+    if (!targetConfig) {
+      return res.status(404).json({
+        success: false,
+        message: 'Target configuration not found'
+      });
     }
+
+    // Find monthly target
+    const monthlyTarget = targetConfig.monthlyTargets.id(monthId);
+    if (!monthlyTarget) {
+      return res.status(404).json({
+        success: false,
+        message: 'Monthly target not found'
+      });
+    }
+
+    // Find or create user target
+    let userTarget = monthlyTarget.userTargets.find(
+      (ut) => ut.userId.toString() === userId
+    );
+
+    if (userTarget) {
+      userTarget.slabs = slabs;
+    } else {
+      monthlyTarget.userTargets.push({
+        userId,
+        slabs
+      });
+    }
+
+    await targetConfig.save({ session });
+    await session.commitTransaction();
+
+    res.json({
+      success: true,
+      message: 'User slabs updated successfully',
+      data: targetConfig
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    console.error('Error updating user slabs:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to update user slabs'
+    });
+  } finally {
+    session.endSession();
+  }
 };
 
 // =====================================================
@@ -2642,131 +3143,131 @@ const updateUserSlabs = async (req, res) => {
 
 
 const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
 ]
 
 const getDateFromPeriod = (periodName) => {
-    const match = periodName.match(/^(\w+)\s*-\s*(\w+)\s+(\d{4})$/)
+  const match = periodName.match(/^(\w+)\s*-\s*(\w+)\s+(\d{4})$/)
 
-    if (!match) return null
+  if (!match) return null
 
-    const [, fromMonth, , year] = match
+  const [, fromMonth, , year] = match
 
-    const monthIndex = months.indexOf(fromMonth)
+  const monthIndex = months.indexOf(fromMonth)
 
-    if (monthIndex === -1) return null
+  if (monthIndex === -1) return null
 
-    return new Date(Number(year), monthIndex, 1)
+  return new Date(Number(year), monthIndex, 1)
 }
 const getTargetConfigurations = async (req, res) => {
-    try {
-        const { periodName, branchId, year } = req.query
-        console.log('peridnme', periodName)
-        console.log("brancid", branchId)
-        if (!periodName || !branchId) {
-            return res.status(400).json({
-                success: false,
-                message: "periodName and branchId are required"
-            })
-        }
-
-        if (!mongoose.Types.ObjectId.isValid(branchId)) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid branchId"
-            })
-        }
-
-        const queryDate = getDateFromPeriod(periodName)
-
-        if (!queryDate) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid period format"
-            })
-        }
-
-        console.log("queryDate:", queryDate.toISOString())
-
-        const allTargets = await TargetConfiguration.find({
-            branch: new mongoose.Types.ObjectId(branchId),
-            year
-        })
-            .populate("categoryId", "name description")
-            .populate("allocationValues.allocationId", "name")
-            .populate("monthlyTargets.userTargets.userId", "name email")
-            .sort({ createdAt: 1 })
-
-        const periodMap = new Map()
-
-        for (const t of allTargets) {
-            const start = new Date(t.startDate)
-            const end = new Date(t.endDate)
-            const key = `${start.getTime()}|${end.getTime()}`
-
-            if (!periodMap.has(key)) {
-                periodMap.set(key, {
-                    _id: key,
-                    periodName: t.periodName,
-                    startDate: t.startDate,
-                    endDate: t.endDate
-                })
-            }
-        }
-
-        const periods = Array.from(periodMap.values()).sort(
-            (a, b) => new Date(a.startDate) - new Date(b.startDate)
-        )
-        console.log("allperiods", periods)
-
-        if (!periods.length) {
-            return res.json({
-                success: true,
-                data: {
-                    targets: [],
-                    periods: [],
-                    effectivePeriod: null,
-                    effectivePeriodName: null,
-                    effectiveStartDate: null,
-                    effectiveEndDate: null
-                }
-            })
-        }
-
-        let effectivePeriod = periods.find((p) => {
-            const start = new Date(p.startDate)
-            const end = new Date(p.endDate)
-            return start <= queryDate && end >= queryDate
-        })
-
-        if (!effectivePeriod) {
-            effectivePeriod = periods[periods.length - 1]
-        }
-
-        const targets = allTargets.filter((t) => {
-            return (
-                new Date(t.startDate).getTime() === new Date(effectivePeriod.startDate).getTime() &&
-                new Date(t.endDate).getTime() === new Date(effectivePeriod.endDate).getTime()
-            )
-        })
-        return res.json({
-            success: true,
-            data: {
-                targets,
-                allperiods: periods,
-                selectedperiod: effectivePeriod,
-                selectedPeriodName: effectivePeriod.periodName,
-
-            }
-        })
-    } catch (error) {
-        console.error("Error fetching target configurations:", error)
-        return res.status(500).json({
-            success: false,
-            message: "Failed to fetch target configurations"
-        })
+  try {
+    const { periodName, branchId, year } = req.query
+    console.log('peridnme', periodName)
+    console.log("brancid", branchId)
+    if (!periodName || !branchId) {
+      return res.status(400).json({
+        success: false,
+        message: "periodName and branchId are required"
+      })
     }
+
+    if (!mongoose.Types.ObjectId.isValid(branchId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid branchId"
+      })
+    }
+
+    const queryDate = getDateFromPeriod(periodName)
+
+    if (!queryDate) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid period format"
+      })
+    }
+
+    console.log("queryDate:", queryDate.toISOString())
+
+    const allTargets = await TargetConfiguration.find({
+      branch: new mongoose.Types.ObjectId(branchId),
+      year
+    })
+      .populate("categoryId", "name description")
+      .populate("allocationValues.allocationId", "name")
+      .populate("monthlyTargets.userTargets.userId", "name email")
+      .sort({ createdAt: 1 })
+
+    const periodMap = new Map()
+
+    for (const t of allTargets) {
+      const start = new Date(t.startDate)
+      const end = new Date(t.endDate)
+      const key = `${start.getTime()}|${end.getTime()}`
+
+      if (!periodMap.has(key)) {
+        periodMap.set(key, {
+          _id: key,
+          periodName: t.periodName,
+          startDate: t.startDate,
+          endDate: t.endDate
+        })
+      }
+    }
+
+    const periods = Array.from(periodMap.values()).sort(
+      (a, b) => new Date(a.startDate) - new Date(b.startDate)
+    )
+    console.log("allperiods", periods)
+
+    if (!periods.length) {
+      return res.json({
+        success: true,
+        data: {
+          targets: [],
+          periods: [],
+          effectivePeriod: null,
+          effectivePeriodName: null,
+          effectiveStartDate: null,
+          effectiveEndDate: null
+        }
+      })
+    }
+
+    let effectivePeriod = periods.find((p) => {
+      const start = new Date(p.startDate)
+      const end = new Date(p.endDate)
+      return start <= queryDate && end >= queryDate
+    })
+
+    if (!effectivePeriod) {
+      effectivePeriod = periods[periods.length - 1]
+    }
+
+    const targets = allTargets.filter((t) => {
+      return (
+        new Date(t.startDate).getTime() === new Date(effectivePeriod.startDate).getTime() &&
+        new Date(t.endDate).getTime() === new Date(effectivePeriod.endDate).getTime()
+      )
+    })
+    return res.json({
+      success: true,
+      data: {
+        targets,
+        allperiods: periods,
+        selectedperiod: effectivePeriod,
+        selectedPeriodName: effectivePeriod.periodName,
+
+      }
+    })
+  } catch (error) {
+    console.error("Error fetching target configurations:", error)
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch target configurations"
+    })
+  }
 }
 
 
@@ -2883,38 +3384,38 @@ const getTargetConfigurations = async (req, res) => {
  * @route GET /api/targets/:id
  */
 const getTargetConfigurationById = async (req, res) => {
-    try {
-        const { id } = req.params;
+  try {
+    const { id } = req.params;
 
-        const targetConfig = await TargetConfiguration.findById(id)
-            .populate('categoryId', 'name description')
-            .populate('allocationValues.allocationId', 'name description')
-            .populate('createdBy', 'name email');
+    const targetConfig = await TargetConfiguration.findById(id)
+      .populate('categoryId', 'name description')
+      .populate('allocationValues.allocationId', 'name description')
+      .populate('createdBy', 'name email');
 
-        if (!targetConfig) {
-            return res.status(404).json({
-                success: false,
-                message: 'Target configuration not found'
-            });
-        }
-
-        // Populate user details in monthly targets
-        const populatedConfig = await TargetConfiguration.populate(targetConfig, {
-            path: 'monthlyTargets.userTargets.userId',
-            select: 'name email'
-        });
-
-        res.json({
-            success: true,
-            data: populatedConfig
-        });
-    } catch (error) {
-        console.error('Error fetching target configuration:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to fetch target configuration'
-        });
+    if (!targetConfig) {
+      return res.status(404).json({
+        success: false,
+        message: 'Target configuration not found'
+      });
     }
+
+    // Populate user details in monthly targets
+    const populatedConfig = await TargetConfiguration.populate(targetConfig, {
+      path: 'monthlyTargets.userTargets.userId',
+      select: 'name email'
+    });
+
+    res.json({
+      success: true,
+      data: populatedConfig
+    });
+  } catch (error) {
+    console.error('Error fetching target configuration:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch target configuration'
+    });
+  }
 };
 
 // =====================================================
@@ -2926,43 +3427,43 @@ const getTargetConfigurationById = async (req, res) => {
  * @route PATCH /api/targets/:id/status
  */
 const updateTargetStatus = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { status } = req.body;
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
 
-        const validStatuses = ['draft', 'active', 'completed', 'cancelled'];
-        if (!validStatuses.includes(status)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Invalid status value'
-            });
-        }
-
-        const targetConfig = await TargetConfiguration.findByIdAndUpdate(
-            id,
-            { status },
-            { new: true, runValidators: true }
-        );
-
-        if (!targetConfig) {
-            return res.status(404).json({
-                success: false,
-                message: 'Target configuration not found'
-            });
-        }
-
-        res.json({
-            success: true,
-            message: 'Status updated successfully',
-            data: targetConfig
-        });
-    } catch (error) {
-        console.error('Error updating status:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to update status'
-        });
+    const validStatuses = ['draft', 'active', 'completed', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status value'
+      });
     }
+
+    const targetConfig = await TargetConfiguration.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true, runValidators: true }
+    );
+
+    if (!targetConfig) {
+      return res.status(404).json({
+        success: false,
+        message: 'Target configuration not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Status updated successfully',
+      data: targetConfig
+    });
+  } catch (error) {
+    console.error('Error updating status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update status'
+    });
+  }
 };
 
 // =====================================================
@@ -3029,72 +3530,72 @@ const updateTargetStatus = async (req, res) => {
  * @route GET /api/targets/user/:userId
  */
 const getUserTargets = async (req, res) => {
-    try {
-        const { userId } = req.params;
-        const { month, year, status = 'active' } = req.query;
+  try {
+    const { userId } = req.params;
+    const { month, year, status = 'active' } = req.query;
 
-        const query = {
-            'monthlyTargets.userTargets.userId': userId,
-            status
-        };
+    const query = {
+      'monthlyTargets.userTargets.userId': userId,
+      status
+    };
 
-        if (month && year) {
-            query['monthlyTargets.month'] = parseInt(month);
-            query['monthlyTargets.year'] = parseInt(year);
-        }
-
-        const targets = await TargetConfiguration.find(query)
-            .populate('categoryId', 'name')
-            .populate('allocationValues.allocationId', 'name')
-            .select(
-                'periodName startDate endDate categoryName measurementType allocationValues monthlyTargets status'
-            );
-
-        const userTargets = targets.map((target) => {
-            const relevantMonths = target.monthlyTargets
-                .filter((mt) => {
-                    const hasUser = mt.userTargets.some(
-                        (ut) => ut.userId.toString() === userId
-                    );
-                    if (!month || !year) return hasUser;
-                    return (
-                        hasUser &&
-                        mt.month === parseInt(month) &&
-                        mt.year === parseInt(year)
-                    );
-                })
-                .map((mt) => ({
-                    month: mt.month,
-                    year: mt.year,
-                    slabs:
-                        mt.userTargets.find((ut) => ut.userId.toString() === userId)
-                            ?.slabs || []
-                }));
-
-            return {
-                targetId: target._id,
-                periodName: target.periodName,
-                startDate: target.startDate,
-                endDate: target.endDate,
-                category: target.categoryName,
-                measurementType: target.measurementType,
-                allocations: target.allocationValues,
-                monthlyTargets: relevantMonths,
-                status: target.status
-            };
-        });
-
-        res.json({
-            success: true,
-            data: userTargets
-        });
-    } catch (error) {
-        console.error('Error fetching user targets:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to fetch user targets'
-        });
+    if (month && year) {
+      query['monthlyTargets.month'] = parseInt(month);
+      query['monthlyTargets.year'] = parseInt(year);
     }
+
+    const targets = await TargetConfiguration.find(query)
+      .populate('categoryId', 'name')
+      .populate('allocationValues.allocationId', 'name')
+      .select(
+        'periodName startDate endDate categoryName measurementType allocationValues monthlyTargets status'
+      );
+
+    const userTargets = targets.map((target) => {
+      const relevantMonths = target.monthlyTargets
+        .filter((mt) => {
+          const hasUser = mt.userTargets.some(
+            (ut) => ut.userId.toString() === userId
+          );
+          if (!month || !year) return hasUser;
+          return (
+            hasUser &&
+            mt.month === parseInt(month) &&
+            mt.year === parseInt(year)
+          );
+        })
+        .map((mt) => ({
+          month: mt.month,
+          year: mt.year,
+          slabs:
+            mt.userTargets.find((ut) => ut.userId.toString() === userId)
+              ?.slabs || []
+        }));
+
+      return {
+        targetId: target._id,
+        periodName: target.periodName,
+        startDate: target.startDate,
+        endDate: target.endDate,
+        category: target.categoryName,
+        measurementType: target.measurementType,
+        allocations: target.allocationValues,
+        monthlyTargets: relevantMonths,
+        status: target.status
+      };
+    });
+
+    res.json({
+      success: true,
+      data: userTargets
+    });
+  } catch (error) {
+    console.error('Error fetching user targets:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch user targets'
+    });
+  }
 };
 
 // =====================================================
@@ -3106,56 +3607,56 @@ const getUserTargets = async (req, res) => {
  * @route POST /api/targets/:id/months
  */
 const addMonthlyTargets = async (req, res) => {
-    const session = await mongoose.startSession();
-    session.startTransaction();
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-    try {
-        const { id } = req.params;
-        const { monthlyTargets } = req.body;
+  try {
+    const { id } = req.params;
+    const { monthlyTargets } = req.body;
 
-        const targetConfig = await TargetConfiguration.findById(id);
-        if (!targetConfig) {
-            return res.status(404).json({
-                success: false,
-                message: 'Target configuration not found'
-            });
-        }
-
-        for (const mt of monthlyTargets) {
-            const exists = targetConfig.monthlyTargets.some(
-                (existing) =>
-                    existing.month === mt.month && existing.year === mt.year
-            );
-
-            if (exists) {
-                throw new Error(`Target for ${mt.month}/${mt.year} already exists`);
-            }
-
-            for (const ut of mt.userTargets) {
-                validateSlabs(ut.slabs);
-            }
-
-            targetConfig.monthlyTargets.push(mt);
-        }
-
-        await targetConfig.save({ session });
-        await session.commitTransaction();
-
-        res.json({
-            success: true,
-            message: 'Monthly targets added successfully',
-            data: targetConfig
-        });
-    } catch (error) {
-        await session.abortTransaction();
-        console.error('Error adding monthly targets:', error);
-        res.status(500).json({
-            success: false,
-            message: error.message || 'Failed to add monthly targets'
-        });
-    } finally {
-        session.endSession();
+    const targetConfig = await TargetConfiguration.findById(id);
+    if (!targetConfig) {
+      return res.status(404).json({
+        success: false,
+        message: 'Target configuration not found'
+      });
     }
+
+    for (const mt of monthlyTargets) {
+      const exists = targetConfig.monthlyTargets.some(
+        (existing) =>
+          existing.month === mt.month && existing.year === mt.year
+      );
+
+      if (exists) {
+        throw new Error(`Target for ${mt.month}/${mt.year} already exists`);
+      }
+
+      for (const ut of mt.userTargets) {
+        validateSlabs(ut.slabs);
+      }
+
+      targetConfig.monthlyTargets.push(mt);
+    }
+
+    await targetConfig.save({ session });
+    await session.commitTransaction();
+
+    res.json({
+      success: true,
+      message: 'Monthly targets added successfully',
+      data: targetConfig
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    console.error('Error adding monthly targets:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to add monthly targets'
+    });
+  } finally {
+    session.endSession();
+  }
 };
 
 // =====================================================
@@ -3167,81 +3668,81 @@ const addMonthlyTargets = async (req, res) => {
  * @route POST /api/targets/achievements
  */
 const recordAchievement = async (req, res) => {
-    try {
-        const {
-            targetConfigId,
-            userId,
-            month,
-            year,
-            allocationId,
-            achievedValue
-        } = req.body;
+  try {
+    const {
+      targetConfigId,
+      userId,
+      month,
+      year,
+      allocationId,
+      achievedValue
+    } = req.body;
 
-        const targetConfig = await TargetConfiguration.findById(targetConfigId);
-        if (!targetConfig) {
-            return res.status(404).json({
-                success: false,
-                message: 'Target configuration not found'
-            });
-        }
-
-        const monthlyTarget = targetConfig.monthlyTargets.find(
-            (mt) => mt.month === month && mt.year === year
-        );
-
-        if (!monthlyTarget) {
-            return res.status(404).json({
-                success: false,
-                message: 'Monthly target not found'
-            });
-        }
-
-        const userTarget = monthlyTarget.userTargets.find(
-            (ut) => ut.userId.toString() === userId
-        );
-
-        if (!userTarget) {
-            return res.status(404).json({
-                success: false,
-                message: 'User target not found'
-            });
-        }
-
-        const matchingSlab = userTarget.slabs.find(
-            (slab) =>
-                achievedValue >= slab.fromValue && achievedValue < slab.toValue
-        );
-
-        const achievement = new TargetAchievement({
-            targetConfigId,
-            userId,
-            month,
-            year,
-            allocationId,
-            achievedValue,
-            slabMatched: matchingSlab
-                ? {
-                    slabOrder: matchingSlab.slabOrder,
-                    fromValue: matchingSlab.fromValue,
-                    toValue: matchingSlab.toValue
-                }
-                : null
-        });
-
-        await achievement.save();
-
-        res.status(201).json({
-            success: true,
-            message: 'Achievement recorded successfully',
-            data: achievement
-        });
-    } catch (error) {
-        console.error('Error recording achievement:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to record achievement'
-        });
+    const targetConfig = await TargetConfiguration.findById(targetConfigId);
+    if (!targetConfig) {
+      return res.status(404).json({
+        success: false,
+        message: 'Target configuration not found'
+      });
     }
+
+    const monthlyTarget = targetConfig.monthlyTargets.find(
+      (mt) => mt.month === month && mt.year === year
+    );
+
+    if (!monthlyTarget) {
+      return res.status(404).json({
+        success: false,
+        message: 'Monthly target not found'
+      });
+    }
+
+    const userTarget = monthlyTarget.userTargets.find(
+      (ut) => ut.userId.toString() === userId
+    );
+
+    if (!userTarget) {
+      return res.status(404).json({
+        success: false,
+        message: 'User target not found'
+      });
+    }
+
+    const matchingSlab = userTarget.slabs.find(
+      (slab) =>
+        achievedValue >= slab.fromValue && achievedValue < slab.toValue
+    );
+
+    const achievement = new TargetAchievement({
+      targetConfigId,
+      userId,
+      month,
+      year,
+      allocationId,
+      achievedValue,
+      slabMatched: matchingSlab
+        ? {
+          slabOrder: matchingSlab.slabOrder,
+          fromValue: matchingSlab.fromValue,
+          toValue: matchingSlab.toValue
+        }
+        : null
+    });
+
+    await achievement.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Achievement recorded successfully',
+      data: achievement
+    });
+  } catch (error) {
+    console.error('Error recording achievement:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to record achievement'
+    });
+  }
 };
 
 // =====================================================
@@ -3253,49 +3754,49 @@ const recordAchievement = async (req, res) => {
  * @route GET /api/targets/achievements/report
  */
 const getAchievementReport = async (req, res) => {
-    try {
-        const { userId, targetConfigId, month, year } = req.query;
+  try {
+    const { userId, targetConfigId, month, year } = req.query;
 
-        const query = {};
-        if (userId) query.userId = userId;
-        if (targetConfigId) query.targetConfigId = targetConfigId;
-        if (month) query.month = parseInt(month);
-        if (year) query.year = parseInt(year);
+    const query = {};
+    if (userId) query.userId = userId;
+    if (targetConfigId) query.targetConfigId = targetConfigId;
+    if (month) query.month = parseInt(month);
+    if (year) query.year = parseInt(year);
 
-        const achievements = await TargetAchievement.find(query)
-            .populate('targetConfigId', 'periodName categoryName measurementType')
-            .populate('userId', 'name email')
-            .populate('allocationId', 'name')
-            .sort({ achievementDate: -1 });
+    const achievements = await TargetAchievement.find(query)
+      .populate('targetConfigId', 'periodName categoryName measurementType')
+      .populate('userId', 'name email')
+      .populate('allocationId', 'name')
+      .sort({ achievementDate: -1 });
 
-        const summary = achievements.reduce((acc, achievement) => {
-            const key = `${achievement.allocationId._id}`;
-            if (!acc[key]) {
-                acc[key] = {
-                    allocationName: achievement.allocationId.name,
-                    totalAchieved: 0,
-                    count: 0
-                };
-            }
-            acc[key].totalAchieved += achievement.achievedValue;
-            acc[key].count += 1;
-            return acc;
-        }, {});
+    const summary = achievements.reduce((acc, achievement) => {
+      const key = `${achievement.allocationId._id}`;
+      if (!acc[key]) {
+        acc[key] = {
+          allocationName: achievement.allocationId.name,
+          totalAchieved: 0,
+          count: 0
+        };
+      }
+      acc[key].totalAchieved += achievement.achievedValue;
+      acc[key].count += 1;
+      return acc;
+    }, {});
 
-        res.json({
-            success: true,
-            data: {
-                achievements,
-                summary: Object.values(summary)
-            }
-        });
-    } catch (error) {
-        console.error('Error fetching achievement report:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to fetch achievement report'
-        });
-    }
+    res.json({
+      success: true,
+      data: {
+        achievements,
+        summary: Object.values(summary)
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching achievement report:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch achievement report'
+    });
+  }
 };
 
 // =====================================================
@@ -3303,14 +3804,14 @@ const getAchievementReport = async (req, res) => {
 // =====================================================
 
 export {
-    createOrUpdateTargetConfiguration,
-    updateUserSlabs,
-    getTargetConfigurations,
-    getTargetConfigurationById,
-    updateTargetStatus,
-    deleteTargetConfiguration,
-    getUserTargets,
-    addMonthlyTargets,
-    recordAchievement,
-    getAchievementReport
+  createOrUpdateTargetConfiguration,
+  updateUserSlabs,
+  getTargetConfigurations,
+  getTargetConfigurationById,
+  updateTargetStatus,
+  deleteTargetConfiguration,
+  getUserTargets,
+  addMonthlyTargets,
+  recordAchievement,
+  getAchievementReport
 };

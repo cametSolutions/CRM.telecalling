@@ -9162,6 +9162,7 @@ export const GetcollectionLeads = async (req, res) => {
   try {
     const { selectedBranch, isAccountant, loggeduserby, verified } = req.query;
 
+
     if (!mongoose.Types.ObjectId.isValid(selectedBranch)) {
       return res.status(400).json({
         message: "Invalid branch id"
