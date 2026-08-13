@@ -798,7 +798,7 @@ const activityLogItemSchema = new mongoose.Schema(
 
 const leadSchema = new mongoose.Schema(
   {
-    leadId: { type: String, required: true, trim: true },
+    leadId: { type: String, required: true, trim: true,unique: true, },
     leadDate: { type: Date, default: null },
     customerName: {
       type: mongoose.Schema.Types.ObjectId,

@@ -365,6 +365,8 @@ function ProductDropdown({
   setTakenLicense,
   setCustomerTableData
 }) {
+  console.log(index)
+  console.log(isReadOnly)
   const emptyRow = {
     licenseNumber: "",
     licenseNumbers: [],
@@ -404,6 +406,7 @@ function ProductDropdown({
       prod.productName?.toLowerCase() || prod.serviceName?.toLowerCase() || ""
     return name.includes(q)
   })
+  console.log(filtered)
 
   const clearPreviousTakenLicense = (previousProductKey) => {
     if (!previousProductKey || !setTakenLicense) return
@@ -416,6 +419,7 @@ function ProductDropdown({
   }
 
   const removeOldLicensesFromCustomerTable = () => {
+    console.log("hh")
     const oldSingleLicense = item?.licenseNumber
     const oldMultiLicenses = (item?.licenseNumbers || []).map((lic) =>
       String(lic?.licenseNumber)
@@ -425,7 +429,9 @@ function ProductDropdown({
       ...(oldSingleLicense ? [String(oldSingleLicense)] : []),
       ...oldMultiLicenses
     ]
-
+console.log(licensesToRemove)
+console.log(oldSingleLicense)
+console.log(oldMultiLicenses)
     if (!licensesToRemove.length || !setCustomerTableData) return
 
     setCustomerTableData((prev) =>
@@ -436,6 +442,7 @@ function ProductDropdown({
   }
 
   const applySelection = (prod) => {
+    console.log(prod)
     const previousProductKey = item?.productorServiceName || ""
 
     const branchdata = (prod?.selected || [])
@@ -474,10 +481,12 @@ function ProductDropdown({
     updated = updated.filter(
       (row, idx) => idx === index || !row?.isDefaultService
     )
-
+console.log("hhh")
     if (!prod) {
+console.log("hhh")
       clearPreviousTakenLicense(previousProductKey)
       removeOldLicensesFromCustomerTable()
+
 
       updated[index] = {
         ...updated[index],
@@ -513,6 +522,7 @@ function ProductDropdown({
     const netAmount = Math.round(rawNet)
 
     clearPreviousTakenLicense(previousProductKey)
+    console.log("hhhh")
     removeOldLicensesFromCustomerTable()
 
     updated[index] = {
@@ -582,6 +592,8 @@ function ProductDropdown({
   }
 
   const handleInputChange = (e) => {
+    console.log(index)
+    if (index > 0) return
     const value = e.target.value
     setSearch(value)
     setOpen(true)
@@ -618,7 +630,7 @@ function ProductDropdown({
         <p className="text-red-400">{selectionMessage.productmessage}</p>
       )}
 
-      {search && !isReadOnly && (
+      {search && !isReadOnly && index === 0 && (
         <button
           type="button"
           onMouseDown={(e) => {
@@ -1632,6 +1644,8 @@ const LeadMaster = ({
   // }
   const updateLicense = (index, licenseNumber) => {
     console.log(licenseNumber)
+console.log(selectedleadlist)
+console.log(index)
     setSelectedLeadList((prev) =>
       prev.map((row, i) =>
         i === index
@@ -1687,27 +1701,47 @@ const LeadMaster = ({
         )
       }))
     )
+console.log(index)
+console.log(customerTableData)
+    // setcustomerTableData((prev) => {
+    //   const existingIndex = prev.findIndex((row) => row?.sourceIndex === index)
 
-    setcustomerTableData((prev) => {
-      const existingIndex = prev.findIndex((row) => row?.sourceIndex === index)
+    //   const newRow = {
+    //     licenseNumber: licenseValue,
+    //     productName: item?.productorServiceName,
+    //     productorServiceId: item?.productorServiceId,
+    //     sourceIndex: index
+    //   }
 
-      const newRow = {
-        licenseNumber: licenseValue,
-        productName: item?.productorServiceName,
-        productorServiceId: item?.productorServiceId,
-        sourceIndex: index
-      }
+    //   if (existingIndex !== -1) {
+    //     return prev.map((row, i) =>
+    //       i === existingIndex ? { ...row, ...newRow } : row
+    //     )
+    //   }
 
-      if (existingIndex !== -1) {
-        return prev.map((row, i) =>
-          i === existingIndex ? { ...row, ...newRow } : row
-        )
-      }
-
-      return [...prev, newRow]
-    })
+    //   return [...prev, newRow]
+    // })
+// setcustomerTableData((prev) => [
+//   ...prev,
+//   {
+//     licenseNumber: licenseValue,
+//     productName: item?.productorServiceName,
+//     productorServiceId: item?.productorServiceId,
+//     sourceIndex: index,
+//   },
+// ])
+setcustomerTableData((prev) => {
+  const newRow = {
+    licenseNumber: licenseValue,
+    productName: item?.productorServiceName,
+    productorServiceId: item?.productorServiceId,
+    sourceIndex: index+1,
   }
 
+  return [prev[0], newRow]
+})
+  }
+console.log(customerTableData)
   const handleLicenseBlur = async (index, licenseNumber) => {
     if (!String(licenseNumber).trim()) return false
 
@@ -1717,7 +1751,6 @@ const LeadMaster = ({
       const { data } = await api.get(
         `/customer/checkLicense?licenseNumber=${licenseNumber}&leadDocId=${Data[0]?._id}`
       )
-
 
       if (data.exists) {
         toast.error(`License ${licenseNumber} already exists`)
@@ -3242,17 +3275,18 @@ const LeadMaster = ({
               item?.netAmount ??
               0
             console.log(productAmount)
-console.log(existing?.nextDueTax)
-console.log(existingTag?.nextDueTax)
-console.log(item?.hsn)
-console.log(item?.actualHsn)
-const r=getPositiveInteger(
-                  existing?.nextDueTax,
-                    existingTag?.nextDueTax ,
-                    item?.hsn ,
-                    item?.actualHsn
-                ) ?? 0
-console.log(r)
+            console.log(existing?.nextDueTax)
+            console.log(existingTag?.nextDueTax)
+            console.log(item?.hsn)
+            console.log(item?.actualHsn)
+            const r =
+              getPositiveInteger(
+                existing?.nextDueTax,
+                existingTag?.nextDueTax,
+                item?.hsn,
+                item?.actualHsn
+              ) ?? 0
+            console.log(r)
             return {
               licensenumber: lic?.licenseNumber || "",
               nextDue: existing?.nextDue ?? "",
@@ -3312,10 +3346,10 @@ console.log(r)
                 // item?.hsn ??
                 // item?.actualHsn,
                 getPositiveInteger(
-                  existing?.nextDueTax ,
-                    existingTag?.nextDueTax ,
-                    item?.hsn ,
-                    item?.actualHsn
+                  existing?.nextDueTax,
+                  existingTag?.nextDueTax,
+                  item?.hsn,
+                  item?.actualHsn
                 ) ?? 0,
               discountAmount:
                 existing?.discountAmount ?? item?.discountAmount ?? 0,
