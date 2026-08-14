@@ -95,6 +95,7 @@ console.log(selectedreduxbranch)
       loggedUser &&
       `/lead/collectionLeads?selectedBranch=${selectedreduxbranch}&verified=${verifiedLead}&isAccountant=${isdepartmentisAccountant}&loggeduserby=${loggedUser._id}`
   )
+console.log(selectedreduxbranch)
 console.log(verifiedLead)
 console.log(isdepartmentisAccountant)
 console.log(selectedreduxbranch)

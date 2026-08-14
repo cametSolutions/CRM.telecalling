@@ -485,7 +485,7 @@ console.log("hhh")
     if (!prod) {
 console.log("hhh")
       clearPreviousTakenLicense(previousProductKey)
-      removeOldLicensesFromCustomerTable()
+      // removeOldLicensesFromCustomerTable()
 
 
       updated[index] = {
@@ -523,7 +523,7 @@ console.log("hhh")
 
     clearPreviousTakenLicense(previousProductKey)
     console.log("hhhh")
-    removeOldLicensesFromCustomerTable()
+    // removeOldLicensesFromCustomerTable()
 
     updated[index] = {
       ...updated[index],
