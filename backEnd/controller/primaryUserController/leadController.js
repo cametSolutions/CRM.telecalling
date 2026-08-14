@@ -95,7 +95,7 @@ export const GetallfollowupList = async (req, res) => {
     const hasValidDates = Boolean(start && end);
     console.log("hasvalidates", hasValidDates)
     const hasFrom = Boolean(from && from !== "null" && from !== "undefined");
-    const isNewMode = isViewMode || hasValidHeader 
+    const isNewMode = isViewMode || hasValidHeader
     const isClosedFollowupMode = pendingfollowup === "false" && !isViewMode;
 
     let query = {};
@@ -311,9 +311,9 @@ export const GetallfollowupList = async (req, res) => {
 
           return true;
         });
-console.log("length",matchedAllocations.length)
+      console.log("length", matchedAllocations.length)
       if (matchedAllocations.length === 0) continue;
-console.log("matcchedallocationsss",matchedAllocations)
+      console.log("matcchedallocationsss", matchedAllocations)
       const lastAlloc = matchedAllocations[matchedAllocations.length - 1];
       const lastIndex = lastAlloc.index;
 
@@ -3725,7 +3725,7 @@ export const Leadclosing = async (req, res) => {
       customerDoc.email = data.email;
       customerDoc.landline = data.phone;
       customerDoc.partner = data.partner;
-      customerDoc.createdFrom = "Lead";
+      // customerDoc.createdFrom = "Lead";
       customerDoc.selected = selected;
 
       const updatedcustomer = await customerDoc.save({ session });
@@ -7451,7 +7451,8 @@ export const RejectTask = async (req, res) => {
       { _id: leadObjectId },
       {
         $set: {
-          [`activityLog.${matchedIndex}.allocationChanged`]: true
+          [`activityLog.${matchedIndex}.allocationChanged`]: true,
+          taskfromFollowup: false
         }
       }
     );

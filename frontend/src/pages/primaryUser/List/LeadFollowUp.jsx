@@ -229,8 +229,8 @@ const LeadFollowUp = () => {
       safeState?.viewMode === "product" &&
       !!loggedUser &&
       !!safeState?.branchId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // keep cache 10 minutes
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 5 * 60 * 1000, // keep cache 05 minutes
     queryFn: async () => {
       const res = await api.get(
         `/lead/getallLeadFollowUpforselectedProduct?branchSelected=${safeState.branchId}` +
@@ -1957,6 +1957,12 @@ console.log("h")
               (lead) =>
                 lead.allocatedfollowup && lead.allocatedTaskClosed === false
             )
+console.log(nonsubmittedtakleads)
+const bb=nonsubmittedtakleads.filter((item)=>item.leadId==="00058")
+console.log(bb)
+console.log(ownFollow)
+const aa=ownFollow.filter((item)=>item.leadId==="00058")
+console.log(aa)
             const allocatedData = normalizeTableData(nonsubmittedtakleads)
             setallocatednetAmount(TotalAmount(nonsubmittedtakleads))
             setAllocatedLeads(allocatedData)
@@ -1968,6 +1974,7 @@ console.log("h")
               ...taskSubmittedLeads
             ]
             const Data = normalizeTableData(mergedall)
+console.log(Data)
             // then store it in state
             setnetTotalAmount(TotalAmount(mergedall))
 console.log("Hhh")
