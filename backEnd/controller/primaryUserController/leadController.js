@@ -585,6 +585,7 @@ export const GetallfollowupList = async (req, res) => {
         ...lead,
         leadBy,
         paymentHistory: populatedpaymentHistory,
+        originalpaymentHistory: populatedpaymentHistory,
         leadFor: populatedLeadFor,
         allocatedTo,
         allocatedBy,
@@ -6855,7 +6856,7 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
       currentPaid + receivedAmount;
 
     const updatedBalance =
-      leadNetAmount - updatedTotalPaid;
+      leadNetAmount - updatedTotalPaid
 
     // 7) Build update doc
     const updateDoc = {
@@ -6874,7 +6875,7 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
       updateDoc.$set.reallocatedTo = true;
       updateDoc.$set.leadConvertedDate = new Date();
       updateDoc.$set.leadClosed = true;
-      updateDoc.$set.leadClosedDate = new Date();
+      // updateDoc.$set.leadClosedDate = new Date();
     }
 
     // lead lost
@@ -9447,13 +9448,14 @@ export const GetcollectionLeads = async (req, res) => {
             originalIndex
           }))
           .filter((history) => {
-            if (accountantMode) {
-              return history.paymentVerified === verifiedBool;
-            }
+            // if (accountantMode) {
+            //   return history.paymentVerified === verifiedBool;
+            // }
+            return history.paymentVerified === verifiedBool;
 
-            return loggeduserby
-              ? String(history.receivedBy) === String(loggeduserby)
-              : true;
+            // return loggeduserby
+            //   ? String(history.receivedBy) === String(loggeduserby)
+            //   : true;
           });
 
         const hydratedActivityLog = activityLogs.map((activity) => ({
@@ -9518,6 +9520,7 @@ export const GetcollectionLeads = async (req, res) => {
           leadBy: getUser(lead.leadBy, lead.leadByModel),
           leadFor: hydratedLeadFor,
           paymentHistory: hydratedPayments,
+          originalpaymentHistory: lead?.paymentHistory,
           activityLog: hydratedActivityLog,
           taskallocatedTo: lastAllocatedActivity?.taskallocatedTo || null,
           taskallocatedBy: lastAllocatedActivity?.taskallocatedBy || null,

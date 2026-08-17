@@ -429,9 +429,9 @@ function ProductDropdown({
       ...(oldSingleLicense ? [String(oldSingleLicense)] : []),
       ...oldMultiLicenses
     ]
-console.log(licensesToRemove)
-console.log(oldSingleLicense)
-console.log(oldMultiLicenses)
+    console.log(licensesToRemove)
+    console.log(oldSingleLicense)
+    console.log(oldMultiLicenses)
     if (!licensesToRemove.length || !setCustomerTableData) return
 
     setCustomerTableData((prev) =>
@@ -481,12 +481,11 @@ console.log(oldMultiLicenses)
     updated = updated.filter(
       (row, idx) => idx === index || !row?.isDefaultService
     )
-console.log("hhh")
+    console.log("hhh")
     if (!prod) {
-console.log("hhh")
+      console.log("hhh")
       clearPreviousTakenLicense(previousProductKey)
       // removeOldLicensesFromCustomerTable()
-
 
       updated[index] = {
         ...updated[index],
@@ -1497,6 +1496,10 @@ const LeadMaster = ({
           (sel) => sel.branch_id === selectedBranch
         )
         console.log(item?.partner)
+        console.log(item?.country)
+        if (item?.country) {
+          console.log(item?.country)
+        }
         return {
           value: item?._id,
           label: item?.customerName,
@@ -1505,7 +1508,13 @@ const LeadMaster = ({
           license: matchingSelected?.licensenumber || "",
           email: item?.email,
           phone: item?.landline,
-          partner: item?.partner
+          partner: item?.partner,
+          country: item?.country,
+          state: item?.state,
+          registrationType: item?.registrationType,
+          city: item?.city,
+          pincode: item?.pincode,
+          contactPerson: item?.contactPerson
         }
       })
       setCustomerOptions(options)
@@ -1644,8 +1653,8 @@ const LeadMaster = ({
   // }
   const updateLicense = (index, licenseNumber) => {
     console.log(licenseNumber)
-console.log(selectedleadlist)
-console.log(index)
+    console.log(selectedleadlist)
+    console.log(index)
     setSelectedLeadList((prev) =>
       prev.map((row, i) =>
         i === index
@@ -1701,8 +1710,8 @@ console.log(index)
         )
       }))
     )
-console.log(index)
-console.log(customerTableData)
+    console.log(index)
+    console.log(customerTableData)
     // setcustomerTableData((prev) => {
     //   const existingIndex = prev.findIndex((row) => row?.sourceIndex === index)
 
@@ -1721,27 +1730,27 @@ console.log(customerTableData)
 
     //   return [...prev, newRow]
     // })
-// setcustomerTableData((prev) => [
-//   ...prev,
-//   {
-//     licenseNumber: licenseValue,
-//     productName: item?.productorServiceName,
-//     productorServiceId: item?.productorServiceId,
-//     sourceIndex: index,
-//   },
-// ])
-setcustomerTableData((prev) => {
-  const newRow = {
-    licenseNumber: licenseValue,
-    productName: item?.productorServiceName,
-    productorServiceId: item?.productorServiceId,
-    sourceIndex: index+1,
-  }
+    // setcustomerTableData((prev) => [
+    //   ...prev,
+    //   {
+    //     licenseNumber: licenseValue,
+    //     productName: item?.productorServiceName,
+    //     productorServiceId: item?.productorServiceId,
+    //     sourceIndex: index,
+    //   },
+    // ])
+    setcustomerTableData((prev) => {
+      const newRow = {
+        licenseNumber: licenseValue,
+        productName: item?.productorServiceName,
+        productorServiceId: item?.productorServiceId,
+        sourceIndex: index + 1
+      }
 
-  return [prev[0], newRow]
-})
+      return [prev[0], newRow]
+    })
   }
-console.log(customerTableData)
+  console.log(customerTableData)
   const handleLicenseBlur = async (index, licenseNumber) => {
     if (!String(licenseNumber).trim()) return false
 
@@ -1810,23 +1819,23 @@ console.log(customerTableData)
     console.log("h")
     setModalOpen(true)
     clearMainerrors()
-    if (Data && Data.length) {
-      setValueModal("customerName", Data[0]?.customerName?.customerName)
-      setValueModal("customerid", Data[0]?.customerName?._id)
-      setValueModal("leadid", Data[0]?._id)
-      setValueModal("email", Data[0]?.customerName?.email)
-      setValueModal("mobile", Data[0]?.customerName?.mobile)
-      setValueModal("landline", Data[0]?.customerName?.landline)
-      setValueModal("contactPerson", Data[0]?.customerName?.contactPerson)
-      setValueModal("address1", Data[0]?.customerName?.address1)
-      setValueModal("pincode", Data[0]?.customerName?.pincode)
-      setValueModal("partner", Data[0]?.customerName?.partner?._id)
-      setValueModal("registrationType", Data[0]?.customerName?.registrationType)
-      setValueModal("gstNo", Data[0]?.customerName?.gstNo)
-      setValueModal("city", Data[0]?.customerName?.city)
-      setValueModal("country", Data[0]?.customerName?.country)
-      console.log("hhh")
-    }
+    // if (Data && Data.length) {
+    //   setValueModal("customerName", Data[0]?.customerName?.customerName)
+    //   setValueModal("customerid", Data[0]?.customerName?._id)
+    //   setValueModal("leadid", Data[0]?._id)
+    //   setValueModal("email", Data[0]?.customerName?.email)
+    //   setValueModal("mobile", Data[0]?.customerName?.mobile)
+    //   setValueModal("landline", Data[0]?.customerName?.landline)
+    //   setValueModal("contactPerson", Data[0]?.customerName?.contactPerson)
+    //   setValueModal("address1", Data[0]?.customerName?.address1)
+    //   setValueModal("pincode", Data[0]?.customerName?.pincode)
+    //   setValueModal("partner", Data[0]?.customerName?.partner?._id)
+    //   setValueModal("registrationType", Data[0]?.customerName?.registrationType)
+    //   setValueModal("gstNo", Data[0]?.customerName?.gstNo)
+    //   setValueModal("city", Data[0]?.customerName?.city)
+    //   setValueModal("country", Data[0]?.customerName?.country)
+    //   console.log("hhh")
+    // }
   }
 
   const Industries = [
@@ -2264,6 +2273,22 @@ console.log(customerTableData)
   console.log(detailsForm)
   const handleSelectedCustomer = (option) => {
     console.log(option)
+
+    setValueModal("customerName", option?.label)
+    setValueModal("customerid", option?.value)
+    setValueModal("email", option?.email)
+
+    setValueModal("address1", option?.address1)
+    setValueModal("mobile", option?.mobile)
+    setValueModal("landline", option?.landline)
+    setValueModal("contactPerson", option?.contactPerson)
+    setValueModal("pincode", option?.pincode)
+    setValueModal("partner", option?.partner)
+    setValueModal("registrationType", option?.registrationType)
+    setValueModal("gstNo", option?.gstNo)
+    setValueModal("city", option?.city)
+    setValueModal("country", option?.country)
+
     console.log(allcustomer)
     const matchedCustomer = allcustomer?.find((item) => {
       return item?._id === option?.value
@@ -5225,54 +5250,64 @@ convertexcel
                             type="tel"
                             {...registerModal("mobile", {
                               required: "Mobile is Required",
-                              // validate: (value) => {
-                              //   const phone = String(value ?? "").trim()
 
-                              //   if (!phone) return "Mobile is Required"
-
-                              //   const countryCode = selectedCountrymodal || "IN"
-                              //   console.log(countryCode)
-                              //   try {
-                              //     const parsed = parsePhoneNumberFromString(
-                              //       phone,
-                              //       countryCode
-                              //     )
-                              //     console.log(parsed)
-                              //     console.log(phone)
-                              //     console.log(countryCode)
-                              //     if (!parsed || !parsed.isValid()) {
-                              //       return "Invalid mobile number for selected country"
-                              //     }
-
-                              //     return true
-                              //   } catch (error) {
-                              //     return "Invalid mobile number"
-                              //   }
-                              // }
                               validate: (value) => {
-                                const phone = value.trim()
+                                const phone = String(value ?? "").trim()
 
-                                if (!phone) return "Mobile is Required"
+                                if (!phone) {
+                                  return "Mobile number is required"
+                                }
+
+                                const country =
+                                  typeof selectedCountrymodal === "string"
+                                    ? selectedCountrymodal.trim().toUpperCase()
+                                    : selectedCountrymodal?.value
+                                        ?.trim()
+                                        ?.toUpperCase() ||
+                                      selectedCountrymodal?.code
+                                        ?.trim()
+                                        ?.toUpperCase() ||
+                                      ""
+
+                                // Country selection is required for every number.
+                                if (!country) {
+                                  return "Select a country before entering a mobile number"
+                                }
 
                                 try {
                                   const parsed = phone.startsWith("+")
                                     ? parsePhoneNumberFromString(phone)
-                                    : parsePhoneNumberFromString(
-                                        phone,
-                                        selectedCountrymodal
-                                      )
+                                    : parsePhoneNumberFromString(phone, country)
 
                                   if (!parsed) {
-                                    return "Invalid mobile number"
+                                    return `Enter a valid mobile number for ${country}`
+                                  }
+
+                                  if (!parsed.isPossible()) {
+                                    return `Mobile number is too short or too long for ${country}`
                                   }
 
                                   if (!parsed.isValid()) {
-                                    return "Invalid mobile number"
+                                    return `Enter a valid mobile number for ${country}`
+                                  }
+
+                                  // Ensures +91... cannot be accepted when user selected AE, US, etc.
+                                  if (
+                                    parsed.country &&
+                                    parsed.country !== country
+                                  ) {
+                                    return `Mobile number does not match the selected country (${country})`
                                   }
 
                                   return true
-                                } catch {
-                                  return "Invalid mobile number"
+                                } catch (error) {
+                                  console.error("Mobile validation failed:", {
+                                    phone,
+                                    country,
+                                    error: error?.message
+                                  })
+
+                                  return `Unable to validate the mobile number for ${country}`
                                 }
                               }
                             })}
