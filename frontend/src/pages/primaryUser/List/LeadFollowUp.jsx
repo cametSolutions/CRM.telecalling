@@ -103,6 +103,7 @@ const LeadFollowUp = () => {
   const [ishavePayment, setishavePayment] = useState(false)
   console.log(ishavePayment)
   const [collectionupdatedata, setcollectionupdateData] = useState({})
+  console.log(collectionupdatedata)
   const [showfollowupModal, setshowFollowupModal] = useState(false)
   const [isdropdownOpen, setIsdropdownOpen] = useState(false)
   const [taskClosed, setfollowupClosed] = useState(false)
@@ -1402,13 +1403,13 @@ const LeadFollowUp = () => {
   console.log(followupUrl)
   // '/lead/getallLeadFollowUp?branchSelected=66f7b26c1e7129afd9aee189&loggeduserid=67220ce51c400b86242fe178&role=undefined&pendingfollowup=true&viewmode=true&startDate=2026-07-01&endDate=2026-07-31&header=Total Leads&from=followupReport'
 
-const isQueryReady = Boolean(followupUrl);
+  const isQueryReady = Boolean(followupUrl)
   const {
     data: loggedusersallocatedleads,
     isLoading: loading,
-  isPending,
-  isFetching,
-isError,
+    isPending,
+    isFetching,
+    isError,
     error,
     refetch: refreshHook
   } = useQuery({
@@ -1435,11 +1436,9 @@ isError,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false
   })
-const showInitialSkeleton =
-  !isQueryReady ||
-  isPending ||
-  (isFetching && !loggedusersallocatedleads);
-console.log(showInitialSkeleton)
+  const showInitialSkeleton =
+    !isQueryReady || isPending || (isFetching && !loggedusersallocatedleads)
+  console.log(showInitialSkeleton)
   console.log(loggedusersallocatedleads)
   // console.log(url)
   console.log(loggedusersallocatedleads?.followupLeads?.length)
@@ -1675,9 +1674,9 @@ console.log(showInitialSkeleton)
     // if (!loggedusersallocatedleads || !dates.endDate || !loggedUser) return
     if (loggedusersallocatedleads && dates.endDate && loggedUser) {
       const leads = loggedusersallocatedleads.followupLeads
-console.log(leads)
-const aaa=leads.filter((item)=>item.leadId==="00085")
-console.log(aaa)
+      console.log(leads)
+      const aaa = leads.filter((item) => item.leadId === "00085")
+      console.log(aaa)
       if (safeState?.header === "Total Leads") {
         const lea = leads.map((item) => item.leadId)
 
@@ -1717,7 +1716,7 @@ console.log(aaa)
         })
         const groupedData = normalizeTableData(groupedLeads)
         setnetTotalAmount(TotalAmount(filteredLeads))
-console.log("Hhh")
+        console.log("Hhh")
         setTableData(groupedData)
       } else {
         if (safeState?.viewMode === "overDue") {
@@ -1758,7 +1757,7 @@ console.log("Hhh")
           })
           const groupedData = normalizeTableData(groupedLeads)
           setnetTotalAmount(TotalAmount(overdueLeads))
-console.log("h")
+          console.log("h")
           setTableData(groupedData)
         } else if (safeState?.viewMode === "dueToday") {
           const today = new Date()
@@ -1957,12 +1956,14 @@ console.log("h")
               (lead) =>
                 lead.allocatedfollowup && lead.allocatedTaskClosed === false
             )
-console.log(nonsubmittedtakleads)
-const bb=nonsubmittedtakleads.filter((item)=>item.leadId==="00058")
-console.log(bb)
-console.log(ownFollow)
-const aa=ownFollow.filter((item)=>item.leadId==="00058")
-console.log(aa)
+            console.log(nonsubmittedtakleads)
+            const bb = nonsubmittedtakleads.filter(
+              (item) => item.leadId === "00058"
+            )
+            console.log(bb)
+            console.log(ownFollow)
+            const aa = ownFollow.filter((item) => item.leadId === "00058")
+            console.log(aa)
             const allocatedData = normalizeTableData(nonsubmittedtakleads)
             setallocatednetAmount(TotalAmount(nonsubmittedtakleads))
             setAllocatedLeads(allocatedData)
@@ -1974,10 +1975,10 @@ console.log(aa)
               ...taskSubmittedLeads
             ]
             const Data = normalizeTableData(mergedall)
-console.log(Data)
+            console.log(Data)
             // then store it in state
             setnetTotalAmount(TotalAmount(mergedall))
-console.log("Hhh")
+            console.log("Hhh")
             setTableData(Data)
           } else if (pending && !ownFollowUp) {
             if (safeState?.staffId) {
@@ -2340,7 +2341,7 @@ console.log("Hhh")
   }
 
   const handlefollowupdate = (Id, docId) => {
-console.log("hhh")
+    console.log("hhh")
     setfollowupDateModal(true)
     setSelectedLeadId(Id)
     setselectedDocid(docId)
@@ -2485,7 +2486,7 @@ console.log("hhh")
 
       if (response.status === 200) {
         toast.success(response?.data?.message)
-
+setcollectionupdateData({})
         setIsEditable(false)
         setselectedDocid(null)
         setSelectedLeadId(null)
@@ -2526,6 +2527,7 @@ console.log("hhh")
     setFormData((prev) => ({
       ...prev,
       netAmount: Item.netAmount,
+      followupType: "infollowup",
       balanceAmount: Item.balanceAmount,
       customerName: Item?.customerName?.customerName,
       followUpDate: new Date().toISOString().split("T")[0]
@@ -2561,7 +2563,7 @@ console.log("hhh")
       setIsAllocated(true)
     }
     setfollowupClosed(!pending)
-console.log("hh")
+    console.log("hh")
     setselectedDocid(Item._id)
     setSelectedLeadId(Item.leadId)
   }
@@ -2577,15 +2579,18 @@ console.log("hh")
     setHistoryList([])
     // Reset payment session flag
     setPaymentUpdatedInSession(false)
+    setcollectionupdateData({})
   }
-
+  console.log(formData?.followupType)
   // MODIFIED: Reset payment session flag when closing follow-up modal
   const handleCloseFollowupModal = () => {
+    console.log(formData)
     setshowFollowupModal(false)
     setPaymentUpdatedInSession(false)
     setishavePayment(false)
     setcollectionUpdateModal(false)
     setisdemofollowedNotClosed(false)
+    setcollectionupdateData({})
   }
 
   // [Keep all your existing component code - LeadRow, renderTable, etc.]
@@ -2983,7 +2988,6 @@ console.log("hh")
   )
   const currentData = statusAllocated ? allocatedLeads : tableData
 
-
   const hasLeads = () => {
     if (!Array.isArray(currentData) || currentData.length === 0) return false
     return currentData.some(
@@ -3177,45 +3181,45 @@ console.log("hh")
                 <NoDataAvailable />
               )}
             </div> */}
-<div className="relative min-h-0 overflow-auto rounded-lg bg-white mx-2 mb-3 shadow-xl md:mx-3">
-  {showInitialSkeleton ? (
-    <SkeletonTable rows={7} />
-  ) : isError ? (
-    <div className="flex min-h-40 flex-col items-center justify-center gap-2 px-4 text-center">
-      <p className="text-sm font-semibold text-red-600">
-        Failed to load follow-up leads
-      </p>
+            <div className="relative min-h-0 overflow-auto rounded-lg bg-white mx-2 mb-3 shadow-xl md:mx-3">
+              {showInitialSkeleton ? (
+                <SkeletonTable rows={7} />
+              ) : isError ? (
+                <div className="flex min-h-40 flex-col items-center justify-center gap-2 px-4 text-center">
+                  <p className="text-sm font-semibold text-red-600">
+                    Failed to load follow-up leads
+                  </p>
 
-      <p className="text-xs text-gray-500">
-        {error?.response?.data?.message ||
-          error?.message ||
-          "Please try again."}
-      </p>
+                  <p className="text-xs text-gray-500">
+                    {error?.response?.data?.message ||
+                      error?.message ||
+                      "Please try again."}
+                  </p>
 
-      <button
-        type="button"
-        onClick={() => refreshHook()}
-        className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
-      >
-        Retry
-      </button>
-    </div>
-  ) : hasLeads() ? (
-    renderTable(currentData)
-  ) : (
-    <NoDataAvailable />
-  )}
+                  <button
+                    type="button"
+                    onClick={() => refreshHook()}
+                    className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+                  >
+                    Retry
+                  </button>
+                </div>
+              ) : hasLeads() ? (
+                renderTable(currentData)
+              ) : (
+                <NoDataAvailable />
+              )}
 
-  {/* Background refresh overlay: old data remains visible */}
-  {isFetching && !showInitialSkeleton && hasLeads() && (
-    <div className="absolute inset-0 z-20 grid place-items-center bg-white/35 backdrop-blur-[1px]">
-      <div className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-xs font-medium text-blue-700 shadow-md">
-        <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
-        Refreshing leads...
-      </div>
-    </div>
-  )}
-</div>
+              {/* Background refresh overlay: old data remains visible */}
+              {isFetching && !showInitialSkeleton && hasLeads() && (
+                <div className="absolute inset-0 z-20 grid place-items-center bg-white/35 backdrop-blur-[1px]">
+                  <div className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-xs font-medium text-blue-700 shadow-md">
+                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+                    Refreshing leads...
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         {showModal && (
