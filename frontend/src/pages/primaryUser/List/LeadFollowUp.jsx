@@ -1429,8 +1429,8 @@ const LeadFollowUp = () => {
       return res.data?.data
     },
     enabled: isQueryReady,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // keep cache 10 minutes
+    staleTime:30*1000, // 30 seconds
+    gcTime: 5 * 60 * 1000, // keep cache 05 minutes
 
     refetchOnMount: false,
     refetchOnWindowFocus: false,

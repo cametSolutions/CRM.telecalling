@@ -77,15 +77,17 @@ export default function CollectionUpdate() {
   const [targetData, settargetData] = useState([])
   console.log(targetData)
   const [openModal, setOpenModal] = useState(false)
-const [selectedCollection,setselectedCollection]=useState({})
+  const [selectedCollection, setselectedCollection] = useState({})
   const [productlist, setproductList] = useState([])
   const [achievedproducts, setacheivedProducts] = useState([])
   const [selectedPeriod, setselectedPeriod] = useState("")
   const navigate = useNavigate()
   const { data: companybranches } = UseFetch("/branch/getBranch")
   // const {data}=UseFetch("/lead/fix-leadverified")
-const selectedreduxbranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
-console.log(selectedreduxbranch)
+  const selectedreduxbranch = useSelector(
+    (branch) => branch.companyBranch.selectedBranch
+  )
+  console.log(selectedreduxbranch)
   const {
     data: collectionlead,
     loading,
@@ -95,16 +97,16 @@ console.log(selectedreduxbranch)
       loggedUser &&
       `/lead/collectionLeads?selectedBranch=${selectedreduxbranch}&verified=${verifiedLead}&isAccountant=${isdepartmentisAccountant}&loggeduserby=${loggedUser._id}`
   )
-console.log(selectedreduxbranch)
-console.log(verifiedLead)
-console.log(isdepartmentisAccountant)
-console.log(selectedreduxbranch)
-console.log(collectionlead)
-const a=collectionlead?.filter((item)=>item.null)
-console.log(a)
+  console.log(selectedreduxbranch)
+  console.log(verifiedLead)
+  console.log(isdepartmentisAccountant)
+  console.log(selectedreduxbranch)
+  console.log(collectionlead)
+  const a = collectionlead?.filter((item) => item.null)
+  console.log(a)
   const { data: branchProduct } = UseFetch(
-selectedreduxbranch&&
-    `/product/getallbranchProduct?branch=${selectedreduxbranch}`
+    selectedreduxbranch &&
+      `/product/getallbranchProduct?branch=${selectedreduxbranch}`
   )
   console.log(selectedCompanyBranch)
   console.log(verifiedLead)
@@ -120,9 +122,7 @@ selectedreduxbranch&&
     if (companybranches && companybranches.length > 0) {
       const userData = getLocalStorageItem("user")
       console.log(userData.department?.department)
-      if (
-        userData.department?.code ==="DEPARTMENT2"
-      ) {
+      if (userData.department?.code === "DEPARTMENT2") {
         setisdepartmentAccountant(true)
       }
 
@@ -223,9 +223,9 @@ selectedreduxbranch&&
         (item) => item.leadId === selectedLeadId
       )
       console.log(updatedhistorylist)
-setselectedCollection(updatedhistorylist[0])
+      setselectedCollection(updatedhistorylist[0])
       setpaymentHistoryList(updatedhistorylist[0]?.paymentHistory)
-console.log(updatedhistorylist[0])
+      console.log(updatedhistorylist[0])
       setBalanceAmount(updatedhistorylist[0].balanceAmount)
     }
   })
@@ -362,7 +362,7 @@ console.log(updatedhistorylist[0])
     console.log("Hh")
     setsubmitLoader(true)
     console.log(formData)
-return
+    
 
     try {
       const response = await api.post("/lead/collectionUPdate", formData)
@@ -946,78 +946,46 @@ return
           <div className="h-auto overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3 bg-white">
             <>
               {(() => {
-//                 const currentData = isforcefullyclosed
-//                   ? forcefullyclosedLeads
-//                   : tableData
-//                 console.log(currentData)
-//                 const hasLeads =
-//                   Array.isArray(currentData) &&
-//                   currentData.some(
-//                     (group) =>
-//                       Array.isArray(group.leads) && group.leads.length > 0
-//                   )
-//                 console.log(hasLeads)
-//                 if (!hasLeads || currentData.length === 0) {
-//                   return loading ? (
-//                     <div className="flex justify-center py-6">
-//                       <SkeletonTable  />
-//                     </div>
-//                   ) : (
-//                     <div className="text-center text-gray-500 py-6">
-//                       No Data Available
-//                     </div>
-//                   )
-//                 }
+                const currentData = isforcefullyclosed
+                  ? forcefullyclosedLeads
+                  : tableData
 
-//                 return currentData.map(({ staffName, leads }, index) => (
-//                   <div key={staffName || `group-${index}`} className="mb-6">
-//                     {staffName && (
-//                       <h3 className="text-base font-semibold text-gray-800 mb-2">
-//                         {staffName}{" "}
-//                         <span className="text-sm text-gray-500">
-//                           ({leads?.length || 0} Leads)
-//                         </span>
-//                       </h3>
-//                     )}
+                const hasLeads =
+                  Array.isArray(currentData) &&
+                  currentData.some(
+                    (group) =>
+                      Array.isArray(group?.leads) && group.leads.length > 0
+                  )
 
-                  
-//  {loading? (
-//  <SkeletonTable/>
-                    
-//                     ) : (
-//                        renderTable(leads)
-//                     )}
-                   
-//                   </div>
-//                 ))
+                if (loading) {
+                  return <SkeletonTable />
+                }
 
+                if (
+                  !Array.isArray(currentData) ||
+                  currentData.length === 0 ||
+                  !hasLeads
+                ) {
+                  return (
+                    <div className="py-6 text-center text-gray-500">
+                      No Data Available
+                    </div>
+                  )
+                }
 
-const currentData = isforcefullyclosed ? forcefullyclosedLeads : tableData
-
-const hasLeads =
-  Array.isArray(currentData) &&
-  currentData.some(
-    (group) => Array.isArray(group?.leads) && group.leads.length > 0
-  )
-
-if (loading) {
-  return <SkeletonTable />
-}
-
-if (!Array.isArray(currentData) || currentData.length === 0 || !hasLeads) {
-  return <div className="py-6 text-center text-gray-500">No Data Available</div>
-}
-
-return currentData.map(({ staffName, leads }, index) => (
-  <div key={staffName || `group-${index}`} className="mb-6">
-    {staffName && (
-      <h3 className="mb-2 text-base font-semibold text-gray-800">
-        {staffName} <span className="text-sm text-gray-500">({leads?.length || 0} Leads)</span>
-      </h3>
-    )}
-    {renderTable(leads)}
-  </div>
-))
+                return currentData.map(({ staffName, leads }, index) => (
+                  <div key={staffName || `group-${index}`} className="mb-6">
+                    {staffName && (
+                      <h3 className="mb-2 text-base font-semibold text-gray-800">
+                        {staffName}{" "}
+                        <span className="text-sm text-gray-500">
+                          ({leads?.length || 0} Leads)
+                        </span>
+                      </h3>
+                    )}
+                    {renderTable(leads)}
+                  </div>
+                ))
               })()}
             </>
           </div>
@@ -1047,7 +1015,7 @@ return currentData.map(({ staffName, leads }, index) => (
       {paymenthistoryModal && (
         <PaymentHistoryModal
           data={paymentHistoryList}
-selectedLead={selectedCollection}
+          selectedLead={selectedCollection}
           isChecked={isChecked}
           isforcefullyclosed={isforcefullyclosed}
           balanceAmount={balanceAmount}
