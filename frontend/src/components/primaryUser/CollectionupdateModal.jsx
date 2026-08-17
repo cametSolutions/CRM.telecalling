@@ -443,7 +443,7 @@ export function CollectionupdateModal({
           return {
             id: crypto.randomUUID(),
             label: p.productorServiceId?.productName ?? "Product",
-            productorServiceId: p.productorServiceId?._id,
+            productorServiceId: p.productorServiceId?._id||p?.productorServiceId,
             productorServicemodel: p.productorServicemodel ?? "Product",
             netAmount: String(net),
             receivedAmount: "",
