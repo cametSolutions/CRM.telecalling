@@ -548,7 +548,7 @@ console.log(matchingProducts)
 console.log(callId)
     setLoader(true)
     const response = await fetch(
-      `https://crm.camet.in/api/customer/getcallregister/${callId}`,
+      `https://crmtest.camet.in/api/customer/getcallregister/${callId}`,
       {
         method: "GET",
         credentials: "include" // This allows cookies to be sent with the request
@@ -1158,7 +1158,7 @@ Problem:    \t${selectedText}
     let url
     if (user.role === "Admin") {
       // url = `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${user.role}`
-      url = `https://crm.camet.in/api/customer/getCustomer?search=${query}&role=${user.role}`
+      url = `https://crmtest.camet.in/api/customer/getCustomer?search=${query}&role=${user.role}`
     } else {
       const branches = JSON.stringify(branch)
 
@@ -1172,7 +1172,7 @@ Problem:    \t${selectedText}
       url =
         branches &&
         branches.length > 0 &&
-        `https://crm.camet.in/api/customer/getCustomer?search=${query}&role=${
+        `https://crmtest.camet.in/api/customer/getCustomer?search=${query}&role=${
           user.role
         }&userBranch=${encodeURIComponent(branches)}`
     }

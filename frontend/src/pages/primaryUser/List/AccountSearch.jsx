@@ -355,7 +355,7 @@ console.log(value)
         //   user.role
         // }&userBranch=${encodeURIComponent(branch)}`
 
-        const url = `https://crm.camet.in/api/customer/getCustomer?search=${value}&role=${
+        const url = `https://crmtest.camet.in/api/customer/getCustomer?search=${value}&role=${
           user.role
         }&userBranch=${encodeURIComponent(branch)}`
 
