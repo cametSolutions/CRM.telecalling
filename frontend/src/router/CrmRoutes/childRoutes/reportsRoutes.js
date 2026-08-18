@@ -8,6 +8,7 @@ import FollowupSummaryDashboard from "../../../pages/primaryUser/List/FollowupSu
 import SalesFunnel from "../../../pages/primaryUser/List/SalesFunnel";
 import DailyStaffActivity from "../../../pages/primaryUser/List/DailyStaffActivity";
 import MarketingDashboard from "../../../components/primaryUser/MarketingDashboard";
+import IncentiveReport from "../../../components/primaryUser/IncentiveReport";
 const reportsRoutes = [
   { path: "/admin/reports/summary", component: Summary },
 
@@ -28,7 +29,8 @@ const reportsRoutes = [
     component: FollowupSummaryDashboard,
   },
   { path: "/admin/reports/sales-funel", component: SalesFunnel },
-  { path: "/admin/reports/dailystaffactivity", component: DailyStaffActivity }
+  { path: "/admin/reports/dailystaffactivity", component: DailyStaffActivity },
+  { path: "/admin//reports/incentiveReport", component: IncentiveReport }
 
 ];
 

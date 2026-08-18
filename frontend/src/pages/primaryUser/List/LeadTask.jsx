@@ -154,8 +154,10 @@ const LeadTask = () => {
  const { data, error, loading, refreshHook } = UseFetch(
     loggedUser &&
       reduxselectedBranch &&
-      `/lead/getrespectedleadTask?userid=${loggedUser._id}&role=${loggedUser.role}&ownTask=${ownTask}`
+      `/lead/getrespectedleadTask?userid=${loggedUser._id}&role=${loggedUser.role}&ownTask=${ownTask}&branchSelected=${reduxselectedBranch}`
+
   )
+console.log(data)
   const { data: branchProduct } = UseFetch(
     `/product/getallbranchProduct?branch=${reduxselectedBranch}`
   )

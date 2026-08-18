@@ -327,56 +327,6 @@
 //   }
 // }
 
-// export const Login = async (req, res) => {
-//   const { emailOrMobile, password } = req.body
-//   try {
-//     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-//     let user
-//     let branch
-//     // Determine if the input is an email or a mobile number
-//     if (emailRegex.test(emailOrMobile)) {
-
-//       user = await Admin.findOne({ email: emailOrMobile }).populate({ path: "department", select: "department" }).lean()
-
-//       if (!user) {
-//         user = await Staff.findOne({ email: emailOrMobile }).populate({ path: "department", select: "department" }).lean()
-//       }
-//     } else {
-//       // If it's a mobile number
-//       user = await Admin.findOne({ mobile: emailOrMobile }).populate({ path: "department", select: "department" }).lean()
-//       if (!user) {
-//         user = await Staff.findOne({ mobile: emailOrMobile }).populate({ path: "department", select: "department" }).lean()
-
-//       }
-//     }
-//     if (!user) {
-//       return res.status(400).json({ message: "Invalid login credentials" })
-//     }
-
-//     const isMatch = await bcrypt.compare(password, user.password)
-//     if (!isMatch) {
-//       return res.status(400).json({ message: "Invalid login credentials" })
-//     }
-//     console.log(user)
-//     const token = generateToken(res, user)
-//     console.log("dddddddddddddddddddddddddddddddd", token)
-
-//     if (token) {
-//       const { password, ...userwithoutpassword } = user
-
-//       res.status(200).json({
-//         message: "Login successful",
-//         token,
-
-//         User: userwithoutpassword,
-//         branch
-//       })
-//     }
-//   } catch (error) {
-//     console.error("Login error:", error.message)
-//     res.status(500).json({ message: "Server error" })
-//   }
-// }
 
 // export const Logout = (req, res) => {
 //   try {
@@ -7476,56 +7426,6 @@ export const StaffRegister = async (req, res) => {
 //   }
 // }
 
-// export const Login = async (req, res) => {
-//   const { emailOrMobile, password } = req.body
-//   try {
-//     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-//     let user
-//     let branch
-//     // Determine if the input is an email or a mobile number
-//     if (emailRegex.test(emailOrMobile)) {
-
-//       user = await Admin.findOne({ email: emailOrMobile }).populate({ path: "department", select: "department" }).lean()
-
-//       if (!user) {
-//         user = await Staff.findOne({ email: emailOrMobile }).populate({ path: "department", select: "department" }).lean()
-//       }
-//     } else {
-//       // If it's a mobile number
-//       user = await Admin.findOne({ mobile: emailOrMobile }).populate({ path: "department", select: "department" }).lean()
-//       if (!user) {
-//         user = await Staff.findOne({ mobile: emailOrMobile }).populate({ path: "department", select: "department" }).lean()
-
-//       }
-//     }
-//     if (!user) {
-//       return res.status(400).json({ message: "Invalid login credentials" })
-//     }
-
-//     const isMatch = await bcrypt.compare(password, user.password)
-//     if (!isMatch) {
-//       return res.status(400).json({ message: "Invalid login credentials" })
-//     }
-//     console.log(user)
-//     const token = generateToken(res, user)
-//     console.log("dddddddddddddddddddddddddddddddd", token)
-
-//     if (token) {
-//       const { password, ...userwithoutpassword } = user
-
-//       res.status(200).json({
-//         message: "Login successful",
-//         token,
-
-//         User: userwithoutpassword,
-//         branch
-//       })
-//     }
-//   } catch (error) {
-//     console.error("Login error:", error.message)
-//     res.status(500).json({ message: "Server error" })
-//   }
-// }
 export const UpdateUserandAdmin = async (req, res) => {
   const { userId, userData, tabledata, imageData = {} } = req.body   // ✅ default imageData too, avoids a crash if it's ever missing entirely
   const { profileUrl, documentUrl } = imageData                       // ✅ no default here — undefined vs "" vs real value are now distinguishable
@@ -7670,13 +7570,7 @@ export const Login = async (req, res) => {
     if (token) {
       const { password, ...userwithoutpassword } = user
 
-      // return res.status(200).json({
-      //   message: "Login successful",
-      //   token,
-      //   User: userwithoutpassword,
-      //   branch,
-      //   passwordExpired: false
-      // })
+      
       return res.status(200).json({
         message: "Login successful",
         token,
@@ -7698,6 +7592,7 @@ export const Login = async (req, res) => {
     })
   }
 }
+
 export const changePassword = async (req, res) => {
   try {
     const { userId, currentPassword, newPassword, confirmPassword } = req.body
