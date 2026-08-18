@@ -1429,7 +1429,7 @@ const LeadFollowUp = () => {
       return res.data?.data
     },
     enabled: isQueryReady,
-    staleTime:30*1000, // 30 seconds
+    staleTime: 30 * 1000, // 30 seconds
     gcTime: 5 * 60 * 1000, // keep cache 05 minutes
 
     refetchOnMount: false,
@@ -1677,6 +1677,7 @@ const LeadFollowUp = () => {
       console.log(leads)
       const aaa = leads.filter((item) => item.leadId === "00085")
       console.log(aaa)
+      console.log(safeState?.header)
       if (safeState?.header === "Total Leads") {
         const lea = leads.map((item) => item.leadId)
 
@@ -1698,12 +1699,15 @@ const LeadFollowUp = () => {
 
           // 4️⃣ Match with user
           return (
-            lastFollowupAllocation.taskallocatedTo.toString() ===
-            safeState?.staffId?.toString()
+            (
+              lastFollowupAllocation.taskallocatedTo?._id ||
+              lastFollowupAllocation.taskallocatedTo
+            ).toString() === safeState?.staffId?.toString()
           )
         })
 
         const groupedLeads = {}
+        console.log(filteredLeads)
         let grandTotal = 0
         filteredLeads.forEach((lead) => {
           const assignedTo = lead?.allocatedTo?.name
@@ -1715,6 +1719,7 @@ const LeadFollowUp = () => {
           groupedLeads[assignedTo].push(lead)
         })
         const groupedData = normalizeTableData(groupedLeads)
+        console.log(groupedData)
         setnetTotalAmount(TotalAmount(filteredLeads))
         console.log("Hhh")
         setTableData(groupedData)
@@ -2486,7 +2491,7 @@ const LeadFollowUp = () => {
 
       if (response.status === 200) {
         toast.success(response?.data?.message)
-setcollectionupdateData({})
+        setcollectionupdateData({})
         setIsEditable(false)
         setselectedDocid(null)
         setSelectedLeadId(null)
@@ -2623,10 +2628,14 @@ setcollectionupdateData({})
     const isAllocatedToeditable = Array.isArray(item.activityLog)
       ? item.activityLog.some(
           (it) =>
-            it?.taskallocatedTo?._id === loggedUser?._id &&
+            (it?.taskallocatedTo?._id === loggedUser?._id ||
+              it?.taskallocatedTo === loggedUser?._id) &&
             it?.taskClosed === false
         )
       : false
+    const isleadclosed = item?.leadConfirmed
+    console.log(isleadclosed)
+    console.log(item.activityLog)
     // const customerName = item?.customerName?.customerName.toUpperCase()
     // const shouldShowTooltipCustomer = customerName.length > 20
     // const shouldShowTooltipEmail = item?.email.length > 5
@@ -2765,13 +2774,15 @@ setcollectionupdateData({})
               className="px-2 py-2 border border-gray-300"
               onClick={(e) => e.stopPropagation()}
             >
-              <button
-                type="button"
-                onClick={() => handleFollowUp(item)}
-                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-white bg-amber-500 rounded hover:bg-amber-600 transition-colors w-full justify-center"
-              >
-                <History className="w-3.5 h-3.5" />
-              </button>
+              {!isleadclosed && (
+                <button
+                  type="button"
+                  onClick={() => handleFollowUp(item)}
+                  className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-white bg-amber-500 rounded hover:bg-amber-600 transition-colors w-full justify-center"
+                >
+                  <History className="w-3.5 h-3.5" />
+                </button>
+              )}
             </td>
           )}
           <td className="px-3 py-2 text-sm font-semibold text-green-700 border border-gray-300 whitespace-nowrap text-right">

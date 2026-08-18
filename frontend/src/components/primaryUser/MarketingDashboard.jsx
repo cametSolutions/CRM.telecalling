@@ -500,16 +500,20 @@ const MarketingDashboard = () => {
 
   const handleFollowupCellClick = (header, count) => {
     console.log("hhh")
- const breadcrumb = [
+    console.log(header)
+    const breadcrumb = [
       { label: "Report", path: "" },
-      { label: "Marketing Dashboard", path: "/staff/reports/markettingdashboard" },
+      {
+        label: "Marketing Dashboard",
+        path: "/staff/reports/markettingdashboard"
+      },
       { label: "Lead Follow-Up", path: "" }
     ]
     if (header === "Lead Count") {
       navigate(
         `/${user.role === "Admin" ? "admin" : "staff"}/transaction/lead/allLeads`,
         {
-          state: { staffId: row.staffId,breadcrumb }
+          state: { staffId: row.staffId, breadcrumb, isReadOnly: false }
         }
       )
     } else if (header === "Due Today" && count > 0) {
@@ -525,7 +529,8 @@ const MarketingDashboard = () => {
             from: "followupReport",
             istotal: true,
             filterRange: date,
-breadcrumb
+            breadcrumb,
+            isReadOnly: false
           }
         }
       )
@@ -542,7 +547,8 @@ breadcrumb
             from: "followupReport",
             istotal: true,
             filterRange: date,
-breadcrumb
+            breadcrumb,
+            isReadOnly: false
           }
         }
       )
@@ -560,7 +566,8 @@ breadcrumb
             from: "followupReport",
             istotal: true,
             filterRange: date,
-breadcrumb
+            breadcrumb,
+            isReadOnly: false
           }
         }
       )
@@ -579,7 +586,8 @@ breadcrumb
             pending: false,
             istotal: true,
             filterRange: date,
-breadcrumb
+            breadcrumb,
+            isReadOnly: false
           }
         }
       )
@@ -597,7 +605,8 @@ breadcrumb
 
             istotal: true,
             filterRange: date,
-breadcrumb
+            breadcrumb,
+            isReadOnly: false
           }
         }
       )
@@ -613,7 +622,8 @@ breadcrumb
           ownlead: true,
 
           branchId: reduxselectedBranch,
-breadcrumb
+          breadcrumb,
+          isReadOnly: false
         }
       })
     }

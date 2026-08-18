@@ -85,6 +85,10 @@ console.log(customer)
   const loggeduserBranch = useSelector(
     (state) => state.companyBranch.loggeduserbranches
   )
+const [licenseRemoveConfirm, setLicenseRemoveConfirm] = useState({
+  open: false,
+  licenseNo: null
+})
   console.log(loggeduserBranch)
   const [detailsData, setdetailsData] = useState({})
   const [isSaved, setIsSaved] = useState(false)
@@ -689,14 +693,16 @@ console.log(customer.country)
   const handleDelete = (index) => {
     setTableData((prev) => prev.filter((_, i) => i !== index))
   }
-
+console.log(tableData)
+console.log("hhhh")
   const validateSelectedLeadList = (selectedleadlist = []) => {
+console.log(selectedleadlist)
     const hasAdditionalService = selectedleadlist.some(
       (row) =>
         String(row?.productorservicetype || "").toLowerCase() ===
         "additionalservice"
     )
-
+console.log(hasAdditionalService)
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
@@ -805,6 +811,22 @@ console.log(customer.country)
   }
 
   const savePopupData = () => {
+if (popupType === "Additionalservice") {
+    const selectedLicenses = getValues("taggedLicenses") || []
+
+    if (selectedLicenses.length === 0) {
+console.log("Hhh")
+console.log(tableData)
+      setError("taggedLicenses", {
+        type: "manual",
+        message: "Select at least one tagged license number for the additional service."
+      })
+      return
+    }
+
+    clearErrors("taggedLicenses")
+  }
+console.log("hhhh")
     if (duplicatelicense) {
       toast.error("License already exists")
       return
@@ -1065,9 +1087,235 @@ console.log(customer.country)
     setPendingAction(null)
     action?.()
   }
-  const onSubmit = async (data) => {
-    const validationMessage = validateSelectedLeadList(tableData)
+const requestTaggedLicenseRemoval = (licenseNo) => {
+  setLicenseRemoveConfirm({
+    open: true,
+    licenseNo: String(licenseNo)
+  })
+}
 
+const cancelTaggedLicenseRemoval = () => {
+  setLicenseRemoveConfirm({
+    open: false,
+    licenseNo: null
+  })
+}
+
+// const confirmTaggedLicenseRemoval = () => {
+//   const licenseNo = licenseRemoveConfirm.licenseNo
+
+//   if (!licenseNo) {
+//     cancelTaggedLicenseRemoval()
+//     return
+//   }
+
+//   const previousLicenses = watch("taggedLicenses") || []
+//   const previousDueMap = watch("taggedLicenseDueDates") || {}
+
+//   const updatedLicenses = previousLicenses.filter(
+//     (item) => String(item) !== String(licenseNo)
+//   )
+
+//   const updatedDueMap = { ...previousDueMap }
+//   delete updatedDueMap[licenseNo]
+
+//   setValue("taggedLicenses", updatedLicenses, {
+//     shouldDirty: true,
+//     shouldValidate: true
+//   })
+
+//   setValue("taggedLicenseDueDates", updatedDueMap, {
+//     shouldDirty: true,
+//     shouldValidate: true
+//   })
+
+//   // Optional: clear license number if no tagged license remains.
+//   if (updatedLicenses.length === 0) {
+//     setValue("licensenumber", "", {
+//       shouldDirty: true,
+//       shouldValidate: true
+//     })
+//   }
+
+//   /*
+//     Put your API/action function here if removing a tagged license
+//     must immediately update backend data.
+
+//     Example:
+//     await removeTaggedLicenseFromService(licenseNo)
+//   */
+
+//   cancelTaggedLicenseRemoval()
+// }
+const confirmTaggedLicenseRemoval = () => {
+  const licenseNo = String(licenseRemoveConfirm.licenseNo || "")
+
+  if (!licenseNo) {
+    cancelTaggedLicenseRemoval()
+    return
+  }
+
+  const currentValues = getValues()
+  const previousLicenses = currentValues.taggedLicenses || []
+  const previousDueMap = currentValues.taggedLicenseDueDates || {}
+  const selectedAdditionalServiceId = currentValues?.productName?.value
+
+  // Remove the license from React Hook Form values.
+  const updatedLicenses = previousLicenses.filter(
+    (item) => String(item) !== licenseNo
+  )
+
+  const updatedDueMap = { ...previousDueMap }
+  delete updatedDueMap[licenseNo]
+
+  setValue("taggedLicenses", updatedLicenses, {
+    shouldDirty: true,
+    shouldValidate: true
+  })
+
+  setValue("taggedLicenseDueDates", updatedDueMap, {
+    shouldDirty: true,
+    shouldValidate: true
+  })
+
+  // Keep the popup state clean when its last tagged license is removed.
+  if (updatedLicenses.length === 0) {
+    setValue("licensenumber", "", {
+      shouldDirty: true,
+      shouldValidate: true
+    })
+  }
+
+  // Remove the license from taggeddata and taggedLicenses in the saved table row.
+  // If no tag remains, remove the entire Additional Service row.
+  setTableData((previousRows) => {
+    if (!Array.isArray(previousRows)) return previousRows
+
+    return previousRows
+      .map((row) => {
+        const isSelectedAdditionalService =
+          row?.productorservicetype === "Additionalservice" &&
+          String(row?.product_id) === String(selectedAdditionalServiceId)
+
+        if (!isSelectedAdditionalService) {
+          return row
+        }
+
+        const updatedRowTaggedLicenses = (row.taggedLicenses || []).filter(
+          (taggedLicense) => String(taggedLicense) !== licenseNo
+        )
+
+        const updatedRowTaggedData = (row.taggeddata || []).filter(
+          (taggedItem) => String(taggedItem?.licensenumber) !== licenseNo
+        )
+
+        return {
+          ...row,
+          taggedLicenses: updatedRowTaggedLicenses,
+          taggeddata: updatedRowTaggedData
+        }
+      })
+      .filter((row) => {
+        if (row?.productorservicetype !== "Additionalservice") {
+          return true
+        }
+
+        // Delete an Additional Service row if it has no tagged license left.
+        return (row?.taggeddata || []).length > 0
+      })
+  })
+
+  cancelTaggedLicenseRemoval()
+}
+
+
+console.log(tableData)
+const taggedLicenseCheckboxOnChange = (event, option) => {
+  const licenseNo = String(option.licenseNo)
+
+  // Do not remove immediately. Keep checkbox checked and ask for confirmation.
+  if (!event.target.checked) {
+    requestTaggedLicenseRemoval(licenseNo)
+    return
+  }
+
+  const previousLicenses = watch("taggedLicenses") || []
+  const previousDueMap = watch("taggedLicenseDueDates") || {}
+  const currentValues = getValues()
+
+  if (!previousLicenses.includes(licenseNo)) {
+    setValue("taggedLicenses", [...previousLicenses, licenseNo], {
+      shouldDirty: true,
+      shouldValidate: true
+    })
+  }
+
+  setValue("licensenumber", "", {
+    shouldDirty: true
+  })
+
+  clearErrors("taggedLicenses")
+
+  const matched = detailsData?.taggeddata?.find(
+    (item) => String(item?.licensenumber) === licenseNo
+  )
+
+  if (matched) {
+    setValue(
+      "taggedLicenseDueDates",
+      {
+        ...previousDueMap,
+        [licenseNo]: {
+          nextDue: matched.nextDue || "",
+          productAmount: matched.productAmount ?? "",
+          taxexclusiveAmount: matched.taxexclusiveAmount ?? "",
+          taxinclusiveamount: matched.taxinclusiveamount ?? "",
+          hsn: matched.hsn ?? "",
+          originalHsn: matched.originalHsn ?? matched.hsn ?? "",
+          nextDueTax: matched.nextDueTax ?? matched.hsn ?? 0,
+          noofusers: matched.noofusers ?? "",
+          serialNumber: matched.serialNumber ?? ""
+        }
+      },
+      {
+        shouldDirty: true,
+        shouldValidate: true
+      }
+    )
+
+    return
+  }
+
+  const selectedProduct = productOptions.find(
+    (item) => item.value === currentValues?.productName?.value
+  )
+
+  setValue(
+    "taggedLicenseDueDates",
+    {
+      ...previousDueMap,
+      [licenseNo]: {
+        nextDue: "",
+        productAmount: "",
+        taxexclusiveAmount: selectedProduct?.basePrice || 0,
+        taxinclusiveamount: selectedProduct?.productprice || 0,
+        hsn: selectedProduct?.igstRate || 0,
+        originalHsn: selectedProduct?.igstRate || 0,
+        nextDueTax: selectedProduct?.igstRate || 0,
+        noofusers: "",
+        serialNumber: ""
+      }
+    },
+    {
+      shouldDirty: true,
+      shouldValidate: true
+    }
+  )
+}
+  const onSubmit = async (data) => {
+
+    const validationMessage = validateSelectedLeadList(tableData)
+console.log(validationMessage)
     if (validationMessage) {
       toast.error(validationMessage)
       return
@@ -2160,7 +2408,7 @@ console.log(customer.country)
                                   key={option.licenseNo}
                                   className="flex items-center gap-2 rounded-md border border-[#edf1f7] bg-white px-2 py-1.5 text-[11px] text-[#4f5d78]"
                                 >
-                                  <input
+                                  {/* <input
                                     type="checkbox"
                                     checked={checked}
                                     onChange={(e) => {
@@ -2280,7 +2528,15 @@ console.log(customer.country)
                                         }
                                       }
                                     }}
-                                  />
+                                  /> */}
+
+<input
+  type="checkbox"
+  checked={checked}
+  onChange={(event) => taggedLicenseCheckboxOnChange(event, option)}
+/>
+
+
 
                                   <span>{option.licenseNo}</span>
                                   <span className="text-[#7b879c]">
@@ -2296,6 +2552,12 @@ console.log(customer.country)
                           </p>
                         )}
                       </div>
+  {/* Put the validation message here */}
+    {errors.taggedLicenses?.message && (
+      <p className="mt-1 text-[11px] text-red-500">
+        {errors.taggedLicenses.message}
+      </p>
+    )}
                     </div>
                   )}
 
@@ -2612,6 +2874,99 @@ console.log(customer.country)
           </div>
         </div>
       )}
+{/* {licenseRemoveConfirm.open && (
+  <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+    <div
+      className="w-full max-w-md rounded-xl bg-white shadow-2xl"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="remove-license-title"
+    >
+      <div className="border-b border-slate-200 px-5 py-4">
+        <h3
+          id="remove-license-title"
+          className="text-sm font-semibold text-slate-800"
+        >
+          Remove tagged license?
+        </h3>
+
+        <p className="mt-1 text-xs leading-5 text-slate-500">
+          License number{" "}
+          <span className="font-semibold text-slate-700">
+            {licenseRemoveConfirm.licenseNo}
+          </span>{" "}
+          will be removed from this additional service. Its due-date,
+          user-count, serial-number, and amount details will also be removed.
+        </p>
+      </div>
+
+      <div className="flex justify-end gap-2 px-5 py-4">
+        <button
+          type="button"
+          onClick={cancelTaggedLicenseRemoval}
+          className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
+        >
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          onClick={confirmTaggedLicenseRemoval}
+          className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700"
+        >
+          Continue
+        </button>
+      </div>
+    </div>
+  </div>
+)} */}
+
+{licenseRemoveConfirm.open && (
+  <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="remove-license-title"
+      className="w-full max-w-md rounded-xl bg-white shadow-2xl"
+    >
+      <div className="border-b border-slate-200 px-5 py-4">
+        <h3
+          id="remove-license-title"
+          className="text-sm font-semibold text-slate-800"
+        >
+          Remove tagged license?
+        </h3>
+
+        <p className="mt-1 text-xs leading-5 text-slate-500">
+          License number{" "}
+          <span className="font-semibold text-slate-700">
+            {licenseRemoveConfirm.licenseNo}
+          </span>{" "}
+          will be removed from this additional service. Its due date, users,
+          serial number, and amount details will also be removed.
+        </p>
+      </div>
+
+      <div className="flex justify-end gap-2 px-5 py-4">
+        <button
+          type="button"
+          onClick={cancelTaggedLicenseRemoval}
+          className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
+        >
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          onClick={confirmTaggedLicenseRemoval}
+          className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700"
+        >
+          Continue
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   )
 }

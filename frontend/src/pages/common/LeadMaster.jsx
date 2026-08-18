@@ -743,6 +743,8 @@ const LeadMaster = ({
   console.log(unselectedtaggedlicense)
   console.log(warningErrors)
   const [licenseloading, setlicenseloading] = useState(false)
+  const [checknewcustomer, setchecknewcustomer] = useState(false)
+  console.log(checknewcustomer)
   const [leadList, setLeadList] = useState([])
   const [submitLoading, setsubmitLoading] = useState(false)
   const [popupOpen, setPopupOpen] = useState(false)
@@ -1815,27 +1817,34 @@ const LeadMaster = ({
     }
   }, [defaultState, getValuesModal, setValueModal])
 
-  const handleOpenmodal = () => {
+  const handleOpenmodal = (text = null) => {
+    console.log(selectedCustomer)
+    console.log(text)
+    if (text) {
+      setchecknewcustomer(true)
+    }
     console.log("h")
     setModalOpen(true)
     clearMainerrors()
-    // if (Data && Data.length) {
-    //   setValueModal("customerName", Data[0]?.customerName?.customerName)
-    //   setValueModal("customerid", Data[0]?.customerName?._id)
-    //   setValueModal("leadid", Data[0]?._id)
-    //   setValueModal("email", Data[0]?.customerName?.email)
-    //   setValueModal("mobile", Data[0]?.customerName?.mobile)
-    //   setValueModal("landline", Data[0]?.customerName?.landline)
-    //   setValueModal("contactPerson", Data[0]?.customerName?.contactPerson)
-    //   setValueModal("address1", Data[0]?.customerName?.address1)
-    //   setValueModal("pincode", Data[0]?.customerName?.pincode)
-    //   setValueModal("partner", Data[0]?.customerName?.partner?._id)
-    //   setValueModal("registrationType", Data[0]?.customerName?.registrationType)
-    //   setValueModal("gstNo", Data[0]?.customerName?.gstNo)
-    //   setValueModal("city", Data[0]?.customerName?.city)
-    //   setValueModal("country", Data[0]?.customerName?.country)
-    //   console.log("hhh")
-    // }
+    console.log(Data)
+    if (Data && Data.length && text === null) {
+      console.log("hhh")
+      setValueModal("customerName", selectedCustomer?.customerName)
+      setValueModal("customerid", selectedCustomer?._id)
+      setValueModal("leadid", Data[0]?._id)
+      setValueModal("email", selectedCustomer?.email)
+      setValueModal("mobile", selectedCustomer?.mobile)
+      setValueModal("landline", selectedCustomer?.landline)
+      setValueModal("contactPerson", selectedCustomer?.contactPerson)
+      setValueModal("address1", selectedCustomer?.address1)
+      setValueModal("pincode", selectedCustomer?.pincode)
+      setValueModal("partner", selectedCustomer?.partner?._id)
+      setValueModal("registrationType", selectedCustomer?.registrationType)
+      setValueModal("gstNo", selectedCustomer?.gstNo)
+      setValueModal("city", selectedCustomer?.city)
+      setValueModal("country", selectedCustomer?.country)
+      console.log("hhh")
+    }
   }
 
   const Industries = [
@@ -3144,6 +3153,14 @@ const LeadMaster = ({
     console.log(duplicateWarning)
 
     if (modalloader) return
+    console.log(checknewcustomer)
+    console.log(data?.customerid)
+    console.log(data)
+    console.log(data?.customerid && !checknewcustomer)
+    if (data?.customerid) {
+      console.log("hhhhh")
+    }
+
     try {
       // const checkexistingNumber = isMobileExists(
       //   data?.mobile,
@@ -3161,11 +3178,14 @@ const LeadMaster = ({
       setModalLoader(true)
       let response
       if (data?.customerid) {
+        if (!checknewcustomer) return
+        console.log("hhh")
         response = await api.post("/customer/customereditonlead", {
           customerData: data
         })
       } else {
         const createdFrom = "lead"
+        console.log("hhhh")
         response = await api.post(
           `/customer/customerRegistration?createdfrom=${createdFrom}`,
           {
@@ -3177,6 +3197,7 @@ const LeadMaster = ({
         toast.success("Customer updated successfully")
         setModalLoader(false)
         setModalOpen(false)
+        setchecknewcustomer(false)
         loggeduser?.role === "Admin"
           ? navigate("/admin/transaction/lead/leadEdit", {
               state: {
@@ -3200,6 +3221,7 @@ const LeadMaster = ({
         setModalOpen(false)
         clearmodalErros()
         resetModal()
+        setchecknewcustomer(false)
       }
     } catch (error) {
       toast.error("something went wrong")
@@ -3593,6 +3615,15 @@ convertexcel
                       >
                         {Data ? "UPDATE CUSTOMER" : "NEW CUSTOMER"}
                       </button>
+                      {Data && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenmodal("NEW CUSTOMER")}
+                          className="bg-[#1B2A4A] hover:bg-[#243660] text-white text-xs font-bold px-4 rounded flex items-center justify-center hover:cursor-pointer"
+                        >
+                          NEW CUSTOMER
+                        </button>
+                      )}
                     </div>
                     {errorsMain.customerName && (
                       <p className="text-red-500 text-xs mt-1">
@@ -5120,7 +5151,9 @@ convertexcel
                 <div className="flex shrink-0 items-start justify-between border-b border-slate-200 bg-[#1B2A4A] px-5 py-3.5 sm:px-6">
                   <div>
                     <h2 className="text-sm font-semibold tracking-wide text-white sm:text-base">
-                      {Data ? "Update Customer Details" : "Add New Customer"}
+                      {checknewcustomer
+                        ? "Add New Customer"
+                        : "Update Customer Details"}
                     </h2>
                     {!Data && (
                       <p className="mt-0.5 text-[11px] text-blue-200">
@@ -5545,9 +5578,12 @@ convertexcel
                     <button
                       type="button"
                       onClick={() => {
+                        console.log("hhhhh")
                         setModalOpen(false)
                         clearmodalErros()
                         resetModal()
+                        setchecknewcustomer(false)
+                        console.log("hhh")
                       }}
                       className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
                     >
