@@ -57,37 +57,17 @@ const router = express.Router();
 // router.get("/export-branch-wise-product-usage",exportBranchWiseProductUsage)
 router.get("/getstaffdailyreports", authMiddleware, Getdailystaffreport)
 router.get("/getnotificationData",authMiddleware,getNotificationData)
-router.post("/approveforcefullyclosetarget",authMiddleware,ApprovedforcefullyClosedTarget)
+
 router.get("/getsalesfunnels", authMiddleware, Getallsalesfunnels)
 router.get(
   "/branchwise-marketing-pending-tasks",
   authMiddleware,
   getBranchwiseMarketingPendingTasks
 )
-router.get("/verifiedcollectionLeads",authMiddleware,getverifiedCollectionLeads)
-router.get("/getTodayVerifiedCollection",authMiddleware,getTodayVerifiedCollection)
-router.get("/getallproductwisereport", authMiddleware, GetallproductwiseReport);
-router.get("/getfollowupsummaryReport", authMiddleware, GetfollowupsummaryReport)
-router.post("/leadRegister", authMiddleware, LeadRegister);
-router.put("/fix-leadverified", authMiddleware, fixLeadVerifiedField);
-router.put("/paymentverification", authMiddleware, UpdatepaymentVerification);
-router.post("/collectionUpdate", authMiddleware, UpdateCollection);
-router.post("/updatereceivedAmount", authMiddleware, UpdatereceivedAmount);
-router.post("/taskRegistration", authMiddleware, TaskRegistration);
-router.get("/checkexistinglead", authMiddleware, Checkexistinglead);
-router.put("/leadRegisterUpdate", authMiddleware, UpdateLeadRegister);
-router.get("/getallTask", authMiddleware, GetallTask);
-router.get("/getAlltasktoTarget", authMiddleware, getAlltasktoTarget)
-router.get("/getalltasktoreport", authMiddleware, Getalltasktoreport)
-router.delete("/taskDelete", authMiddleware, TaskDelete);
-router.put("/taskEdit", authMiddleware, TaskEdit);
-router.put("/closingleads",authMiddleware,Leadclosing)
-router.post("/leadClosingAmount", authMiddleware, LeadClosingAmount);
-router.put("/followupDateUpdate", authMiddleware, UpdateLeadfollowUpDate);
-router.get("/getSelectedLead", authMiddleware, GetselectedLeadData);
-router.post("/leadAllocation", authMiddleware, UpadateOrLeadAllocationRegister);
-router.post("/leadReallocation", authMiddleware, updateReallocation);
-router.post("/leadAllocationtask", authMiddleware, UpdateOrleadallocationTask);
+router.get("/getrespecteddemolead", authMiddleware, GetrepecteduserDemo);
+router.get("/getrespectedleadTask", authMiddleware, GetrespectedleadTask);
+router.get("/demoleadcount", authMiddleware, GetdemoleadCount);
+router.get("/collectionLeads", authMiddleware, GetcollectionLeads);
 router.get("/getallLead", authMiddleware, GetallLead);
 router.get("/getAllleadowned", authMiddleware, GetallleadOwned); //for getting allleads in own lead page
 router.get("/getallreallocatedLead", authMiddleware, GetallReallocatedLead);
@@ -98,11 +78,35 @@ router.get("/getallLeadFollowUpforselectedProduct", authMiddleware, Getallselect
 router.get("/getallServices", authMiddleware, GetAllservices);
 router.get("/ownregisteredLead", authMiddleware, GetownLeadList);
 router.get("/lostlead", authMiddleware, GetlostLeads);
+router.get("/getSelectedLead", authMiddleware, GetselectedLeadData);
+router.get("/getalltasktoreport", authMiddleware, Getalltasktoreport)
+router.get("/getAlltasktoTarget", authMiddleware, getAlltasktoTarget)
+router.get("/getallTask", authMiddleware, GetallTask);
+router.get("/checkexistinglead", authMiddleware, Checkexistinglead);
+router.get("/verifiedcollectionLeads",authMiddleware,getverifiedCollectionLeads)
+router.get("/getTodayVerifiedCollection",authMiddleware,getTodayVerifiedCollection)
+router.get("/getallproductwisereport", authMiddleware, GetallproductwiseReport);
+router.get("/getfollowupsummaryReport", authMiddleware, GetfollowupsummaryReport)
+
+
+router.put("/followupDateUpdate", authMiddleware, UpdateLeadfollowUpDate);
+router.put("/leadRegisterUpdate", authMiddleware, UpdateLeadRegister);
+router.put("/taskEdit", authMiddleware, TaskEdit);
+router.put("/closingleads",authMiddleware,Leadclosing)
+router.put("/fix-leadverified", authMiddleware, fixLeadVerifiedField);
+router.put("/paymentverification", authMiddleware, UpdatepaymentVerification);
+router.put("/paymentunverify",authMiddleware,UpdatepaymentVerification)
+router.delete("/taskDelete", authMiddleware, TaskDelete);
+
+router.post("/leadClosingAmount", authMiddleware, LeadClosingAmount);
+router.post("/leadAllocation", authMiddleware, UpadateOrLeadAllocationRegister);
+router.post("/leadReallocation", authMiddleware, updateReallocation);
+router.post("/leadAllocationtask", authMiddleware, UpdateOrleadallocationTask);
 router.post("/setdemolead", authMiddleware, SetDemoallocation);
-router.get("/getrespecteddemolead", authMiddleware, GetrepecteduserDemo);
-router.get("/getrespectedleadTask", authMiddleware, GetrespectedleadTask);
-router.get("/demoleadcount", authMiddleware, GetdemoleadCount);
-router.get("/collectionLeads", authMiddleware, GetcollectionLeads);
+router.post("/leadRegister", authMiddleware, LeadRegister);
+router.post("/collectionUpdate", authMiddleware, UpdateCollection);
+router.post("/updatereceivedAmount", authMiddleware, UpdatereceivedAmount);
+router.post("/taskRegistration", authMiddleware, TaskRegistration);
 router.post("/taskSubmission", authMiddleware, UpdateLeadTask);
 router.post("/taskRejection",authMiddleware,RejectTask)
 router.post("/check-customer-duplicate",authMiddleware,Checkduplicatecustomer)
@@ -116,5 +120,6 @@ router.post(
   authMiddleware,
   UpdateOrSubmittaskByfollower
 );
+router.post("/approveforcefullyclosetarget",authMiddleware,ApprovedforcefullyClosedTarget)
 
 export default router;

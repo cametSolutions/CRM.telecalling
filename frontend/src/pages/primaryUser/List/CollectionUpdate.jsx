@@ -60,6 +60,7 @@ export default function CollectionUpdate() {
   const [selectedLeadId, setselectedLeadId] = useState(null)
   console.log(selectedLeadId)
   const [verifiedLead, setverifiedLead] = useState(false)
+  console.log(verifiedLead)
   const [companyBranches, setcompanyBranches] = useState(null)
   const [balanceAmount, setBalanceAmount] = useState(null)
   const [isChecked, setIsChecked] = useState(false)
@@ -77,15 +78,17 @@ export default function CollectionUpdate() {
   const [targetData, settargetData] = useState([])
   console.log(targetData)
   const [openModal, setOpenModal] = useState(false)
-const [selectedCollection,setselectedCollection]=useState({})
+  const [selectedCollection, setselectedCollection] = useState({})
   const [productlist, setproductList] = useState([])
   const [achievedproducts, setacheivedProducts] = useState([])
   const [selectedPeriod, setselectedPeriod] = useState("")
   const navigate = useNavigate()
   const { data: companybranches } = UseFetch("/branch/getBranch")
   // const {data}=UseFetch("/lead/fix-leadverified")
-const selectedreduxbranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
-console.log(selectedreduxbranch)
+  const selectedreduxbranch = useSelector(
+    (branch) => branch.companyBranch.selectedBranch
+  )
+  console.log(selectedreduxbranch)
   const {
     data: collectionlead,
     loading,
@@ -95,15 +98,16 @@ console.log(selectedreduxbranch)
       loggedUser &&
       `/lead/collectionLeads?selectedBranch=${selectedreduxbranch}&verified=${verifiedLead}&isAccountant=${isdepartmentisAccountant}&loggeduserby=${loggedUser._id}`
   )
-console.log(verifiedLead)
-console.log(isdepartmentisAccountant)
-console.log(selectedreduxbranch)
-console.log(collectionlead)
-const a=collectionlead?.filter((item)=>item.null)
-console.log(a)
+  console.log(selectedreduxbranch)
+  console.log(verifiedLead)
+  console.log(isdepartmentisAccountant)
+  console.log(selectedreduxbranch)
+  console.log(collectionlead)
+  const a = collectionlead?.filter((item) => item.null)
+  console.log(a)
   const { data: branchProduct } = UseFetch(
-selectedreduxbranch&&
-    `/product/getallbranchProduct?branch=${selectedreduxbranch}`
+    selectedreduxbranch &&
+      `/product/getallbranchProduct?branch=${selectedreduxbranch}`
   )
   console.log(selectedCompanyBranch)
   console.log(verifiedLead)
@@ -119,9 +123,7 @@ selectedreduxbranch&&
     if (companybranches && companybranches.length > 0) {
       const userData = getLocalStorageItem("user")
       console.log(userData.department?.department)
-      if (
-        userData.department?.code ==="DEPARTMENT2"
-      ) {
+      if (userData.department?.code === "DEPARTMENT2") {
         setisdepartmentAccountant(true)
       }
 
@@ -221,10 +223,12 @@ selectedreduxbranch&&
       const updatedhistorylist = collectionlead.filter(
         (item) => item.leadId === selectedLeadId
       )
+
       console.log(updatedhistorylist)
-setselectedCollection(updatedhistorylist[0])
+      console.log(updatedhistorylist[0]?.paymentHistory)
+      setselectedCollection(updatedhistorylist[0])
       setpaymentHistoryList(updatedhistorylist[0]?.paymentHistory)
-console.log(updatedhistorylist[0])
+      console.log(updatedhistorylist[0])
       setBalanceAmount(updatedhistorylist[0].balanceAmount)
     }
   })
@@ -345,11 +349,34 @@ console.log(updatedhistorylist[0])
 
   const getDisplayAmount = (item) => {
     console.log(item)
-
+    console.log(isdepartmentisAccountant)
     console.log("h")
-    return (item || [])
-      .filter((history) => history?.paymentVerified === false)
-      .reduce((sum, history) => sum + Number(history?.receivedAmount || 0), 0)
+    console.log(verifiedLead)
+    console.log(isdepartmentisAccountant)
+    if (isdepartmentisAccountant) {
+      if (verifiedLead) {
+        console.log("hhh")
+        return (item || [])
+          .filter((history) => history?.paymentVerified === true)
+          .reduce(
+            (sum, history) => sum + Number(history?.receivedAmount || 0),
+            0
+          )
+      } else {
+        return (item || [])
+          .filter((history) => history?.paymentVerified === false)
+          .reduce(
+            (sum, history) => sum + Number(history?.receivedAmount || 0),
+            0
+          )
+      }
+    } else {
+      console.log("hhh")
+      return (item || []).reduce(
+        (sum, history) => sum + Number(history?.receivedAmount || 0),
+        0
+      )
+    }
   }
   const handleCollectionUpdate = async (
     formData,
@@ -479,7 +506,19 @@ console.log(updatedhistorylist[0])
     const LeadRow = ({ item, index }) => {
       console.log(item)
       const [open, setOpen] = useState(false)
+      const isAdditionalService = item?.leadFor?.filter(
+        (item) => item.productorservicetype === "Additionalservice"
+      )
+      let taggedlicense = null
+      if (isAdditionalService && isAdditionalService.length) {
+        console.log("h")
+        console.log(isAdditionalService)
 
+        taggedlicense = (isAdditionalService || []).flatMap((item) =>
+          (item.taggeddata || []).map((tag) => tag.licensenumber)
+        )
+        console.log(taggedlicense)
+      }
       const lastLog = item.activityLog[item.activityLog.length - 1]
       const followupDate = lastLog?.nextFollowUpDate
         ? new Date(lastLog.nextFollowUpDate)
@@ -533,16 +572,28 @@ console.log(updatedhistorylist[0])
             <td className="px-3 py-2 text-gray-700 text-sm border border-gray-300 whitespace-nowrap">
               {item?.mobile}
             </td>
-            <td className="px-3 py-2 text-sm border border-gray-300 max-w-[200px]">
+            {/* <td className="px-3 py-2 text-sm border border-gray-300 max-w-[200px]">
               <span
                 className="text-red-600 font-medium truncate block"
                 title={lastLog?.remarks}
               >
-                {lastLog?.remarks || "-"}
+                {item?.leadFor[0]?.licenseNumber}{" "}
               </span>
+            </td> */}
+            <td className="whitespace-nowrap border border-blue-300 px-3 py-2 text-center text-sm font-medium text-red-500">
+              {isAdditionalService?.length
+                ? taggedlicense.join(", ")
+                : (
+                    item?.leadFor?.[0]?.productorServiceId?.shortName ||
+                    item?.leadFor?.[0]?.productorServiceId?.productName ||
+                    "-"
+                  ).toUpperCase()}
             </td>
-            <td className="px-3 py-2 text-sm text-gray-700 border border-gray-300 whitespace-nowrap text-center">
-              {followupDate}
+            <td className="px-3 py-2 text-sm font-medium text-blue-700 border border-blue-300 whitespace-nowrap text-center">
+              {(
+                item?.leadFor[0]?.prodproductorServiceId?.shortName ||
+                item?.leadFor[0]?.productorServiceId?.productName
+              ).toUpperCase()}
             </td>
             <td
               className="px-2 py-2 border border-gray-300"
@@ -597,9 +648,7 @@ console.log(updatedhistorylist[0])
             <td className="px-3 py-2 text-sm font-semibold text-green-700 border border-gray-300 whitespace-nowrap text-right">
               <span className="inline-flex items-center gap-0.5 justify-end">
                 <IndianRupee className="w-3.5 h-3.5" />
-                {!verifiedLead
-                  ? getDisplayAmount(item.paymentHistory)
-                  : item?.netAmount?.toLocaleString("en-IN")}
+                {getDisplayAmount(item.paymentHistory)}
               </span>
             </td>
           </tr>
@@ -731,14 +780,13 @@ console.log(updatedhistorylist[0])
                 <span>Mobile</span>
               </div>
             </th>
-            <th className="border border-gray-300 px-3 py-1 text-left">
-              <span>Last Remark</span>
+            <th className="border border-gray-300 px-3 py-1 text-center">
+              <span>License No.</span>
             </th>
-            <th className="border border-gray-300 px-3 py-1 text-left">
-              <div className="flex items-center gap-1.5">
-                <Calendar className="w-3 h-3" />
-                <span>Followup Date</span>
-              </div>
+            <th className="border border-gray-300 px-3 py-1 text-center">
+            
+                <span>Product Name</span>
+              
             </th>
             <th className="border border-gray-300 px-3 py-1 text-center">
               Event Log
@@ -755,7 +803,7 @@ console.log(updatedhistorylist[0])
             <th className="border border-gray-300 px-3 py-1 text-right">
               <div className="flex items-center gap-1.5 justify-end">
                 <IndianRupee className="w-3 h-3" />
-                <span>Net Amount</span>
+                <span>Coll. Amount</span>
               </div>
             </th>
           </tr>
@@ -944,78 +992,46 @@ console.log(updatedhistorylist[0])
           <div className="h-auto overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3 bg-white">
             <>
               {(() => {
-//                 const currentData = isforcefullyclosed
-//                   ? forcefullyclosedLeads
-//                   : tableData
-//                 console.log(currentData)
-//                 const hasLeads =
-//                   Array.isArray(currentData) &&
-//                   currentData.some(
-//                     (group) =>
-//                       Array.isArray(group.leads) && group.leads.length > 0
-//                   )
-//                 console.log(hasLeads)
-//                 if (!hasLeads || currentData.length === 0) {
-//                   return loading ? (
-//                     <div className="flex justify-center py-6">
-//                       <SkeletonTable  />
-//                     </div>
-//                   ) : (
-//                     <div className="text-center text-gray-500 py-6">
-//                       No Data Available
-//                     </div>
-//                   )
-//                 }
+                const currentData = isforcefullyclosed
+                  ? forcefullyclosedLeads
+                  : tableData
 
-//                 return currentData.map(({ staffName, leads }, index) => (
-//                   <div key={staffName || `group-${index}`} className="mb-6">
-//                     {staffName && (
-//                       <h3 className="text-base font-semibold text-gray-800 mb-2">
-//                         {staffName}{" "}
-//                         <span className="text-sm text-gray-500">
-//                           ({leads?.length || 0} Leads)
-//                         </span>
-//                       </h3>
-//                     )}
+                const hasLeads =
+                  Array.isArray(currentData) &&
+                  currentData.some(
+                    (group) =>
+                      Array.isArray(group?.leads) && group.leads.length > 0
+                  )
 
-                  
-//  {loading? (
-//  <SkeletonTable/>
-                    
-//                     ) : (
-//                        renderTable(leads)
-//                     )}
-                   
-//                   </div>
-//                 ))
+                if (loading) {
+                  return <SkeletonTable />
+                }
 
+                if (
+                  !Array.isArray(currentData) ||
+                  currentData.length === 0 ||
+                  !hasLeads
+                ) {
+                  return (
+                    <div className="py-6 text-center text-gray-500">
+                      No Data Available
+                    </div>
+                  )
+                }
 
-const currentData = isforcefullyclosed ? forcefullyclosedLeads : tableData
-
-const hasLeads =
-  Array.isArray(currentData) &&
-  currentData.some(
-    (group) => Array.isArray(group?.leads) && group.leads.length > 0
-  )
-
-if (loading) {
-  return <SkeletonTable />
-}
-
-if (!Array.isArray(currentData) || currentData.length === 0 || !hasLeads) {
-  return <div className="py-6 text-center text-gray-500">No Data Available</div>
-}
-
-return currentData.map(({ staffName, leads }, index) => (
-  <div key={staffName || `group-${index}`} className="mb-6">
-    {staffName && (
-      <h3 className="mb-2 text-base font-semibold text-gray-800">
-        {staffName} <span className="text-sm text-gray-500">({leads?.length || 0} Leads)</span>
-      </h3>
-    )}
-    {renderTable(leads)}
-  </div>
-))
+                return currentData.map(({ staffName, leads }, index) => (
+                  <div key={staffName || `group-${index}`} className="mb-6">
+                    {staffName && (
+                      <h3 className="mb-2 text-base font-semibold text-gray-800">
+                        {staffName}{" "}
+                        <span className="text-sm text-gray-500">
+                          ({leads?.length || 0} Leads)
+                        </span>
+                      </h3>
+                    )}
+                    {renderTable(leads)}
+                  </div>
+                ))
               })()}
             </>
           </div>
@@ -1045,7 +1061,7 @@ return currentData.map(({ staffName, leads }, index) => (
       {paymenthistoryModal && (
         <PaymentHistoryModal
           data={paymentHistoryList}
-selectedLead={selectedCollection}
+          selectedLead={selectedCollection}
           isChecked={isChecked}
           isforcefullyclosed={isforcefullyclosed}
           balanceAmount={balanceAmount}

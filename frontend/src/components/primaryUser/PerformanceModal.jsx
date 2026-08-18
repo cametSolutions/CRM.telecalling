@@ -28,6 +28,7 @@ setproductList,
   selectedUser,
   activeUserId
 }) {
+console.log(productlist)
 console.log(products)
   console.log(periodmode)
   console.log(selectedperiod)
@@ -270,9 +271,245 @@ console.log(products)
   }
   console.log("hhh")
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-3 backdrop-blur-sm">
-      <div className="w-full max-w-4xl rounded-2xl bg-slate-50 shadow-2xl ring-1 ring-slate-900/10 ">
-        <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-end sm:justify-between">
+    // <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-3 backdrop-blur-sm">
+    //   <div className="w-full max-w-4xl rounded-2xl bg-slate-50 shadow-2xl ring-1 ring-slate-900/10 ">
+    //     <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-end sm:justify-between">
+    //       <div>
+    //         <h2 className="text-base font-semibold text-slate-900">
+    //           Performance Summary{" "}
+    //           <span className="text-slate-500">
+    //             {/* ({category?.categoryName?.toUpperCase() || ""}) */}
+    //           </span>
+    //         </h2>
+    //         <p className="mt-0.5 text-xs text-slate-500">
+    //           Target vs Achieved with product-wise breakdown
+    //         </p>
+    //       </div>
+
+    //       <div className="flex flex-wrap items-end gap-2">
+    //         <FancySelect
+    //           label="Period"
+    //           value={localSelectedPeriod || ""}
+    //           options={periodOptions}
+    //           onChange={handlePeriodChange}
+    //           width="min-w-[180px]"
+    //         />
+
+    //         <FancySelect
+    //           label="Month"
+    //           value={String(periodMode ?? "all")}
+    //           options={monthOptions}
+    //           onChange={onMonthChange}
+    //           width="min-w-[140px]"
+    //         />
+
+    //         <FancySelect
+    //           label="Year"
+    //           value={String(selectedYear || "")}
+    //           options={yearOptions}
+    //           onChange={onYearChange}
+    //           width="min-w-[110px]"
+    //         />
+
+    //         <button
+    //           type="button"
+    //           onClick={onClose}
+    //           className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 shadow-sm transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
+    //         >
+    //           Close
+    //         </button>
+    //       </div>
+    //     </div>
+
+    //     <div className="border-b border-slate-200 bg-slate-100/60 px-5 py-3">
+    //       <div className="mb-2 flex items-center justify-between">
+    //         <span className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+    //           {/* {loggedUser?.name || ""} */}
+    //         </span>
+    //       </div>
+
+    //       <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+    //         <SummaryPill
+    //           label="Target"
+    //           value={target}
+    //           tone="slate"
+    //           active={activeMetric === "target"}
+    //           onClick={() => handleMetricTab("target")}
+    //           isAmountMode={isAmountMode}
+    //         />
+    //         <SummaryPill
+    //           label="Achieved"
+    //           value={achieved}
+    //           tone="emerald"
+    //           active={activeMetric === "achieved"}
+    //           onClick={() => handleMetricTab("achieved")}
+    //           isAmountMode={isAmountMode}
+    //         />
+    //         <SummaryPill
+    //           label="Balance"
+    //           value={balance}
+    //           tone="amber"
+    //           active={activeMetric === "balance"}
+    //           onClick={() => handleMetricTab("balance")}
+    //           isAmountMode={isAmountMode}
+    //         />
+    //       </div>
+    //     </div>
+
+    //     {activeMetric && allusersData?.length > 0 && (
+    //       <>
+    //         <div className="px-5 pt-3">
+    //           <div className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-100">
+    //             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+    //             {getActiveLabel()} – Summary (All Users)
+    //           </div>
+    //         </div>
+
+    //         <div className="px-5 pb-3 pt-2">
+    //           <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+    //             <table className="min-w-full border-collapse text-xs">
+    //               <thead className="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
+    //                 <tr>
+    //                   <th className="px-3 py-2 text-left">Name</th>
+    //                   <th className="px-3 py-2 text-right">
+    //                     {getActiveLabel()}{" "}
+    //                     {isAmountMode ? "Amount" : "Quantity"}
+    //                   </th>
+    //                 </tr>
+    //               </thead>
+
+    //               <tbody className="divide-y divide-slate-100 bg-white">
+    //                 {allusersData.map((item, index) => {
+    //                   const isActive =
+    //                     String(activeUserId) === String(item.userId)
+    //                   console.log(isActive)
+    //                   return (
+    //                     <tr
+    //                       key={item.userId || index}
+    //                       onClick={() =>
+    //                         handleSelectedUser(
+    //                           category,
+    //                           item.userId,
+    //                           item.userName
+    //                         )
+    //                       }
+    //                       className={`cursor-pointer transition-colors ${
+    //                         isActive ? "bg-blue-100" : "hover:bg-blue-200"
+    //                       }`}
+    //                     >
+    //                       <td
+    //                         className={`px-3 py-2 text-[12px] font-semibold ${
+    //                           isActive
+    //                             ? "border-l-2 border-emerald-500 text-emerald-900"
+    //                             : "text-slate-800"
+    //                         }`}
+    //                       >
+    //                         {item?.userName?.toUpperCase()}
+    //                       </td>
+
+    //                       <td className="px-3 py-2 text-right text-[12px] font-semibold text-slate-900">
+    //                         {formatValue(item?.amount)}
+    //                       </td>
+    //                     </tr>
+    //                   )
+    //                 })}
+    //               </tbody>
+    //             </table>
+    //           </div>
+    //         </div>
+    //       </>
+    //     )}
+
+    //     {activeMetric && (
+    //       <div className="px-5 pb-4 pt-2">
+    //         <div className="mb-2 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-100">
+    //           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+    //           {activeMetric === "target"
+    //             ? `Product List - ${category?.categoryName?.toUpperCase() || ""}`
+    //             : `Product-wise Report - ${
+    //                 selectedUser?.toUpperCase() || "All users"
+    //               }`}
+    //         </div>
+
+    //         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+    //           {activeMetric === "target" ? (
+    //             <div className="max-h-[150px] overflow-y-auto px-3 py-3">
+    //               {productlist?.length > 0 ? (
+    //                 <div className="space-y-2">
+    //                   {productlist.map((product, index) => (
+    //                     <div
+    //                       key={`${product}-${index}`}
+    //                       className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-[12px] font-medium text-slate-700"
+    //                     >
+    //                       {product.toUpperCase()}
+    //                     </div>
+    //                   ))}
+    //                 </div>
+    //               ) : (
+    //                 <div className="py-6 text-center text-[12px] text-slate-400">
+    //                   No products configured.
+    //                 </div>
+    //               )}
+    //             </div>
+    //           ) : (
+    //             <div className="max-h-[260px] overflow-auto">
+    //               <table className="min-w-full border-collapse text-xs">
+    //                 <thead className="sticky top-0 bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
+    //                   <tr>
+    //                     <th className="px-3 py-2 text-left">Product</th>
+    //                     <th className="px-3 py-2 text-right">
+    //                       {activeMetric === "balance"
+    //                         ? isAmountMode
+    //                           ? "Balance Amount"
+    //                           : "Balance Quantity"
+    //                         : isAmountMode
+    //                           ? "Achieved Amount"
+    //                           : "Achieved Quantity"}
+    //                     </th>
+    //                   </tr>
+    //                 </thead>
+
+    //                 <tbody className="divide-y divide-slate-100 bg-white">
+    //                   {products?.map((p, index) => (
+    //                     <tr
+    //                       key={p.productname || index}
+    //                       className="font-semibold transition-colors hover:bg-slate-50/80"
+    //                     >
+    //                       <td className="px-3 py-2 text-[12px] text-slate-700">
+    //                         {p.productname?.toUpperCase()}
+    //                       </td>
+    //                       <td className="px-3 py-2 text-right text-[12px] text-slate-900">
+    //                         {formatValue(p.amount)}
+    //                       </td>
+    //                     </tr>
+    //                   ))}
+
+    //                   {(!products || products.length === 0) && (
+    //                     <tr>
+    //                       <td
+    //                         colSpan={2}
+    //                         className="px-3 py-6 text-center text-[12px] text-slate-400"
+    //                       >
+    //                         No achieved data available.
+    //                       </td>
+    //                     </tr>
+    //                   )}
+    //                 </tbody>
+    //               </table>
+    //             </div>
+    //           )}
+    //         </div>
+    //       </div>
+    //     )}
+    //   </div>
+    // </div>
+<div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 p-3 backdrop-blur-sm sm:p-5">
+  <div className="flex min-h-full items-center justify-center">
+    <div className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-slate-50 shadow-2xl ring-1 ring-slate-900/10 sm:max-h-[calc(100dvh-2.5rem)]">
+      
+      {/* Fixed header */}
+      <div className="shrink-0 border-b border-slate-200 bg-slate-50 px-5 py-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 className="text-base font-semibold text-slate-900">
               Performance Summary{" "}
@@ -280,6 +517,7 @@ console.log(products)
                 {/* ({category?.categoryName?.toUpperCase() || ""}) */}
               </span>
             </h2>
+
             <p className="mt-0.5 text-xs text-slate-500">
               Target vs Achieved with product-wise breakdown
             </p>
@@ -319,7 +557,12 @@ console.log(products)
             </button>
           </div>
         </div>
+      </div>
 
+      {/* Scrollable modal body */}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        
+        {/* Summary cards */}
         <div className="border-b border-slate-200 bg-slate-100/60 px-5 py-3">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wide text-slate-600">
@@ -336,6 +579,7 @@ console.log(products)
               onClick={() => handleMetricTab("target")}
               isAmountMode={isAmountMode}
             />
+
             <SummaryPill
               label="Achieved"
               value={achieved}
@@ -344,6 +588,7 @@ console.log(products)
               onClick={() => handleMetricTab("achieved")}
               isAmountMode={isAmountMode}
             />
+
             <SummaryPill
               label="Balance"
               value={balance}
@@ -355,6 +600,7 @@ console.log(products)
           </div>
         </div>
 
+        {/* User summary */}
         {activeMetric && allusersData?.length > 0 && (
           <>
             <div className="px-5 pt-3">
@@ -369,10 +615,15 @@ console.log(products)
                 <table className="min-w-full border-collapse text-xs">
                   <thead className="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
                     <tr>
-                      <th className="px-3 py-2 text-left">Name</th>
+                      <th className="px-3 py-2 text-left">
+                        Name
+                      </th>
+
                       <th className="px-3 py-2 text-right">
                         {getActiveLabel()}{" "}
-                        {isAmountMode ? "Amount" : "Quantity"}
+                        {isAmountMode
+                          ? "Amount"
+                          : "Quantity"}
                       </th>
                     </tr>
                   </thead>
@@ -380,8 +631,9 @@ console.log(products)
                   <tbody className="divide-y divide-slate-100 bg-white">
                     {allusersData.map((item, index) => {
                       const isActive =
-                        String(activeUserId) === String(item.userId)
-                      console.log(isActive)
+                        String(activeUserId) ===
+                        String(item.userId);
+
                       return (
                         <tr
                           key={item.userId || index}
@@ -393,7 +645,9 @@ console.log(products)
                             )
                           }
                           className={`cursor-pointer transition-colors ${
-                            isActive ? "bg-blue-100" : "hover:bg-blue-200"
+                            isActive
+                              ? "bg-blue-100"
+                              : "hover:bg-blue-200"
                           }`}
                         >
                           <td
@@ -410,7 +664,7 @@ console.log(products)
                             {formatValue(item?.amount)}
                           </td>
                         </tr>
-                      )
+                      );
                     })}
                   </tbody>
                 </table>
@@ -419,20 +673,26 @@ console.log(products)
           </>
         )}
 
+        {/* Product report */}
         {activeMetric && (
           <div className="px-5 pb-4 pt-2">
             <div className="mb-2 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-100">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+
               {activeMetric === "target"
-                ? `Product List - ${category?.categoryName?.toUpperCase() || ""}`
+                ? `Product List - ${
+                    category?.categoryName?.toUpperCase() ||
+                    ""
+                  }`
                 : `Product-wise Report - ${
-                    selectedUser?.toUpperCase() || "All users"
+                    selectedUser?.toUpperCase() ||
+                    "All users"
                   }`}
             </div>
 
             <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
               {activeMetric === "target" ? (
-                <div className="max-h-[150px] overflow-y-auto px-3 py-3">
+                <div className="max-h-[180px] overflow-y-auto px-3 py-3">
                   {productlist?.length > 0 ? (
                     <div className="space-y-2">
                       {productlist.map((product, index) => (
@@ -451,34 +711,46 @@ console.log(products)
                   )}
                 </div>
               ) : (
-                <div className="max-h-[260px] overflow-auto">
+                <div className="max-h-[300px] overflow-auto">
                   <table className="min-w-full border-collapse text-xs">
-                    <thead className="sticky top-0 bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
+                    <thead className="sticky top-0 z-10 bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
                       <tr>
-                        <th className="px-3 py-2 text-left">Product</th>
+                        <th className="px-3 py-2 text-left">
+                          Product
+                        </th>
+
                         <th className="px-3 py-2 text-right">
                           {activeMetric === "balance"
                             ? isAmountMode
                               ? "Balance Amount"
                               : "Balance Quantity"
                             : isAmountMode
-                              ? "Achieved Amount"
-                              : "Achieved Quantity"}
+                            ? "Achieved Amount"
+                            : "Achieved Quantity"}
                         </th>
                       </tr>
                     </thead>
 
                     <tbody className="divide-y divide-slate-100 bg-white">
-                      {products?.map((p, index) => (
+                      {products?.map((product, index) => (
                         <tr
-                          key={p.productname || index}
+                          key={
+                            product.productname ||
+                            product.productName ||
+                            index
+                          }
                           className="font-semibold transition-colors hover:bg-slate-50/80"
                         >
                           <td className="px-3 py-2 text-[12px] text-slate-700">
-                            {p.productname?.toUpperCase()}
+                            {(
+                              product.productname ||
+                              product.productName ||
+                              "—"
+                            ).toUpperCase()}
                           </td>
+
                           <td className="px-3 py-2 text-right text-[12px] text-slate-900">
-                            {formatValue(p.amount)}
+                            {formatValue(product.amount)}
                           </td>
                         </tr>
                       ))}
@@ -502,6 +774,8 @@ console.log(products)
         )}
       </div>
     </div>
+  </div>
+</div>
   )
 }
 
