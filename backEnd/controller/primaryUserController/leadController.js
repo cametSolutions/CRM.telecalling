@@ -472,43 +472,43 @@ export const GetallfollowupList = async (req, res) => {
           .get(lastAlloc.taskallocatedByModel)
           ?.get(String(lastAlloc.taskallocatedBy)) || null;
 
-      let populatedActivityLog = activity;
+      // let populatedActivityLog = activity;
 
-      if (!isNewMode) {
-        populatedActivityLog = activity.map((log) => {
-          const submittedUser =
-            submittedUserMaps
-              .get(log.submissiondoneByModel)
-              ?.get(String(log.submittedUser)) || log.submittedUser;
 
-          const taskallocatedTo =
-            submittedUserMaps
-              .get(log.taskallocatedToModel)
-              ?.get(String(log.taskallocatedTo)) || log.taskallocatedTo;
+      const populatedActivityLog = activity.map((log) => {
+        const submittedUser =
+          submittedUserMaps
+            .get(log.submissiondoneByModel)
+            ?.get(String(log.submittedUser)) || log.submittedUser;
 
-          const taskallocatedBy =
-            submittedUserMaps
-              .get(log.taskallocatedByModel)
-              ?.get(String(log.taskallocatedBy)) || log.taskallocatedBy;
+        const taskallocatedTo =
+          submittedUserMaps
+            .get(log.taskallocatedToModel)
+            ?.get(String(log.taskallocatedTo)) || log.taskallocatedTo;
 
-          const taskId = log.taskId
-            ? taskIdMap.get(String(log.taskId)) || null
-            : null;
+        const taskallocatedBy =
+          submittedUserMaps
+            .get(log.taskallocatedByModel)
+            ?.get(String(log.taskallocatedBy)) || log.taskallocatedBy;
 
-          const taskBy = log.taskBy
-            ? taskByIdMap.get(String(log.taskBy)) || null
-            : null;
+        const taskId = log.taskId
+          ? taskIdMap.get(String(log.taskId)) || null
+          : null;
 
-          return {
-            ...log,
-            taskBy,
-            submittedUser,
-            taskallocatedBy,
-            taskallocatedTo,
-            taskId,
-          };
-        });
-      }
+        const taskBy = log.taskBy
+          ? taskByIdMap.get(String(log.taskBy)) || null
+          : null;
+
+        return {
+          ...log,
+          taskBy,
+          submittedUser,
+          taskallocatedBy,
+          taskallocatedTo,
+          taskId,
+        };
+      });
+
 
       const populatedLeadFor = (lead.leadFor || []).map((item) => {
         const populated =
@@ -590,11 +590,13 @@ export const GetallfollowupList = async (req, res) => {
         allocatedTo,
         allocatedBy,
         matchedlog: lastAlloc,
+        // Always return populated activityLog
+        activityLog: populatedActivityLog,
         nextFollowUpDate: lastActivity.nextFollowUpDate ?? null,
       };
 
       if (!isNewMode) {
-        leadObject.activityLog = populatedActivityLog;
+        // leadObject.activityLog = populatedActivityLog;
         leadObject.neverfollowuped = neverfollowuped;
         leadObject.Nextfollowup = Nextfollowup;
         leadObject.allocatedfollowup = allocatedfollowup;
@@ -627,7 +629,7 @@ export const GetallfollowupList = async (req, res) => {
       message: "Internal server error",
     });
   }
-};//datewise converted leads
+};//datewise converted leads ,and this is git code
 
 // export const GetallfollowupList = async (req, res) => {
 //   try {
@@ -2112,53 +2114,159 @@ export const UpdatereceivedAmount = async (req, res) => {
     session.endSession();
   }
 };
-
 export const UpdatepaymentVerification = async (req, res) => {
   try {
-    const { leadId, index, isverified, verifiedBy } = req.body;
+    const {
+      leadId,
+      index,
+      isverified,
+      verifiedBy,
+      unVerify = false,
+    } = req.body;
 
-    // Find the document first
-    const lead = await LeadMaster.findOne({ _id: leadId });
+    // Find lead
+    const lead = await LeadMaster.findById(leadId);
+
     if (!lead) {
-      return res.status(404).json({ message: "Lead not found" });
+      return res.status(404).json({
+        message: "Lead not found",
+      });
     }
-    const isStaff = await Staff.findOne({ _id: verifiedBy });
-    let verifiedModel;
-    if (isStaff) {
-      verifiedModel = "Staff";
-    } else {
-      const isAdmin = await Admin.findOne({ _id: verifiedBy });
-      if (isAdmin) {
-        verifiedModel = "Admin";
+
+    // Validate index
+    if (
+      index === undefined ||
+      index < 0 ||
+      index >= lead.paymentHistory.length
+    ) {
+      return res.status(400).json({
+        message: "Invalid payment index",
+      });
+    }
+
+    const payment = lead.paymentHistory[index];
+
+    // =========================
+    // UNVERIFY PAYMENT
+    // =========================
+    if (unVerify === true) {
+      payment.paymentVerified = false;
+      payment.paymentVerifiedBy = null;
+      payment.paymentverifiedModel = null;
+      payment.verifiedAt = null;
+    }
+
+    // =========================
+    // VERIFY PAYMENT
+    // =========================
+    else {
+      if (!verifiedBy) {
+        return res.status(400).json({
+          message: "verifiedBy is required",
+        });
       }
-    }
-    // Validate index range
-    if (index < 0 || index >= lead.paymentHistory.length) {
-      return res.status(400).json({ message: "Invalid index" });
+
+      // Find verifier model
+      const isStaff = await Staff.exists({ _id: verifiedBy });
+
+      let verifiedModel;
+
+      if (isStaff) {
+        verifiedModel = "Staff";
+      } else {
+        const isAdmin = await Admin.exists({ _id: verifiedBy });
+
+        if (isAdmin) {
+          verifiedModel = "Admin";
+        }
+      }
+
+      if (!verifiedModel) {
+        return res.status(400).json({
+          message: "Invalid verifier",
+        });
+      }
+
+      payment.paymentVerified = isverified;
+      payment.paymentVerifiedBy = verifiedBy;
+      payment.paymentverifiedModel = verifiedModel;
+      payment.verifiedAt = new Date();
     }
 
-    // ✅ Update that specific paymentHistory element
-    lead.paymentHistory[index].paymentVerified = isverified;
-    lead.paymentHistory[index].paymentVerifiedBy = verifiedBy;
-    lead.paymentHistory[index].paymentverifiedModel = verifiedModel;
-    lead.paymentHistory[index].verifiedAt = new Date();
+    // =========================
+    // UPDATE OVERALL PAYMENT STATUS
+    // =========================
 
-    // ✅ Check if all payments are verified
     const allVerified = lead.paymentHistory.every(
       (p) => p.paymentVerified === true
     );
 
-    // ✅ Update parent field
     lead.paymentVerified =
-      allVerified && Number(lead.totalPaidAmount) === Number(lead.netAmount);
+      allVerified &&
+      Number(lead.totalPaidAmount) === Number(lead.netAmount);
 
     await lead.save();
-    return res.status(204).json({ message: "successfully done" });
+
+    return res.status(200).json({
+      message: unVerify
+        ? "Payment unverified successfully"
+        : "Payment verified successfully",
+    });
   } catch (error) {
-    console.log("error:", error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    console.error("Update payment verification error:", error);
+
+    return res.status(500).json({
+      message: "Internal server error",
+    });
   }
 };
+
+// export const UpdatepaymentVerification = async (req, res) => {
+//   try {
+//     const { leadId, index, isverified, verifiedBy,unVerify=false } = req.body;
+
+//     // Find the document first
+//     const lead = await LeadMaster.findOne({ _id: leadId });
+//     if (!lead) {
+//       return res.status(404).json({ message: "Lead not found" });
+//     }
+//     const isStaff = await Staff.findOne({ _id: verifiedBy });
+//     let verifiedModel;
+//     if (isStaff) {
+//       verifiedModel = "Staff";
+//     } else {
+//       const isAdmin = await Admin.findOne({ _id: verifiedBy });
+//       if (isAdmin) {
+//         verifiedModel = "Admin";
+//       }
+//     }
+//     // Validate index range
+//     if (index < 0 || index >= lead.paymentHistory.length) {
+//       return res.status(400).json({ message: "Invalid index" });
+//     }
+
+//     // ✅ Update that specific paymentHistory element
+//     lead.paymentHistory[index].paymentVerified = isverified;
+//     lead.paymentHistory[index].paymentVerifiedBy = verifiedBy;
+//     lead.paymentHistory[index].paymentverifiedModel = verifiedModel;
+//     lead.paymentHistory[index].verifiedAt = new Date();
+
+//     // ✅ Check if all payments are verified
+//     const allVerified = lead.paymentHistory.every(
+//       (p) => p.paymentVerified === true
+//     );
+
+//     // ✅ Update parent field
+//     lead.paymentVerified =
+//       allVerified && Number(lead.totalPaidAmount) === Number(lead.netAmount);
+
+//     await lead.save();
+//     return res.status(204).json({ message: "successfully done" });
+//   } catch (error) {
+//     console.log("error:", error.message);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// };
 export const getNotificationData = async (req, res) => {
   try {
     const { loggedUser, branchSelected, today = true } = req.query
@@ -7596,23 +7704,84 @@ export const GetrespectedleadTask = async (req, res) => {
     const userObjectId = toObjectId(userid);
     const branchObjectId = toObjectId(branchSelected);
 
-
-
-    if (ownTask === "true" && !userObjectId) {
-      return res.status(400).json({ message: "Invalid userid" });
+    if (!userObjectId) {
+      return res.status(400).json({
+        message: "Invalid userid",
+      });
     }
 
-    const isAdminOrManager = role === "Admin" || role === "Manager";
+    if (!branchObjectId) {
+      return res.status(400).json({
+        message: "Invalid branchSelected",
+      });
+    }
+
+    const isAdmin = role === "Admin";
+    const isManager = role === "Manager";
+    const isOwnTask = ownTask === "true";
+
+    /*
+      allowedUserIds rules:
+
+      ownTask=true:
+        [logged-in user only]
+
+      Admin and ownTask=false:
+        null = no taskallocatedTo restriction
+
+      Manager and ownTask=false:
+        [manager id + ids of staff assigned under manager]
+
+      Staff:
+        [logged-in user only]
+    */
+    let allowedUserIds = [];
+
+    if (isOwnTask) {
+      // Highest priority: return only the user's own tasks.
+      allowedUserIds = [userObjectId];
+    } else if (isAdmin) {
+      // Admin can access every valid task in the selected branch.
+      allowedUserIds = null;
+    } else if (isManager) {
+      /*
+        Change Staff to the exact model that contains:
+        {
+          assignedto: ObjectId
+        }
+      */
+      const assignedStaff = await Staff.find({
+        assignedto: userObjectId,
+      })
+        .select("_id")
+        .lean();
+
+      const assignedStaffIds = assignedStaff.map((staff) => staff._id);
+
+      // Manager's own tasks + direct subordinate staff tasks.
+      allowedUserIds = [userObjectId, ...assignedStaffIds];
+    } else {
+      // Normal staff only get their own tasks.
+      allowedUserIds = [userObjectId];
+    }
 
     const elemMatch = {
       allocationChanged: false,
       taskTo: { $ne: "followup" },
-      ...(isAdminOrManager ? {} : { taskallocatedTo: userObjectId }),
+      ...(allowedUserIds
+        ? {
+          taskallocatedTo: {
+            $in: allowedUserIds,
+          },
+        }
+        : {}),
     };
 
     const query = {
-      // leadBranch: branchObjectId,
-      activityLog: { $elemMatch: elemMatch },
+      leadBranch: branchObjectId,
+      activityLog: {
+        $elemMatch: elemMatch,
+      },
     };
 
     const selectedfollowup = await LeadMaster.find(query)
@@ -7639,11 +7808,17 @@ export const GetrespectedleadTask = async (req, res) => {
         createdAt: 1,
         updatedAt: 1,
       })
-      .populate({ path: "customerName", select: "customerName" })
+      .populate({
+        path: "customerName",
+        select: "customerName",
+      })
       .lean();
 
     if (!selectedfollowup.length) {
-      return res.status(200).json({ message: "No Task found", data: [] });
+      return res.status(200).json({
+        message: "No Task found",
+        data: [],
+      });
     }
 
     const userIdsByModel = {};
@@ -7660,31 +7835,44 @@ export const GetrespectedleadTask = async (req, res) => {
       for (const log of lead.activityLog || []) {
         if (log?.submittedUser && log?.submissiondoneByModel) {
           userIdsByModel[log.submissiondoneByModel] ??= new Set();
-          userIdsByModel[log.submissiondoneByModel].add(String(log.submittedUser));
+          userIdsByModel[log.submissiondoneByModel].add(
+            String(log.submittedUser)
+          );
         }
 
         if (log?.taskallocatedTo && log?.taskallocatedToModel) {
           userIdsByModel[log.taskallocatedToModel] ??= new Set();
-          userIdsByModel[log.taskallocatedToModel].add(String(log.taskallocatedTo));
+          userIdsByModel[log.taskallocatedToModel].add(
+            String(log.taskallocatedTo)
+          );
         }
 
         if (log?.taskallocatedBy && log?.taskallocatedByModel) {
           userIdsByModel[log.taskallocatedByModel] ??= new Set();
-          userIdsByModel[log.taskallocatedByModel].add(String(log.taskallocatedBy));
+          userIdsByModel[log.taskallocatedByModel].add(
+            String(log.taskallocatedBy)
+          );
         }
 
-        if (log?.taskId) taskIds.add(String(log.taskId));
+        if (log?.taskId) {
+          taskIds.add(String(log.taskId));
+        }
+
         if (log?.taskBy && isValidObjectId(log.taskBy)) {
           taskIds.add(String(log.taskBy));
         }
       }
 
       for (const item of lead.leadFor || []) {
-        if (!item?.productorServiceId || !item?.productorServicemodel) continue;
+        if (!item?.productorServiceId || !item?.productorServicemodel) {
+          continue;
+        }
 
         if (item.productorServicemodel === "Product") {
           productIds.add(String(item.productorServiceId));
-        } else if (item.productorServicemodel === "Service") {
+        }
+
+        if (item.productorServicemodel === "Service") {
           serviceIds.add(String(item.productorServiceId));
         }
       }
@@ -7692,23 +7880,52 @@ export const GetrespectedleadTask = async (req, res) => {
 
     const userModelEntries = Object.entries(userIdsByModel);
 
-    const userFetchPromises = userModelEntries.map(([modelName, ids]) =>
-      batchFetchByModels(modelName, ids, "name")
-        .then((docs) => [modelName, buildMap(docs)])
+    const userFetchPromises = userModelEntries.map(
+      ([modelName, ids]) =>
+        batchFetchByModels(modelName, ids, "name").then((docs) => [
+          modelName,
+          buildMap(docs),
+        ])
     );
 
-    const [userMapsEntries, taskDocs, productDocs, serviceDocs] = await Promise.all([
-      Promise.all(userFetchPromises),
-      taskIds.size
-        ? Task.find({ _id: { $in: [...taskIds] } }).select("taskName").lean()
-        : [],
-      productIds.size
-        ? mongoose.model("Product").find({ _id: { $in: [...productIds] } }).select("productName").lean()
-        : [],
-      serviceIds.size
-        ? mongoose.model("Service").find({ _id: { $in: [...serviceIds] } }).select("serviceName productName").lean()
-        : [],
-    ]);
+    const [userMapsEntries, taskDocs, productDocs, serviceDocs] =
+      await Promise.all([
+        Promise.all(userFetchPromises),
+
+        taskIds.size
+          ? Task.find({
+            _id: {
+              $in: [...taskIds],
+            },
+          })
+            .select("taskName")
+            .lean()
+          : [],
+
+        productIds.size
+          ? mongoose
+            .model("Product")
+            .find({
+              _id: {
+                $in: [...productIds],
+              },
+            })
+            .select("productName")
+            .lean()
+          : [],
+
+        serviceIds.size
+          ? mongoose
+            .model("Service")
+            .find({
+              _id: {
+                $in: [...serviceIds],
+              },
+            })
+            .select("serviceName productName")
+            .lean()
+          : [],
+      ]);
 
     const userMaps = new Map(userMapsEntries);
     const taskMap = buildMap(taskDocs);
@@ -7717,90 +7934,130 @@ export const GetrespectedleadTask = async (req, res) => {
 
     const resolveUser = (id, modelName) => {
       const key = toIdString(id);
-      if (!key || !modelName) return id ?? null;
+
+      if (!key || !modelName) {
+        return id ?? null;
+      }
+
       const modelMap = userMaps.get(modelName);
+
       return modelMap?.get(key) || id;
     };
 
     const resolveTask = (id) => {
       const key = toIdString(id);
-      if (!key) return id ?? null;
+
+      if (!key) {
+        return id ?? null;
+      }
+
       return taskMap.get(key) || id;
     };
 
     const resolveProductOrService = (id, modelName) => {
       const key = toIdString(id);
-      if (!key || !modelName) return id ?? null;
-      if (modelName === "Product") return productMap.get(key) || id;
-      if (modelName === "Service") return serviceMap.get(key) || id;
+
+      if (!key || !modelName) {
+        return id ?? null;
+      }
+
+      if (modelName === "Product") {
+        return productMap.get(key) || id;
+      }
+
+      if (modelName === "Service") {
+        return serviceMap.get(key) || id;
+      }
+
       return id;
+    };
+
+    /*
+      This filters activityLog before sending data to the client.
+
+      Example:
+      A Manager with ownTask=false may receive:
+      - tasks allocated to the manager
+      - tasks allocated to the manager's assigned staff
+
+      A Manager with ownTask=true receives:
+      - only tasks allocated directly to the manager
+    */
+    const hasTaskAccess = (log) => {
+      if (!log?.taskallocatedTo) {
+        return false;
+      }
+
+      if (log?.allocationChanged) {
+        return false;
+      }
+
+      if (log?.taskTo === "followup") {
+        return false;
+      }
+
+      // Highest priority: ownTask returns only the logged-in user's tasks.
+      if (isOwnTask) {
+        return (
+          String(log.taskallocatedTo) === String(userObjectId)
+        );
+      }
+
+      // Admin, when ownTask=false, can access all valid branch tasks.
+      if (isAdmin) {
+        return true;
+      }
+
+      // Manager/staff: use allowed allocation IDs.
+      return allowedUserIds.some(
+        (allowedId) =>
+          String(allowedId) === String(log.taskallocatedTo)
+      );
     };
 
     const taskLeads = [];
 
     for (const lead of selectedfollowup) {
-      const activityLog = Array.isArray(lead.activityLog) ? lead.activityLog : [];
-      const leadFor = Array.isArray(lead.leadFor) ? lead.leadFor : [];
+      const activityLog = Array.isArray(lead.activityLog)
+        ? lead.activityLog
+        : [];
 
-      let lastAllocatedItem = null;
-      for (const item of activityLog) {
-        if (item?.taskallocatedTo) {
-          lastAllocatedItem = item;
-        }
-      }
+      const leadFor = Array.isArray(lead.leadFor)
+        ? lead.leadFor
+        : [];
 
-      if (ownTask === "true") {
-        const matchedallocation = activityLog.filter(
-          (item) =>
-            String(item?.taskallocatedTo) === String(userid) &&
-            item?.taskTo !== "followup" &&
-            !item?.allocationChanged
-        );
+      /*
+        Do not return unrelated allocation activity logs.
+        Only send the logs the current user has permission to view.
+      */
+      const accessibleActivityLog = activityLog.filter(hasTaskAccess);
 
-        if (!matchedallocation.length) continue;
-
-        const firstMatched = matchedallocation[0];
-
-        const populatedActivityLog = activityLog.map((log) => ({
-          ...log,
-          taskBy: resolveTask(log?.taskBy),
-          taskId: resolveTask(log?.taskId),
-          submittedUser: resolveUser(log?.submittedUser, log?.submissiondoneByModel),
-          taskallocatedTo: resolveUser(log?.taskallocatedTo, log?.taskallocatedToModel),
-        }));
-
-        const populatedLeadFor = leadFor.map((item) => ({
-          ...item,
-          productorServiceId: resolveProductOrService(
-            item?.productorServiceId,
-            item?.productorServicemodel
-          ),
-        }));
-
-        taskLeads.push({
-          ...lead,
-          leadBy: resolveUser(lead?.leadBy, lead?.leadByModel),
-          taskallocatedTo: resolveUser(
-            firstMatched?.taskallocatedTo,
-            firstMatched?.taskallocatedToModel
-          ),
-          taskallocatedBy: resolveUser(
-            firstMatched?.taskallocatedBy,
-            firstMatched?.taskallocatedByModel
-          ),
-          activityLog: populatedActivityLog,
-          leadFor: populatedLeadFor,
-        });
-
+      if (!accessibleActivityLog.length) {
         continue;
       }
 
-      const populatedActivityLog = activityLog.map((item) => ({
-        ...item,
-        taskBy: resolveTask(item?.taskBy),
-        taskId: resolveTask(item?.taskId),
-        submittedUser: resolveUser(item?.submittedUser, item?.submissiondoneByModel),
-        taskallocatedTo: resolveUser(item?.taskallocatedTo, item?.taskallocatedToModel),
+      const lastAccessibleAllocation =
+        accessibleActivityLog[accessibleActivityLog.length - 1];
+
+      const populatedActivityLog = accessibleActivityLog.map((log) => ({
+        ...log,
+        taskBy: resolveTask(log?.taskBy),
+        taskId: resolveTask(log?.taskId),
+
+        submittedUser: resolveUser(
+          log?.submittedUser,
+          log?.submissiondoneByModel
+        ),
+
+        taskallocatedTo: resolveUser(
+          log?.taskallocatedTo,
+          log?.taskallocatedToModel
+        ),
+
+        taskallocatedBy: resolveUser(
+          log?.taskallocatedBy,
+          log?.taskallocatedByModel
+        ),
       }));
 
       const populatedLeadFor = leadFor.map((item) => ({
@@ -7813,28 +8070,660 @@ export const GetrespectedleadTask = async (req, res) => {
 
       taskLeads.push({
         ...lead,
-        leadBy: resolveUser(lead?.leadBy, lead?.leadByModel),
-        taskallocatedTo: lastAllocatedItem
-          ? resolveUser(lastAllocatedItem?.taskallocatedTo, lastAllocatedItem?.taskallocatedToModel)
-          : null,
-        taskallocatedBy: lastAllocatedItem
-          ? resolveUser(lastAllocatedItem?.taskallocatedBy, lastAllocatedItem?.taskallocatedByModel)
-          : null,
+
+        leadBy: resolveUser(
+          lead?.leadBy,
+          lead?.leadByModel
+        ),
+
+        taskallocatedTo: resolveUser(
+          lastAccessibleAllocation?.taskallocatedTo,
+          lastAccessibleAllocation?.taskallocatedToModel
+        ),
+
+        taskallocatedBy: resolveUser(
+          lastAccessibleAllocation?.taskallocatedBy,
+          lastAccessibleAllocation?.taskallocatedByModel
+        ),
+
         activityLog: populatedActivityLog,
         leadFor: populatedLeadFor,
       });
     }
 
     if (!taskLeads.length) {
-      return res.status(200).json({ message: "No Task found", data: [] });
+      return res.status(200).json({
+        message: "No Task found",
+        data: [],
+      });
     }
 
-    return res.status(200).json({ message: "Task found", data: taskLeads });
+    return res.status(200).json({
+      message: "Task found",
+      data: taskLeads,
+    });
   } catch (error) {
     console.error("GetrespectedleadTask error:", error);
-    return res.status(500).json({ message: "Internal server error" });
+
+    return res.status(500).json({
+      message: "Internal server error",
+    });
   }
 };
+
+
+
+
+// export const GetrespectedleadTask = async (req, res) => {
+//   try {
+//     const { userid, branchSelected, role, ownTask } = req.query;
+
+//     const userObjectId = toObjectId(userid);
+//     const branchObjectId = toObjectId(branchSelected);
+
+//     if (!userObjectId) {
+//       return res.status(400).json({ message: "Invalid userid" });
+//     }
+
+//     if (!branchObjectId) {
+//       return res.status(400).json({ message: "Invalid branchSelected" });
+//     }
+
+//     const isAdmin = role === "Admin";
+//     const isManager = role === "Manager";
+
+//     /*
+//       Access rules:
+//       Admin:
+//         - Can see every active task in the selected branch.
+
+//       Manager:
+//         - Can see tasks allocated to the manager.
+//         - Can see tasks allocated to staff where staff.assignedto = manager _id.
+
+//       Other staff:
+//         - Can see only their own allocated tasks.
+//     */
+
+//     let allowedUserIds = [];
+
+//     if (isAdmin) {
+//       // No allocation-user restriction for Admin.
+//       allowedUserIds = null;
+//     } else if (isManager) {
+//       // IMPORTANT:
+//       // Change Staff to your real Mongoose staff model if needed.
+//       const managerStaff = await Staff.find({
+//         assignedto: userObjectId,
+//       })
+//         .select("_id")
+//         .lean();
+
+//       const assignedStaffIds = managerStaff.map((staff) => staff._id);
+
+//       // Manager can see their own tasks + their assigned staff tasks.
+//       allowedUserIds = [userObjectId, ...assignedStaffIds];
+//     } else {
+//       // Normal staff can only see their own assigned tasks.
+//       allowedUserIds = [userObjectId];
+//     }
+
+//     const elemMatch = {
+//       allocationChanged: false,
+//       taskTo: { $ne: "followup" },
+//       ...(allowedUserIds
+//         ? { taskallocatedTo: { $in: allowedUserIds } }
+//         : {}),
+//     };
+
+//     const query = {
+//       leadBranch: branchObjectId,
+//       activityLog: { $elemMatch: elemMatch },
+//     };
+
+//     const selectedfollowup = await LeadMaster.find(query)
+//       .select({
+//         leadId: 1,
+//         leadDate: 1,
+//         customerName: 1,
+//         netAmount: 1,
+//         mobile: 1,
+//         phone: 1,
+//         email: 1,
+//         location: 1,
+//         pincode: 1,
+//         trade: 1,
+//         partner: 1,
+//         leadConfirmed: 1,
+//         leadClosed: 1,
+//         leadLost: 1,
+//         dueDate: 1,
+//         leadFor: 1,
+//         leadBy: 1,
+//         leadByModel: 1,
+//         activityLog: 1,
+//         createdAt: 1,
+//         updatedAt: 1,
+//       })
+//       .populate({
+//         path: "customerName",
+//         select: "customerName",
+//       })
+//       .lean();
+
+//     if (!selectedfollowup.length) {
+//       return res.status(200).json({
+//         message: "No Task found",
+//         data: [],
+//       });
+//     }
+
+//     const userIdsByModel = {};
+//     const taskIds = new Set();
+//     const productIds = new Set();
+//     const serviceIds = new Set();
+
+//     for (const lead of selectedfollowup) {
+//       if (lead?.leadBy && lead?.leadByModel) {
+//         userIdsByModel[lead.leadByModel] ??= new Set();
+//         userIdsByModel[lead.leadByModel].add(String(lead.leadBy));
+//       }
+
+//       for (const log of lead.activityLog || []) {
+//         if (log?.submittedUser && log?.submissiondoneByModel) {
+//           userIdsByModel[log.submissiondoneByModel] ??= new Set();
+//           userIdsByModel[log.submissiondoneByModel].add(
+//             String(log.submittedUser)
+//           );
+//         }
+
+//         if (log?.taskallocatedTo && log?.taskallocatedToModel) {
+//           userIdsByModel[log.taskallocatedToModel] ??= new Set();
+//           userIdsByModel[log.taskallocatedToModel].add(
+//             String(log.taskallocatedTo)
+//           );
+//         }
+
+//         if (log?.taskallocatedBy && log?.taskallocatedByModel) {
+//           userIdsByModel[log.taskallocatedByModel] ??= new Set();
+//           userIdsByModel[log.taskallocatedByModel].add(
+//             String(log.taskallocatedBy)
+//           );
+//         }
+
+//         if (log?.taskId) {
+//           taskIds.add(String(log.taskId));
+//         }
+
+//         if (log?.taskBy && isValidObjectId(log.taskBy)) {
+//           taskIds.add(String(log.taskBy));
+//         }
+//       }
+
+//       for (const item of lead.leadFor || []) {
+//         if (!item?.productorServiceId || !item?.productorServicemodel) {
+//           continue;
+//         }
+
+//         if (item.productorServicemodel === "Product") {
+//           productIds.add(String(item.productorServiceId));
+//         }
+
+//         if (item.productorServicemodel === "Service") {
+//           serviceIds.add(String(item.productorServiceId));
+//         }
+//       }
+//     }
+
+//     const userModelEntries = Object.entries(userIdsByModel);
+
+//     const userFetchPromises = userModelEntries.map(([modelName, ids]) =>
+//       batchFetchByModels(modelName, ids, "name").then((docs) => [
+//         modelName,
+//         buildMap(docs),
+//       ])
+//     );
+
+//     const [userMapsEntries, taskDocs, productDocs, serviceDocs] =
+//       await Promise.all([
+//         Promise.all(userFetchPromises),
+
+//         taskIds.size
+//           ? Task.find({
+//               _id: { $in: [...taskIds] },
+//             })
+//               .select("taskName")
+//               .lean()
+//           : [],
+
+//         productIds.size
+//           ? mongoose
+//               .model("Product")
+//               .find({
+//                 _id: { $in: [...productIds] },
+//               })
+//               .select("productName")
+//               .lean()
+//           : [],
+
+//         serviceIds.size
+//           ? mongoose
+//               .model("Service")
+//               .find({
+//                 _id: { $in: [...serviceIds] },
+//               })
+//               .select("serviceName productName")
+//               .lean()
+//           : [],
+//       ]);
+
+//     const userMaps = new Map(userMapsEntries);
+//     const taskMap = buildMap(taskDocs);
+//     const productMap = buildMap(productDocs);
+//     const serviceMap = buildMap(serviceDocs);
+
+//     const resolveUser = (id, modelName) => {
+//       const key = toIdString(id);
+
+//       if (!key || !modelName) {
+//         return id ?? null;
+//       }
+
+//       const modelMap = userMaps.get(modelName);
+
+//       return modelMap?.get(key) || id;
+//     };
+
+//     const resolveTask = (id) => {
+//       const key = toIdString(id);
+
+//       if (!key) {
+//         return id ?? null;
+//       }
+
+//       return taskMap.get(key) || id;
+//     };
+
+//     const resolveProductOrService = (id, modelName) => {
+//       const key = toIdString(id);
+
+//       if (!key || !modelName) {
+//         return id ?? null;
+//       }
+
+//       if (modelName === "Product") {
+//         return productMap.get(key) || id;
+//       }
+
+//       if (modelName === "Service") {
+//         return serviceMap.get(key) || id;
+//       }
+
+//       return id;
+//     };
+
+//     const hasTaskAccess = (log) => {
+//       if (!log?.taskallocatedTo) {
+//         return false;
+//       }
+
+//       if (log?.allocationChanged) {
+//         return false;
+//       }
+
+//       if (log?.taskTo === "followup") {
+//         return false;
+//       }
+
+//       // Admin can access all valid tasks in the selected branch.
+//       if (isAdmin) {
+//         return true;
+//       }
+
+//       // Manager can access own tasks and assigned staff tasks.
+//       // Normal staff can access only own tasks.
+//       return allowedUserIds.some(
+//         (allowedId) =>
+//           String(allowedId) === String(log.taskallocatedTo)
+//       );
+//     };
+
+//     const taskLeads = [];
+
+//     for (const lead of selectedfollowup) {
+//       const activityLog = Array.isArray(lead.activityLog)
+//         ? lead.activityLog
+//         : [];
+
+//       const leadFor = Array.isArray(lead.leadFor)
+//         ? lead.leadFor
+//         : [];
+
+//       /*
+//         Return only activity logs the current user is authorized to see.
+//         This prevents a manager/staff member from receiving unrelated
+//         allocation history in the API response.
+//       */
+//       const accessibleActivityLogs = activityLog.filter(hasTaskAccess);
+
+//       if (!accessibleActivityLogs.length) {
+//         continue;
+//       }
+
+//       const lastAccessibleAllocation =
+//         accessibleActivityLogs[accessibleActivityLogs.length - 1];
+
+//       const populatedActivityLog = accessibleActivityLogs.map((log) => ({
+//         ...log,
+//         taskBy: resolveTask(log?.taskBy),
+//         taskId: resolveTask(log?.taskId),
+//         submittedUser: resolveUser(
+//           log?.submittedUser,
+//           log?.submissiondoneByModel
+//         ),
+//         taskallocatedTo: resolveUser(
+//           log?.taskallocatedTo,
+//           log?.taskallocatedToModel
+//         ),
+//         taskallocatedBy: resolveUser(
+//           log?.taskallocatedBy,
+//           log?.taskallocatedByModel
+//         ),
+//       }));
+
+//       const populatedLeadFor = leadFor.map((item) => ({
+//         ...item,
+//         productorServiceId: resolveProductOrService(
+//           item?.productorServiceId,
+//           item?.productorServicemodel
+//         ),
+//       }));
+
+//       taskLeads.push({
+//         ...lead,
+//         leadBy: resolveUser(lead?.leadBy, lead?.leadByModel),
+
+//         taskallocatedTo: resolveUser(
+//           lastAccessibleAllocation?.taskallocatedTo,
+//           lastAccessibleAllocation?.taskallocatedToModel
+//         ),
+
+//         taskallocatedBy: resolveUser(
+//           lastAccessibleAllocation?.taskallocatedBy,
+//           lastAccessibleAllocation?.taskallocatedByModel
+//         ),
+
+//         activityLog: populatedActivityLog,
+//         leadFor: populatedLeadFor,
+//       });
+//     }
+
+//     if (!taskLeads.length) {
+//       return res.status(200).json({
+//         message: "No Task found",
+//         data: [],
+//       });
+//     }
+
+//     return res.status(200).json({
+//       message: "Task found",
+//       data: taskLeads,
+//     });
+//   } catch (error) {
+//     console.error("GetrespectedleadTask error:", error);
+
+//     return res.status(500).json({
+//       message: "Internal server error",
+//     });
+//   }
+// };
+
+// export const GetrespectedleadTask = async (req, res) => {
+//   try {
+//     const { userid, branchSelected, role, ownTask } = req.query;
+
+//     const userObjectId = toObjectId(userid);
+//     const branchObjectId = toObjectId(branchSelected);
+
+
+
+//     if (ownTask === "true" && !userObjectId) {
+//       return res.status(400).json({ message: "Invalid userid" });
+//     }
+
+//     const isAdminOrManager = role === "Admin" || role === "Manager";
+
+//     const elemMatch = {
+//       allocationChanged: false,
+//       taskTo: { $ne: "followup" },
+//       ...(isAdminOrManager ? {} : { taskallocatedTo: userObjectId }),
+//     };
+
+//     const query = {
+//       leadBranch: branchObjectId,
+//       activityLog: { $elemMatch: elemMatch },
+//     };
+
+//     const selectedfollowup = await LeadMaster.find(query)
+//       .select({
+//         leadId: 1,
+//         leadDate: 1,
+//         customerName: 1,
+//         netAmount: 1,
+//         mobile: 1,
+//         phone: 1,
+//         email: 1,
+//         location: 1,
+//         pincode: 1,
+//         trade: 1,
+//         partner: 1,
+//         leadConfirmed: 1,
+//         leadClosed: 1,
+//         leadLost: 1,
+//         dueDate: 1,
+//         leadFor: 1,
+//         leadBy: 1,
+//         leadByModel: 1,
+//         activityLog: 1,
+//         createdAt: 1,
+//         updatedAt: 1,
+//       })
+//       .populate({ path: "customerName", select: "customerName" })
+//       .lean();
+
+//     if (!selectedfollowup.length) {
+//       return res.status(200).json({ message: "No Task found", data: [] });
+//     }
+
+//     const userIdsByModel = {};
+//     const taskIds = new Set();
+//     const productIds = new Set();
+//     const serviceIds = new Set();
+
+//     for (const lead of selectedfollowup) {
+//       if (lead?.leadBy && lead?.leadByModel) {
+//         userIdsByModel[lead.leadByModel] ??= new Set();
+//         userIdsByModel[lead.leadByModel].add(String(lead.leadBy));
+//       }
+
+//       for (const log of lead.activityLog || []) {
+//         if (log?.submittedUser && log?.submissiondoneByModel) {
+//           userIdsByModel[log.submissiondoneByModel] ??= new Set();
+//           userIdsByModel[log.submissiondoneByModel].add(String(log.submittedUser));
+//         }
+
+//         if (log?.taskallocatedTo && log?.taskallocatedToModel) {
+//           userIdsByModel[log.taskallocatedToModel] ??= new Set();
+//           userIdsByModel[log.taskallocatedToModel].add(String(log.taskallocatedTo));
+//         }
+
+//         if (log?.taskallocatedBy && log?.taskallocatedByModel) {
+//           userIdsByModel[log.taskallocatedByModel] ??= new Set();
+//           userIdsByModel[log.taskallocatedByModel].add(String(log.taskallocatedBy));
+//         }
+
+//         if (log?.taskId) taskIds.add(String(log.taskId));
+//         if (log?.taskBy && isValidObjectId(log.taskBy)) {
+//           taskIds.add(String(log.taskBy));
+//         }
+//       }
+
+//       for (const item of lead.leadFor || []) {
+//         if (!item?.productorServiceId || !item?.productorServicemodel) continue;
+
+//         if (item.productorServicemodel === "Product") {
+//           productIds.add(String(item.productorServiceId));
+//         } else if (item.productorServicemodel === "Service") {
+//           serviceIds.add(String(item.productorServiceId));
+//         }
+//       }
+//     }
+
+//     const userModelEntries = Object.entries(userIdsByModel);
+
+//     const userFetchPromises = userModelEntries.map(([modelName, ids]) =>
+//       batchFetchByModels(modelName, ids, "name")
+//         .then((docs) => [modelName, buildMap(docs)])
+//     );
+
+//     const [userMapsEntries, taskDocs, productDocs, serviceDocs] = await Promise.all([
+//       Promise.all(userFetchPromises),
+//       taskIds.size
+//         ? Task.find({ _id: { $in: [...taskIds] } }).select("taskName").lean()
+//         : [],
+//       productIds.size
+//         ? mongoose.model("Product").find({ _id: { $in: [...productIds] } }).select("productName").lean()
+//         : [],
+//       serviceIds.size
+//         ? mongoose.model("Service").find({ _id: { $in: [...serviceIds] } }).select("serviceName productName").lean()
+//         : [],
+//     ]);
+
+//     const userMaps = new Map(userMapsEntries);
+//     const taskMap = buildMap(taskDocs);
+//     const productMap = buildMap(productDocs);
+//     const serviceMap = buildMap(serviceDocs);
+
+//     const resolveUser = (id, modelName) => {
+//       const key = toIdString(id);
+//       if (!key || !modelName) return id ?? null;
+//       const modelMap = userMaps.get(modelName);
+//       return modelMap?.get(key) || id;
+//     };
+
+//     const resolveTask = (id) => {
+//       const key = toIdString(id);
+//       if (!key) return id ?? null;
+//       return taskMap.get(key) || id;
+//     };
+
+//     const resolveProductOrService = (id, modelName) => {
+//       const key = toIdString(id);
+//       if (!key || !modelName) return id ?? null;
+//       if (modelName === "Product") return productMap.get(key) || id;
+//       if (modelName === "Service") return serviceMap.get(key) || id;
+//       return id;
+//     };
+
+//     const taskLeads = [];
+
+//     for (const lead of selectedfollowup) {
+//       const activityLog = Array.isArray(lead.activityLog) ? lead.activityLog : [];
+//       const leadFor = Array.isArray(lead.leadFor) ? lead.leadFor : [];
+
+//       let lastAllocatedItem = null;
+//       for (const item of activityLog) {
+//         if (item?.taskallocatedTo) {
+//           lastAllocatedItem = item;
+//         }
+//       }
+
+//       if (ownTask === "true") {
+//         const matchedallocation = activityLog.filter(
+//           (item) =>
+//             String(item?.taskallocatedTo) === String(userid) &&
+//             item?.taskTo !== "followup" &&
+//             !item?.allocationChanged
+//         );
+
+//         if (!matchedallocation.length) continue;
+
+//         const firstMatched = matchedallocation[0];
+
+//         const populatedActivityLog = activityLog.map((log) => ({
+//           ...log,
+//           taskBy: resolveTask(log?.taskBy),
+//           taskId: resolveTask(log?.taskId),
+//           submittedUser: resolveUser(log?.submittedUser, log?.submissiondoneByModel),
+//           taskallocatedTo: resolveUser(log?.taskallocatedTo, log?.taskallocatedToModel),
+//         }));
+
+//         const populatedLeadFor = leadFor.map((item) => ({
+//           ...item,
+//           productorServiceId: resolveProductOrService(
+//             item?.productorServiceId,
+//             item?.productorServicemodel
+//           ),
+//         }));
+
+//         taskLeads.push({
+//           ...lead,
+//           leadBy: resolveUser(lead?.leadBy, lead?.leadByModel),
+//           taskallocatedTo: resolveUser(
+//             firstMatched?.taskallocatedTo,
+//             firstMatched?.taskallocatedToModel
+//           ),
+//           taskallocatedBy: resolveUser(
+//             firstMatched?.taskallocatedBy,
+//             firstMatched?.taskallocatedByModel
+//           ),
+//           activityLog: populatedActivityLog,
+//           leadFor: populatedLeadFor,
+//         });
+
+//         continue;
+//       }
+
+//       const populatedActivityLog = activityLog.map((item) => ({
+//         ...item,
+//         taskBy: resolveTask(item?.taskBy),
+//         taskId: resolveTask(item?.taskId),
+//         submittedUser: resolveUser(item?.submittedUser, item?.submissiondoneByModel),
+//         taskallocatedTo: resolveUser(item?.taskallocatedTo, item?.taskallocatedToModel),
+//       }));
+
+//       const populatedLeadFor = leadFor.map((item) => ({
+//         ...item,
+//         productorServiceId: resolveProductOrService(
+//           item?.productorServiceId,
+//           item?.productorServicemodel
+//         ),
+//       }));
+
+//       taskLeads.push({
+//         ...lead,
+//         leadBy: resolveUser(lead?.leadBy, lead?.leadByModel),
+//         taskallocatedTo: lastAllocatedItem
+//           ? resolveUser(lastAllocatedItem?.taskallocatedTo, lastAllocatedItem?.taskallocatedToModel)
+//           : null,
+//         taskallocatedBy: lastAllocatedItem
+//           ? resolveUser(lastAllocatedItem?.taskallocatedBy, lastAllocatedItem?.taskallocatedByModel)
+//           : null,
+//         activityLog: populatedActivityLog,
+//         leadFor: populatedLeadFor,
+//       });
+//     }
+
+//     if (!taskLeads.length) {
+//       return res.status(200).json({ message: "No Task found", data: [] });
+//     }
+
+//     return res.status(200).json({ message: "Task found", data: taskLeads });
+//   } catch (error) {
+//     console.error("GetrespectedleadTask error:", error);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// };
 
 
 
@@ -9448,11 +10337,11 @@ export const GetcollectionLeads = async (req, res) => {
             originalIndex
           }))
           .filter((history) => {
-            // if (accountantMode) {
-            //   return history.paymentVerified === verifiedBool;
-            // }
-            return history.paymentVerified === verifiedBool;
-
+            if (accountantMode) {
+              return history.paymentVerified === verifiedBool;
+            }
+            // return history.paymentVerified === verifiedBool;
+            return history
             // return loggeduserby
             //   ? String(history.receivedBy) === String(loggeduserby)
             //   : true;

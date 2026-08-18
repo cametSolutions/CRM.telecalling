@@ -60,6 +60,7 @@ export default function CollectionUpdate() {
   const [selectedLeadId, setselectedLeadId] = useState(null)
   console.log(selectedLeadId)
   const [verifiedLead, setverifiedLead] = useState(false)
+  console.log(verifiedLead)
   const [companyBranches, setcompanyBranches] = useState(null)
   const [balanceAmount, setBalanceAmount] = useState(null)
   const [isChecked, setIsChecked] = useState(false)
@@ -222,7 +223,9 @@ export default function CollectionUpdate() {
       const updatedhistorylist = collectionlead.filter(
         (item) => item.leadId === selectedLeadId
       )
+
       console.log(updatedhistorylist)
+      console.log(updatedhistorylist[0]?.paymentHistory)
       setselectedCollection(updatedhistorylist[0])
       setpaymentHistoryList(updatedhistorylist[0]?.paymentHistory)
       console.log(updatedhistorylist[0])
@@ -346,11 +349,34 @@ export default function CollectionUpdate() {
 
   const getDisplayAmount = (item) => {
     console.log(item)
-
+    console.log(isdepartmentisAccountant)
     console.log("h")
-    return (item || [])
-      .filter((history) => history?.paymentVerified === false)
-      .reduce((sum, history) => sum + Number(history?.receivedAmount || 0), 0)
+    console.log(verifiedLead)
+    console.log(isdepartmentisAccountant)
+    if (isdepartmentisAccountant) {
+      if (verifiedLead) {
+console.log("hhh")
+        return (item || [])
+          .filter((history) => history?.paymentVerified === true)
+          .reduce(
+            (sum, history) => sum + Number(history?.receivedAmount || 0),
+            0
+          )
+      } else {
+        return (item || [])
+          .filter((history) => history?.paymentVerified === false)
+          .reduce(
+            (sum, history) => sum + Number(history?.receivedAmount || 0),
+            0
+          )
+      }
+    } else {
+      console.log("hhh")
+      return (item || []).reduce(
+        (sum, history) => sum + Number(history?.receivedAmount || 0),
+        0
+      )
+    }
   }
   const handleCollectionUpdate = async (
     formData,
@@ -362,7 +388,6 @@ export default function CollectionUpdate() {
     console.log("Hh")
     setsubmitLoader(true)
     console.log(formData)
-    
 
     try {
       const response = await api.post("/lead/collectionUPdate", formData)
@@ -540,11 +565,14 @@ export default function CollectionUpdate() {
                 className="text-red-600 font-medium truncate block"
                 title={lastLog?.remarks}
               >
-                {lastLog?.remarks || "-"}
+                {item?.leadFor[0]?.licenseNumber}{" "}
               </span>
             </td>
-            <td className="px-3 py-2 text-sm text-gray-700 border border-gray-300 whitespace-nowrap text-center">
-              {followupDate}
+            <td className="px-3 py-2 text-sm font-medium text-blue-700 border border-blue-300 whitespace-nowrap text-center">
+              {(
+                item?.leadFor[0]?.prodproductorServiceId?.shortName ||
+                item?.leadFor[0]?.productorServiceId?.productName
+              ).toUpperCase()}
             </td>
             <td
               className="px-2 py-2 border border-gray-300"
@@ -599,9 +627,7 @@ export default function CollectionUpdate() {
             <td className="px-3 py-2 text-sm font-semibold text-green-700 border border-gray-300 whitespace-nowrap text-right">
               <span className="inline-flex items-center gap-0.5 justify-end">
                 <IndianRupee className="w-3.5 h-3.5" />
-                {!verifiedLead
-                  ? getDisplayAmount(item.paymentHistory)
-                  : item?.netAmount?.toLocaleString("en-IN")}
+                {getDisplayAmount(item.paymentHistory)}
               </span>
             </td>
           </tr>
@@ -738,8 +764,7 @@ export default function CollectionUpdate() {
             </th>
             <th className="border border-gray-300 px-3 py-1 text-left">
               <div className="flex items-center gap-1.5">
-                <Calendar className="w-3 h-3" />
-                <span>Followup Date</span>
+                <span>Product Name</span>
               </div>
             </th>
             <th className="border border-gray-300 px-3 py-1 text-center">
@@ -757,7 +782,7 @@ export default function CollectionUpdate() {
             <th className="border border-gray-300 px-3 py-1 text-right">
               <div className="flex items-center gap-1.5 justify-end">
                 <IndianRupee className="w-3 h-3" />
-                <span>Net Amount</span>
+                <span>Coll. Amount</span>
               </div>
             </th>
           </tr>

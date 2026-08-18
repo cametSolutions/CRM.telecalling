@@ -95,7 +95,7 @@ router.put("/taskEdit", authMiddleware, TaskEdit);
 router.put("/closingleads",authMiddleware,Leadclosing)
 router.put("/fix-leadverified", authMiddleware, fixLeadVerifiedField);
 router.put("/paymentverification", authMiddleware, UpdatepaymentVerification);
-
+router.put("/paymentunverify",authMiddleware,UpdatepaymentVerification)
 router.delete("/taskDelete", authMiddleware, TaskDelete);
 
 router.post("/leadClosingAmount", authMiddleware, LeadClosingAmount);
