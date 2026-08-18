@@ -355,7 +355,7 @@ export default function CollectionUpdate() {
     console.log(isdepartmentisAccountant)
     if (isdepartmentisAccountant) {
       if (verifiedLead) {
-console.log("hhh")
+        console.log("hhh")
         return (item || [])
           .filter((history) => history?.paymentVerified === true)
           .reduce(
@@ -506,7 +506,19 @@ console.log("hhh")
     const LeadRow = ({ item, index }) => {
       console.log(item)
       const [open, setOpen] = useState(false)
+      const isAdditionalService = item?.leadFor?.filter(
+        (item) => item.productorservicetype === "Additionalservice"
+      )
+      let taggedlicense = null
+      if (isAdditionalService && isAdditionalService.length) {
+        console.log("h")
+        console.log(isAdditionalService)
 
+        taggedlicense = (isAdditionalService || []).flatMap((item) =>
+          (item.taggeddata || []).map((tag) => tag.licensenumber)
+        )
+        console.log(taggedlicense)
+      }
       const lastLog = item.activityLog[item.activityLog.length - 1]
       const followupDate = lastLog?.nextFollowUpDate
         ? new Date(lastLog.nextFollowUpDate)
@@ -560,13 +572,22 @@ console.log("hhh")
             <td className="px-3 py-2 text-gray-700 text-sm border border-gray-300 whitespace-nowrap">
               {item?.mobile}
             </td>
-            <td className="px-3 py-2 text-sm border border-gray-300 max-w-[200px]">
+            {/* <td className="px-3 py-2 text-sm border border-gray-300 max-w-[200px]">
               <span
                 className="text-red-600 font-medium truncate block"
                 title={lastLog?.remarks}
               >
                 {item?.leadFor[0]?.licenseNumber}{" "}
               </span>
+            </td> */}
+            <td className="whitespace-nowrap border border-blue-300 px-3 py-2 text-center text-sm font-medium text-red-500">
+              {isAdditionalService?.length
+                ? taggedlicense.join(", ")
+                : (
+                    item?.leadFor?.[0]?.productorServiceId?.shortName ||
+                    item?.leadFor?.[0]?.productorServiceId?.productName ||
+                    "-"
+                  ).toUpperCase()}
             </td>
             <td className="px-3 py-2 text-sm font-medium text-blue-700 border border-blue-300 whitespace-nowrap text-center">
               {(
@@ -759,13 +780,13 @@ console.log("hhh")
                 <span>Mobile</span>
               </div>
             </th>
-            <th className="border border-gray-300 px-3 py-1 text-left">
-              <span>Last Remark</span>
+            <th className="border border-gray-300 px-3 py-1 text-center">
+              <span>License No.</span>
             </th>
-            <th className="border border-gray-300 px-3 py-1 text-left">
-              <div className="flex items-center gap-1.5">
+            <th className="border border-gray-300 px-3 py-1 text-center">
+            
                 <span>Product Name</span>
-              </div>
+              
             </th>
             <th className="border border-gray-300 px-3 py-1 text-center">
               Event Log
