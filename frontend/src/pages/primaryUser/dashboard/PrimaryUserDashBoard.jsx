@@ -75,7 +75,7 @@ console.log(announcementlist)
           date.getFullYear() === currentYear && date.getMonth() === currentMonth
         )
       })
-
+console.log(currentMonthHolidays)
       setcurrentyearHoliday(currentMonthHolidays)
     }
   }, [holydata])
