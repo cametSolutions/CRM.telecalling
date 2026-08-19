@@ -2042,45 +2042,45 @@ export const CustomerEdit = async (req, res) => {
     */
     const directLicenseNumbers = Array.isArray(tableData)
       ? tableData
-          .filter((item) => {
-            const licenseNo = normalizeLicenseNumber(
-              item?.licensenumber
-            )
+        .filter((item) => {
+          const licenseNo = normalizeLicenseNumber(
+            item?.licensenumber
+          )
 
-            return Boolean(licenseNo)
-          })
-          .map((item) => ({
-            licensenumber: Number(
-              normalizeLicenseNumber(item.licensenumber)
-            ),
-            productid: item?.productid || item?.product_id || null
-          }))
+          return Boolean(licenseNo)
+        })
+        .map((item) => ({
+          licensenumber: Number(
+            normalizeLicenseNumber(item.licensenumber)
+          ),
+          productid: item?.productid || item?.product_id || null
+        }))
       : []
 
     const taggedLicenseNumbers = Array.isArray(tableData)
       ? tableData.flatMap((item) => {
-          const tags = Array.isArray(item?.taggeddata)
-            ? item.taggeddata
-            : []
+        const tags = Array.isArray(item?.taggeddata)
+          ? item.taggeddata
+          : []
 
-          return tags
-            .filter((tag) =>
-              Boolean(normalizeLicenseNumber(tag?.licensenumber))
-            )
-            .map((tag) => ({
-              licensenumber: Number(
-                normalizeLicenseNumber(tag.licensenumber)
-              ),
+        return tags
+          .filter((tag) =>
+            Boolean(normalizeLicenseNumber(tag?.licensenumber))
+          )
+          .map((tag) => ({
+            licensenumber: Number(
+              normalizeLicenseNumber(tag.licensenumber)
+            ),
 
-              /*
-                This product ID is only used if a License document
-                does not already exist for this customer/license number.
+            /*
+              This product ID is only used if a License document
+              does not already exist for this customer/license number.
 
-                Usually tagged licenses already belong to a Primary Product.
-              */
-              productid: item?.productid || item?.product_id || null
-            }))
-        })
+              Usually tagged licenses already belong to a Primary Product.
+            */
+            productid: item?.productid || item?.product_id || null
+          }))
+      })
       : []
 
     const allLicenses = [
@@ -2253,7 +2253,7 @@ export const GetAllCustomer = async (req, res) => {
     }
 
 
-   
+
     const customers = await Customer.aggregate([
       {
         $lookup: {
@@ -2277,15 +2277,22 @@ export const GetAllCustomer = async (req, res) => {
           mobile: 1,
           landline: 1,
           email: 1,
-          selected: 1,
+          // selected: 1,
+          selected: {
+            $cond: [
+              { $isArray: "$selected" },
+              "$selected",
+              []
+            ]
+          },
           partner: 1,
-gstNo:1,
-registrationType:1,
-city:1,
-pincode:1,
-contactPerson:1,
-country:1,
-state:1,
+          gstNo: 1,
+          registrationType: 1,
+          city: 1,
+          pincode: 1,
+          contactPerson: 1,
+          country: 1,
+          state: 1,
           // pick partner name from the correct field
           "partnerDoc._id": 1,
           "partnerDoc.partner": 1,    // NOT partnerDoc.name
@@ -3140,7 +3147,7 @@ export const customerCallRegistration = async (req, res) => {
 
     const calldata = req.body // Assuming calldata is sent in the body
     const emailsend = calldata.formdata.emailSend
-  
+
 
     // Convert attendedBy.callerId to ObjectId
     const addTimes = (time1, time2) => {
@@ -4089,7 +4096,7 @@ export const GetCallRegister = async (req, res) => {
     const { customerid } = req.query
 
     const { callId } = req.params
-   
+
     if (customerid !== "null" && customerid) {
       const customerId = new mongoose.Types.ObjectId(customerid)
       const registeredCall = await CallRegistration.findOne({
@@ -4940,7 +4947,7 @@ export const LeavemasterRegister = async (req, res) => {
 }
 export const GetallHoly = async (req, res) => {
   try {
-    const holydata= await Holymaster.find({})
+    const holydata = await Holymaster.find({})
     if (holydata) {
       return res.status(200).json({ message: "holy found", data: holydata })
     }
