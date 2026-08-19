@@ -169,11 +169,12 @@ const Layout = () => {
   const [selectedMonth, setSelectedMonth] = useState(
     String(now.getMonth() + 1).padStart(2, "0")
   )
+console.log(selectedMonth)
   const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   console.log(selectedMonth)
   const [categorylist, setcategorylist] = useState([])
   const [achievedproducts, setacheivedProducts] = useState([])
-console.log(achievedproducts)
+  console.log(achievedproducts)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
   const [periodMode, setperiodMode] = useState("all")
   console.log(periodMode)
@@ -183,14 +184,14 @@ console.log(achievedproducts)
   // const [loggedUser, setLoggedUser] = useState(null)
   // console.log(loggedUser)
   const [productlist, setproductList] = useState([])
-console.log(productlist)
+  console.log(productlist)
   const [selectedCategory, setselectedCategory] = useState(null)
   console.log(selectedCategory)
   const [changepasswordOpen, setchangepasswordOpen] = useState(false)
   const [performanceModalOpen, setperformanceModalOpen] = useState(false)
   const [categoryId, setcategoryId] = useState(null)
-console.log(categoryId)
-console.log(selectedCategory)
+  console.log(categoryId)
+  console.log(selectedCategory)
   console.log(performanceModalOpen)
   const isAuthPage = location.pathname === "/"
   const [targetData, setTargetData] = useState([])
@@ -330,7 +331,7 @@ console.log(selectedCategory)
             selectedMonths={selectedMonth}
             yearSelected={selectedYear}
             setselectedCategory={setselectedCategory}
-selectedCategory={selectedCategory}
+            selectedCategory={selectedCategory}
             setproductList={setproductList}
             setcategoryId={setcategoryId}
             parentperiodmode={periodMode}
@@ -338,8 +339,8 @@ selectedCategory={selectedCategory}
               setSelectedMonth(val2)
               setselectedPeriod(val)
             }}
-setacheivedProducts={setacheivedProducts}
-achievedproducts={achievedproducts}
+            setacheivedProducts={setacheivedProducts}
+            achievedproducts={achievedproducts}
           />
         )}
 
@@ -381,7 +382,7 @@ achievedproducts={achievedproducts}
           setperformanceModalOpen(false)
           setselectedCategory(null)
           setproductList([])
-setacheivedProducts([])
+          setacheivedProducts([])
         }}
         targetData={targetData}
         onselectedPeriodChange={(val, val2) => {
@@ -390,7 +391,7 @@ setacheivedProducts([])
         }}
         setproductList={setproductList}
         productlist={productlist}
-  products={achievedproducts}
+        products={achievedproducts}
         category={selectedCategory}
         loggedUser={loggedUser}
         categoryId={categoryId}

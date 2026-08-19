@@ -2344,9 +2344,9 @@ const LeadFollowUp = () => {
     setHistoryList(history)
     setSelectedLeadId(leadid)
   }
-
+console.log(selectedDocId)
   const handlefollowupdate = (Id, docId) => {
-    console.log("hhh")
+    console.log("hhhffff")
     setfollowupDateModal(true)
     setSelectedLeadId(Id)
     setselectedDocid(docId)
@@ -2552,6 +2552,15 @@ const LeadFollowUp = () => {
       console.log(ishaveAllocation)
       console.log(taskList)
       setdemoEditIndex(Item.activityLog.length - 1)
+console.log("hhhh")
+console.log(
+ishaveAllocation?.allocationDate
+          ?.toString()
+          ?.split("T")[0])
+console.log(ishaveAllocation?.allocationDate
+          .toString()
+          .split("T")[0])
+console.log("jjjj")
       setDemodata({
         selectedType: ishaveAllocation?.taskId?._id,
         selectedTypeName: ishaveAllocation?.taskTo.toUpperCase(),
@@ -2562,10 +2571,13 @@ const LeadFollowUp = () => {
         demoassignedDate: formatDate(ishaveAllocation.submissionDate),
         demoDescription: ishaveAllocation?.remarks
       })
+console.log("hhh")
+console.log("hhh")
       setisdemofollowedNotClosed(true)
 
       setIsEditable(true)
       setIsAllocated(true)
+console.log("hhh")
     }
     setfollowupClosed(!pending)
     console.log("hh")

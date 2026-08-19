@@ -23,7 +23,6 @@ import {
   PiggyBank
 } from "lucide-react"
 export const NotificationPopup = ({ open, onClose, notificationData }) => {
-  console.log(notificationData.holidays)
   if (!open) return
   const [showTasks, setShowTasks] = useState(false)
   const [showFollowups, setShowFollowups] = useState(false)
