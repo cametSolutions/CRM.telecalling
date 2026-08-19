@@ -1486,6 +1486,7 @@ export const gettargetResult = async (req, res) => {
 
     const monthNumber = Number(month);
     const yearNumber = Number(year);
+
     const mode = String(periodMode).trim().toLowerCase();
 
     if (
