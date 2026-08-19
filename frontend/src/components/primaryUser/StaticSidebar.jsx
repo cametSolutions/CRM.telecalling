@@ -1,5 +1,3 @@
-
-
 import React, { useEffect, useState } from "react"
 import UseFetch from "../../hooks/useFetch"
 import useMediaQuery from "@mui/material/useMediaQuery"
@@ -26,8 +24,8 @@ export const StaticSidebar = ({
   setcategoryId,
   onselectedPeriodChange,
   setselectedCategory,
-setproductList,
-selectedCategory,
+  setproductList,
+  selectedCategory,
   // setselectedPeriod,
   // handleMoreClick,
   setselectedCompanyBranch,
@@ -39,11 +37,11 @@ selectedCategory,
   setTargetData,
   targetData,
   onavataropenClick,
-setacheivedProducts,
-achievedproducts
+  setacheivedProducts,
+  achievedproducts
 }) => {
-console.log(selectedCategory)
-// console.log(setselectedCategory)
+  console.log(selectedCategory)
+  // console.log(setselectedCategory)
   console.log(targetData)
   console.log("hhd")
   // console.log(onpasswordClick)
@@ -57,7 +55,7 @@ console.log(selectedCategory)
   const [selectedYear, setSelectedYear] = useState(yearSelected)
   console.log(selectedYear)
   const [periodMode, setperiodMode] = useState(parentperiodmode)
-console.log(parentperiodmode)
+  console.log(parentperiodmode)
   const [avatarOpen, setAvatarOpen] = useState(false)
   // const [user, setUser] = useState(null)
   const user = useSelector((state) => state.auth.user)
@@ -84,7 +82,7 @@ console.log(parentperiodmode)
       periodMode &&
       `/target/gettargetresult?month=${selectedMonth}&year=${selectedYear}&periodMode=${periodMode}&selectedBranch=${selectedBranch}`
   )
- const { data: branchProduct } = UseFetch(
+  const { data: branchProduct } = UseFetch(
     `/product/getallbranchProduct?branch=${selectedBranch}`
   )
   console.log(selectedMonth)
@@ -94,11 +92,11 @@ console.log(parentperiodmode)
   console.log(periodMode)
   console.log(data)
   const { data: branchlist } = UseFetch("/branch/getBranch")
-useEffect(() => {
-console.log("hhhhh")
-console.log(selectedCategory)
+  useEffect(() => {
+    console.log("hhhhh")
+    console.log(selectedCategory)
     if (selectedCategory) {
-console.log('hhhh')
+      console.log("hhhh")
       const filteredList = branchProduct
         .filter(
           (item) =>
@@ -110,13 +108,13 @@ console.log('hhhh')
         )
         .map((item) => item.productName || item.serviceName)
       setproductList(filteredList)
-console.log(data.userWiseResults)
-const rt=data.userWiseResults.map((item)=>item.userName)
-console.log(rt)
+      console.log(data.userWiseResults)
+      const rt = data.userWiseResults.map((item) => item.userName)
+      console.log(rt)
       const filteredloggedUserItem = data?.userWiseResults.filter(
         (item) => item.userId === user._id
       )
-console.log(user)
+      console.log(user)
       console.log(filteredloggedUserItem)
       const filteredselectedCategory =
         filteredloggedUserItem[0]?.categories.filter(
@@ -131,12 +129,12 @@ console.log(user)
         },
         { target: 0, achieved: 0, balance: 0 }
       )
-console.log(filteredselectedCategory)
+      console.log(filteredselectedCategory)
       // setselectedDataPopup(summary)
       console.log(summary)
       if (filteredselectedCategory && filteredselectedCategory.length) {
-console.log("hhhhha")
-console.log(achievedproducts)
+        console.log("hhhhha")
+        console.log(achievedproducts)
         setacheivedProducts((prev) => [
           ...prev,
           ...filteredselectedCategory.flatMap((item) =>
@@ -150,8 +148,8 @@ console.log(achievedproducts)
         setacheivedProducts([])
       }
     }
-  }, [data,selectedCategory])
-console.log(achievedPoints)
+  }, [data, selectedCategory])
+  console.log(achievedPoints)
   useEffect(() => {
     setSidebarOpen(!isMobile)
   }, [isMobile])
@@ -202,15 +200,17 @@ console.log(achievedPoints)
             ])
         ).values()
       ]
-
+      console.log(uniqueCategories)
       const selectedUser = data.userWiseResults.find(
         (item) => item.userId === user._id
       )
-console.log(data.userWiseResults)
-const aa=data.userWiseResults.map((item)=>item.incentive)
-console.log(aa)
+      console.log(data.userWiseResults)
+      const aa = data.userWiseResults.filter(
+        (item) => item.userName === "Alina C P"
+      )
+      console.log(aa)
       setloggeduserTarget(selectedUser || null)
-console.log(selectedUser)
+      console.log(selectedUser)
       setachievedPoints(selectedUser?.incentive || 0)
 
       const updatedCategories = uniqueCategories
@@ -219,17 +219,27 @@ console.log(selectedUser)
             data.userWiseResults
               ?.flatMap((userItem) => userItem.categories || [])
               .filter((c) => c.categoryId === cat.categoryId) || []
-
+          if (cat.categoryId === "69f5be3af24022288f2953f2") {
+            console.log("hh")
+            const a =
+              data.userWiseResults
+                ?.flatMap((userItem) => userItem.categories || [])
+                .filter((c) => c.categoryId === cat.categoryId) || []
+            console.log(a)
+const b=a.filter((it)=>it.measurementType==="quantity")
+console.log(b)
+          }
+          console.log(matchedCategories)
           const totalTarget = matchedCategories.reduce(
             (sum, c) => sum + (c.target || 0),
             0
           )
-
+          console.log(totalTarget)
           const totalAchieved = matchedCategories.reduce(
             (sum, c) => sum + (c.achieved || 0),
             0
           )
-
+          console.log(totalAchieved)
           return {
             ...cat,
             achievedamount: totalAchieved,
@@ -273,20 +283,19 @@ console.log(selectedUser)
     }
   }
   const handleMoreClick = (categoryid, categoryName) => {
-console.log(categoryName)
+    console.log(categoryName)
     console.log(categoryid)
     console.log("hhh")
- const filteredList = branchProduct
-        .filter(
-          (item) =>
-            item.selected?.some(
-              (selectedItem) =>
-                String(selectedItem.category_id) ===
-                String(categoryid)
-            ) || String(item.category_id) === String(categoryid)
-        )
-        .map((item) => item.productName || item.serviceName)
-      setproductList(filteredList)
+    const filteredList = branchProduct
+      .filter(
+        (item) =>
+          item.selected?.some(
+            (selectedItem) =>
+              String(selectedItem.category_id) === String(categoryid)
+          ) || String(item.category_id) === String(categoryid)
+      )
+      .map((item) => item.productName || item.serviceName)
+    setproductList(filteredList)
     setselectedCategory({
       Id: categoryid,
       categoryName

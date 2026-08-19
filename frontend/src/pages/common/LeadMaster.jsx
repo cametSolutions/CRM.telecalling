@@ -133,7 +133,7 @@ function LicenseDropdown({
       document.removeEventListener("touchstart", handlePointerDown)
     }
   }, [dropdownId])
-
+  console.log(customerTableData)
   const filtered = (customerTableData || []).filter((lic) => {
     const q = String(search || "")
       .toLowerCase()
@@ -1741,6 +1741,7 @@ const LeadMaster = ({
     //     sourceIndex: index,
     //   },
     // ])
+    console.log(customerTableData)
     setcustomerTableData((prev) => {
       const newRow = {
         licenseNumber: licenseValue,
@@ -1749,7 +1750,9 @@ const LeadMaster = ({
         sourceIndex: index + 1
       }
 
-      return [prev[0], newRow]
+      // return [...prev, newRow]
+
+      return prev.length > 0 ? [newRow, ...prev.slice(1)] : [newRow]
     })
   }
   console.log(customerTableData)
@@ -3267,15 +3270,15 @@ const LeadMaster = ({
     console.log(item)
     console.log(selectedCustomer)
     console.log(item?.productorServiceId)
-    const filteredproduct = selectedCustomer?.selected.filter(
-      (it) => it.product_id?._id === item?.productorServiceId
+    const filteredproduct = selectedCustomer?.selected?.filter(
+      (it) => it?.product_id?._id === item?.productorServiceId
     )
     console.log(filteredproduct)
     console.log(item?.productorServiceId)
     const a = leadList.map((item) => item.productName)
     console.log(a)
     const newproduct = leadList.filter(
-      (it) => it._id === item.productorServiceId
+      (it) => it?._id === item?.productorServiceId
     )
     console.log(newproduct)
 
@@ -3426,6 +3429,7 @@ const LeadMaster = ({
     console.log(normalizedTaggedData)
     setDetailsItem(item)
     setDetailsIndex(index)
+    console.log("hhh")
     setDetailsForm({
       name: item?.productorServiceName || "",
       licenseNumber: item?.licenseNumber || "",
@@ -3438,6 +3442,7 @@ const LeadMaster = ({
       taggeddata: normalizedTaggedData,
       productType: item?.productorservicetype
     })
+    console.log("Hh")
     setdetailsopen(true)
   }
   console.log(detailsForm)

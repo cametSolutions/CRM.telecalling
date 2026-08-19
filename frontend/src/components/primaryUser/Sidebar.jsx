@@ -3602,7 +3602,7 @@ const Sidebar = ({
       return { ...item, target, achieved, percent }
     })
   }, [categorylist])
-
+console.log(normalizedCategories)
   const periodOptions = useMemo(() => {
     return (targetData?.periods || []).map((period) => {
       const parsed = getPeriodRange(period)
