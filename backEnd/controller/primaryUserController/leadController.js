@@ -3,7 +3,7 @@ import Partner from "../../model/secondaryUser/partnerSchema.js";
 import Product from "../../model/primaryUser/productSchema.js"
 import { isValidObjectId } from "mongoose";
 import util from "util";
-
+import Holymaster from "../../model/secondaryUser/holydaymasterSchema.js";
 import QuarterlyAchiever from "../../model/primaryUser/quarterlyAchieversSchema.js";
 import YearlyAchiever from "../../model/primaryUser/yearylyAchieversSchema.js";
 import mongoose from "mongoose";
@@ -2707,13 +2707,28 @@ export const getNotificationData = async (req, res) => {
 
 
 
+const startOfMonth = new Date();
+startOfMonth.setDate(1);
+startOfMonth.setHours(0, 0, 0, 0);
 
+const endOfMonth = new Date();
+endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+endOfMonth.setDate(0);
+endOfMonth.setHours(23, 59, 59, 999);
+
+const holydata = await Holymaster.find({
+  holyDate: {
+    $gte: startOfMonth,
+    $lte: endOfMonth,
+  },
+});
+console.log("holddddddddddddddddddddd",holydata)
       const notificationData = {
         pendingTasks: taskLeads,
         pendingFollowups: followupLeads,
         leaves: result || [],
         birthdays: currentmonthBirthDays || [],
-        holidays: [], // Add your holiday data here when you implement it
+        holidays: holydata, // Add your holiday data here when you implement it
         quarterlyAchievers: data?.quarterlyachiever || [],
         yearlyAchievers: data?.yearlyachiever || [],
       };

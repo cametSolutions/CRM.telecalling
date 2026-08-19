@@ -4940,9 +4940,9 @@ export const LeavemasterRegister = async (req, res) => {
 }
 export const GetallHoly = async (req, res) => {
   try {
-    const a = await Holymaster.find({})
-    if (a) {
-      return res.status(200).json({ message: "holy found", data: a })
+    const holydata= await Holymaster.find({})
+    if (holydata) {
+      return res.status(200).json({ message: "holy found", data: holydata })
     }
   } catch (error) {
     console.log("error", error.message)
