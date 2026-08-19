@@ -757,6 +757,7 @@ const LeadMaster = ({
   const [warningMessage, setwarningMessage] = useState("")
   console.log(warningErrors)
   const [showdetailsopen, setdetailsopen] = useState(false)
+  console.log(showdetailsopen)
   const [detailsItem, setDetailsItem] = useState(null)
   const [detailsIndex, setDetailsIndex] = useState(null)
   const [detailsForm, setDetailsForm] = useState({
@@ -1516,7 +1517,8 @@ const LeadMaster = ({
           registrationType: item?.registrationType,
           city: item?.city,
           pincode: item?.pincode,
-          contactPerson: item?.contactPerson
+          contactPerson: item?.contactPerson,
+          selected: item?.selected
         }
       })
       setCustomerOptions(options)
@@ -3242,7 +3244,7 @@ const LeadMaster = ({
     })
   }
   const handleDetails = (item, index) => {
-    console.log(detailsForm)
+    console.log("k")
     console.log(selectedCustomer)
     console.log(item)
     console.log(leadList)
@@ -3270,9 +3272,10 @@ const LeadMaster = ({
     console.log(item)
     console.log(selectedCustomer)
     console.log(item?.productorServiceId)
-    const filteredproduct = selectedCustomer?.selected?.filter(
-      (it) => it?.product_id?._id === item?.productorServiceId
-    )
+    const filteredproduct =
+      selectedCustomer?.selected?.filter(
+        (it) => it?.product_id?._id === item?.productorServiceId
+      ) || []
     console.log(filteredproduct)
     console.log(item?.productorServiceId)
     const a = leadList.map((item) => item.productName)
@@ -3443,6 +3446,7 @@ const LeadMaster = ({
       productType: item?.productorservicetype
     })
     console.log("Hh")
+    console.log(showdetailsopen)
     setdetailsopen(true)
   }
   console.log(detailsForm)
