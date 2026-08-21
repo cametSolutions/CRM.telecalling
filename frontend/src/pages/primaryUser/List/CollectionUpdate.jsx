@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useMemo, useCallback } from "react"
 import UseFetch from "../../../hooks/useFetch"
 import { useNavigate } from "react-router-dom"
 import { PaymentHistoryModal } from "../../../components/primaryUser/PaymentHistoryModal"
@@ -6,6 +6,7 @@ import { LeadhistoryModal } from "../../../components/primaryUser/LeadhistoryMod
 import { CollectionupdateModal } from "../../../components/primaryUser/CollectionupdateModal"
 import api from "../../../api/api"
 import { useSelector } from "react-redux"
+import SearchBar from "../../../components/common/SearchBar"
 import SkeletonTable from "../../../components/loader/SkeletonTable"
 import {
   Eye,
@@ -38,6 +39,8 @@ export default function CollectionUpdate() {
   console.log("hh")
   const [showFullName, setShowFullName] = useState(false)
   const [tableData, setTableData] = useState([])
+  const [filteredLeads, setFilteredLeads] = useState([])
+  const [searchInitialized, setSearchInitialized] = useState(false)
   console.log(tableData)
   console.log(tableData)
   const [forcefullyclosedLeads, setforcefullyClosedLeads] = useState([])
@@ -109,16 +112,9 @@ export default function CollectionUpdate() {
     selectedreduxbranch &&
       `/product/getallbranchProduct?branch=${selectedreduxbranch}`
   )
-  console.log(selectedCompanyBranch)
-  console.log(verifiedLead)
-  console.log(isdepartmentisAccountant)
-  console.log(loggedUser)
-  console.log(isdepartmentisAccountant)
-  console.log(verifiedLead)
-  console.log(collectionlead)
+
   const { data: partners } = UseFetch("/customer/getallpartners")
-  console.log("h")
-  console.log(paymenthistoryModal)
+
   useEffect(() => {
     if (companybranches && companybranches.length > 0) {
       const userData = getLocalStorageItem("user")
@@ -501,6 +497,19 @@ export default function CollectionUpdate() {
       setacheivedProducts([])
     }
   }
+
+  const sourceGroupedData = useMemo(() => {
+    return isforcefullyclosed ? forcefullyclosedLeads : tableData
+  }, [isforcefullyclosed, forcefullyclosedLeads, tableData])
+
+  const leadsForSearch = useMemo(() => {
+    return (sourceGroupedData || []).flatMap((group) => group?.leads || [])
+  }, [sourceGroupedData])
+
+  const handleFilteredLeads = useCallback((leads) => {
+    setFilteredLeads(leads)
+    setSearchInitialized(true)
+  }, [])
   console.log(forcefullyclosedLeads)
   const renderTable = (data) => {
     const LeadRow = ({ item, index }) => {
@@ -543,14 +552,7 @@ export default function CollectionUpdate() {
                 <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
               )}
             </td>
-            {/* <td className="px-3 py-2 font-semibold text-gray-900 text-sm border border-gray-300 whitespace-nowrap uppercase truncate">
-              {item?.customerName?.customerName}
-            </td> */}
-            {/* <td className="px-3 py-2 border border-gray-300">
-              <div className="font-semibold text-gray-900 text-sm uppercase max-w-[200px] truncate">
-                {item?.customerName?.customerName}
-              </div>
-            </td> */}
+          
             <td className="px-3 py-2 font-semibold text-gray-900 text-sm border border-gray-300 whitespace-nowrap">
               <div className="relative group w-[180px]">
                 <span
@@ -572,22 +574,20 @@ export default function CollectionUpdate() {
             <td className="px-3 py-2 text-gray-700 text-sm border border-gray-300 whitespace-nowrap">
               {item?.mobile}
             </td>
-            {/* <td className="px-3 py-2 text-sm border border-gray-300 max-w-[200px]">
-              <span
-                className="text-red-600 font-medium truncate block"
-                title={lastLog?.remarks}
-              >
-                {item?.leadFor[0]?.licenseNumber}{" "}
-              </span>
-            </td> */}
+        
             <td className="whitespace-nowrap border border-blue-300 px-3 py-2 text-center text-sm font-medium text-red-500">
-              {isAdditionalService?.length
+              {/* {isAdditionalService?.length
                 ? taggedlicense.join(", ")
                 : (
                     item?.leadFor?.[0]?.productorServiceId?.shortName ||
                     item?.leadFor?.[0]?.productorServiceId?.productName ||
                     "-"
-                  ).toUpperCase()}
+                  ).toUpperCase()} */}
+  {isAdditionalService?.length
+                ? taggedlicense.join(", ")
+                : 
+                    item?.leadFor?.[0]?.licenseNumber
+                   }
             </td>
             <td className="px-3 py-2 text-sm font-medium text-blue-700 border border-blue-300 whitespace-nowrap text-center">
               {(
@@ -784,9 +784,7 @@ export default function CollectionUpdate() {
               <span>License No.</span>
             </th>
             <th className="border border-gray-300 px-3 py-1 text-center">
-            
-                <span>Product Name</span>
-              
+              <span>Product Name</span>
             </th>
             <th className="border border-gray-300 px-3 py-1 text-center">
               Event Log
@@ -831,212 +829,534 @@ export default function CollectionUpdate() {
     )
   }
   return (
-    <div className="h-full  bg-[#ADD8E6]">
-      <div className="flex h-full flex-row">
-        {/* <StaticSidebar
-          handleMoreClick={handleMoreClick}
-          selectedCompanyBranch={selectedCompanyBranch}
-          setselectedCompanyBranch={setselectedCompanyBranch}
-          parenttargetData={settargetData}
-          parentperiodmode={periodMode}
-          parentyear={selectedYear}
-          setselectedPeriod={setselectedPeriod}
-        /> */}
-        <div className="flex flex-1 flex-col overflow-hidden">
-          {/* <header className="flex items-center justify-between bg-[#ADD8E6]">
-            {loggedUser?.role?.toLowerCase() === "admin" ? (
-              <AdminHeader hide={true} />
-            ) : (
-              <StaffHeader hide={true} />
-            )}
+    // <div className="h-full  bg-[#ADD8E6]">
+    //   <div className="flex h-full flex-row">
+    //     <div className="flex flex-1 flex-col overflow-hidden">
+    //       <SearchBar
+    //         data={leadsForSearch}
+    //         onFilteredData={handleFilteredLeads}
+    //         placeholder="Search customer, mobile, license or product..."
+    //       />
 
-            <div className="flex items-center gap-1.5  pr-3 h-full">
-              <button className="rounded-full p-1.5 transition bg-slate-100">
-                <Mail size={15} strokeWidth={2.2} />
-              </button>
-              <div className="relative">
-                <button className="rounded-full p-1.5 transition bg-slate-100">
-                  <MessageSquareText size={15} strokeWidth={2.2} />
-                </button>
-                <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />
+    //       <div className="flex justify-between items-center p-3 md:p-5 md:pb-2 sticky top-0 z-30">
+    //         <h2 className="text-lg font-bold">
+    //           {isdepartmentisAccountant
+    //             ? verifiedLead
+    //               ? "All Verified Payment Leads"
+    //               : forcefullyclosedLeads.length > 0 && isforcefullyclosed
+    //                 ? "Forcefully Closed amount Leads"
+    //                 : "Pending Verified Collections"
+    //             : "Pending Collection Leads"}
+    //         </h2>
+
+    //         <div className="flex justify-end items-center">
+    //           {isdepartmentisAccountant && (
+    //             <>
+    //               {!verifiedLead && (
+    //                 <div className="mr-3 flex">
+    //                   <span className="text-sm whitespace-nowrap font-semibold">
+    //                     Forcefully closed Leads
+    //                   </span>
+    //                   <div className="">
+    //                     <button
+    //                       onClick={() => {
+    //                         // setTableData([])
+    //                         setisforcefullyclosed(!isforcefullyclosed)
+    //                         // setverifiedLead(!verifiedLead)
+    //                       }}
+    //                       className={`${
+    //                         isforcefullyclosed ? "bg-green-500" : "bg-gray-300"
+    //                       } w-11 h-6 flex items-center rounded-full transition-colors duration-300 mx-2`}
+    //                     >
+    //                       <div
+    //                         className={`${
+    //                           isforcefullyclosed
+    //                             ? "translate-x-5"
+    //                             : "translate-x-0"
+    //                         } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+    //                       ></div>
+    //                     </button>
+    //                   </div>
+    //                 </div>
+    //               )}
+
+    //               <div className="flex">
+    //                 <span className="text-sm whitespace-nowrap font-semibold">
+    //                   {verifiedLead ? "Payment Verified" : "Pending Verified"}
+    //                 </span>
+    //                 <div className="">
+    //                   {" "}
+    //                   <button
+    //                     onClick={() => {
+    //                       setTableData([])
+    //                       setverifiedLead(!verifiedLead)
+    //                     }}
+    //                     className={`${
+    //                       verifiedLead ? "bg-green-500" : "bg-gray-300"
+    //                     } w-11 h-6 flex items-center rounded-full transition-colors duration-300 mx-2`}
+    //                   >
+    //                     <div
+    //                       className={`${
+    //                         verifiedLead ? "translate-x-5" : "translate-x-0"
+    //                       } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+    //                     ></div>
+    //                   </button>
+    //                 </div>
+    //               </div>
+    //             </>
+    //           )}
+
+    //           <button
+    //             onClick={() =>
+    //               loggedUser?.role === "Admin"
+    //                 ? navigate("/admin/transaction/lead")
+    //                 : navigate("/staff/transaction/lead")
+    //             }
+    //             className="bg-black text-white py-1 px-3 rounded-lg shadow-lg hover:bg-gray-600"
+    //           >
+    //             New Lead
+    //           </button>
+    //         </div>
+    //       </div>
+    //       {/* Responsive Table Container this is the newest design*/}
+    //       <div className="h-auto overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3 bg-white">
+    //         <>
+    //           {(() => {
+    //             const sourceData = sourceGroupedData
+
+    //             const leadIdsToShow = new Set(
+    //               (searchInitialized ? filteredLeads : leadsForSearch).map(
+    //                 (lead) => String(lead._id)
+    //               )
+    //             )
+
+    //             const currentData = (sourceData || [])
+    //               .map((group) => ({
+    //                 ...group,
+    //                 leads: (group?.leads || []).filter((lead) =>
+    //                   leadIdsToShow.has(String(lead._id))
+    //                 )
+    //               }))
+    //               .filter((group) => group.leads.length > 0)
+
+    //             const hasLeads = currentData.some(
+    //               (group) => group?.leads?.length > 0
+    //             )
+
+    //             if (loading) {
+    //               return <SkeletonTable />
+    //             }
+
+    //             if (!hasLeads) {
+    //               return (
+    //                 <div className="py-6 text-center text-gray-500">
+    //                   No Data Available
+    //                 </div>
+    //               )
+    //             }
+
+    //             return currentData.map(({ staffName, leads }, index) => (
+    //               <div key={staffName || `group-${index}`} className="mb-6">
+    //                 {staffName && (
+    //                   <h3 className="mb-2 text-base font-semibold text-gray-800">
+    //                     {staffName}{" "}
+    //                     <span className="text-sm text-gray-500">
+    //                       ({leads.length} Leads)
+    //                     </span>
+    //                   </h3>
+    //                 )}
+
+    //                 {renderTable(leads)}
+    //               </div>
+    //             ))
+    //           })()}
+    //         </>
+    //       </div>
+    //     </div>
+    //   </div>
+
+    //   {showhistoryModal && historyList && historyList.length > 0 && (
+    //     <LeadhistoryModal
+    //       selectedLeadId={selectedLeadId}
+    //       historyList={historyList}
+    //       handlecloseModal={handlecloseModal}
+    //     />
+    //   )}
+    //   {collectionupdateModal &&
+    //     selectedData &&
+    //     partner &&
+    //     partner.length > 0 && (
+    //       <CollectionupdateModal
+    //         data={selectedData}
+    //         closemodal={setcollectionUpdateModal}
+    //         partnerlist={partner}
+    //         loggedUser={loggedUser}
+    //         // refreshHook={refreshHook}
+    //         handleCollectionUpdate={handleCollectionUpdate}
+    //       />
+    //     )}
+    //   {paymenthistoryModal && (
+    //     <PaymentHistoryModal
+    //       data={paymentHistoryList}
+    //       selectedLead={selectedCollection}
+    //       isChecked={isChecked}
+    //       isforcefullyclosed={isforcefullyclosed}
+    //       balanceAmount={balanceAmount}
+    //       onClose={setpaymentHistoryModal}
+    //       leadid={leadId}
+    //       setselectedLeadId={setselectedLeadId}
+    //       leadDocId={leadDocId}
+    //       loggedUser={loggedUser}
+    //       refresh={refreshHook}
+    //       setdata={setTableData}
+    //       verifiedLead={verifiedLead}
+    //       isdepartmentisAccountant={isdepartmentisAccountant}
+    //     />
+    //   )}
+    //   <PerformanceModal
+    //     modalOpen={openModal}
+    //     splitType={targetData?.selectedMeasurementType}
+    //     selectedperiod={selectedPeriod}
+    //     allperiods={targetData?.periods}
+    //     onselectedPeriodChange={(val, val2) => {
+    //       setSelectedMonth(val2)
+    //       setselectedPeriod(val)
+    //     }}
+    //     onMonthChange={(val) => {
+    //       setacheivedProducts([])
+    //       setselectedDataPopup([])
+    //       setperiodMode(val)
+    //       setselecteduserName(null)
+    //     }}
+    //     onYearChange={(val) => {
+    //       setacheivedProducts([])
+    //       setselectedDataPopup([])
+    //       setSelectedYear(val)
+    //       setselecteduserName(null)
+    //     }}
+    //     productlist={productlist}
+    //     onClose={() => {
+    //       setselecteduserName(null)
+    //       setacheivedProducts([])
+    //       setOpenModal(false)
+    //       setActiveUserId(null)
+    //     }}
+    //     selectedMonth={periodMode}
+    //     selectedYear={selectedYear}
+    //     summary={{
+    //       target: selectedDatapopup?.target,
+    //       achieved: selectedDatapopup?.achieved,
+    //       balance:
+    //         selectedDatapopup?.achieved > selectedDatapopup?.target
+    //           ? 0
+    //           : selectedDatapopup?.balance
+    //     }}
+    //     products={achievedproducts}
+    //     targetData={targetData?.userWiseResults}
+    //     loggedUser={loggedUser}
+    //     selectedUser={selectedUserName}
+    //     category={selectedCategory}
+    //     handleSelectedUser={handleSelectedUser}
+    //     activeUserId={activeUserId}
+    //   />
+    // </div>
+
+    <div className="flex h-full overflow-hidden bg-[#ADD8E6]">
+      {/* Keep your existing sidebar component outside/alongside this main area.
+        Sidebar wrapper should use: h-screen shrink-0 overflow-y-auto */}
+
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
+       
+<section
+  className="
+    mx-2 shrink-0 rounded-xl border border-white/60
+    bg-white/90 px-2.5 py-2 shadow-sm backdrop-blur
+    sm:mx-3 sm:px-3
+  "
+>
+  {/* Row 1: title and action */}
+  <div className="flex min-w-0 items-center justify-between gap-2">
+    <div className="flex min-w-0 items-center gap-2">
+      <span className="h-5 w-1 shrink-0 rounded-full bg-blue-600" />
+
+      <h2 className="truncate text-sm font-bold text-slate-900">
+        {isdepartmentisAccountant
+          ? verifiedLead
+            ? "Verified Payments"
+            : forcefullyclosedLeads.length > 0 &&
+                isforcefullyclosed
+              ? "Force Closed"
+              : "Pending Collections"
+          : "Collection Leads"}
+      </h2>
+
+      <span className="hidden shrink-0 text-xs font-semibold text-slate-400 sm:inline">
+        {leadsForSearch.length}
+      </span>
+    </div>
+
+    <button
+      type="button"
+      onClick={() =>
+        loggedUser?.role === "Admin"
+          ? navigate("/admin/transaction/lead")
+          : navigate("/staff/transaction/lead")
+      }
+      className="
+        inline-flex h-7 shrink-0 items-center justify-center gap-1
+        rounded-md bg-slate-900 px-2 text-[11px] font-semibold
+        text-white shadow-sm transition hover:bg-slate-700
+      "
+    >
+      <span className="text-sm leading-none">+</span>
+      New Lead
+    </button>
+  </div>
+
+  {/* Row 2: search and filters. Responsive grid, never scrolls */}
+  <div
+    className="
+      mt-2 grid grid-cols-1 gap-1.5
+      sm:grid-cols-[minmax(0,1fr)_auto]
+      lg:grid-cols-[minmax(220px,1fr)_auto_auto]
+    "
+  >
+    <div className="min-w-0">
+      <SearchBar
+        data={leadsForSearch}
+        onFilteredData={handleFilteredLeads}
+        placeholder="Search customer, mobile, license or product..."
+      />
+    </div>
+
+    {isdepartmentisAccountant && !verifiedLead && (
+      <label
+        className={`
+          flex h-8 cursor-pointer items-center justify-between gap-2
+          rounded-lg border px-2.5 transition
+          ${
+            isforcefullyclosed
+              ? "border-orange-200 bg-orange-50"
+              : "border-slate-200 bg-white hover:bg-slate-50"
+          }
+        `}
+      >
+        <input
+          type="checkbox"
+          checked={isforcefullyclosed}
+          onChange={() =>
+            setisforcefullyclosed((previous) => !previous)
+          }
+          className="sr-only"
+        />
+
+        <span
+          className={`
+            text-[11px] font-semibold
+            ${
+              isforcefullyclosed
+                ? "text-orange-700"
+                : "text-slate-600"
+            }
+          `}
+        >
+          Force Closed
+        </span>
+
+        <span
+          className={`
+            relative inline-flex h-4 w-8 items-center rounded-full
+            transition-colors duration-200
+            ${
+              isforcefullyclosed
+                ? "bg-orange-500"
+                : "bg-slate-300"
+            }
+          `}
+        >
+          <span
+            className={`
+              h-3 w-3 rounded-full bg-white shadow-sm
+              transition-transform duration-200
+              ${
+                isforcefullyclosed
+                  ? "translate-x-4"
+                  : "translate-x-0.5"
+              }
+            `}
+          />
+        </span>
+      </label>
+    )}
+
+    {isdepartmentisAccountant && (
+      <label
+        className={`
+          flex h-8 cursor-pointer items-center justify-between gap-2
+          rounded-lg border px-2.5 transition
+          ${
+            verifiedLead
+              ? "border-emerald-200 bg-emerald-50"
+              : "border-slate-200 bg-white hover:bg-slate-50"
+          }
+        `}
+      >
+        <input
+          type="checkbox"
+          checked={verifiedLead}
+          onChange={() => {
+            setTableData([]);
+            setverifiedLead((previous) => !previous);
+          }}
+          className="sr-only"
+        />
+
+        <span
+          className={`
+            text-[11px] font-semibold
+            ${
+              verifiedLead
+                ? "text-emerald-700"
+                : "text-slate-600"
+            }
+          `}
+        >
+          {verifiedLead ? "Verified" : "Pending"}
+        </span>
+
+        <span
+          className={`
+            relative inline-flex h-4 w-8 items-center rounded-full
+            transition-colors duration-200
+            ${
+              verifiedLead
+                ? "bg-emerald-500"
+                : "bg-slate-300"
+            }
+          `}
+        >
+          <span
+            className={`
+              h-3 w-3 rounded-full bg-white shadow-sm
+              transition-transform duration-200
+              ${
+                verifiedLead
+                  ? "translate-x-4"
+                  : "translate-x-0.5"
+              }
+            `}
+          />
+        </span>
+      </label>
+    )}
+  </div>
+</section>
+        <section className="flex min-h-0 flex-1 flex-col p-2 md:p-3">
+          <div
+            className="
+      flex min-h-0 flex-1 flex-col overflow-hidden
+      rounded-xl border border-white/70 bg-white
+      shadow-md shadow-slate-900/10
+    "
+          >
+            {/* Table card header */}
+            <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-3 py-2">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-blue-500" />
+
+                <p className="text-xs font-semibold text-slate-700">
+                  Collection Records
+                </p>
               </div>
-              <button className="rounded-full p-1.5 transition bg-slate-100">
-                <Settings size={15} strokeWidth={2.2} />
-              </button>
-              <button className="rounded-full p-1.5 transition bg-slate-100">
-                <User size={15} strokeWidth={2.2} />
-              </button>
 
-              <div className="relative">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setShowUserMenu((prev) => !prev)
-                  }}
-                  className="rounded-full p-1.5 transition bg-slate-100"
-                >
-                  <User size={15} strokeWidth={2.2} />
-                </button>
-
-                {showUserMenu && (
-                  <div
-                    onClick={(e) => e.stopPropagation()} 
-                    className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
-                  >
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
+                {leadsForSearch.length} total
+              </span>
             </div>
-          </header> */}
-          <div className="flex justify-between items-center p-3 md:p-5 md:pb-2 sticky top-0 z-30">
-            <h2 className="text-lg font-bold">
-              {isdepartmentisAccountant
-                ? verifiedLead
-                  ? "All Verified Payment Leads"
-                  : forcefullyclosedLeads.length > 0 && isforcefullyclosed
-                    ? "Forcefully Closed amount Leads"
-                    : "Pending Verified Collections"
-                : "Pending Collection Leads"}
-            </h2>
 
-            <div className="flex justify-end items-center">
-              {isdepartmentisAccountant && (
-                <>
-                  {!verifiedLead && (
-                    <div className="mr-3 flex">
-                      <span className="text-sm whitespace-nowrap font-semibold">
-                        Forcefully closed Leads
-                      </span>
-                      <div className="">
-                        <button
-                          onClick={() => {
-                            // setTableData([])
-                            setisforcefullyclosed(!isforcefullyclosed)
-                            // setverifiedLead(!verifiedLead)
-                          }}
-                          className={`${
-                            isforcefullyclosed ? "bg-green-500" : "bg-gray-300"
-                          } w-11 h-6 flex items-center rounded-full transition-colors duration-300 mx-2`}
-                        >
-                          <div
-                            className={`${
-                              isforcefullyclosed
-                                ? "translate-x-5"
-                                : "translate-x-0"
-                            } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-                          ></div>
-                        </button>
+            {/* Table takes all remaining page height and scrolls internally */}
+            <div className="relative min-h-0 flex-1 overflow-auto bg-slate-100/70">
+              <div className="min-h-full bg-white">
+                {(() => {
+                  const sourceData = sourceGroupedData
+
+                  const leadIdsToShow = new Set(
+                    (searchInitialized ? filteredLeads : leadsForSearch).map(
+                      (lead) => String(lead._id)
+                    )
+                  )
+
+                  const currentData = (sourceData || [])
+                    .map((group) => ({
+                      ...group,
+                      leads: (group?.leads || []).filter((lead) =>
+                        leadIdsToShow.has(String(lead._id))
+                      )
+                    }))
+                    .filter((group) => group.leads.length > 0)
+
+                  const hasLeads = currentData.some(
+                    (group) => group?.leads?.length > 0
+                  )
+
+                  if (loading) {
+                    return <SkeletonTable />
+                  }
+
+                  if (!hasLeads) {
+                    return (
+                      <div className="flex min-h-[220px] items-center justify-center">
+                        <div className="text-center">
+                          <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+                            <span className="text-lg">⌕</span>
+                          </div>
+
+                          <p className="text-sm font-semibold text-slate-600">
+                            No records found
+                          </p>
+
+                          <p className="mt-1 text-xs text-slate-400">
+                            Try changing the search or filters.
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )
+                  }
 
-                  <div className="flex">
-                    <span className="text-sm whitespace-nowrap font-semibold">
-                      {verifiedLead ? "Payment Verified" : "Pending Verified"}
-                    </span>
-                    <div className="">
-                      {" "}
-                      <button
-                        onClick={() => {
-                          setTableData([])
-                          setverifiedLead(!verifiedLead)
-                        }}
-                        className={`${
-                          verifiedLead ? "bg-green-500" : "bg-gray-300"
-                        } w-11 h-6 flex items-center rounded-full transition-colors duration-300 mx-2`}
-                      >
+                  return (
+                    <>
+                      {currentData.map(({ staffName, leads }, index) => (
                         <div
-                          className={`${
-                            verifiedLead ? "translate-x-5" : "translate-x-0"
-                          } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-                        ></div>
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-              {/* <select
-                value={selectedCompanyBranch || ""}
-                onChange={(e) => {
-                  setTableData([])
-                  setselectedCompanyBranch(e.target.value)
-                }}
-                className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[150px] mx-2 cursor-pointer "
-              >
-                {loggedUserBranches?.map((branch) => (
-                  <option key={branch.value} value={branch.value}>
-                    {branch.label}
-                  </option>
-                ))}
-              </select> */}
+                          key={staffName || `group-${index}`}
+                          className="border-b border-slate-100 last:border-b-0"
+                        >
+                          {staffName && (
+                            <div className="sticky top-0 z-10 flex items-center bg-slate-50 px-3 py-1.5">
+                              <h3 className="text-xs font-semibold text-slate-700">
+                                {staffName}
 
-              <button
-                onClick={() =>
-                  loggedUser?.role === "Admin"
-                    ? navigate("/admin/transaction/lead")
-                    : navigate("/staff/transaction/lead")
-                }
-                className="bg-black text-white py-1 px-3 rounded-lg shadow-lg hover:bg-gray-600"
-              >
-                New Lead
-              </button>
+                                <span className="ml-1.5 font-medium text-slate-400">
+                                  ({leads.length} Leads)
+                                </span>
+                              </h3>
+                            </div>
+                          )}
+
+                          {/* Keep your existing table exactly unchanged */}
+                          {renderTable(leads)}
+                        </div>
+                      ))}
+
+                      {/* Shows only when rows do not fill the full available height */}
+                      <div className="min-h-[110px] border-t border-slate-100 bg-slate-50/60" />
+                    </>
+                  )
+                })()}
+              </div>
             </div>
           </div>
-          {/* Responsive Table Container this is the newest design*/}
-          <div className="h-auto overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3 bg-white">
-            <>
-              {(() => {
-                const currentData = isforcefullyclosed
-                  ? forcefullyclosedLeads
-                  : tableData
-
-                const hasLeads =
-                  Array.isArray(currentData) &&
-                  currentData.some(
-                    (group) =>
-                      Array.isArray(group?.leads) && group.leads.length > 0
-                  )
-
-                if (loading) {
-                  return <SkeletonTable />
-                }
-
-                if (
-                  !Array.isArray(currentData) ||
-                  currentData.length === 0 ||
-                  !hasLeads
-                ) {
-                  return (
-                    <div className="py-6 text-center text-gray-500">
-                      No Data Available
-                    </div>
-                  )
-                }
-
-                return currentData.map(({ staffName, leads }, index) => (
-                  <div key={staffName || `group-${index}`} className="mb-6">
-                    {staffName && (
-                      <h3 className="mb-2 text-base font-semibold text-gray-800">
-                        {staffName}{" "}
-                        <span className="text-sm text-gray-500">
-                          ({leads?.length || 0} Leads)
-                        </span>
-                      </h3>
-                    )}
-                    {renderTable(leads)}
-                  </div>
-                ))
-              })()}
-            </>
-          </div>
-        </div>
-      </div>
+        </section>
+      </main>
 
       {showhistoryModal && historyList && historyList.length > 0 && (
         <LeadhistoryModal
@@ -1045,6 +1365,7 @@ export default function CollectionUpdate() {
           handlecloseModal={handlecloseModal}
         />
       )}
+
       {collectionupdateModal &&
         selectedData &&
         partner &&
@@ -1054,10 +1375,10 @@ export default function CollectionUpdate() {
             closemodal={setcollectionUpdateModal}
             partnerlist={partner}
             loggedUser={loggedUser}
-            // refreshHook={refreshHook}
             handleCollectionUpdate={handleCollectionUpdate}
           />
         )}
+
       {paymenthistoryModal && (
         <PaymentHistoryModal
           data={paymentHistoryList}
@@ -1076,6 +1397,7 @@ export default function CollectionUpdate() {
           isdepartmentisAccountant={isdepartmentisAccountant}
         />
       )}
+
       <PerformanceModal
         modalOpen={openModal}
         splitType={targetData?.selectedMeasurementType}

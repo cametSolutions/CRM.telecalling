@@ -3096,7 +3096,7 @@ export const GetLicense = async (req, res) => {
 export const ChecklicenseForlead = async (req, res) => {
   try {
     const { licenseNumber, leadDocId } = req.query;
-
+console.log("abhi abhi abhia")
     if (!licenseNumber) {
       return res.status(400).json({
         message: "License number is required",
@@ -3127,7 +3127,7 @@ export const ChecklicenseForlead = async (req, res) => {
         licensenumber: licenseNo,
       }).select("_id"),
     ]);
-
+console.log("checkingggggggggggggggggggggggggggg")
     return res.json({
       exists: Boolean(leadExists || licenseExists),
       source: leadExists ? "Lead" : licenseExists ? "License" : null,
