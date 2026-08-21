@@ -93,10 +93,10 @@ export const StaticSidebar = ({
   console.log(data)
   const { data: branchlist } = UseFetch("/branch/getBranch")
   useEffect(() => {
-    console.log("hhhhh")
+    console.log("hhhhhdddd")
     console.log(selectedCategory)
     if (selectedCategory) {
-      console.log("hhhh")
+      console.log("hhhhhhhh")
       const filteredList = branchProduct
         .filter(
           (item) =>
@@ -109,8 +109,28 @@ export const StaticSidebar = ({
         .map((item) => item.productName || item.serviceName)
       setproductList(filteredList)
       console.log(data.userWiseResults)
-      const rt = data.userWiseResults.map((item) => item.userName)
+      console.log(data?.checkvalues)
+      const m = data?.checkvalues.map((it) => it.leadId)
+      console.log(m)
+      const rt = data.userWiseResults.filter(
+        (item) => item.userName === "Alina C P"
+      )
+      const u = data.userWiseResults.map((it) => it.userName)
+      console.log(u)
       console.log(rt)
+      const t = rt[0].categories.filter(
+        (it) => it.measurementType === "quantity"
+      )
+      console.log(t)
+      const c = t[0]?.achievedLeads.map((it) => it.leadId)
+      const d = t[1]?.achievedLeads.map((it) => it.leadId)
+      console.log(d)
+      console.log(c)
+      const mSet = new Set(m)
+
+      const missingFromM = [...d, ...c].filter((leadId) => !mSet.has(leadId))
+
+      console.log("Missing from m:", missingFromM)
       const filteredloggedUserItem = data?.userWiseResults.filter(
         (item) => item.userId === user._id
       )
@@ -130,20 +150,47 @@ export const StaticSidebar = ({
         { target: 0, achieved: 0, balance: 0 }
       )
       console.log(filteredselectedCategory)
+      const re = filteredselectedCategory?.map(
+        ({ achievedLeads, ...rest }) => rest
+      )
+      console.log(re)
       // setselectedDataPopup(summary)
       console.log(summary)
       if (filteredselectedCategory && filteredselectedCategory.length) {
         console.log("hhhhha")
         console.log(achievedproducts)
-        setacheivedProducts((prev) => [
-          ...prev,
-          ...filteredselectedCategory.flatMap((item) =>
-            (item?.products || []).map((product) => ({
-              productname: product.name,
-              amount: product.achieved
-            }))
-          )
-        ])
+        // setacheivedProducts((prev) => [
+        //   ...prev,
+        //   ...filteredselectedCategory.flatMap((item) =>
+        //     (item?.products || []).map((product) => ({
+        //       productname: product.name,
+        //       amount: product.achieved
+        //     }))
+        //   )
+        // ])
+        const products = filteredselectedCategory.flatMap((item) =>
+          (item?.products || []).map((product) => ({
+            productname: product.name,
+            amount: product.achieved
+          }))
+        )
+
+        const combinedProducts = Object.values(
+          products.reduce((acc, product) => {
+            if (!acc[product.productname]) {
+              acc[product.productname] = {
+                productname: product.productname,
+                amount: 0
+              }
+            }
+
+            acc[product.productname].amount += product.amount || 0
+
+            return acc
+          }, {})
+        )
+
+        setacheivedProducts(combinedProducts)
       } else {
         setacheivedProducts([])
       }
@@ -226,8 +273,8 @@ export const StaticSidebar = ({
                 ?.flatMap((userItem) => userItem.categories || [])
                 .filter((c) => c.categoryId === cat.categoryId) || []
             console.log(a)
-const b=a.filter((it)=>it.measurementType==="quantity")
-console.log(b)
+            const b = a.filter((it) => it.measurementType === "quantity")
+            console.log(b)
           }
           console.log(matchedCategories)
           const totalTarget = matchedCategories.reduce(
@@ -295,6 +342,7 @@ console.log(b)
           ) || String(item.category_id) === String(categoryid)
       )
       .map((item) => item.productName || item.serviceName)
+    console.log(filteredList)
     setproductList(filteredList)
     setselectedCategory({
       Id: categoryid,
@@ -347,71 +395,6 @@ console.log(b)
   }
 
   return (
-    //     <>
-    //       <div
-    //         className={`${
-    //           isMobile
-    //             ? `fixed left-0 top-0 z-40 h-screen ${
-    //                 sidebarOpen ? "" : "pointer-events-none"
-    //               }`
-    //             : "relative h-full"
-    //         }`}
-    //       >
-    //         <div
-    //           className={`h-full transition-transform duration-300 ease-in-out ${
-    //             isMobile
-    //               ? sidebarOpen
-    //                 ? "translate-x-0 pointer-events-auto"
-    //                 : "-translate-x-full pointer-events-none"
-    //               : "translate-x-0"
-    //           }`}
-    //         >
-    //           <div
-    //             className={`h-full ${
-    //               isMobile ? "w-[74vw] max-w-[280px] bg-white shadow-2xl" : "w-auto"
-    //             }`}
-    //           >
-    //             {targetData && (
-    //               <Sidebar
-    //                 handleMoreClick={handleMoreClick}
-    //                 onpasswordClick={onpasswordClick}
-    //                 onperformanceModalClick={onperformanceModalClick}
-    //                 onLogoutClick={logout}
-    // selectedYear={selectedYear}
-    // setSelectedYear={setSelectedYear}
-    //                 targetData={targetData}
-    //                 onselectedPeriodChange={onselectedPeriodChange}
-    //                 onavataropenClick={onavataropenClick}
-    //                 achievedPoints={achievedPoints}
-    //                 sidebarOpen={sidebarOpen}
-    //                 toggleSidebar={toggleSidebar}
-    //                 user={user}
-    //                 selectedBranch={selectedBranch}
-    //                 setselectedBranch={handleBranchChange}
-    //                 branchOptions={branchOptions}
-    //                 categorylist={categorylist}
-    //                 targetLoading={targetLoading}
-    //                 BranchSelect={BranchSelect}
-    //                 SkeletonTable={SkeletonTable}
-    //                 setAvatarOpen={setAvatarOpen}
-    //                 onPasswordChange={handlepasswordChange}
-    //                 isMobile={isMobile}
-    //               />
-    //             )}
-    //           </div>
-    //         </div>
-    //       </div>
-
-    //       {isMobile && sidebarOpen && (
-    //         <button
-    //           type="button"
-    //           aria-label="Close sidebar overlay"
-    //           onClick={() => setSidebarOpen(false)}
-    //           className="fixed inset-0 z-30 bg-black/40"
-    //         />
-    //       )}
-    //     </>
-
     <>
       <div
         className={`${

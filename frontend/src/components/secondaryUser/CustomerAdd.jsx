@@ -34,9 +34,9 @@ const CustomerAdd = ({
   process,
   handleCustomerData,
   handleEditedData,
-  customer=null
+  customer = null
 }) => {
-console.log(customer)
+  console.log(customer)
   const navigate = useNavigate()
   const { setHasUnsavedChanges, requestNavigation } = useUnsavedChanges()
   const {
@@ -85,14 +85,12 @@ console.log(customer)
   const loggeduserBranch = useSelector(
     (state) => state.companyBranch.loggeduserbranches
   )
-const [licenseRemoveConfirm, setLicenseRemoveConfirm] = useState({
-  open: false,
-  licenseNo: null
-})
-  console.log(loggeduserBranch)
+  const [licenseRemoveConfirm, setLicenseRemoveConfirm] = useState({
+    open: false,
+    licenseNo: null
+  })
   const [detailsData, setdetailsData] = useState({})
   const [isSaved, setIsSaved] = useState(false)
-  console.log(isSaved)
   const [duplicatelicense, setduplicatelicense] = useState(null)
   const debounceTimersRef = useRef({})
   const [submissionloader, setsubmissionloader] = useState(false)
@@ -103,7 +101,6 @@ const [licenseRemoveConfirm, setLicenseRemoveConfirm] = useState({
   const [partner, setPartner] = useState([])
   const [license, setLicense] = useState([])
   const [tableData, setTableData] = useState([])
-  console.log(tableData)
   const [initialTableData, setInitialTableData] = useState([])
   const [licenseAvailable, setLicenseAvailable] = useState(true)
   const [showProductPopup, setShowProductPopup] = useState(false)
@@ -115,10 +112,8 @@ const [licenseRemoveConfirm, setLicenseRemoveConfirm] = useState({
   const registrationType = watch("registrationType")
   const watchedLicense = watch("licensenumber")
   const watchedTaggedLicenses = watch("taggedLicenses") || []
-const selectedCountry = watch("country");
-console.log(selectedCountry)
+  const selectedCountry = watch("country")
   const watchedTaggedLicenseDueDates = watch("taggedLicenseDueDates") || {}
-  console.log(watchedTaggedLicenseDueDates)
   const hasTaggedLicenses =
     popupType === "Additionalservice" && watchedTaggedLicenses.length > 0
 
@@ -134,10 +129,8 @@ console.log(selectedCountry)
   const debouncedLicenseNo = useDebounce(watchedLicense, 1000)
   const isTableDirty =
     JSON.stringify(tableData) !== JSON.stringify(initialTableData)
-  console.log(initialTableData)
-  console.log(tableData)
+
   const hasUnsavedChanges = isDirty || isTableDirty
-  console.log(hasUnsavedChanges)
   const softwareTrades = [
     "Agriculture",
     "Business Services",
@@ -228,9 +221,8 @@ console.log(selectedCountry)
     if (user) {
     }
   }, [])
- 
 
-const countryOptions = useMemo(
+  const countryOptions = useMemo(
     () =>
       Country.getAllCountries().map((country) => ({
         label: country.name,
@@ -238,14 +230,14 @@ const countryOptions = useMemo(
       })),
     []
   )
-console.log(countryOptions)
+  console.log(countryOptions)
   const stateOptions = selectedCountry
     ? State.getStatesOfCountry(selectedCountry).map((state) => ({
         label: state.name,
         value: state.isoCode
       }))
     : []
- const defaultCountry = useMemo(
+  const defaultCountry = useMemo(
     () => countryOptions.find((country) => country.value === "IN"),
     [countryOptions]
   )
@@ -255,19 +247,13 @@ console.log(countryOptions)
     [stateOptions]
   )
   useEffect(() => {
-    console.log("hhh")
-    if (defaultCountry&&!customer) {
-console.log(defaultCountry)
-      setValue("country",defaultCountry.value)
-      console.log(defaultCountry)
+    if (defaultCountry && !customer) {
+      setValue("country", defaultCountry.value)
     }
   }, [defaultCountry])
- useEffect(() => {
-    console.log("hhh")
-    if (defaultState&&!customer) {
-console.log(defaultCountry)
-      setValue("state",defaultState.value)
-      console.log(defaultState)
+  useEffect(() => {
+    if (defaultState && !customer) {
+      setValue("state", defaultState.value)
     }
   }, [defaultState])
 
@@ -343,7 +329,7 @@ console.log(defaultCountry)
   useEffect(() => {
     if (customer && process === "edit" && !isSaved) {
       console.log("hhhh")
-console.log(customer.country)
+      console.log(customer.country)
       reset({
         customerName: customer?.customerName || "",
         address1: customer?.address1 || "",
@@ -426,19 +412,31 @@ console.log(customer.country)
   console.log(initialTableData)
   useEffect(() => {
     if (!debouncedLicenseNo || !String(debouncedLicenseNo).trim()) return
-
-    const checkLicense = license.find(
-      (item) => String(item?.licensenumber) === String(debouncedLicenseNo)
+    console.log("hhh")
+    // const checkLicense = license.find(
+    //   (item) => String(item?.licensenumber) === String(debouncedLicenseNo)&&!item?.products
+    // )
+    const hasProductValue = (value) =>
+      value !== undefined && value !== null && String(value).trim() !== ""
+    const checkLicense = (license || []).find(
+      (item) =>
+        String(item?.licensenumber || "").trim() ===
+          String(debouncedLicenseNo || "").trim() &&
+        hasProductValue(item?.products)
     )
-
+    console.log(checkLicense)
+    console.log(license)
     const currentEditing = editIndex !== null ? tableData[editIndex] : null
+    console.log(currentEditing)
+    console.log(debouncedLicenseNo)
     const isSameEditingLicense =
       currentEditing &&
       String(currentEditing?.licensenumber) === String(debouncedLicenseNo)
-
+    console.log(isSameEditingLicense)
+    console.log(licenseAvailable)
     setLicenseAvailable(!(checkLicense && !isSameEditingLicense))
   }, [debouncedLicenseNo, license, editIndex, tableData])
-
+  console.log(licenseAvailable)
   const getCompaniesForProduct = (productId) => {
     const product = productData?.find((item) => item._id === productId)
     if (!product) return []
@@ -586,19 +584,70 @@ console.log(customer.country)
       }
     })
   }
+  console.log(licenseAvailable)
   const handleLicenseBlur = async (licenseNumber) => {
     if (!String(licenseNumber).trim()) return
 
     try {
-      const existsInTable = tableData?.some(
-        (row) => String(row?.licensenumber) === String(licenseNumber)
-      )
+      console.log(tableData)
+      // const existsInTable = tableData?.some(
+      //   (row) => String(row?.licensenumber) === String(licenseNumber)
+      // )
+      // const existsInTable = tableData?.some(
+      //   (row) =>
+      //     String(row?.licensenumber) === String(licenseNumber) &&
+      //     row?.product_id !== undefined &&
+      //     row?.product_id !== null &&
+      //     String(row?.product_id).trim() !== ""
+      // )
 
-      if (existsInTable) {
-        toast.error(`License ${licenseNumber} already exists`)
+      // if (existsInTable) {
+      //   toast.error(`License ${licenseNumber} already exists`)
+      //   return
+      // }
+
+      const matchingLicenseRow = (tableData || []).find(
+        (row) =>
+          String(row?.licensenumber || "").trim() ===
+          String(licenseNumber || "").trim()
+      )
+      console.log(matchingLicenseRow)
+      /*
+    License exists in tableData.
+    Check whether that existing table row has product_id.
+  */
+      if (matchingLicenseRow) {
+        console.log("hhhh")
+        const hasProductId =
+          matchingLicenseRow.product_id !== undefined &&
+          matchingLicenseRow.product_id !== null &&
+          String(matchingLicenseRow.product_id).trim() !== ""
+
+        if (hasProductId) {
+          toast.error(`License ${licenseNumber} already exists with a product`)
+
+          setduplicatelicense(true)
+          return
+        }
+
+        /*
+      License exists in tableData, but product_id is empty/undefined.
+      It is allowed for product selection.
+      Do not call the API.
+    */
+        setduplicatelicense(false)
+        toast.success(
+          `License ${licenseNumber} is available for product selection`
+        )
+        console.log("hhhh")
+        setLicenseAvailable(true)
         return
       }
 
+      /*
+    License does not exist in current tableData.
+    Check the database through API.
+  */
       setlicenseloading(true)
       const { data } = await api.get(
         `/customer/checkLicense?licenseNumber=${licenseNumber}`
@@ -687,22 +736,20 @@ console.log(customer.country)
 
     setShowProductPopup(true)
   }
-  
 
-  
   const handleDelete = (index) => {
     setTableData((prev) => prev.filter((_, i) => i !== index))
   }
-console.log(tableData)
-console.log("hhhh")
+  console.log(tableData)
+  console.log("hhhh")
   const validateSelectedLeadList = (selectedleadlist = []) => {
-console.log(selectedleadlist)
+    console.log(selectedleadlist)
     const hasAdditionalService = selectedleadlist.some(
       (row) =>
         String(row?.productorservicetype || "").toLowerCase() ===
         "additionalservice"
     )
-console.log(hasAdditionalService)
+    console.log(hasAdditionalService)
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
@@ -811,34 +858,37 @@ console.log(hasAdditionalService)
   }
 
   const savePopupData = () => {
-if (popupType === "Additionalservice") {
-    const selectedLicenses = getValues("taggedLicenses") || []
+    if (popupType === "Additionalservice") {
+      const selectedLicenses = getValues("taggedLicenses") || []
 
-    if (selectedLicenses.length === 0) {
-console.log("Hhh")
-console.log(tableData)
-      setError("taggedLicenses", {
-        type: "manual",
-        message: "Select at least one tagged license number for the additional service."
-      })
-      return
+      if (selectedLicenses.length === 0) {
+        console.log("Hhh")
+        console.log(tableData)
+        setError("taggedLicenses", {
+          type: "manual",
+          message:
+            "Select at least one tagged license number for the additional service."
+        })
+        return
+      }
+
+      clearErrors("taggedLicenses")
     }
-
-    clearErrors("taggedLicenses")
-  }
-console.log("hhhh")
+    console.log("hhhh")
+    console.log(duplicatelicense)
     if (duplicatelicense) {
+      // console.log()
       toast.error("License already exists")
       return
     }
 
     const values = getValues()
-
+    console.log(values)
     if (!values?.productName?.value) {
       toast.error("Please select product/service")
       return
     }
-
+    console.log("hhh")
     if (
       popupType === "Primaryproduct" &&
       !String(values?.licensenumber || "").trim()
@@ -849,19 +899,21 @@ console.log("hhhh")
       })
       return
     }
-
+    console.log(popupType)
+    console.log(licenseAvailable)
     if (
       popupType === "Primaryproduct" &&
       String(values?.licensenumber || "").trim() &&
       !licenseAvailable
     ) {
+      console.log("hhh")
       setError("licensenumber", {
         type: "manual",
         message: "License number already exists"
       })
       return
     }
-
+    console.log("hhh")
     const selectedTaggedLicenses =
       popupType === "Additionalservice" ? values?.taggedLicenses || [] : []
 
@@ -1087,194 +1139,222 @@ console.log("hhhh")
     setPendingAction(null)
     action?.()
   }
-const requestTaggedLicenseRemoval = (licenseNo) => {
-  setLicenseRemoveConfirm({
-    open: true,
-    licenseNo: String(licenseNo)
-  })
-}
+  const requestTaggedLicenseRemoval = (licenseNo) => {
+    setLicenseRemoveConfirm({
+      open: true,
+      licenseNo: String(licenseNo)
+    })
+  }
 
-const cancelTaggedLicenseRemoval = () => {
-  setLicenseRemoveConfirm({
-    open: false,
-    licenseNo: null
-  })
-}
+  const cancelTaggedLicenseRemoval = () => {
+    setLicenseRemoveConfirm({
+      open: false,
+      licenseNo: null
+    })
+  }
 
-// const confirmTaggedLicenseRemoval = () => {
-//   const licenseNo = licenseRemoveConfirm.licenseNo
+  // const confirmTaggedLicenseRemoval = () => {
+  //   const licenseNo = licenseRemoveConfirm.licenseNo
 
-//   if (!licenseNo) {
-//     cancelTaggedLicenseRemoval()
-//     return
-//   }
+  //   if (!licenseNo) {
+  //     cancelTaggedLicenseRemoval()
+  //     return
+  //   }
 
-//   const previousLicenses = watch("taggedLicenses") || []
-//   const previousDueMap = watch("taggedLicenseDueDates") || {}
+  //   const previousLicenses = watch("taggedLicenses") || []
+  //   const previousDueMap = watch("taggedLicenseDueDates") || {}
 
-//   const updatedLicenses = previousLicenses.filter(
-//     (item) => String(item) !== String(licenseNo)
-//   )
+  //   const updatedLicenses = previousLicenses.filter(
+  //     (item) => String(item) !== String(licenseNo)
+  //   )
 
-//   const updatedDueMap = { ...previousDueMap }
-//   delete updatedDueMap[licenseNo]
+  //   const updatedDueMap = { ...previousDueMap }
+  //   delete updatedDueMap[licenseNo]
 
-//   setValue("taggedLicenses", updatedLicenses, {
-//     shouldDirty: true,
-//     shouldValidate: true
-//   })
+  //   setValue("taggedLicenses", updatedLicenses, {
+  //     shouldDirty: true,
+  //     shouldValidate: true
+  //   })
 
-//   setValue("taggedLicenseDueDates", updatedDueMap, {
-//     shouldDirty: true,
-//     shouldValidate: true
-//   })
+  //   setValue("taggedLicenseDueDates", updatedDueMap, {
+  //     shouldDirty: true,
+  //     shouldValidate: true
+  //   })
 
-//   // Optional: clear license number if no tagged license remains.
-//   if (updatedLicenses.length === 0) {
-//     setValue("licensenumber", "", {
-//       shouldDirty: true,
-//       shouldValidate: true
-//     })
-//   }
+  //   // Optional: clear license number if no tagged license remains.
+  //   if (updatedLicenses.length === 0) {
+  //     setValue("licensenumber", "", {
+  //       shouldDirty: true,
+  //       shouldValidate: true
+  //     })
+  //   }
 
-//   /*
-//     Put your API/action function here if removing a tagged license
-//     must immediately update backend data.
+  //   /*
+  //     Put your API/action function here if removing a tagged license
+  //     must immediately update backend data.
 
-//     Example:
-//     await removeTaggedLicenseFromService(licenseNo)
-//   */
+  //     Example:
+  //     await removeTaggedLicenseFromService(licenseNo)
+  //   */
 
-//   cancelTaggedLicenseRemoval()
-// }
-const confirmTaggedLicenseRemoval = () => {
-  const licenseNo = String(licenseRemoveConfirm.licenseNo || "")
+  //   cancelTaggedLicenseRemoval()
+  // }
+  const confirmTaggedLicenseRemoval = () => {
+    const licenseNo = String(licenseRemoveConfirm.licenseNo || "")
 
-  if (!licenseNo) {
+    if (!licenseNo) {
+      cancelTaggedLicenseRemoval()
+      return
+    }
+
+    const currentValues = getValues()
+    const previousLicenses = currentValues.taggedLicenses || []
+    const previousDueMap = currentValues.taggedLicenseDueDates || {}
+    const selectedAdditionalServiceId = currentValues?.productName?.value
+
+    // Remove the license from React Hook Form values.
+    const updatedLicenses = previousLicenses.filter(
+      (item) => String(item) !== licenseNo
+    )
+
+    const updatedDueMap = { ...previousDueMap }
+    delete updatedDueMap[licenseNo]
+
+    setValue("taggedLicenses", updatedLicenses, {
+      shouldDirty: true,
+      shouldValidate: true
+    })
+
+    setValue("taggedLicenseDueDates", updatedDueMap, {
+      shouldDirty: true,
+      shouldValidate: true
+    })
+
+    // Keep the popup state clean when its last tagged license is removed.
+    if (updatedLicenses.length === 0) {
+      setValue("licensenumber", "", {
+        shouldDirty: true,
+        shouldValidate: true
+      })
+    }
+
+    // Remove the license from taggeddata and taggedLicenses in the saved table row.
+    // If no tag remains, remove the entire Additional Service row.
+    setTableData((previousRows) => {
+      if (!Array.isArray(previousRows)) return previousRows
+
+      return previousRows
+        .map((row) => {
+          const isSelectedAdditionalService =
+            row?.productorservicetype === "Additionalservice" &&
+            String(row?.product_id) === String(selectedAdditionalServiceId)
+
+          if (!isSelectedAdditionalService) {
+            return row
+          }
+
+          const updatedRowTaggedLicenses = (row.taggedLicenses || []).filter(
+            (taggedLicense) => String(taggedLicense) !== licenseNo
+          )
+
+          const updatedRowTaggedData = (row.taggeddata || []).filter(
+            (taggedItem) => String(taggedItem?.licensenumber) !== licenseNo
+          )
+
+          return {
+            ...row,
+            taggedLicenses: updatedRowTaggedLicenses,
+            taggeddata: updatedRowTaggedData
+          }
+        })
+        .filter((row) => {
+          if (row?.productorservicetype !== "Additionalservice") {
+            return true
+          }
+
+          // Delete an Additional Service row if it has no tagged license left.
+          return (row?.taggeddata || []).length > 0
+        })
+    })
+
     cancelTaggedLicenseRemoval()
-    return
   }
 
-  const currentValues = getValues()
-  const previousLicenses = currentValues.taggedLicenses || []
-  const previousDueMap = currentValues.taggedLicenseDueDates || {}
-  const selectedAdditionalServiceId = currentValues?.productName?.value
+  console.log(tableData)
+  const taggedLicenseCheckboxOnChange = (event, option) => {
+    const licenseNo = String(option.licenseNo)
 
-  // Remove the license from React Hook Form values.
-  const updatedLicenses = previousLicenses.filter(
-    (item) => String(item) !== licenseNo
-  )
+    // Do not remove immediately. Keep checkbox checked and ask for confirmation.
+    if (!event.target.checked) {
+      requestTaggedLicenseRemoval(licenseNo)
+      return
+    }
 
-  const updatedDueMap = { ...previousDueMap }
-  delete updatedDueMap[licenseNo]
+    const previousLicenses = watch("taggedLicenses") || []
+    const previousDueMap = watch("taggedLicenseDueDates") || {}
+    const currentValues = getValues()
 
-  setValue("taggedLicenses", updatedLicenses, {
-    shouldDirty: true,
-    shouldValidate: true
-  })
+    if (!previousLicenses.includes(licenseNo)) {
+      setValue("taggedLicenses", [...previousLicenses, licenseNo], {
+        shouldDirty: true,
+        shouldValidate: true
+      })
+    }
 
-  setValue("taggedLicenseDueDates", updatedDueMap, {
-    shouldDirty: true,
-    shouldValidate: true
-  })
-
-  // Keep the popup state clean when its last tagged license is removed.
-  if (updatedLicenses.length === 0) {
     setValue("licensenumber", "", {
-      shouldDirty: true,
-      shouldValidate: true
+      shouldDirty: true
     })
-  }
 
-  // Remove the license from taggeddata and taggedLicenses in the saved table row.
-  // If no tag remains, remove the entire Additional Service row.
-  setTableData((previousRows) => {
-    if (!Array.isArray(previousRows)) return previousRows
+    clearErrors("taggedLicenses")
 
-    return previousRows
-      .map((row) => {
-        const isSelectedAdditionalService =
-          row?.productorservicetype === "Additionalservice" &&
-          String(row?.product_id) === String(selectedAdditionalServiceId)
+    const matched = detailsData?.taggeddata?.find(
+      (item) => String(item?.licensenumber) === licenseNo
+    )
 
-        if (!isSelectedAdditionalService) {
-          return row
+    if (matched) {
+      setValue(
+        "taggedLicenseDueDates",
+        {
+          ...previousDueMap,
+          [licenseNo]: {
+            nextDue: matched.nextDue || "",
+            productAmount: matched.productAmount ?? "",
+            taxexclusiveAmount: matched.taxexclusiveAmount ?? "",
+            taxinclusiveamount: matched.taxinclusiveamount ?? "",
+            hsn: matched.hsn ?? "",
+            originalHsn: matched.originalHsn ?? matched.hsn ?? "",
+            nextDueTax: matched.nextDueTax ?? matched.hsn ?? 0,
+            noofusers: matched.noofusers ?? "",
+            serialNumber: matched.serialNumber ?? ""
+          }
+        },
+        {
+          shouldDirty: true,
+          shouldValidate: true
         }
+      )
 
-        const updatedRowTaggedLicenses = (row.taggedLicenses || []).filter(
-          (taggedLicense) => String(taggedLicense) !== licenseNo
-        )
+      return
+    }
 
-        const updatedRowTaggedData = (row.taggeddata || []).filter(
-          (taggedItem) => String(taggedItem?.licensenumber) !== licenseNo
-        )
+    const selectedProduct = productOptions.find(
+      (item) => item.value === currentValues?.productName?.value
+    )
 
-        return {
-          ...row,
-          taggedLicenses: updatedRowTaggedLicenses,
-          taggeddata: updatedRowTaggedData
-        }
-      })
-      .filter((row) => {
-        if (row?.productorservicetype !== "Additionalservice") {
-          return true
-        }
-
-        // Delete an Additional Service row if it has no tagged license left.
-        return (row?.taggeddata || []).length > 0
-      })
-  })
-
-  cancelTaggedLicenseRemoval()
-}
-
-
-console.log(tableData)
-const taggedLicenseCheckboxOnChange = (event, option) => {
-  const licenseNo = String(option.licenseNo)
-
-  // Do not remove immediately. Keep checkbox checked and ask for confirmation.
-  if (!event.target.checked) {
-    requestTaggedLicenseRemoval(licenseNo)
-    return
-  }
-
-  const previousLicenses = watch("taggedLicenses") || []
-  const previousDueMap = watch("taggedLicenseDueDates") || {}
-  const currentValues = getValues()
-
-  if (!previousLicenses.includes(licenseNo)) {
-    setValue("taggedLicenses", [...previousLicenses, licenseNo], {
-      shouldDirty: true,
-      shouldValidate: true
-    })
-  }
-
-  setValue("licensenumber", "", {
-    shouldDirty: true
-  })
-
-  clearErrors("taggedLicenses")
-
-  const matched = detailsData?.taggeddata?.find(
-    (item) => String(item?.licensenumber) === licenseNo
-  )
-
-  if (matched) {
     setValue(
       "taggedLicenseDueDates",
       {
         ...previousDueMap,
         [licenseNo]: {
-          nextDue: matched.nextDue || "",
-          productAmount: matched.productAmount ?? "",
-          taxexclusiveAmount: matched.taxexclusiveAmount ?? "",
-          taxinclusiveamount: matched.taxinclusiveamount ?? "",
-          hsn: matched.hsn ?? "",
-          originalHsn: matched.originalHsn ?? matched.hsn ?? "",
-          nextDueTax: matched.nextDueTax ?? matched.hsn ?? 0,
-          noofusers: matched.noofusers ?? "",
-          serialNumber: matched.serialNumber ?? ""
+          nextDue: "",
+          productAmount: "",
+          taxexclusiveAmount: selectedProduct?.basePrice || 0,
+          taxinclusiveamount: selectedProduct?.productprice || 0,
+          hsn: selectedProduct?.igstRate || 0,
+          originalHsn: selectedProduct?.igstRate || 0,
+          nextDueTax: selectedProduct?.igstRate || 0,
+          noofusers: "",
+          serialNumber: ""
         }
       },
       {
@@ -1282,40 +1362,10 @@ const taggedLicenseCheckboxOnChange = (event, option) => {
         shouldValidate: true
       }
     )
-
-    return
   }
-
-  const selectedProduct = productOptions.find(
-    (item) => item.value === currentValues?.productName?.value
-  )
-
-  setValue(
-    "taggedLicenseDueDates",
-    {
-      ...previousDueMap,
-      [licenseNo]: {
-        nextDue: "",
-        productAmount: "",
-        taxexclusiveAmount: selectedProduct?.basePrice || 0,
-        taxinclusiveamount: selectedProduct?.productprice || 0,
-        hsn: selectedProduct?.igstRate || 0,
-        originalHsn: selectedProduct?.igstRate || 0,
-        nextDueTax: selectedProduct?.igstRate || 0,
-        noofusers: "",
-        serialNumber: ""
-      }
-    },
-    {
-      shouldDirty: true,
-      shouldValidate: true
-    }
-  )
-}
   const onSubmit = async (data) => {
-
     const validationMessage = validateSelectedLeadList(tableData)
-console.log(validationMessage)
+    console.log(validationMessage)
     if (validationMessage) {
       toast.error(validationMessage)
       return
@@ -1619,126 +1669,130 @@ console.log(validationMessage)
                   placeholder="Address line 2"
                 />
               </InfoInputCard>
-<InfoInputCard
-  icon={<FaGlobeAsia size={12} />}
-  iconBg="bg-[#fff2e8]"
-  iconColor="text-[#ef9a47]"
-  label="Country"
->
-  <Controller
-    name="country"
-    control={control}
-    render={({ field }) => (
-      <Select
-        options={countryOptions}
-        value={
-          countryOptions.find((opt) => opt.value === field.value) || null
-        }
-        onChange={(option) => field.onChange(option?.value || "")}
-        getOptionLabel={(o) => o.label}
-        getOptionValue={(o) => o.value}
-        placeholder="Select country"
-        isSearchable
-        classNamePrefix="rs"
-        unstyled
-        menuPortalTarget={typeof document !== "undefined" ? document.body : null}
-        menuPosition="fixed"
-        styles={{
-          control: (base) => ({
-            ...base,
-            minHeight: "auto",
-            padding: 0,
-            border: "none",
-            boxShadow: "none",
-            backgroundColor: "transparent",
-            cursor: "pointer"
-          }),
-          valueContainer: (base) => ({
-            ...base,
-            padding: 0
-          }),
-          input: (base) => ({
-            ...base,
-            margin: 0,
-            padding: 0,
-            color: "#374151",
-            fontSize: "0.8125rem"
-          }),
-          placeholder: (base) => ({
-            ...base,
-            margin: 0,
-            color: "#9ca3af",
-            fontSize: "0.8125rem"
-          }),
-          singleValue: (base) => ({
-            ...base,
-            margin: 0,
-            color: "#374151",
-            fontWeight: 600,
-            fontSize: "0.8125rem"
-          }),
-          indicatorsContainer: (base) => ({
-            ...base,
-            paddingRight: 2
-          }),
-          dropdownIndicator: (base, state) => ({
-            ...base,
-            padding: 0,
-            color: "#9ca3af",
-            transition: "transform 150ms ease",
-            transform: state.selectProps.menuIsOpen
-              ? "rotate(180deg)"
-              : "rotate(0deg)"
-          }),
-          indicatorSeparator: () => ({ display: "none" }),
+              <InfoInputCard
+                icon={<FaGlobeAsia size={12} />}
+                iconBg="bg-[#fff2e8]"
+                iconColor="text-[#ef9a47]"
+                label="Country"
+              >
+                <Controller
+                  name="country"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      options={countryOptions}
+                      value={
+                        countryOptions.find(
+                          (opt) => opt.value === field.value
+                        ) || null
+                      }
+                      onChange={(option) => field.onChange(option?.value || "")}
+                      getOptionLabel={(o) => o.label}
+                      getOptionValue={(o) => o.value}
+                      placeholder="Select country"
+                      isSearchable
+                      classNamePrefix="rs"
+                      unstyled
+                      menuPortalTarget={
+                        typeof document !== "undefined" ? document.body : null
+                      }
+                      menuPosition="fixed"
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          minHeight: "auto",
+                          padding: 0,
+                          border: "none",
+                          boxShadow: "none",
+                          backgroundColor: "transparent",
+                          cursor: "pointer"
+                        }),
+                        valueContainer: (base) => ({
+                          ...base,
+                          padding: 0
+                        }),
+                        input: (base) => ({
+                          ...base,
+                          margin: 0,
+                          padding: 0,
+                          color: "#374151",
+                          fontSize: "0.8125rem"
+                        }),
+                        placeholder: (base) => ({
+                          ...base,
+                          margin: 0,
+                          color: "#9ca3af",
+                          fontSize: "0.8125rem"
+                        }),
+                        singleValue: (base) => ({
+                          ...base,
+                          margin: 0,
+                          color: "#374151",
+                          fontWeight: 600,
+                          fontSize: "0.8125rem"
+                        }),
+                        indicatorsContainer: (base) => ({
+                          ...base,
+                          paddingRight: 2
+                        }),
+                        dropdownIndicator: (base, state) => ({
+                          ...base,
+                          padding: 0,
+                          color: "#9ca3af",
+                          transition: "transform 150ms ease",
+                          transform: state.selectProps.menuIsOpen
+                            ? "rotate(180deg)"
+                            : "rotate(0deg)"
+                        }),
+                        indicatorSeparator: () => ({ display: "none" }),
 
-          // 👇 this is the fix — explicit solid background + elevation
-          menuPortal: (base) => ({
-            ...base,
-            zIndex: 9999
-          }),
-          menu: (base) => ({
-            ...base,
-            marginTop: 6,
-            backgroundColor: "#ffffff",
-            borderRadius: "0.75rem",
-            border: "1px solid #e5e7eb",
-            boxShadow:
-              "0 10px 25px -5px rgba(0,0,0,0.08), 0 8px 10px -6px rgba(0,0,0,0.05)",
-            overflow: "hidden"
-          }),
-          menuList: (base) => ({
-            ...base,
-            padding: 4,
-            maxHeight: 220,
-            backgroundColor: "#ffffff"
-          }),
-          option: (base, state) => ({
-            ...base,
-            borderRadius: "0.5rem",
-            padding: "8px 10px",
-            fontSize: "0.8125rem",
-            fontWeight: state.isSelected ? 600 : 500,
-            color: state.isSelected ? "#ef9a47" : "#374151",
-            backgroundColor: state.isSelected
-              ? "#fff2e8"
-              : state.isFocused
-              ? "#fff8f2"
-              : "#ffffff",
-            cursor: "pointer"
-          }),
-          noOptionsMessage: (base) => ({
-            ...base,
-            backgroundColor: "#ffffff",
-            fontSize: "0.8125rem",
-            color: "#9ca3af",
-            padding: "10px"
-          })
-        }}
-      />
-    )}
-  />
-</InfoInputCard>
+                        // 👇 this is the fix — explicit solid background + elevation
+                        menuPortal: (base) => ({
+                          ...base,
+                          zIndex: 9999
+                        }),
+                        menu: (base) => ({
+                          ...base,
+                          marginTop: 6,
+                          backgroundColor: "#ffffff",
+                          borderRadius: "0.75rem",
+                          border: "1px solid #e5e7eb",
+                          boxShadow:
+                            "0 10px 25px -5px rgba(0,0,0,0.08), 0 8px 10px -6px rgba(0,0,0,0.05)",
+                          overflow: "hidden"
+                        }),
+                        menuList: (base) => ({
+                          ...base,
+                          padding: 4,
+                          maxHeight: 220,
+                          backgroundColor: "#ffffff"
+                        }),
+                        option: (base, state) => ({
+                          ...base,
+                          borderRadius: "0.5rem",
+                          padding: "8px 10px",
+                          fontSize: "0.8125rem",
+                          fontWeight: state.isSelected ? 600 : 500,
+                          color: state.isSelected ? "#ef9a47" : "#374151",
+                          backgroundColor: state.isSelected
+                            ? "#fff2e8"
+                            : state.isFocused
+                              ? "#fff8f2"
+                              : "#ffffff",
+                          cursor: "pointer"
+                        }),
+                        noOptionsMessage: (base) => ({
+                          ...base,
+                          backgroundColor: "#ffffff",
+                          fontSize: "0.8125rem",
+                          color: "#9ca3af",
+                          padding: "10px"
+                        })
+                      }}
+                    />
+                  )}
+                />
+              </InfoInputCard>
 
               <InfoInputCard
                 icon={<FaBuilding size={12} />}
@@ -1746,128 +1800,128 @@ console.log(validationMessage)
                 iconColor="text-[#4f98ff]"
                 label="State"
               >
-               
- <Controller
-                            name="state"
-                            control={control}
-                            render={({ field }) => (
-                              <Select
-                                options={stateOptions}
-                                value={
-                                  stateOptions.find(
-                                    (opt) => opt.value === field.value
-                                  ) || null
-                                }
-                                onChange={(option) => {
-                                  field.onChange(option?.value || "")
-                                  setSelectedState(option)
-                                }}
-                                isDisabled={!selectedCountry}
-  getOptionLabel={(o) => o.label}
-        getOptionValue={(o) => o.value}
-        placeholder="Select state"
-        isSearchable
-        classNamePrefix="rs"
-        unstyled
-        menuPortalTarget={typeof document !== "undefined" ? document.body : null}
-        menuPosition="fixed"
-        styles={{
-          control: (base) => ({
-            ...base,
-            minHeight: "auto",
-            padding: 0,
-            border: "none",
-            boxShadow: "none",
-            backgroundColor: "transparent",
-            cursor: "pointer"
-          }),
-          valueContainer: (base) => ({
-            ...base,
-            padding: 0
-          }),
-          input: (base) => ({
-            ...base,
-            margin: 0,
-            padding: 0,
-            color: "#374151",
-            fontSize: "0.8125rem"
-          }),
-          placeholder: (base) => ({
-            ...base,
-            margin: 0,
-            color: "#9ca3af",
-            fontSize: "0.8125rem"
-          }),
-          singleValue: (base) => ({
-            ...base,
-            margin: 0,
-            color: "#374151",
-            fontWeight: 600,
-            fontSize: "0.8125rem"
-          }),
-          indicatorsContainer: (base) => ({
-            ...base,
-            paddingRight: 2
-          }),
-          dropdownIndicator: (base, state) => ({
-            ...base,
-            padding: 0,
-            color: "#9ca3af",
-            transition: "transform 150ms ease",
-            transform: state.selectProps.menuIsOpen
-              ? "rotate(180deg)"
-              : "rotate(0deg)"
-          }),
-          indicatorSeparator: () => ({ display: "none" }),
+                <Controller
+                  name="state"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      options={stateOptions}
+                      value={
+                        stateOptions.find((opt) => opt.value === field.value) ||
+                        null
+                      }
+                      onChange={(option) => {
+                        field.onChange(option?.value || "")
+                        setSelectedState(option)
+                      }}
+                      isDisabled={!selectedCountry}
+                      getOptionLabel={(o) => o.label}
+                      getOptionValue={(o) => o.value}
+                      placeholder="Select state"
+                      isSearchable
+                      classNamePrefix="rs"
+                      unstyled
+                      menuPortalTarget={
+                        typeof document !== "undefined" ? document.body : null
+                      }
+                      menuPosition="fixed"
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          minHeight: "auto",
+                          padding: 0,
+                          border: "none",
+                          boxShadow: "none",
+                          backgroundColor: "transparent",
+                          cursor: "pointer"
+                        }),
+                        valueContainer: (base) => ({
+                          ...base,
+                          padding: 0
+                        }),
+                        input: (base) => ({
+                          ...base,
+                          margin: 0,
+                          padding: 0,
+                          color: "#374151",
+                          fontSize: "0.8125rem"
+                        }),
+                        placeholder: (base) => ({
+                          ...base,
+                          margin: 0,
+                          color: "#9ca3af",
+                          fontSize: "0.8125rem"
+                        }),
+                        singleValue: (base) => ({
+                          ...base,
+                          margin: 0,
+                          color: "#374151",
+                          fontWeight: 600,
+                          fontSize: "0.8125rem"
+                        }),
+                        indicatorsContainer: (base) => ({
+                          ...base,
+                          paddingRight: 2
+                        }),
+                        dropdownIndicator: (base, state) => ({
+                          ...base,
+                          padding: 0,
+                          color: "#9ca3af",
+                          transition: "transform 150ms ease",
+                          transform: state.selectProps.menuIsOpen
+                            ? "rotate(180deg)"
+                            : "rotate(0deg)"
+                        }),
+                        indicatorSeparator: () => ({ display: "none" }),
 
-          // 👇 this is the fix — explicit solid background + elevation
-          menuPortal: (base) => ({
-            ...base,
-            zIndex: 9999
-          }),
-          menu: (base) => ({
-            ...base,
-            marginTop: 6,
-            backgroundColor: "#ffffff",
-            borderRadius: "0.75rem",
-            border: "1px solid #e5e7eb",
-            boxShadow:
-              "0 10px 25px -5px rgba(0,0,0,0.08), 0 8px 10px -6px rgba(0,0,0,0.05)",
-            overflow: "hidden"
-          }),
-          menuList: (base) => ({
-            ...base,
-            padding: 4,
-            maxHeight: 220,
-            backgroundColor: "#ffffff"
-          }),
-          option: (base, state) => ({
-            ...base,
-            borderRadius: "0.5rem",
-            padding: "8px 10px",
-            fontSize: "0.8125rem",
-            fontWeight: state.isSelected ? 600 : 500,
-            color: state.isSelected ? "#ef9a47" : "#374151",
-            backgroundColor: state.isSelected
-              ? "#fff2e8"
-              : state.isFocused
-              ? "#fff8f2"
-              : "#ffffff",
-            cursor: "pointer"
-          }),
-          noOptionsMessage: (base) => ({
-            ...base,
-            backgroundColor: "#ffffff",
-            fontSize: "0.8125rem",
-            color: "#9ca3af",
-            padding: "10px"
-          })
-        }}
-                              />
-                            )}
-                          />
+                        // 👇 this is the fix — explicit solid background + elevation
+                        menuPortal: (base) => ({
+                          ...base,
+                          zIndex: 9999
+                        }),
+                        menu: (base) => ({
+                          ...base,
+                          marginTop: 6,
+                          backgroundColor: "#ffffff",
+                          borderRadius: "0.75rem",
+                          border: "1px solid #e5e7eb",
+                          boxShadow:
+                            "0 10px 25px -5px rgba(0,0,0,0.08), 0 8px 10px -6px rgba(0,0,0,0.05)",
+                          overflow: "hidden"
+                        }),
+                        menuList: (base) => ({
+                          ...base,
+                          padding: 4,
+                          maxHeight: 220,
+                          backgroundColor: "#ffffff"
+                        }),
+                        option: (base, state) => ({
+                          ...base,
+                          borderRadius: "0.5rem",
+                          padding: "8px 10px",
+                          fontSize: "0.8125rem",
+                          fontWeight: state.isSelected ? 600 : 500,
+                          color: state.isSelected ? "#ef9a47" : "#374151",
+                          backgroundColor: state.isSelected
+                            ? "#fff2e8"
+                            : state.isFocused
+                              ? "#fff8f2"
+                              : "#ffffff",
+                          cursor: "pointer"
+                        }),
+                        noOptionsMessage: (base) => ({
+                          ...base,
+                          backgroundColor: "#ffffff",
+                          fontSize: "0.8125rem",
+                          color: "#9ca3af",
+                          padding: "10px"
+                        })
+                      }}
+                    />
+                  )}
+                />
               </InfoInputCard>
-{/* 
+              {/* 
               <InfoInputCard
                 icon={<FaGlobeAsia size={12} />}
                 iconBg="bg-[#fff2e8]"
@@ -1892,7 +1946,6 @@ console.log(validationMessage)
                   )}
                 />
               </InfoInputCard> */}
-
 
               <InfoInputCard
                 icon={<FaPhone size={12} />}
@@ -2530,13 +2583,16 @@ console.log(validationMessage)
                                     }}
                                   /> */}
 
-<input
-  type="checkbox"
-  checked={checked}
-  onChange={(event) => taggedLicenseCheckboxOnChange(event, option)}
-/>
-
-
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={(event) =>
+                                      taggedLicenseCheckboxOnChange(
+                                        event,
+                                        option
+                                      )
+                                    }
+                                  />
 
                                   <span>{option.licenseNo}</span>
                                   <span className="text-[#7b879c]">
@@ -2552,12 +2608,12 @@ console.log(validationMessage)
                           </p>
                         )}
                       </div>
-  {/* Put the validation message here */}
-    {errors.taggedLicenses?.message && (
-      <p className="mt-1 text-[11px] text-red-500">
-        {errors.taggedLicenses.message}
-      </p>
-    )}
+                      {/* Put the validation message here */}
+                      {errors.taggedLicenses?.message && (
+                        <p className="mt-1 text-[11px] text-red-500">
+                          {errors.taggedLicenses.message}
+                        </p>
+                      )}
                     </div>
                   )}
 
@@ -2874,7 +2930,7 @@ console.log(validationMessage)
           </div>
         </div>
       )}
-{/* {licenseRemoveConfirm.open && (
+      {/* {licenseRemoveConfirm.open && (
   <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
     <div
       className="w-full max-w-md rounded-xl bg-white shadow-2xl"
@@ -2921,52 +2977,52 @@ console.log(validationMessage)
   </div>
 )} */}
 
-{licenseRemoveConfirm.open && (
-  <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="remove-license-title"
-      className="w-full max-w-md rounded-xl bg-white shadow-2xl"
-    >
-      <div className="border-b border-slate-200 px-5 py-4">
-        <h3
-          id="remove-license-title"
-          className="text-sm font-semibold text-slate-800"
-        >
-          Remove tagged license?
-        </h3>
+      {licenseRemoveConfirm.open && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="remove-license-title"
+            className="w-full max-w-md rounded-xl bg-white shadow-2xl"
+          >
+            <div className="border-b border-slate-200 px-5 py-4">
+              <h3
+                id="remove-license-title"
+                className="text-sm font-semibold text-slate-800"
+              >
+                Remove tagged license?
+              </h3>
 
-        <p className="mt-1 text-xs leading-5 text-slate-500">
-          License number{" "}
-          <span className="font-semibold text-slate-700">
-            {licenseRemoveConfirm.licenseNo}
-          </span>{" "}
-          will be removed from this additional service. Its due date, users,
-          serial number, and amount details will also be removed.
-        </p>
-      </div>
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                License number{" "}
+                <span className="font-semibold text-slate-700">
+                  {licenseRemoveConfirm.licenseNo}
+                </span>{" "}
+                will be removed from this additional service. Its due date,
+                users, serial number, and amount details will also be removed.
+              </p>
+            </div>
 
-      <div className="flex justify-end gap-2 px-5 py-4">
-        <button
-          type="button"
-          onClick={cancelTaggedLicenseRemoval}
-          className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
-        >
-          Cancel
-        </button>
+            <div className="flex justify-end gap-2 px-5 py-4">
+              <button
+                type="button"
+                onClick={cancelTaggedLicenseRemoval}
+                className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
+              >
+                Cancel
+              </button>
 
-        <button
-          type="button"
-          onClick={confirmTaggedLicenseRemoval}
-          className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700"
-        >
-          Continue
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+              <button
+                type="button"
+                onClick={confirmTaggedLicenseRemoval}
+                className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -2994,13 +3050,18 @@ const InfoInputCard = ({ icon, iconBg, iconColor, label, children, error }) => {
 }
 
 const PopupField = ({ label, children, error }) => {
+  console.log(label)
+  if (label === "License Number") {
+    console.log(error)
+  }
+  console.log(error)
   return (
     <div>
       <label className="mb-1 block text-[12px] font-medium text-[#5d6983]">
         {label}
       </label>
       {children}
-      {error ? <p className="mt-1 text-[11px] text-red-500">{error}</p> : null}
+      {/* {error ? <p className="mt-1 text-[11px] text-red-500">{error}</p> : null} */}
     </div>
   )
 }
