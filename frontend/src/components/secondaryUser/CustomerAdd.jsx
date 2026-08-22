@@ -89,6 +89,7 @@ const CustomerAdd = ({
     open: false,
     licenseNo: null
   })
+const [dummyTableData,setDummyTableData]=useState([])
   const [detailsData, setdetailsData] = useState({})
   const [isSaved, setIsSaved] = useState(false)
   const [duplicatelicense, setduplicatelicense] = useState(null)
@@ -489,6 +490,14 @@ const CustomerAdd = ({
   }, [tableData])
 
   const handleProductChange = (selectedOption) => {
+console.log(detailsData)
+console.log(tableData)
+const filteredTableData = tableData.filter(
+  (item) => String(item.licensenumber) !== String(detailsData.licensenumber)
+);
+
+console.log(filteredTableData);
+setDummyTableData(filteredTableData)
     setValue("productName", selectedOption, { shouldDirty: true })
     setValue("shortName", selectedOption?.shortName, { shouldDirty: true })
     setValue("productAmount", selectedOption?.productprice, {
@@ -585,32 +594,27 @@ const CustomerAdd = ({
     })
   }
   console.log(licenseAvailable)
+console.log(tableData)
   const handleLicenseBlur = async (licenseNumber) => {
     if (!String(licenseNumber).trim()) return
 
     try {
       console.log(tableData)
-      // const existsInTable = tableData?.some(
-      //   (row) => String(row?.licensenumber) === String(licenseNumber)
-      // )
-      // const existsInTable = tableData?.some(
+      console.log(licenseNumber)
+console.log(dummyTableData)
+      // const matchingLicenseRow = (dummyTableData || []).find(
       //   (row) =>
-      //     String(row?.licensenumber) === String(licenseNumber) &&
-      //     row?.product_id !== undefined &&
-      //     row?.product_id !== null &&
-      //     String(row?.product_id).trim() !== ""
+      //     String(row?.licensenumber || "").trim() ===
+      //     String(licenseNumber || "").trim()
       // )
-
-      // if (existsInTable) {
-      //   toast.error(`License ${licenseNumber} already exists`)
-      //   return
-      // }
-
-      const matchingLicenseRow = (tableData || []).find(
+const matchingLicenseRow =
+  editIndex !== null && editIndex !== undefined
+    ? true
+    : (dummyTableData || []).find(
         (row) =>
           String(row?.licensenumber || "").trim() ===
           String(licenseNumber || "").trim()
-      )
+      );
       console.log(matchingLicenseRow)
       /*
     License exists in tableData.
@@ -668,7 +672,8 @@ const CustomerAdd = ({
       setlicenseloading(false)
     }
   }
-
+console.log(detailsData)
+console.log(editIndex)
   const handleEdit = (item, index) => {
     console.log(item)
 
@@ -1026,31 +1031,59 @@ const CustomerAdd = ({
             autoAddedFromDefaultService: true
           }))
         : []
+console.log(editIndex)
+console.log(tableData)
+console.log(row)
+//     setTableData((prev) => {
+//       if (editIndex !== null) {
+//         const updated = [...prev]
+//         updated[editIndex] = row
+//         // return updated
+//       }
 
-    setTableData((prev) => {
-      if (editIndex !== null) {
-        const updated = [...prev]
-        updated[editIndex] = row
-        return updated
-      }
+//       const existingAdditionalServiceIds = new Set(
+//         prev
+//           .filter(
+//             (item) =>
+//               String(item.productorservicetype).toLowerCase() ===
+//               "additionalservice"
+//           )
+//           .map((item) => String(item.product_id))
+//       )
 
-      const existingAdditionalServiceIds = new Set(
-        prev
-          .filter(
-            (item) =>
-              String(item.productorservicetype).toLowerCase() ===
-              "additionalservice"
-          )
-          .map((item) => String(item.product_id))
+//       const newDefaultServices = defaultServiceRows.filter(
+//         (service) =>
+//           !existingAdditionalServiceIds.has(String(service.product_id))
+//       )
+// console.log(prev)
+// console.log(row)
+// console.log(newDefaultServices)
+//       return [...prev, row, ...newDefaultServices]
+//     })
+setTableData((prev) => {
+  const isEditMode = editIndex !== null && editIndex !== undefined;
+
+  const baseRows = isEditMode
+    ? prev.map((item, index) => (index === editIndex ? row : item))
+    : [...prev, row];
+
+  const existingAdditionalServiceIds = new Set(
+    baseRows
+      .filter(
+        (item) =>
+          String(item?.productorservicetype || "").toLowerCase() ===
+          "additionalservice"
       )
+      .map((item) => String(item?.product_id))
+  );
 
-      const newDefaultServices = defaultServiceRows.filter(
-        (service) =>
-          !existingAdditionalServiceIds.has(String(service.product_id))
-      )
+  const newDefaultServices = defaultServiceRows.filter(
+    (service) =>
+      !existingAdditionalServiceIds.has(String(service?.product_id))
+  );
 
-      return [...prev, row, ...newDefaultServices]
-    })
+  return [...baseRows, ...newDefaultServices];
+});
 
     closePopup()
   }
@@ -2930,52 +2963,8 @@ const CustomerAdd = ({
           </div>
         </div>
       )}
-      {/* {licenseRemoveConfirm.open && (
-  <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
-    <div
-      className="w-full max-w-md rounded-xl bg-white shadow-2xl"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="remove-license-title"
-    >
-      <div className="border-b border-slate-200 px-5 py-4">
-        <h3
-          id="remove-license-title"
-          className="text-sm font-semibold text-slate-800"
-        >
-          Remove tagged license?
-        </h3>
 
-        <p className="mt-1 text-xs leading-5 text-slate-500">
-          License number{" "}
-          <span className="font-semibold text-slate-700">
-            {licenseRemoveConfirm.licenseNo}
-          </span>{" "}
-          will be removed from this additional service. Its due-date,
-          user-count, serial-number, and amount details will also be removed.
-        </p>
-      </div>
-
-      <div className="flex justify-end gap-2 px-5 py-4">
-        <button
-          type="button"
-          onClick={cancelTaggedLicenseRemoval}
-          className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
-        >
-          Cancel
-        </button>
-
-        <button
-          type="button"
-          onClick={confirmTaggedLicenseRemoval}
-          className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700"
-        >
-          Continue
-        </button>
-      </div>
-    </div>
-  </div>
-)} */}
+     
 
       {licenseRemoveConfirm.open && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
