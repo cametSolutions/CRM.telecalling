@@ -3507,7 +3507,7 @@ console.log("hhh")
                         />
                         <div>
                           <span className="text-sm font-semibold text-gray-800">
-                            Payment Received
+                            Collection Advance
                           </span>
                           <p className="text-xs text-gray-500 mt-0.5">
                             Check if payment has been collected
