@@ -133,6 +133,7 @@ console.log(location?.state)
       }
     }
   }, [targetData])
+console.log(leadId)
   useEffect(() => {
     console.log("hhhh")
     if (leadId) {
@@ -279,61 +280,12 @@ console.log(newnetamount)
   return (
     <div className="h-full bg-[#ADD8E6 overflow-hidden">
       <div className="flex h-full flex-row overflow-hidden">
-        {/* <StaticSidebar
-          handleMoreClick={handleMoreClick}
-          selectedCompanyBranch={selectedcompanyBranch}
-          setselectedCompanyBranch={setselectedcompanyBranch}
-          parenttargetData={settargetData}
-          parentperiodmode={periodMode}
-          parentyear={selectedYear}
-          setselectedPeriod={setselectedPeriod}
-        /> */}
+       
         <div className="flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden justify-center">
-          {/* <header className="flex items-center justify-between ">
-            {userData?.role?.toLowerCase() === "admin" ? (
-              <AdminHeader hide={true} />
-            ) : (
-              <StaffHeader hide={true} />
-            )}
-
-            <div className="flex h-full items-center gap-1.5  pr-3 bg-[#ADD8E6]">
-              <button className="rounded-full bg-slate-100 p-1.5 transition">
-                <Mail size={15} strokeWidth={2.2} />
-              </button>
-
-              <div className="relative">
-                <button className="rounded-full bg-slate-100 p-1.5 transition">
-                  <MessageSquareText size={15} strokeWidth={2.2} />
-                </button>
-                <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />
-              </div>
-
-              <button className="rounded-full bg-slate-100 p-1.5 transition">
-                <Settings size={15} strokeWidth={2.2} />
-              </button>
-
-              <div className="relative">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setShowUserMenu((prev) => !prev)
-                  }}
-                  className="rounded-full bg-slate-100 p-1.5 transition"
-                >
-                  <User size={15} strokeWidth={2.2} />
-                </button>
-              </div>
-            </div>
-          </header> */}
+         
 
           <div className="flex flex-1 flex-col min-h-0 min-w-0 overflow-hidden  w-full justify-center  bg-[#ADD8E6]">
-            {/* {loader && (
-              <BarLoader
-                cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
-                color="#4A90E2" // Change color as needed
-              />
-            )} */}
-            {/* <Breadcrumb items={Breadcrumblist} /> */}
+        
             <LeadMaster
               process="edit"
               handleEditData={handleSubmit}
@@ -347,52 +299,7 @@ console.log(newnetamount)
             />
           </div>
         </div>
-        <PerformanceModal
-          modalOpen={openModal}
-          splitType={targetData?.selectedMeasurementType}
-          selectedperiod={selectedPeriod}
-          allperiods={targetData?.periods}
-          onselectedPeriodChange={(val, val2) => {
-            setSelectedMonth(val2)
-            setselectedPeriod(val)
-          }}
-          onMonthChange={(val) => {
-            setacheivedProducts([])
-            setselectedDataPopup([])
-            setperiodMode(val)
-            setselecteduserName(null)
-          }}
-          onYearChange={(val) => {
-            setacheivedProducts([])
-            setselectedDataPopup([])
-            setSelectedYear(val)
-            setselecteduserName(null)
-          }}
-          productlist={productlist}
-          onClose={() => {
-            setselecteduserName(null)
-            setacheivedProducts([])
-            setOpenModal(false)
-            setActiveUserId(null)
-          }}
-          selectedMonth={periodMode}
-          selectedYear={selectedYear}
-          summary={{
-            target: selectedDatapopup?.target,
-            achieved: selectedDatapopup?.achieved,
-            balance:
-              selectedDatapopup?.achieved > selectedDatapopup?.target
-                ? 0
-                : selectedDatapopup?.balance
-          }}
-          products={achievedproducts}
-          targetData={targetData?.userWiseResults}
-          loggedUser={userData}
-          selectedUser={selectedUserName}
-          category={selectedCategory}
-          handleSelectedUser={handleSelectedUser}
-          activeUserId={activeUserId}
-        />
+      
       </div>
     </div>
   )

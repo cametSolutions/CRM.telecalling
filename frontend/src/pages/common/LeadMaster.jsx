@@ -821,6 +821,7 @@ const LeadMaster = ({
   const [productlist, setproductList] = useState([])
   const [achievedproducts, setacheivedProducts] = useState([])
   const [selectedPeriod, setselectedPeriod] = useState("")
+const [customerapichange,setcustomerapichange]=useState(true)
   const dropdownLicenseRef = useRef(null)
   const dropdownLeadforRef = useRef(null)
   const registrationType = watchModal("registrationType")
@@ -989,6 +990,7 @@ const LeadMaster = ({
   } = UseFetch(
     loggeduser &&
       selectedBranch &&
+
       `/customer/getallCustomer?branchSelected=${selectedBranch}`
   )
   console.log(customerData)
@@ -1473,6 +1475,7 @@ const LeadMaster = ({
   useEffect(() => {
     if (customerData && customerData.length > 0) {
       setallcustomer(customerData)
+setcustomerapichange(false)
     }
   }, [customerData])
   useEffect(() => {
@@ -3167,23 +3170,13 @@ const LeadMaster = ({
     }
 
     try {
-      // const checkexistingNumber = isMobileExists(
-      //   data?.mobile,
-      //   allcustomer,
-      //   data?.customerid
-      // )
-
-      // if (checkexistingNumber) {
-      //   setError("mobile", {
-      //     type: "manual",
-      //     message: "This mobile number is already used"
-      //   })
-      //   return
-      // }
+    
       setModalLoader(true)
+console.log(data)
       let response
+console.log(checknewcustomer)
       if (data?.customerid) {
-        if (!checknewcustomer) return
+        if (checknewcustomer) return
         console.log("hhh")
         response = await api.post("/customer/customereditonlead", {
           customerData: data
@@ -3199,6 +3192,9 @@ const LeadMaster = ({
         )
       }
       if (data?.customerid && response.status === 200) {
+console.log("hhhh")
+setcustomerapichange(true)
+ refreshHook()
         toast.success("Customer updated successfully")
         setModalLoader(false)
         setModalOpen(false)
@@ -3487,7 +3483,8 @@ const LeadMaster = ({
       toast.error("Failed to download Excel report.")
     }
   }
-
+console.log(modalloader)
+console.log(submitLoading)
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#ADD8E6]">
       {(modalloader ||
@@ -5602,7 +5599,7 @@ convertexcel
                       type="submit"
                       className="rounded-lg bg-[#1B2A4A] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#243660]"
                     >
-                      Submit
+                    Submit
                     </button>
                   </div>
                 </form>
