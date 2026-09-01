@@ -4640,7 +4640,7 @@ convertexcel
                               <input
                                 type="date"
                                 name="applicationDate"
-                                value={detailsForm.applicationDate}
+                                value={detailsForm.applicationDate?.split("T")[0] || ""}
                                 onChange={handleDetailsChange}
                                 className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 shadow-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
                               />
