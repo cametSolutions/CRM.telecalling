@@ -35,7 +35,7 @@ import { PerformanceModal } from "../../../components/primaryUser/PerformanceMod
 import { PropagateLoader } from "react-spinners"
 import { toast } from "react-toastify"
 
-export default function CollectionUpdate() {
+export default function ClosedLeads() {
   console.log("hh")
   const [showFullName, setShowFullName] = useState(false)
   const [tableData, setTableData] = useState([])
@@ -101,6 +101,11 @@ export default function CollectionUpdate() {
       loggedUser &&
       `/lead/collectionLeads?selectedBranch=${selectedreduxbranch}&verified=${verifiedLead}&isAccountant=${isdepartmentisAccountant}&loggeduserby=${loggedUser._id}`
   )
+  const { data: closedleads } = UseFetch(
+    selectedreduxbranch &&
+      `/lead/closedleads?selectedBranch=${selectedreduxbranch}`
+  )
+  console.log(closedleads)
   console.log(selectedreduxbranch)
   console.log(verifiedLead)
   console.log(isdepartmentisAccountant)
@@ -272,15 +277,17 @@ export default function CollectionUpdate() {
           return getOldest(a) - getOldest(b)
         })
         console.log(sortedLeads)
+
         setTableData(normalizeTableData(sortedLeads))
       } else {
         console.log(collectionlead)
-        setTableData(normalizeTableData(collectionlead))
+        // setTableData(normalizeTableData(collectionlead))
+        setTableData(normalizeTableData(closedleads?.closedLeads))
       }
 
       setPartner(partners)
     }
-  }, [collectionlead, partners, loggedUser])
+  }, [collectionlead, partners, loggedUser, closedleads])
   const normalizeTableData = (data) => {
     if (Array.isArray(data)) {
       return [{ staffName: null, leads: data }]
@@ -514,6 +521,9 @@ export default function CollectionUpdate() {
   const renderTable = (data) => {
     const LeadRow = ({ item, index }) => {
       console.log(item)
+      if (item?.leadId === "00017") {
+        console.log(item)
+      }
       const [open, setOpen] = useState(false)
       const isAdditionalService = item?.leadFor?.filter(
         (item) => item.productorservicetype === "Additionalservice"
@@ -535,9 +545,21 @@ export default function CollectionUpdate() {
             .split("/")
             .join("-")
         : "-"
+      console.log(item?.customerName)
       const customerName = item?.customerName?.customerName.toUpperCase()
-      const shouldShowTooltipCustomer = customerName.length > 20
+      const shouldShowTooltipCustomer = customerName?.length > 20
       const shouldShowTooltipEmail = item?.email.length > 5
+      const productOrServiceNames = Array.from(
+        new Set(
+          (item?.leadFor || [])
+            .map(
+              (leadItem) =>
+                leadItem?.productorServiceId?.shortName ||
+                leadItem?.productorServiceId?.productName
+            )
+            .filter(Boolean)
+        )
+      ).join(", ")
       return (
         <>
           {/* ── Main row ── */}
@@ -576,22 +598,12 @@ export default function CollectionUpdate() {
             </td>
 
             <td className="whitespace-nowrap border border-blue-300 px-3 py-2 text-center text-sm font-medium text-red-500">
-              {/* {isAdditionalService?.length
-                ? taggedlicense.join(", ")
-                : (
-                    item?.leadFor?.[0]?.productorServiceId?.shortName ||
-                    item?.leadFor?.[0]?.productorServiceId?.productName ||
-                    "-"
-                  ).toUpperCase()} */}
               {isAdditionalService?.length
                 ? taggedlicense.join(", ")
                 : item?.leadFor?.[0]?.licenseNumber}
             </td>
             <td className="px-3 py-2 text-sm font-medium text-blue-700 border border-blue-300 whitespace-nowrap text-center">
-              {(
-                item?.leadFor[0]?.prodproductorServiceId?.shortName ||
-                item?.leadFor[0]?.productorServiceId?.productName
-              ).toUpperCase()}
+              {productOrServiceNames.toUpperCase()}
             </td>
             <td
               className="px-2 py-2 border border-gray-300"
@@ -629,24 +641,52 @@ export default function CollectionUpdate() {
                 <CreditCard className="w-3.5 h-3.5" />
               </button>
             </td>
-            {!verifiedLead && (
-              <td
-                className="px-2 py-2 border border-gray-300"
-                onClick={(e) => e.stopPropagation()}
+            <td className="px-2 py-2 border border-gray-300">
+              <button
+                type="button"
+                onClick={() => {
+                  console.log("hh")
+                  //   const breadcrumb = [
+                  //     { label: "Lead", path: "", state: "" },
+                  //     {
+                  //       label: "Lead Follow-Up",
+                  //       path:
+                  //         loggedUser?.role === "Admin"
+                  //           ? "/admin/transaction/lead/leadEdit"
+                  //           : "/staff/transaction/lead/leadEdit",
+                  //       state: { ownfollowup: ownFollowUp, pending }
+                  //     },
+                  //     { label: "New Lead", path: "" }
+                  //   ]
+                  console.log("Hh")
+                  loggedUser?.role === "Admin"
+                    ? navigate("/admin/transaction/lead/leadEdit", {
+                        state: {
+                          leadId: item._id,
+                          isReadOnly: false,
+                          from: "closedlead"
+                        }
+                      })
+                    : navigate("/staff/transaction/lead/leadEdit", {
+                        state: {
+                          leadId: item._id,
+                          isReadOnly: false,
+                          from: "closedlead"
+                        }
+                      })
+                  console.log("hhh")
+                }}
+                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors w-full justify-center"
               >
-                <button
-                  onClick={() => handleCollection(item)}
-                  className="inline-flex items-center gap-1  py-1 text-xs font-semibold text-white bg-green-500 rounded hover:bg-green-600 transition-colors w-full justify-center"
-                >
-                  <ClipboardCheck className="w-3.5 h-3.5" />
-                </button>
-              </td>
-            )}
+                <Eye className="w-3.5 h-3.5" />
+              </button>
+            </td>
 
             <td className="px-3 py-2 text-sm font-semibold text-green-700 border border-gray-300 whitespace-nowrap text-right">
               <span className="inline-flex items-center gap-0.5 justify-end">
                 <IndianRupee className="w-3.5 h-3.5" />
-                {getDisplayAmount(item.paymentHistory)}
+
+                {item?.netAmount}
               </span>
             </td>
           </tr>
@@ -699,8 +739,8 @@ export default function CollectionUpdate() {
                 </td>
                 <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
                   <div className="flex items-center gap-1">
-                    <Phone className="w-3.5 h-3.5" />
-                    <span>ProductName</span>
+                    {/* <Phone className="w-3.5 h-3.5" /> */}
+                    {/* <span>ProductName</span> */}
                   </div>
                 </td>
               </tr>
@@ -746,10 +786,20 @@ export default function CollectionUpdate() {
                     )}
                   </div>
                 </td>
-                <td className="px-3 py-1.5 border border-gray-300 text-blue-500 font-medium">
-                  {item?.leadFor[0]?.prodproductorServiceId?.shortName ||
-                    item?.leadFor[0]?.productorServiceId?.productName ||
-                    "-"}
+                <td className="px-3 py-1.5 border border-gray-300 text-blue-500 font-medium max-w-[120px]">
+               
+ {/* <div
+    className="whitespace-normal break-words"
+    title={
+      item?.leadFor[0]?.prodproductorServiceId?.shortName ||
+      item?.leadFor[0]?.productorServiceId?.productName ||
+      "-"
+    }
+  >
+    {item?.leadFor[0]?.prodproductorServiceId?.shortName ||
+      item?.leadFor[0]?.productorServiceId?.productName ||
+      "-"}
+  </div> */}
                 </td>
                 {/* <td className="px-3 py-1.5 border border-gray-300 text-gray-700">
                   {item?.phone || "-"}
@@ -790,16 +840,14 @@ export default function CollectionUpdate() {
             <th className="border border-gray-300 px-3 py-1 text-center">
               Payment History
             </th>
-            {!verifiedLead && (
-              <th className="border border-gray-300 px-3 py-1 text-center">
-                Collection Update
-              </th>
-            )}
+            <th className="border border-gray-300 px-3 py-1 text-center">
+              View/Modify
+            </th>
 
             <th className="border border-gray-300 px-3 py-1 text-right">
               <div className="flex items-center gap-1.5 justify-end">
                 <IndianRupee className="w-3 h-3" />
-                <span>Coll. Amount</span>
+                <span>Net Amount</span>
               </div>
             </th>
           </tr>
@@ -845,13 +893,7 @@ export default function CollectionUpdate() {
               <span className="h-5 w-1 shrink-0 rounded-full bg-blue-600" />
 
               <h2 className="truncate text-sm font-bold text-slate-900">
-                {isdepartmentisAccountant
-                  ? verifiedLead
-                    ? "Verified Payments"
-                    : forcefullyclosedLeads.length > 0 && isforcefullyclosed
-                      ? "Force Closed"
-                      : "Pending Collections"
-                  : "Collection Leads"}
+                Closed Leads
               </h2>
 
               <span className="hidden shrink-0 text-xs font-semibold text-slate-400 sm:inline">
@@ -1005,7 +1047,7 @@ export default function CollectionUpdate() {
                 <span className="h-2 w-2 rounded-full bg-blue-500" />
 
                 <p className="text-xs font-semibold text-slate-700">
-                  Collection Records
+                  Closed Records
                 </p>
               </div>
 
@@ -1106,19 +1148,6 @@ export default function CollectionUpdate() {
         />
       )}
 
-      {collectionupdateModal &&
-        selectedData &&
-        partner &&
-        partner.length > 0 && (
-          <CollectionupdateModal
-            data={selectedData}
-            closemodal={setcollectionUpdateModal}
-            partnerlist={partner}
-            loggedUser={loggedUser}
-            handleCollectionUpdate={handleCollectionUpdate}
-          />
-        )}
-
       {paymenthistoryModal && (
         <PaymentHistoryModal
           data={paymentHistoryList}
@@ -1137,53 +1166,6 @@ export default function CollectionUpdate() {
           isdepartmentisAccountant={isdepartmentisAccountant}
         />
       )}
-
-      <PerformanceModal
-        modalOpen={openModal}
-        splitType={targetData?.selectedMeasurementType}
-        selectedperiod={selectedPeriod}
-        allperiods={targetData?.periods}
-        onselectedPeriodChange={(val, val2) => {
-          setSelectedMonth(val2)
-          setselectedPeriod(val)
-        }}
-        onMonthChange={(val) => {
-          setacheivedProducts([])
-          setselectedDataPopup([])
-          setperiodMode(val)
-          setselecteduserName(null)
-        }}
-        onYearChange={(val) => {
-          setacheivedProducts([])
-          setselectedDataPopup([])
-          setSelectedYear(val)
-          setselecteduserName(null)
-        }}
-        productlist={productlist}
-        onClose={() => {
-          setselecteduserName(null)
-          setacheivedProducts([])
-          setOpenModal(false)
-          setActiveUserId(null)
-        }}
-        selectedMonth={periodMode}
-        selectedYear={selectedYear}
-        summary={{
-          target: selectedDatapopup?.target,
-          achieved: selectedDatapopup?.achieved,
-          balance:
-            selectedDatapopup?.achieved > selectedDatapopup?.target
-              ? 0
-              : selectedDatapopup?.balance
-        }}
-        products={achievedproducts}
-        targetData={targetData?.userWiseResults}
-        loggedUser={loggedUser}
-        selectedUser={selectedUserName}
-        category={selectedCategory}
-        handleSelectedUser={handleSelectedUser}
-        activeUserId={activeUserId}
-      />
     </div>
   )
 }

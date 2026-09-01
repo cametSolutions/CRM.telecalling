@@ -182,51 +182,139 @@ console.log(products)
     })
   }, [])
   console.log(targetData)
-  const handleMetricTab = (tab) => {
-    setActiveMetric(tab)
-    console.log(tab)
-    const result =
-      targetData?.userWiseResults
-        ?.filter((user) =>
-          user.categories?.some(
+console.log(targetData?.userWiseResults)
+const u=targetData?.userWiseResults?.filter((it)=>it.userName==="M P Rajasree")
+console.log(u)
+const t=targetData?.userWiseResults.filter((user)=>  user.categories?.some(
             (cat) => String(cat.categoryId) === String(categoryId)
-          )
-        )
-        .map((user) => {
-          const matchedCategories = (user.categories || []).filter(
-            (cat) => String(cat.categoryId) === String(category?.Id)
-          )
+          ))
+console.log(t)
+console.log(t?.length)
+const ee=t.map((it)=>it.userName)
+console.log(ee)
+  // const handleMetricTab = (tab) => {
+  //   setActiveMetric(tab)
+  //   console.log(tab)
+  //   const result =
+  //     targetData?.userWiseResults
+  //       ?.filter((user) =>
+  //         user.categories?.some(
+  //           (cat) => String(cat.categoryId) === String(categoryId)&&cat.measurementType !== "incentive"
+  //         )
+  //       )
+  //       .map((user) => {
+  //         const matchedCategories = (user.categories || []).filter(
+  //           (cat) => String(cat.categoryId) === String(category?.Id)&& cat.measurementType !== "incentive"
+  //         )
 
-          const aggregated = matchedCategories.reduce(
-            (acc, cat) => {
-              acc.target += Number(cat.target || 0)
-              acc.achieved += Number(cat.achieved || 0)
-              acc.balance += Number(cat.balance || 0)
-              return acc
-            },
-            { target: 0, achieved: 0, balance: 0 }
-          )
+  //         const aggregated = matchedCategories.reduce(
+  //           (acc, cat) => {
+  //             acc.target += Number(cat.target || 0)
+  //             acc.achieved += Number(cat.achieved || 0)
+  //             acc.balance += Number(cat.balance || 0)
+  //             return acc
+  //           },
+  //           { target: 0, achieved: 0, balance: 0 }
+  //         )
 
-          let amount = 0
+  //         let amount = 0
 
-          if (tab === "achieved") {
-            amount = aggregated.achieved
-          } else if (tab === "balance") {
-            amount =
-              aggregated.achieved > aggregated.target ? 0 : aggregated.balance
-          } else {
-            amount = aggregated.target
-          }
+  //         if (tab === "achieved") {
+  //           amount = aggregated.achieved
+  //         } else if (tab === "balance") {
+  //           amount =
+  //             aggregated.achieved > aggregated.target ? 0 : aggregated.balance
+  //         } else {
+  //           amount = aggregated.target
+  //         }
 
-          return {
-            userId: user.userId,
-            userName: user.userName,
-            amount: Number(amount || 0)
-          }
-        }) || []
-    console.log(result)
-    setallusersData(result)
+  //         return {
+  //           userId: user.userId,
+  //           userName: user.userName,
+  //           amount: Number(amount || 0)
+  //         }
+  //       }) || []
+  //   console.log(result)
+  //   setallusersData(result)
+  // }
+const handleMetricTab = (tab) => {
+  setActiveMetric(tab);
+
+  const currentCategoryId = String(categoryId || "");
+
+  if (!currentCategoryId) {
+    setallusersData([]);
+    return;
   }
+
+  const result = (targetData?.userWiseResults || [])
+    .filter((user) =>
+      (user.categories || []).some(
+        (cat) =>
+          String(cat.categoryId) === currentCategoryId &&
+          cat.measurementType !== "incentive"
+      )
+    )
+    .map((user) => {
+      const matchedCategories = (user.categories || []).filter(
+        (cat) =>
+          String(cat.categoryId) === currentCategoryId &&
+          cat.measurementType !== "incentive"
+      );
+
+      const aggregated = matchedCategories.reduce(
+        (acc, cat) => {
+          acc.target += Number(cat.target || 0);
+          acc.achieved += Number(cat.achieved || 0);
+          acc.balance += Number(cat.balance || 0);
+
+          return acc;
+        },
+        {
+          target: 0,
+          achieved: 0,
+          balance: 0,
+        }
+      );
+
+      let amount = 0;
+
+      if (tab === "achieved") {
+        amount = aggregated.achieved;
+      } else if (tab === "balance") {
+        amount = Math.max(0, aggregated.balance);
+      } else {
+        amount = aggregated.target;
+      }
+
+      return {
+        userId: user.userId,
+        userName: user.userName,
+        designation: user.designation || "",
+
+        amount: Number(amount || 0),
+
+        target: Number(aggregated.target || 0),
+        achieved: Number(aggregated.achieved || 0),
+        balance: Math.max(
+          0,
+          Number(aggregated.balance || 0)
+        ),
+
+        months: matchedCategories.map((cat) => ({
+          month: cat.month,
+          year: cat.year,
+          target: Number(cat.target || 0),
+          achieved: Number(cat.achieved || 0),
+          balance: Math.max(0, Number(cat.balance || 0)),
+        })),
+      };
+    });
+
+  console.log("Target / achieved / balance users:", result);
+
+  setallusersData(result);
+};
 
   useEffect(() => {
     handleMetricTab("achieved")

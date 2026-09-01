@@ -133,7 +133,7 @@ function LicenseDropdown({
       document.removeEventListener("touchstart", handlePointerDown)
     }
   }, [dropdownId])
-
+  console.log(customerTableData)
   const filtered = (customerTableData || []).filter((lic) => {
     const q = String(search || "")
       .toLowerCase()
@@ -697,6 +697,9 @@ const LeadMaster = ({
   console.log(Breadcrumblist)
   console.log(from)
   console.log(Data)
+  if (Data == null) {
+    console.log("hhh")
+  }
   console.log(isReadOnly)
 
   const {
@@ -734,6 +737,11 @@ const LeadMaster = ({
   )
   const mobileRegister = registerMain("mobile")
   const today = new Date().toISOString().split("T")[0]
+  console.log(Data?.[0]?.customerName)
+  console.log(Data?.[0]?.customerName?._id)
+  const [previousLeadCustomer, setpreviousLeadCustomer] = useState(null)
+  const [isCustomerChanged, setiscustomerChanged] = useState(false)
+  console.log(previousLeadCustomer)
   const [takenLicenses, setTakenLicense] = useState([])
   console.log(takenLicenses)
   const [warningErrors, setwarningError] = useState({})
@@ -757,6 +765,7 @@ const LeadMaster = ({
   const [warningMessage, setwarningMessage] = useState("")
   console.log(warningErrors)
   const [showdetailsopen, setdetailsopen] = useState(false)
+  console.log(showdetailsopen)
   const [detailsItem, setDetailsItem] = useState(null)
   const [detailsIndex, setDetailsIndex] = useState(null)
   const [detailsForm, setDetailsForm] = useState({
@@ -820,6 +829,7 @@ const LeadMaster = ({
   const [productlist, setproductList] = useState([])
   const [achievedproducts, setacheivedProducts] = useState([])
   const [selectedPeriod, setselectedPeriod] = useState("")
+  const [customerapichange, setcustomerapichange] = useState(true)
   const dropdownLicenseRef = useRef(null)
   const dropdownLeadforRef = useRef(null)
   const registrationType = watchModal("registrationType")
@@ -878,27 +888,7 @@ const LeadMaster = ({
     document.addEventListener("mousedown", handleClickOutside)
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
-  // const softwareTrades = [
-  //   "Agriculture",
-  //   "Business Services",
-  //   "Computer Hardware Software",
-  //   "Electronics Electrical Supplies",
-  //   "FMCG-Fast Moving Consumable Goods",
-  //   "Garment,Fashion Apparel",
-  //   "Health Beauty",
-  //   "Industrial Supplies",
-  //   "Jewelry Gemstones",
-  //   "Mobile Accessories",
-  //   "Pharmaceutical Chemicals",
-  //   "Textiles Chemicals",
-  //   "Textiles Fabrics",
-  //   "Others",
-  //   "Restaurant, Food And Beverage",
-  //   "Accounts Chartered Account",
-  //   "Stationery, Printing Publishing",
-  //   "Hotel",
-  //   "Pipes, Tubes Fittings"
-  // ]
+
   const softwareTrades = [
     "Agriculture",
     "Business Services",
@@ -1112,6 +1102,7 @@ const LeadMaster = ({
   console.log(duplicateWarning)
   useEffect(() => {
     if (!selectedleadlist || selectedleadlist.length === 0) {
+      console.log(selectedleadlist)
       console.log("hh")
       setSelectedLeadList([{ ...emptyRow }])
     }
@@ -1245,7 +1236,7 @@ const LeadMaster = ({
       if (Data[0]?.selfAllocation) {
         setselfAllocationChangable(false)
       }
-
+      setpreviousLeadCustomer(Data[0]?.customerName?._id)
       setValueMain("leadId", Data[0]?.leadId)
       setValueMain("partner", Data[0]?.partner)
       setValueMain("remark", Data[0].remark)
@@ -1278,6 +1269,9 @@ const LeadMaster = ({
         productorServiceName:
           item?.productorServiceId?.productName ||
           item?.productorServiceId?.serviceName,
+        softwareTrade: item?.softwareTrade,
+        applicationDate: item?.applicationDate,
+        status: item?.status || item?.isActive,
         productorServiceId: item?.productorServiceId?._id,
         itemType: item?.productorServicemodel,
         productPrice: item?.productPrice,
@@ -1311,7 +1305,7 @@ const LeadMaster = ({
       ) {
         sethaveprimaryProduct(true)
         const primary = leadData[0]
-        console.log("hh")
+        console.log("hhddd")
         const primaryProductId = getRowId(primary?.productorServiceId)
         const primaryProduct = getPrimaryProductFromLeadList(primary)
         console.log(primaryProduct)
@@ -1398,6 +1392,7 @@ const LeadMaster = ({
           return rows
         })
       } else {
+        console.log(leadData)
         setSelectedLeadList(leadData)
       }
 
@@ -1472,6 +1467,7 @@ const LeadMaster = ({
   useEffect(() => {
     if (customerData && customerData.length > 0) {
       setallcustomer(customerData)
+      setcustomerapichange(false)
     }
   }, [customerData])
   useEffect(() => {
@@ -1516,7 +1512,8 @@ const LeadMaster = ({
           registrationType: item?.registrationType,
           city: item?.city,
           pincode: item?.pincode,
-          contactPerson: item?.contactPerson
+          contactPerson: item?.contactPerson,
+          selected: item?.selected
         }
       })
       setCustomerOptions(options)
@@ -1744,6 +1741,7 @@ console.log(e)
     //     sourceIndex: index,
     //   },
     // ])
+    console.log(customerTableData)
     setcustomerTableData((prev) => {
       const newRow = {
         licenseNumber: licenseValue,
@@ -1752,7 +1750,9 @@ console.log(e)
         sourceIndex: index + 1
       }
 
-      return [prev[0], newRow]
+      // return [...prev, newRow]
+
+      return prev.length > 0 ? [newRow, ...prev.slice(1)] : [newRow]
     })
   }
   console.log(customerTableData)
@@ -2285,7 +2285,10 @@ console.log(e)
   console.log(detailsForm)
   const handleSelectedCustomer = (option) => {
     console.log(option)
-
+    console.log(previousLeadCustomer)
+    if (option?.value !== previousLeadCustomer) {
+      setiscustomerChanged(true)
+    }
     setValueModal("customerName", option?.label)
     setValueModal("customerid", option?.value)
     setValueModal("email", option?.email)
@@ -2929,11 +2932,20 @@ console.log(e)
           setsubmitLoading(false)
           return
         }
+        const validationMessage = validateSelectedLeadList(selectedleadlist)
+        console.log(validationMessage)
+        if (validationMessage) {
+          toast.warning(validationMessage)
+          return
+        }
         seteditLoadingState(true)
         const updated = await handleEditData(
           data,
           selectedleadlist,
-          Data[0]?._id
+          Data[0]?._id,
+          from,
+          previousLeadCustomer,
+          isCustomerChanged
         )
       } else if (process === "closing") {
         const validationMessage = validateSelectedLeadList(selectedleadlist)
@@ -3002,7 +3014,7 @@ console.log(e)
     const itemType = String(
       detailsItem?.productorservicetype || ""
     ).toLowerCase()
-    console.log("hh")
+    console.log("hha")
     console.log(detailsForm)
     console.log(detailsForm.taggeddata)
     console.log(selectedleadlist)
@@ -3165,23 +3177,12 @@ console.log(e)
     }
 
     try {
-      // const checkexistingNumber = isMobileExists(
-      //   data?.mobile,
-      //   allcustomer,
-      //   data?.customerid
-      // )
-
-      // if (checkexistingNumber) {
-      //   setError("mobile", {
-      //     type: "manual",
-      //     message: "This mobile number is already used"
-      //   })
-      //   return
-      // }
       setModalLoader(true)
+      console.log(data)
       let response
+      console.log(checknewcustomer)
       if (data?.customerid) {
-        if (!checknewcustomer) return
+        if (checknewcustomer) return
         console.log("hhh")
         response = await api.post("/customer/customereditonlead", {
           customerData: data
@@ -3197,6 +3198,9 @@ console.log(e)
         )
       }
       if (data?.customerid && response.status === 200) {
+        console.log("hhhh")
+        setcustomerapichange(true)
+        refreshHook()
         toast.success("Customer updated successfully")
         setModalLoader(false)
         setModalOpen(false)
@@ -3242,7 +3246,7 @@ console.log(e)
     })
   }
   const handleDetails = (item, index) => {
-    console.log(detailsForm)
+    console.log("k")
     console.log(selectedCustomer)
     console.log(item)
     console.log(leadList)
@@ -3270,15 +3274,16 @@ console.log(e)
     console.log(item)
     console.log(selectedCustomer)
     console.log(item?.productorServiceId)
-    const filteredproduct = selectedCustomer?.selected.filter(
-      (it) => it.product_id?._id === item?.productorServiceId
-    )
+    const filteredproduct =
+      selectedCustomer?.selected?.filter(
+        (it) => it?.product_id?._id === item?.productorServiceId
+      ) || []
     console.log(filteredproduct)
     console.log(item?.productorServiceId)
     const a = leadList.map((item) => item.productName)
     console.log(a)
     const newproduct = leadList.filter(
-      (it) => it._id === item.productorServiceId
+      (it) => it?._id === item?.productorServiceId
     )
     console.log(newproduct)
 
@@ -3429,6 +3434,7 @@ console.log(e)
     console.log(normalizedTaggedData)
     setDetailsItem(item)
     setDetailsIndex(index)
+    console.log("hhh")
     setDetailsForm({
       name: item?.productorServiceName || "",
       licenseNumber: item?.licenseNumber || "",
@@ -3441,6 +3447,8 @@ console.log(e)
       taggeddata: normalizedTaggedData,
       productType: item?.productorservicetype
     })
+    console.log("Hh")
+    console.log(showdetailsopen)
     setdetailsopen(true)
   }
   console.log(detailsForm)
@@ -3481,7 +3489,8 @@ console.log(e)
       toast.error("Failed to download Excel report.")
     }
   }
-
+  console.log(modalloader)
+  console.log(submitLoading)
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#ADD8E6]">
       {(modalloader ||
@@ -3618,7 +3627,7 @@ convertexcel
                       >
                         {Data ? "UPDATE CUSTOMER" : "NEW CUSTOMER"}
                       </button>
-                      {Data && (
+                      {Data && from !== "closedlead" && (
                         <button
                           type="button"
                           onClick={() => handleOpenmodal("NEW CUSTOMER")}
@@ -3869,7 +3878,7 @@ convertexcel
                         >
                           Action
                         </th>
-                        {process === "closing" && (
+                        {(process === "closing" || from === "closedlead") && (
                           <th
                             rowSpan={2}
                             className="border border-blue-900 px-2 py-2 text-center text-xs"
@@ -4106,7 +4115,8 @@ convertexcel
                                 </button>
                               </div>
                             </td>
-                            {process === "closing" && (
+                            {(process === "closing" ||
+                              from === "closedlead") && (
                               <td className="border border-gray-300 px-1 py-1 text-center">
                                 <div className="relative inline-block group">
                                   <button

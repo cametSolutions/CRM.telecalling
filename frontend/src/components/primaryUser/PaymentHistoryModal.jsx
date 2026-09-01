@@ -49,7 +49,7 @@ export const PaymentHistoryModal = ({
   const [excessamountWarning, setexcessAmountWarning] = useState(null)
   const [editedData, setEditedData] = useState({})
   const [checkverified, setcheckverified] = useState({})
-console.log(checkverified)
+  console.log(checkverified)
   const [ispermissionEdit, setispermissionEdit] = useState(false)
 
   const [submitLoading, setsubmitLoading] = useState(false)
@@ -78,6 +78,7 @@ console.log(checkverified)
     console.log("hh")
     setMessageRowIndex(index)
     if (row.paymentVerified) {
+      console.log("hh")
       seteditMessage("Amount is verified, can't edit")
 
       setTimeout(() => {
@@ -192,7 +193,7 @@ console.log(checkverified)
     console.log(index)
     console.log(!checkverified?.[index])
     console.log(loggedUser?._id)
-    
+
     try {
       setsubmitLoading(true)
       const payload = {
@@ -202,7 +203,7 @@ console.log(checkverified)
         verifiedBy: loggedUser?._id
       }
       const response = await api.put("/lead/paymentverification", payload)
-console.log(response.status)
+      console.log(response.status)
       if (response.status === 200) {
         refresh()
         setdata([])
@@ -225,7 +226,7 @@ console.log(response.status)
   }
   const handleUnverify = async (index) => {
     console.log(index)
-    
+
     try {
       setsubmitLoading(true)
       const payload = {
@@ -969,6 +970,12 @@ console.log(response.status)
                                   >
                                     {message.warning}
                                   </p>
+                                )}
+                              {editmessage &&
+                                messageRowIndex === row.originalIndex && (
+                                  <span className="text-xs text-red-600 font-medium">
+                                    {editmessage}
+                                  </span>
                                 )}
                             </div>
                           </td>
