@@ -1133,10 +1133,7 @@ setTableData((prev) => {
     return String(date).split("T")[0]
   }
 
-  // useUnsavedChangesPrompt(
-  //   hasUnsavedChanges,
-  //   "You have unsaved customer details. Leaving this page without saving will discard the data. Do you want to continue?"
-  // )
+ 
   useUnsavedChangesPrompt({
     when: hasUnsavedChanges,
     onBlock: ({ proceed, stay }) => {

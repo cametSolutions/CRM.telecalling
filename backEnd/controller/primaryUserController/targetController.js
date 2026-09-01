@@ -1209,6 +1209,927 @@ import { ObjectId } from "bson";
 //   }
 // }
 
+// export const gettargetResult = async (req, res) => {
+//   try {
+//     const {
+//       month,
+//       year,
+//       periodMode = "all",
+//       selectedBranch,
+//     } = req.query;
+
+//     const monthNumber = Number(month);
+//     const yearNumber = Number(year);
+//     const mode = String(periodMode).trim().toLowerCase();
+
+//     if (
+//       !Number.isInteger(monthNumber) ||
+//       monthNumber < 1 ||
+//       monthNumber > 12 ||
+//       !Number.isInteger(yearNumber) ||
+//       !selectedBranch
+//     ) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Valid month, year and selectedBranch are required",
+//       });
+//     }
+
+//     const objects = (value) => {
+//       if (!Array.isArray(value)) return [];
+
+//       return value.filter(
+//         (item) =>
+//           item !== null &&
+//           item !== undefined &&
+//           typeof item === "object" &&
+//           !Array.isArray(item)
+//       );
+//     };
+
+//     const num = (value) => Number(value) || 0;
+
+//     const getMonthKey = (yearValue, monthValue) =>
+//       `${yearValue}-${monthValue}`;
+
+//     const getMonthRange = (yearValue, startMonth, endMonth) => ({
+//       $gte: new Date(Date.UTC(yearValue, startMonth - 1, 1)),
+//       $lte: new Date(
+//         Date.UTC(yearValue, endMonth, 0, 23, 59, 59, 999)
+//       ),
+//     });
+
+//     const [allTargetConfigs, closingTask] = await Promise.all([
+//       TargetConfiguration.find({
+//         branch: selectedBranch,
+//       })
+//         .select(`
+//           periodName branch startDate endDate categoryId categoryName
+//           measurementType allocationValues monthlyTargets
+//         `)
+//         .populate("categoryId", "category")
+//         .populate("monthlyTargets.userTargets.userId", "name email")
+//         .lean(),
+
+//       Task.findOne({
+//         taskName: "Follow-Up Closing",
+//       })
+//         .select("_id")
+//         .lean(),
+//     ]);
+
+//     const allPeriods = [
+//       ...new Set(
+//         allTargetConfigs
+//           .map((item) => String(item.periodName || "").trim())
+//           .filter(Boolean)
+//       ),
+//     ];
+
+//     const selectedMonth =
+//       mode === "all" ? monthNumber : Number(mode);
+
+//     if (
+//       !Number.isInteger(selectedMonth) ||
+//       selectedMonth < 1 ||
+//       selectedMonth > 12
+//     ) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "periodMode must be all or a valid month number",
+//       });
+//     }
+
+//     const hasSelectedMonth = (config) =>
+//       objects(config.monthlyTargets).some(
+//         (monthlyTarget) =>
+//           num(monthlyTarget.month) === selectedMonth &&
+//           num(monthlyTarget.year) === yearNumber
+//       );
+
+//     const requestedStart = new Date(
+//       Date.UTC(yearNumber, selectedMonth - 1, 1)
+//     );
+
+//     const requestedEnd = new Date(
+//       Date.UTC(yearNumber, selectedMonth, 0, 23, 59, 59, 999)
+//     );
+
+//     const targetConfigs = allTargetConfigs.filter((config) => {
+//       const configStart = new Date(config.startDate);
+//       const configEnd = new Date(config.endDate);
+
+//       const overlapsRequestedMonth =
+//         configStart <= requestedEnd &&
+//         configEnd >= requestedStart;
+
+//       return overlapsRequestedMonth && hasSelectedMonth(config);
+//     });
+
+//     if (!targetConfigs.length) {
+//       return res.json({
+//         success: true,
+//         data: {
+//           userWiseResults: [],
+//           summary: {
+//             target: 0,
+//             achieved: 0,
+//             balance: 0,
+//             incentive: 0,
+//           },
+//           periods: allPeriods,
+//           measurementTypes: [],
+//           selectedMeasurementType: "",
+//           selectedPeriodName: "",
+//           selectedMonth,
+//           selectedYear: yearNumber,
+//         },
+//       });
+//     }
+
+//     const activeMonths = [
+//       ...new Set(
+//         targetConfigs.flatMap((config) =>
+//           objects(config.monthlyTargets)
+//             .filter(
+//               (monthlyTarget) =>
+//                 num(monthlyTarget.year) === yearNumber
+//             )
+//             .map((monthlyTarget) => num(monthlyTarget.month))
+//         )
+//       ),
+//     ].filter(Boolean);
+
+//     const startMonth = Math.min(...activeMonths);
+//     const endMonth = Math.max(...activeMonths);
+
+//     const leads = await LeadMaster.find({
+//       leadBranch: selectedBranch,
+//       leadDate: getMonthRange(
+//         yearNumber,
+//         startMonth,
+//         endMonth
+//       ),
+//     })
+//       .select(`
+//         leadId leadDate netAmount balanceAmount totalPaidAmount
+//         forcefullyClosedTarget leadFor paymentHistory activityLog paymentVerified
+//       `)
+//       .lean();
+
+//     const closingTaskId = String(closingTask?._id || "");
+
+//     const productIds = new Set();
+//     const serviceIds = new Set();
+//     const staffIds = new Set();
+//     const adminIds = new Set();
+
+//     for (const lead of leads) {
+//       const leadItems = objects(lead.leadFor);
+
+//       const paymentEntries = objects(
+//         lead.paymentHistory
+//       ).flatMap((payment) => objects(payment.paymentEntries));
+
+//       const allItems = [...leadItems, ...paymentEntries];
+
+//       for (const item of allItems) {
+//         if (!item?.productorServiceId) continue;
+
+//         if (item.productorServicemodel === "Product") {
+//           productIds.add(String(item.productorServiceId));
+//         }
+
+//         if (item.productorServicemodel === "Service") {
+//           serviceIds.add(String(item.productorServiceId));
+//         }
+//       }
+
+//       for (const activity of objects(lead.activityLog)) {
+//         if (!activity?.submittedUser) continue;
+
+//         if (activity.submissiondoneByModel === "Admin") {
+//           adminIds.add(String(activity.submittedUser));
+//         } else {
+//           staffIds.add(String(activity.submittedUser));
+//         }
+//       }
+//     }
+
+//     const [products, services, staffs, admins] =
+//       await Promise.all([
+//         Product.find({
+//           _id: { $in: [...productIds] },
+//         })
+//           .select("productName name selected.category_id")
+//           .lean(),
+
+//         Service.find({
+//           _id: { $in: [...serviceIds] },
+//         })
+//           .select(`
+//             serviceName name selected.category_id
+//             category_id categoryId
+//           `)
+//           .lean(),
+
+//         Staff.find({
+//           _id: { $in: [...staffIds] },
+//         })
+//           .select("name designation")
+//           .lean(),
+
+//         Admin.find({
+//           _id: { $in: [...adminIds] },
+//         })
+//           .select("name designation")
+//           .lean(),
+//       ]);
+
+//     const productMap = new Map(
+//       products.map((product) => {
+//         const categoryId = product?.selected?.[0]?.category_id
+//           ? String(product.selected[0].category_id)
+//           : "";
+
+//         return [
+//           String(product._id),
+//           {
+//             name: product.productName || product.name || "Product",
+//             categoryId,
+//           },
+//         ];
+//       })
+//     );
+
+//     const serviceMap = new Map(
+//       services.map((service) => {
+//         const categoryId = service?.selected?.[0]?.category_id
+//           ? String(service.selected[0].category_id)
+//           : service?.category_id
+//             ? String(service.category_id)
+//             : service?.categoryId
+//               ? String(service.categoryId)
+//               : "";
+
+//         return [
+//           String(service._id),
+//           {
+//             name: service.serviceName || service.name || "Service",
+//             categoryId,
+//           },
+//         ];
+//       })
+//     );
+
+//     const staffMap = new Map(
+//       staffs.map((staff) => [String(staff._id), staff])
+//     );
+
+//     const adminMap = new Map(
+//       admins.map((admin) => [String(admin._id), admin])
+//     );
+
+//     const resolveUser = (userId, userModel) => {
+//       if (!userId) return null;
+
+//       const id = String(userId);
+
+//       if (userModel === "Admin" && adminMap.has(id)) {
+//         return {
+//           ...adminMap.get(id),
+//           model: "Admin",
+//         };
+//       }
+
+//       if (userModel === "Staff" && staffMap.has(id)) {
+//         return {
+//           ...staffMap.get(id),
+//           model: "Staff",
+//         };
+//       }
+
+//       if (staffMap.has(id)) {
+//         return {
+//           ...staffMap.get(id),
+//           model: "Staff",
+//         };
+//       }
+
+//       if (adminMap.has(id)) {
+//         return {
+//           ...adminMap.get(id),
+//           model: "Admin",
+//         };
+//       }
+
+//       return null;
+//     };
+
+//     const getItemMeta = (item) => {
+//       if (!item?.productorServiceId) return null;
+
+//       const itemId = String(item.productorServiceId);
+
+//       if (item.productorServicemodel === "Product") {
+//         return productMap.get(itemId) || null;
+//       }
+
+//       if (item.productorServicemodel === "Service") {
+//         return serviceMap.get(itemId) || null;
+//       }
+
+//       return null;
+//     };
+
+//     const getLeadCategoryItems = (
+//       lead,
+//       configCategoryId
+//     ) => {
+//       const entries = [];
+
+//       for (const item of objects(lead.leadFor)) {
+//         const meta = getItemMeta(item);
+
+//         if (!meta?.categoryId) continue;
+
+//         if (
+//           String(meta.categoryId) !==
+//           String(configCategoryId)
+//         ) {
+//           continue;
+//         }
+
+//         entries.push({
+//           id: String(item.productorServiceId),
+//           model: item.productorServicemodel,
+//           name: meta.name,
+//         });
+//       }
+
+//       return entries;
+//     };
+
+//     const getVerifiedAmountForCategory = (
+//       lead,
+//       configCategoryId
+//     ) => {
+//       let total = 0;
+
+//       for (const payment of objects(lead.paymentHistory)) {
+//         if (payment.paymentVerified !== true) continue;
+
+//         for (const entry of objects(payment.paymentEntries)) {
+//           const meta = getItemMeta(entry);
+
+//           if (!meta?.categoryId) continue;
+
+//           if (
+//             String(meta.categoryId) !==
+//             String(configCategoryId)
+//           ) {
+//             continue;
+//           }
+
+//           total += num(entry.receivedAmount);
+//         }
+//       }
+
+//       return total;
+//     };
+
+//     const isLeadFullyVerified = (lead) => {
+//       const payments = objects(lead.paymentHistory);
+
+//       return (
+//         payments.length > 0 &&
+//         payments.every(
+//           (payment) => payment.paymentVerified === true
+//         )
+//       );
+//     };
+
+//     const isLeadEligibleForIncentive = (lead) => {
+//       const netAmount = num(lead.netAmount);
+//       const totalPaidAmount = num(lead.totalPaidAmount);
+
+//       // Zero-value leads never count.
+//       if (netAmount <= 0) {
+//         return false;
+//       }
+
+//       const hasZeroBalance =
+//         lead.balanceAmount !== null &&
+//         lead.balanceAmount !== undefined &&
+//         lead.balanceAmount !== "" &&
+//         num(lead.balanceAmount) === 0;
+
+//       // Excess payment is allowed:
+//       // totalPaidAmount can be equal to or greater than netAmount.
+//       const isFullyPaid =
+//         hasZeroBalance &&
+//         totalPaidAmount >= netAmount;
+
+//       // Outer LeadMaster field must also be verified.
+//       const isLeadRootPaymentVerified =
+//         lead.paymentVerified === true;
+
+//       // There must be at least one payment,
+//       // and every paymentHistory item must be verified.
+//       const areAllPaymentsVerified =
+//         isLeadFullyVerified(lead);
+
+//       return (
+//         isFullyPaid &&
+//         isLeadRootPaymentVerified &&
+//         areAllPaymentsVerified
+//       );
+//     };//new codez
+
+   
+
+//     const getLatestClosingUserId = (lead) => {
+//       const closingLogs = objects(lead.activityLog).filter(
+//         (log) =>
+//           String(log.taskBy || "") === closingTaskId &&
+//           log.followupClosed === true &&
+//           log.submittedUser
+//       );
+
+//       const latestClosingLog = closingLogs.at(-1);
+
+//       return latestClosingLog?.submittedUser
+//         ? String(latestClosingLog.submittedUser)
+//         : null;
+//     };
+
+//     const leadsByMonth = new Map();
+
+//     for (const lead of leads) {
+//       const date = new Date(lead.leadDate);
+
+//       if (Number.isNaN(date.getTime())) continue;
+
+//       const leadMonth = date.getUTCMonth() + 1;
+//       const leadYear = date.getUTCFullYear();
+
+//       const monthKey = getMonthKey(leadYear, leadMonth);
+
+//       if (!leadsByMonth.has(monthKey)) {
+//         leadsByMonth.set(monthKey, []);
+//       }
+
+//       leadsByMonth.get(monthKey).push(lead);
+//     }
+
+//     const userWiseMap = new Map();
+
+//     const ensureUser = (
+//       userId,
+//       suppliedName = null,
+//       userModel = null
+//     ) => {
+//       const id = String(userId);
+
+//       const resolvedUser = resolveUser(id, userModel);
+
+//       const resolvedName =
+//         suppliedName ||
+//         resolvedUser?.name ||
+//         `Unknown User (${id})`;
+
+//       const resolvedDesignation =
+//         resolvedUser?.designation ||
+//         resolvedUser?.model ||
+//         userModel ||
+//         "Unknown";
+
+//       const existingUser = userWiseMap.get(id);
+
+//       if (existingUser) {
+//         const existingName = String(
+//           existingUser.userName || ""
+//         );
+
+//         const wasUnknown =
+//           existingName
+//             .toLowerCase()
+//             .startsWith("unknown user") ||
+//           existingName === "un";
+
+//         const hasRealName = !resolvedName
+//           .toLowerCase()
+//           .startsWith("unknown user");
+
+//         if (wasUnknown && hasRealName) {
+//           existingUser.userName = resolvedName;
+//           existingUser.designation = resolvedDesignation;
+//         }
+
+//         return existingUser;
+//       }
+
+//       const user = {
+//         userId: id,
+//         userName: resolvedName,
+//         designation: resolvedDesignation,
+//         target: 0,
+//         achieved: 0,
+//         balance: 0,
+//         incentive: 0,
+//         categories: [],
+//       };
+
+//       userWiseMap.set(id, user);
+
+//       return user;
+//     };
+
+//     const awardedIncentives = new Set();
+
+//     for (const config of targetConfigs) {
+//       const configCategoryId = String(
+//         config.categoryId?._id || config.categoryId || ""
+//       );
+
+//       if (!configCategoryId) continue;
+
+//       const categoryName =
+//         config.categoryId?.category ||
+//         config.categoryName ||
+//         "Category";
+
+//       const monthlyTargets = objects(
+//         config.monthlyTargets
+//       ).filter(
+//         (monthlyTarget) =>
+//           num(monthlyTarget.year) === yearNumber &&
+//           activeMonths.includes(num(monthlyTarget.month))
+//       );
+
+//       for (const monthlyTarget of monthlyTargets) {
+//         const targetMonth = num(monthlyTarget.month);
+
+//         const currentMonthLeads =
+//           leadsByMonth.get(
+//             getMonthKey(yearNumber, targetMonth)
+//           ) || [];
+
+//         for (const userTarget of objects(
+//           monthlyTarget.userTargets
+//         )) {
+//           const userId = String(
+//             userTarget.userId?._id ||
+//             userTarget.userId ||
+//             ""
+//           );
+
+//           if (!userId) continue;
+
+//           const userName =
+//             userTarget.userId?.name || "Unknown User";
+
+//           const slabs = objects(userTarget.slabs);
+
+//           const target = slabs.reduce(
+//             (highest, slab) =>
+//               Math.max(highest, num(slab.toValue)),
+//             0
+//           );
+
+//           const user = ensureUser(userId, userName, "Staff");
+
+//           user.target += target;
+
+//           let achieved = 0;
+//           const productWiseMap = new Map();
+
+//           // Contains only leads that actually contribute
+//           // to target achievement for this user/category/month.
+//           const achievedLeads = [];
+
+//           for (const lead of currentMonthLeads) {
+//             const closingUserId =
+//               getLatestClosingUserId(lead);
+
+//             if (closingUserId !== userId) continue;
+
+//             const categoryItems = getLeadCategoryItems(
+//               lead,
+//               configCategoryId
+//             );
+
+//             if (!categoryItems.length) continue;
+
+//             let leadAchievement = 0;
+
+//             if (config.measurementType === "amount") {
+//               leadAchievement =
+//                 lead.forcefullyClosedTarget === true
+//                   ? num(lead.netAmount)
+//                   : getVerifiedAmountForCategory(
+//                     lead,
+//                     configCategoryId
+//                   );
+//             } else {
+//               leadAchievement =
+//                 isLeadEligibleForIncentive(lead) ? 1 : 0;
+//             }
+
+//             if (leadAchievement <= 0) continue;
+
+//             achieved += leadAchievement;
+
+//             achievedLeads.push({
+//               leadId: lead.leadId || "",
+//               leadMongoId: String(lead._id),
+//               leadDate: lead.leadDate,
+
+//               closingUserId,
+
+//               measurementType: config.measurementType,
+//               achievedValue: leadAchievement,
+
+//               netAmount: num(lead.netAmount),
+//               balanceAmount: num(lead.balanceAmount),
+//               totalPaidAmount: num(lead.totalPaidAmount),
+
+//               forcefullyClosedTarget:
+//                 lead.forcefullyClosedTarget === true,
+
+//               isFullyVerified:
+//                 isLeadFullyVerified(lead),
+
+//               verifiedCategoryAmount:
+//                 getVerifiedAmountForCategory(
+//                   lead,
+//                   configCategoryId
+//                 ),
+
+//               categoryItems: categoryItems.map((item) => ({
+//                 id: item.id,
+//                 model: item.model,
+//                 name: item.name,
+//               })),
+//             });
+
+//             const itemCount = categoryItems.length || 1;
+
+//             for (const item of categoryItems) {
+//               const productKey = `${item.model}-${item.id}`;
+
+//               if (!productWiseMap.has(productKey)) {
+//                 productWiseMap.set(productKey, {
+//                   id: item.id,
+//                   model: item.model,
+//                   name: item.name,
+//                   achieved: 0,
+//                   incentive: 0,
+//                 });
+//               }
+
+//               const product = productWiseMap.get(productKey);
+
+//               product.achieved +=
+//                 config.measurementType === "amount"
+//                   ? leadAchievement / itemCount
+//                   : 1;
+//             }
+//           }
+
+//           user.achieved += achieved;
+
+//           user.categories.push({
+//             categoryId: configCategoryId,
+//             categoryName,
+//             periodName: config.periodName || "",
+//             month: targetMonth,
+//             year: yearNumber,
+//             measurementType: config.measurementType,
+
+//             target,
+//             slabs,
+//             achieved,
+//             balance: target - achieved,
+//             incentive: 0,
+
+//             // Frontend can use this to inspect all
+//             // leads included in target achievement.
+//             achievedLeads,
+
+//             products: [...productWiseMap.values()],
+//           });
+//         }
+
+//         for (const lead of currentMonthLeads) {
+//           const categoryItems = getLeadCategoryItems(
+//             lead,
+//             configCategoryId
+//           );
+
+//           if (!categoryItems.length) continue;
+
+//           if (!isLeadEligibleForIncentive(lead)) continue;
+
+//           const percentageBaseAmount =
+//             lead.forcefullyClosedTarget === true
+//               ? num(lead.netAmount)
+//               : getVerifiedAmountForCategory(
+//                 lead,
+//                 configCategoryId
+//               );
+
+//           for (const [activityIndex, activity] of objects(
+//             lead.activityLog
+//           ).entries()) {
+//             const userId = String(activity.submittedUser || "");
+
+//             if (!userId) continue;
+
+//             const taskById = String(activity.taskBy || "");
+//             const taskId = String(activity.taskId || "");
+
+//             const allocationRule = objects(
+//               config.allocationValues
+//             ).find((allocation) => {
+//               const allocationId = String(
+//                 allocation.allocationId || ""
+//               );
+
+//               return (
+//                 allocationId === taskById ||
+//                 allocationId === taskId
+//               );
+//             });
+
+//             if (!allocationRule) continue;
+
+//             const completed =
+//               activity.taskClosed === true ||
+//               activity.followupClosed === true ||
+//               activity.allocatedClosed === true;
+
+//             const isFirstActivity = activityIndex === 0;
+
+//             if (!isFirstActivity && !completed) continue;
+
+//             const rewardValue = num(allocationRule.value);
+
+//             if (rewardValue <= 0) continue;
+
+//             const rewardMode = String(
+//               allocationRule.incentiveType ||
+//               allocationRule.mode ||
+//               "amount"
+//             )
+//               .toLowerCase()
+//               .trim();
+
+//             const isPercentage =
+//               rewardMode === "percentage" ||
+//               rewardMode === "percent";
+
+//             let incentive = 0;
+
+//             if (isPercentage) {
+//               if (percentageBaseAmount <= 0) continue;
+
+//               incentive =
+//                 (rewardValue / 100) * percentageBaseAmount;
+//             } else {
+//               incentive = rewardValue;
+//             }
+
+//             if (incentive <= 0) continue;
+
+//             const rewardTaskId = String(
+//               allocationRule.allocationId ||
+//               taskById ||
+//               taskId
+//             );
+
+//             const rewardKey = [
+//               String(config._id),
+//               String(lead._id),
+//               userId,
+//               rewardTaskId,
+//             ].join("-");
+
+//             if (awardedIncentives.has(rewardKey)) continue;
+
+//             awardedIncentives.add(rewardKey);
+
+//             const user = ensureUser(
+//               userId,
+//               null,
+//               activity.submissiondoneByModel
+//             );
+
+//             user.incentive += incentive;
+
+//             user.categories.push({
+//               categoryId: configCategoryId,
+//               categoryName,
+//               periodName: config.periodName || "",
+//               month: targetMonth,
+//               year: yearNumber,
+//               measurementType: "incentive",
+//               target: 0,
+//               slabs: [],
+//               achieved: 0,
+//               balance: 0,
+//               incentive,
+
+//               leadId: lead.leadId,
+//               leadMongoId: String(lead._id),
+
+//               activityIndex,
+//               taskById,
+//               taskId,
+
+//               allocationId: rewardTaskId,
+//               incentiveMode: rewardMode,
+
+//               products: [],
+//             });
+//           }
+//         }
+//       }
+//     }
+
+//     const userWiseResults = [...userWiseMap.values()].map(
+//       (user) => ({
+//         ...user,
+//         balance: user.target - user.achieved,
+//       })
+//     );
+
+//     const summary = userWiseResults.reduce(
+//       (total, user) => {
+//         total.target += num(user.target);
+//         total.achieved += num(user.achieved);
+//         total.balance += num(user.balance);
+//         total.incentive += num(user.incentive);
+
+//         return total;
+//       },
+//       {
+//         target: 0,
+//         achieved: 0,
+//         balance: 0,
+//         incentive: 0,
+//       }
+//     );
+
+//     const measurementTypes = [
+//       ...new Set(
+//         targetConfigs
+//           .map((config) =>
+//             String(config.measurementType || "").trim()
+//           )
+//           .filter(Boolean)
+//       ),
+//     ];
+//     const check = await LeadMaster.find({
+//       "activityLog.taskallocatedTo": new ObjectId("672072c7a80cc9c3f31d97d0"),
+//       balanceAmount: 0,
+//       paymentVerified: true,
+//       "leadFor.productorServiceId": {
+//         $in: [
+//           new ObjectId("6a326db3a587143676cf71fb"),
+//           new ObjectId("6a326d76a587143676cf6ee7"),
+//           new ObjectId("6a326e04a587143676cf7249"),
+//           new ObjectId("6a326e27a587143676cf7298")
+//         ]
+//       },
+//       leadBranch: new ObjectId("66f7b26c1e7129afd9aee189")
+//     })
+
+//     return res.status(200).json({
+//       success: true,
+//       data: {
+//         userWiseResults,
+//         checkvalues: check,
+//         summary,
+//         periods: allPeriods,
+//         selectedPeriodName: targetConfigs[0]?.periodName || "",
+//         measurementTypes,
+//         selectedMeasurementType:
+//           targetConfigs[0]?.measurementType || "",
+//         selectedMonth,
+//         selectedYear: yearNumber,
+//       },
+//     });
+//   } catch (error) {
+//     console.error("gettargetResult error:", error);
+
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal server error",
+//     });
+//   }
+// };
+
 export const gettargetResult = async (req, res) => {
   try {
     const {
@@ -1259,7 +2180,7 @@ export const gettargetResult = async (req, res) => {
       ),
     });
 
-    const [allTargetConfigs, closingTask] = await Promise.all([
+    const [allTargetConfigs] = await Promise.all([
       TargetConfiguration.find({
         branch: selectedBranch,
       })
@@ -1269,12 +2190,6 @@ export const gettargetResult = async (req, res) => {
         `)
         .populate("categoryId", "category")
         .populate("monthlyTargets.userTargets.userId", "name email")
-        .lean(),
-
-      Task.findOne({
-        taskName: "Follow-Up Closing",
-      })
-        .select("_id")
         .lean(),
     ]);
 
@@ -1327,7 +2242,7 @@ export const gettargetResult = async (req, res) => {
     });
 
     if (!targetConfigs.length) {
-      return res.json({
+      return res.status(200).json({
         success: true,
         data: {
           userWiseResults: [],
@@ -1372,12 +2287,11 @@ export const gettargetResult = async (req, res) => {
       ),
     })
       .select(`
-        leadId leadDate netAmount balanceAmount totalPaidAmount
-        forcefullyClosedTarget leadFor paymentHistory activityLog paymentVerified
+        leadId leadDate leadClosed paymentVerified
+        netAmount balanceAmount totalPaidAmount
+        forcefullyClosedTarget leadFor paymentHistory activityLog
       `)
       .lean();
-
-    const closingTaskId = String(closingTask?._id || "");
 
     const productIds = new Set();
     const serviceIds = new Set();
@@ -1609,58 +2523,34 @@ export const gettargetResult = async (req, res) => {
       );
     };
 
-    const isLeadEligibleForIncentive = (lead) => {
-      const netAmount = num(lead.netAmount);
-      const totalPaidAmount = num(lead.totalPaidAmount);
+    /*
+      Finds the staff/admin who actually completed
+      the latest follow-up close action.
 
-      // Zero-value leads never count.
-      if (netAmount <= 0) {
-        return false;
-      }
-
-      const hasZeroBalance =
-        lead.balanceAmount !== null &&
-        lead.balanceAmount !== undefined &&
-        lead.balanceAmount !== "" &&
-        num(lead.balanceAmount) === 0;
-
-      // Excess payment is allowed:
-      // totalPaidAmount can be equal to or greater than netAmount.
-      const isFullyPaid =
-        hasZeroBalance &&
-        totalPaidAmount >= netAmount;
-
-      // Outer LeadMaster field must also be verified.
-      const isLeadRootPaymentVerified =
-        lead.paymentVerified === true;
-
-      // There must be at least one payment,
-      // and every paymentHistory item must be verified.
-      const areAllPaymentsVerified =
-        isLeadFullyVerified(lead);
-
-      return (
-        isFullyPaid &&
-        isLeadRootPaymentVerified &&
-        areAllPaymentsVerified
-      );
-    };//new codez
-
-   
-
-    const getLatestClosingUserId = (lead) => {
+      We intentionally do not check `taskBy` against a single
+      Task document ID because your activityLog uses different
+      taskBy IDs for different kinds of follow-up closure entries.
+    */
+    const getLatestFollowUpCloser = (lead) => {
       const closingLogs = objects(lead.activityLog).filter(
-        (log) =>
-          String(log.taskBy || "") === closingTaskId &&
-          log.followupClosed === true &&
-          log.submittedUser
+        (activity) =>
+          activity.followupClosed === true &&
+          activity.taskClosed === true &&
+          activity.submittedUser
       );
 
       const latestClosingLog = closingLogs.at(-1);
 
-      return latestClosingLog?.submittedUser
-        ? String(latestClosingLog.submittedUser)
-        : null;
+      if (!latestClosingLog?.submittedUser) {
+        return null;
+      }
+
+      return {
+        userId: String(latestClosingLog.submittedUser),
+        userModel:
+          latestClosingLog.submissiondoneByModel || "Staff",
+        activity: latestClosingLog,
+      };
     };
 
     const leadsByMonth = new Map();
@@ -1775,6 +2665,16 @@ export const gettargetResult = async (req, res) => {
             getMonthKey(yearNumber, targetMonth)
           ) || [];
 
+        /*
+          STEP 1:
+          Add only assigned target values to target users.
+
+          Example:
+          Saritha has a target of 2.
+          Saritha starts with:
+          target: 2
+          achieved: 0
+        */
         for (const userTarget of objects(
           monthlyTarget.userTargets
         )) {
@@ -1801,104 +2701,6 @@ export const gettargetResult = async (req, res) => {
 
           user.target += target;
 
-          let achieved = 0;
-          const productWiseMap = new Map();
-
-          // Contains only leads that actually contribute
-          // to target achievement for this user/category/month.
-          const achievedLeads = [];
-
-          for (const lead of currentMonthLeads) {
-            const closingUserId =
-              getLatestClosingUserId(lead);
-
-            if (closingUserId !== userId) continue;
-
-            const categoryItems = getLeadCategoryItems(
-              lead,
-              configCategoryId
-            );
-
-            if (!categoryItems.length) continue;
-
-            let leadAchievement = 0;
-
-            if (config.measurementType === "amount") {
-              leadAchievement =
-                lead.forcefullyClosedTarget === true
-                  ? num(lead.netAmount)
-                  : getVerifiedAmountForCategory(
-                    lead,
-                    configCategoryId
-                  );
-            } else {
-              leadAchievement =
-                isLeadEligibleForIncentive(lead) ? 1 : 0;
-            }
-
-            if (leadAchievement <= 0) continue;
-
-            achieved += leadAchievement;
-
-            achievedLeads.push({
-              leadId: lead.leadId || "",
-              leadMongoId: String(lead._id),
-              leadDate: lead.leadDate,
-
-              closingUserId,
-
-              measurementType: config.measurementType,
-              achievedValue: leadAchievement,
-
-              netAmount: num(lead.netAmount),
-              balanceAmount: num(lead.balanceAmount),
-              totalPaidAmount: num(lead.totalPaidAmount),
-
-              forcefullyClosedTarget:
-                lead.forcefullyClosedTarget === true,
-
-              isFullyVerified:
-                isLeadFullyVerified(lead),
-
-              verifiedCategoryAmount:
-                getVerifiedAmountForCategory(
-                  lead,
-                  configCategoryId
-                ),
-
-              categoryItems: categoryItems.map((item) => ({
-                id: item.id,
-                model: item.model,
-                name: item.name,
-              })),
-            });
-
-            const itemCount = categoryItems.length || 1;
-
-            for (const item of categoryItems) {
-              const productKey = `${item.model}-${item.id}`;
-
-              if (!productWiseMap.has(productKey)) {
-                productWiseMap.set(productKey, {
-                  id: item.id,
-                  model: item.model,
-                  name: item.name,
-                  achieved: 0,
-                  incentive: 0,
-                });
-              }
-
-              const product = productWiseMap.get(productKey);
-
-              product.achieved +=
-                config.measurementType === "amount"
-                  ? leadAchievement / itemCount
-                  : 1;
-            }
-          }
-
-          user.achieved += achieved;
-
           user.categories.push({
             categoryId: configCategoryId,
             categoryName,
@@ -1909,18 +2711,22 @@ export const gettargetResult = async (req, res) => {
 
             target,
             slabs,
-            achieved,
-            balance: target - achieved,
+            achieved: 0,
+            balance: target,
             incentive: 0,
 
-            // Frontend can use this to inspect all
-            // leads included in target achievement.
-            achievedLeads,
-
-            products: [...productWiseMap.values()],
+            achievedLeads: [],
+            products: [],
           });
         }
 
+        /*
+          STEP 2:
+          Add achievement only to the user who actually closed
+          the follow-up for the qualifying lead.
+
+          That staff/admin does not need a target configured.
+        */
         for (const lead of currentMonthLeads) {
           const categoryItems = getLeadCategoryItems(
             lead,
@@ -1929,15 +2735,181 @@ export const gettargetResult = async (req, res) => {
 
           if (!categoryItems.length) continue;
 
-          if (!isLeadEligibleForIncentive(lead)) continue;
+          const followUpCloser =
+            getLatestFollowUpCloser(lead);
+
+          if (!followUpCloser) continue;
+
+          const {
+            userId: achievedByUserId,
+            userModel: achievedByModel,
+            activity: closingActivity,
+          } = followUpCloser;
+
+          let leadAchievement = 0;
+
+          if (config.measurementType === "amount") {
+            leadAchievement =
+              lead.forcefullyClosedTarget === true
+                ? num(lead.netAmount)
+                : getVerifiedAmountForCategory(
+                    lead,
+                    configCategoryId
+                  );
+          } else {
+            /*
+              Quantity target:
+              Count one when the lead is closed and a follow-up
+              is marked closed by a staff/admin.
+
+              This does NOT require balanceAmount === 0.
+              If you need fully-paid-only quantity targets, replace
+              this with your full-payment validation condition.
+            */
+            leadAchievement =
+              lead.leadClosed === true &&
+              closingActivity.followupClosed === true
+                ? 1
+                : 0;
+          }
+
+          if (leadAchievement <= 0) continue;
+
+          const achievedByUser = ensureUser(
+            achievedByUserId,
+            null,
+            achievedByModel
+          );
+
+          achievedByUser.achieved += leadAchievement;
+
+          const productWiseMap = new Map();
+          const itemCount = categoryItems.length || 1;
+
+          for (const item of categoryItems) {
+            const productKey = `${item.model}-${item.id}`;
+
+            if (!productWiseMap.has(productKey)) {
+              productWiseMap.set(productKey, {
+                id: item.id,
+                model: item.model,
+                name: item.name,
+                achieved: 0,
+                incentive: 0,
+              });
+            }
+
+            const product = productWiseMap.get(productKey);
+
+            product.achieved +=
+              config.measurementType === "amount"
+                ? leadAchievement / itemCount
+                : 1;
+          }
+
+          achievedByUser.categories.push({
+            categoryId: configCategoryId,
+            categoryName,
+            periodName: config.periodName || "",
+            month: targetMonth,
+            year: yearNumber,
+            measurementType: config.measurementType,
+
+            target: 0,
+            slabs: [],
+            achieved: leadAchievement,
+            balance: -leadAchievement,
+            incentive: 0,
+
+            achievedLeads: [
+              {
+                leadId: lead.leadId || "",
+                leadMongoId: String(lead._id),
+                leadDate: lead.leadDate,
+
+                achievedByUserId,
+                achievedByModel,
+
+                activityId: String(closingActivity._id || ""),
+                taskById: String(closingActivity.taskBy || ""),
+                taskId: String(closingActivity.taskId || ""),
+
+                measurementType: config.measurementType,
+                achievedValue: leadAchievement,
+
+                netAmount: num(lead.netAmount),
+                balanceAmount: num(lead.balanceAmount),
+                totalPaidAmount: num(lead.totalPaidAmount),
+
+                forcefullyClosedTarget:
+                  lead.forcefullyClosedTarget === true,
+
+                isFullyVerified: isLeadFullyVerified(lead),
+
+                verifiedCategoryAmount:
+                  getVerifiedAmountForCategory(
+                    lead,
+                    configCategoryId
+                  ),
+
+                categoryItems: categoryItems.map((item) => ({
+                  id: item.id,
+                  model: item.model,
+                  name: item.name,
+                })),
+              },
+            ],
+
+            products: [...productWiseMap.values()],
+          });
+        }
+
+        /*
+          STEP 3:
+          Incentives remain assigned to the activity user.
+          This is independent of target assignment.
+        */
+        for (const lead of currentMonthLeads) {
+          const categoryItems = getLeadCategoryItems(
+            lead,
+            configCategoryId
+          );
+
+          if (!categoryItems.length) continue;
+
+          const payments = objects(lead.paymentHistory);
+
+          const isFullyVerified =
+            payments.length > 0 &&
+            payments.every(
+              (payment) => payment.paymentVerified === true
+            );
+
+          const hasZeroBalance =
+            lead.balanceAmount !== null &&
+            lead.balanceAmount !== undefined &&
+            lead.balanceAmount !== "" &&
+            num(lead.balanceAmount) === 0;
+
+          const isFullyPaid =
+            hasZeroBalance &&
+            num(lead.totalPaidAmount) >= num(lead.netAmount);
+
+          const isLeadEligibleForIncentive =
+            num(lead.netAmount) > 0 &&
+            lead.paymentVerified === true &&
+            isFullyVerified &&
+            isFullyPaid;
+
+          if (!isLeadEligibleForIncentive) continue;
 
           const percentageBaseAmount =
             lead.forcefullyClosedTarget === true
               ? num(lead.netAmount)
               : getVerifiedAmountForCategory(
-                lead,
-                configCategoryId
-              );
+                  lead,
+                  configCategoryId
+                );
 
           for (const [activityIndex, activity] of objects(
             lead.activityLog
@@ -2034,13 +3006,14 @@ export const gettargetResult = async (req, res) => {
               month: targetMonth,
               year: yearNumber,
               measurementType: "incentive",
+
               target: 0,
               slabs: [],
               achieved: 0,
               balance: 0,
               incentive,
 
-              leadId: lead.leadId,
+              leadId: lead.leadId || "",
               leadMongoId: String(lead._id),
 
               activityIndex,
@@ -2090,26 +3063,11 @@ export const gettargetResult = async (req, res) => {
           .filter(Boolean)
       ),
     ];
-    const check = await LeadMaster.find({
-      "activityLog.taskallocatedTo": new ObjectId("672072c7a80cc9c3f31d97d0"),
-      balanceAmount: 0,
-      paymentVerified: true,
-      "leadFor.productorServiceId": {
-        $in: [
-          new ObjectId("6a326db3a587143676cf71fb"),
-          new ObjectId("6a326d76a587143676cf6ee7"),
-          new ObjectId("6a326e04a587143676cf7249"),
-          new ObjectId("6a326e27a587143676cf7298")
-        ]
-      },
-      leadBranch: new ObjectId("66f7b26c1e7129afd9aee189")
-    })
 
     return res.status(200).json({
       success: true,
       data: {
         userWiseResults,
-        checkvalues: check,
         summary,
         periods: allPeriods,
         selectedPeriodName: targetConfigs[0]?.periodName || "",
@@ -2129,6 +3087,7 @@ export const gettargetResult = async (req, res) => {
     });
   }
 };
+
 /**
 
  * Generate months array between start and end dates

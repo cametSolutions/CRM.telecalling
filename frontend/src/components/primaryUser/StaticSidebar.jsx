@@ -108,29 +108,29 @@ export const StaticSidebar = ({
         )
         .map((item) => item.productName || item.serviceName)
       setproductList(filteredList)
-      console.log(data.userWiseResults)
-      console.log(data?.checkvalues)
-      const m = data?.checkvalues.map((it) => it.leadId)
-      console.log(m)
-      const rt = data.userWiseResults.filter(
-        (item) => item.userName === "Alina C P"
-      )
-      const u = data.userWiseResults.map((it) => it.userName)
-      console.log(u)
-      console.log(rt)
-      const t = rt[0].categories.filter(
-        (it) => it.measurementType === "quantity"
-      )
-      console.log(t)
-      const c = t[0]?.achievedLeads.map((it) => it.leadId)
-      const d = t[1]?.achievedLeads.map((it) => it.leadId)
-      console.log(d)
-      console.log(c)
-      const mSet = new Set(m)
+      // console.log(data.userWiseResults)
+      // console.log(data?.checkvalues)
+      // const m = data?.checkvalues.map((it) => it.leadId)
+      // console.log(m)
+      // const rt = data.userWiseResults.filter(
+      //   (item) => item.userName === "Alina C P"
+      // )
+      // const u = data.userWiseResults.map((it) => it.userName)
+      // console.log(u)
+      // console.log(rt)
+      // const t = rt[0].categories.filter(
+      //   (it) => it.measurementType === "quantity"
+      // )
+      // console.log(t)
+      // const c = t[0]?.achievedLeads.map((it) => it.leadId)
+      // const d = t[1]?.achievedLeads.map((it) => it.leadId)
+      // console.log(d)
+      // console.log(c)
+      // const mSet = new Set(m)
 
-      const missingFromM = [...d, ...c].filter((leadId) => !mSet.has(leadId))
+      // const missingFromM = [...d, ...c].filter((leadId) => !mSet.has(leadId))
 
-      console.log("Missing from m:", missingFromM)
+      // console.log("Missing from m:", missingFromM)
       const filteredloggedUserItem = data?.userWiseResults.filter(
         (item) => item.userId === user._id
       )
@@ -230,6 +230,7 @@ export const StaticSidebar = ({
   useEffect(() => {
     if (data?.userWiseResults && data?.userWiseResults.length && user?._id) {
       console.log(data)
+
       // parenttargetData(data)
       setTargetData(data)
       setselectedPeriod(data?.selectedPeriodName)
@@ -253,8 +254,10 @@ export const StaticSidebar = ({
       )
       console.log(data.userWiseResults)
       const aa = data.userWiseResults.filter(
-        (item) => item.userName === "Alina C P"
+        (item) => item.userName === "Riyas"
       )
+const names=data.userWiseResults.map((it)=>it.userName)
+console.log(names)
       console.log(aa)
       setloggeduserTarget(selectedUser || null)
       console.log(selectedUser)
@@ -266,16 +269,7 @@ export const StaticSidebar = ({
             data.userWiseResults
               ?.flatMap((userItem) => userItem.categories || [])
               .filter((c) => c.categoryId === cat.categoryId) || []
-          if (cat.categoryId === "69f5be3af24022288f2953f2") {
-            console.log("hh")
-            const a =
-              data.userWiseResults
-                ?.flatMap((userItem) => userItem.categories || [])
-                .filter((c) => c.categoryId === cat.categoryId) || []
-            console.log(a)
-            const b = a.filter((it) => it.measurementType === "quantity")
-            console.log(b)
-          }
+        
           console.log(matchedCategories)
           const totalTarget = matchedCategories.reduce(
             (sum, c) => sum + (c.target || 0),

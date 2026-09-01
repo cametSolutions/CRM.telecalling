@@ -38,6 +38,7 @@ function LeadEdit() {
 
   const location = useLocation()
   const { leadId, isReadOnly, refreshKey, from } = location.state || {}
+console.log(from)
 console.log(location?.state)
   console.log(isReadOnly)
   console.log(location?.state)
@@ -244,9 +245,12 @@ console.log(leadId)
   }
   console.log(leadId)
 
-  const handleSubmit = async (data, leadData, objectId) => {
+  const handleSubmit = async (data, leadData, objectId,from=null,previousLeadCustomer,isCustomerChanged) => {
     console.log(data)
     console.log(leadData)
+console.log(from)
+console.log(isCustomerChanged)
+console.log(previousLeadCustomer)
 
 const newnetamount = leadData.reduce(
   (sum, item) => sum + Number(item.netAmount || 0),
@@ -259,16 +263,21 @@ console.log(newnetamount)
     try {
       setLoader(true)
       const response = await api.put(
-        `/lead/leadRegisterUpdate?docID=${objectId}`,
+        `/lead/leadRegisterUpdate?docID=${objectId}&previousCustomer=${previousLeadCustomer}`,
         {
           data,
-          leadData
+          leadData,
+from,
+previousleadCustomer:previousLeadCustomer,
+isCustomerChanged
         }
       )
       if (response.status === 200) {
         toast.success(response.data.message)
         setLoader(false)
       }
+console.log(response)
+console.log(response?.data)
       navigate(-1)
     } catch (error) {
       setLoader(false)

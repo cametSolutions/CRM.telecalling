@@ -697,6 +697,9 @@ const LeadMaster = ({
   console.log(Breadcrumblist)
   console.log(from)
   console.log(Data)
+  if (Data == null) {
+    console.log("hhh")
+  }
   console.log(isReadOnly)
 
   const {
@@ -734,6 +737,11 @@ const LeadMaster = ({
   )
   const mobileRegister = registerMain("mobile")
   const today = new Date().toISOString().split("T")[0]
+  console.log(Data?.[0]?.customerName)
+  console.log(Data?.[0]?.customerName?._id)
+  const [previousLeadCustomer, setpreviousLeadCustomer] = useState(null)
+  const [isCustomerChanged, setiscustomerChanged] = useState(false)
+  console.log(previousLeadCustomer)
   const [takenLicenses, setTakenLicense] = useState([])
   console.log(takenLicenses)
   const [warningErrors, setwarningError] = useState({})
@@ -821,7 +829,7 @@ const LeadMaster = ({
   const [productlist, setproductList] = useState([])
   const [achievedproducts, setacheivedProducts] = useState([])
   const [selectedPeriod, setselectedPeriod] = useState("")
-const [customerapichange,setcustomerapichange]=useState(true)
+  const [customerapichange, setcustomerapichange] = useState(true)
   const dropdownLicenseRef = useRef(null)
   const dropdownLeadforRef = useRef(null)
   const registrationType = watchModal("registrationType")
@@ -880,27 +888,7 @@ const [customerapichange,setcustomerapichange]=useState(true)
     document.addEventListener("mousedown", handleClickOutside)
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
-  // const softwareTrades = [
-  //   "Agriculture",
-  //   "Business Services",
-  //   "Computer Hardware Software",
-  //   "Electronics Electrical Supplies",
-  //   "FMCG-Fast Moving Consumable Goods",
-  //   "Garment,Fashion Apparel",
-  //   "Health Beauty",
-  //   "Industrial Supplies",
-  //   "Jewelry Gemstones",
-  //   "Mobile Accessories",
-  //   "Pharmaceutical Chemicals",
-  //   "Textiles Chemicals",
-  //   "Textiles Fabrics",
-  //   "Others",
-  //   "Restaurant, Food And Beverage",
-  //   "Accounts Chartered Account",
-  //   "Stationery, Printing Publishing",
-  //   "Hotel",
-  //   "Pipes, Tubes Fittings"
-  // ]
+
   const softwareTrades = [
     "Agriculture",
     "Business Services",
@@ -990,7 +978,6 @@ const [customerapichange,setcustomerapichange]=useState(true)
   } = UseFetch(
     loggeduser &&
       selectedBranch &&
-
       `/customer/getallCustomer?branchSelected=${selectedBranch}`
   )
   console.log(customerData)
@@ -1115,6 +1102,7 @@ const [customerapichange,setcustomerapichange]=useState(true)
   console.log(duplicateWarning)
   useEffect(() => {
     if (!selectedleadlist || selectedleadlist.length === 0) {
+      console.log(selectedleadlist)
       console.log("hh")
       setSelectedLeadList([{ ...emptyRow }])
     }
@@ -1248,7 +1236,7 @@ const [customerapichange,setcustomerapichange]=useState(true)
       if (Data[0]?.selfAllocation) {
         setselfAllocationChangable(false)
       }
-
+      setpreviousLeadCustomer(Data[0]?.customerName?._id)
       setValueMain("leadId", Data[0]?.leadId)
       setValueMain("partner", Data[0]?.partner)
       setValueMain("remark", Data[0].remark)
@@ -1281,6 +1269,9 @@ const [customerapichange,setcustomerapichange]=useState(true)
         productorServiceName:
           item?.productorServiceId?.productName ||
           item?.productorServiceId?.serviceName,
+        softwareTrade: item?.softwareTrade,
+        applicationDate: item?.applicationDate,
+        status: item?.status || item?.isActive,
         productorServiceId: item?.productorServiceId?._id,
         itemType: item?.productorServicemodel,
         productPrice: item?.productPrice,
@@ -1314,7 +1305,7 @@ const [customerapichange,setcustomerapichange]=useState(true)
       ) {
         sethaveprimaryProduct(true)
         const primary = leadData[0]
-        console.log("hh")
+        console.log("hhddd")
         const primaryProductId = getRowId(primary?.productorServiceId)
         const primaryProduct = getPrimaryProductFromLeadList(primary)
         console.log(primaryProduct)
@@ -1401,6 +1392,7 @@ const [customerapichange,setcustomerapichange]=useState(true)
           return rows
         })
       } else {
+        console.log(leadData)
         setSelectedLeadList(leadData)
       }
 
@@ -1475,7 +1467,7 @@ const [customerapichange,setcustomerapichange]=useState(true)
   useEffect(() => {
     if (customerData && customerData.length > 0) {
       setallcustomer(customerData)
-setcustomerapichange(false)
+      setcustomerapichange(false)
     }
   }, [customerData])
   useEffect(() => {
@@ -2290,7 +2282,10 @@ setcustomerapichange(false)
   console.log(detailsForm)
   const handleSelectedCustomer = (option) => {
     console.log(option)
-
+    console.log(previousLeadCustomer)
+    if (option?.value !== previousLeadCustomer) {
+      setiscustomerChanged(true)
+    }
     setValueModal("customerName", option?.label)
     setValueModal("customerid", option?.value)
     setValueModal("email", option?.email)
@@ -2934,11 +2929,20 @@ setcustomerapichange(false)
           setsubmitLoading(false)
           return
         }
+        const validationMessage = validateSelectedLeadList(selectedleadlist)
+        console.log(validationMessage)
+        if (validationMessage) {
+          toast.warning(validationMessage)
+          return
+        }
         seteditLoadingState(true)
         const updated = await handleEditData(
           data,
           selectedleadlist,
-          Data[0]?._id
+          Data[0]?._id,
+          from,
+          previousLeadCustomer,
+          isCustomerChanged
         )
       } else if (process === "closing") {
         const validationMessage = validateSelectedLeadList(selectedleadlist)
@@ -3007,7 +3011,7 @@ setcustomerapichange(false)
     const itemType = String(
       detailsItem?.productorservicetype || ""
     ).toLowerCase()
-    console.log("hh")
+    console.log("hha")
     console.log(detailsForm)
     console.log(detailsForm.taggeddata)
     console.log(selectedleadlist)
@@ -3170,11 +3174,10 @@ setcustomerapichange(false)
     }
 
     try {
-    
       setModalLoader(true)
-console.log(data)
+      console.log(data)
       let response
-console.log(checknewcustomer)
+      console.log(checknewcustomer)
       if (data?.customerid) {
         if (checknewcustomer) return
         console.log("hhh")
@@ -3192,9 +3195,9 @@ console.log(checknewcustomer)
         )
       }
       if (data?.customerid && response.status === 200) {
-console.log("hhhh")
-setcustomerapichange(true)
- refreshHook()
+        console.log("hhhh")
+        setcustomerapichange(true)
+        refreshHook()
         toast.success("Customer updated successfully")
         setModalLoader(false)
         setModalOpen(false)
@@ -3483,8 +3486,8 @@ setcustomerapichange(true)
       toast.error("Failed to download Excel report.")
     }
   }
-console.log(modalloader)
-console.log(submitLoading)
+  console.log(modalloader)
+  console.log(submitLoading)
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#ADD8E6]">
       {(modalloader ||
@@ -3621,7 +3624,7 @@ convertexcel
                       >
                         {Data ? "UPDATE CUSTOMER" : "NEW CUSTOMER"}
                       </button>
-                      {Data && (
+                      {Data && from !== "closedlead" && (
                         <button
                           type="button"
                           onClick={() => handleOpenmodal("NEW CUSTOMER")}
@@ -3872,7 +3875,7 @@ convertexcel
                         >
                           Action
                         </th>
-                        {process === "closing" && (
+                        {(process === "closing" || from === "closedlead") && (
                           <th
                             rowSpan={2}
                             className="border border-blue-900 px-2 py-2 text-center text-xs"
@@ -4109,7 +4112,8 @@ convertexcel
                                 </button>
                               </div>
                             </td>
-                            {process === "closing" && (
+                            {(process === "closing" ||
+                              from === "closedlead") && (
                               <td className="border border-gray-300 px-1 py-1 text-center">
                                 <div className="relative inline-block group">
                                   <button
@@ -5599,7 +5603,7 @@ convertexcel
                       type="submit"
                       className="rounded-lg bg-[#1B2A4A] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#243660]"
                     >
-                    Submit
+                      Submit
                     </button>
                   </div>
                 </form>
