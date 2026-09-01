@@ -9,8 +9,10 @@ import SalesFunnel from "../../../pages/primaryUser/List/SalesFunnel";
 import DailyStaffActivity from "../../../pages/primaryUser/List/DailyStaffActivity";
 import MarketingDashboard from "../../../components/primaryUser/MarketingDashboard";
 import IncentiveReport from "../../../components/primaryUser/IncentiveReport";
+import ClosedLeads from "../../../pages/primaryUser/List/ClosedLeads";
 const reportsRoutes = [
   { path: "/admin/reports/summary", component: Summary },
+  { path: "/admin/reports/closed-leads", component: ClosedLeads },
 
   { path: "/admin/reports/expiry-register", component: ExpiredCustomer },
 

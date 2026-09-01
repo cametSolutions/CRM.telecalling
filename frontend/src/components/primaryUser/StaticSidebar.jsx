@@ -1,255 +1,3 @@
-// import React, { useEffect, useMemo, useState } from "react"
-// import UseFetch from "../../hooks/useFetch"
-// import useMediaQuery from "@mui/material/useMediaQuery"
-// import { BranchSelect } from "./BranchSelect"
-// import {
-//   getLocalStorageItem,
-//   setLocalStorageItem
-// } from "../../helper/localstorage"
-// import AvatarEditor from "../common/AvatarEditor"
-// import { PerformanceModal } from "./PerformanceModal"
-// import api from "../../api/api"
-// import SkeletonTable from "../loader/SkeletonTable"
-// import Sidebar from "./Sidebar"
-// import { toast } from "react-toastify"
-
-// export const StaticSidebar = ({
-//   selectedCompanyBranch,
-//   setselectedPeriod,
-//   handleMoreClick,
-//   setselectedCompanyBranch,
-//   parenttargetData,
-//   parentyear,
-//   parentperiodmode
-// }) => {
-//   const now = new Date()
-
-//   const [categorylist, setcategorylist] = useState([])
-//   const [avatarOpen, setAvatarOpen] = useState(false)
-//   const [user, setUser] = useState(null)
-//   const [selectedUserName, setselecteduserName] = useState(null)
-//   const [selectedBranch, setselectedBranch] = useState(null)
-//   const [periodMode, setperiodMode] = useState(parentperiodmode)
-//   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024)
-//   // const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
-//   const [branchOptions, setbranchOptions] = useState([])
-//   const [selectedMonth, setSelectedMonth] = useState(
-//     String(now.getMonth() + 1).padStart(2, "0")
-//   )
-// const isMobile = useMediaQuery("(max-width:768px)");
-//   const [loggedusedTarget, setloggeduserTarget] = useState([])
-//   const [selectedYear, setSelectedYear] = useState(parentyear)
-//   const [achievedPoints, setachievedPoints] = useState(0)
-
-//   const { data, loading: targetLoading } = UseFetch(
-//     selectedBranch &&
-//       selectedMonth &&
-//       selectedYear &&
-//       periodMode &&
-//       `/target/gettargetresult?month=${selectedMonth}&year=${selectedYear}&periodMode=${periodMode}&selectedBranch=${selectedBranch}`
-//   )
-
-//   const { data: branchlist } = UseFetch("/branch/getBranch")
-
-//   // useEffect(() => {
-//   //   const handleResize = () => {
-//   //     const mobile = window.innerWidth < 1024
-//   //     setIsMobile(mobile)
-//   //     setSidebarOpen(!mobile)
-//   //   }
-
-//   //   window.addEventListener("resize", handleResize)
-//   //   return () => window.removeEventListener("resize", handleResize)
-//   // }, [])
-// useEffect(() => {
-//   const handleResize = () => {
-//     const mobile = window.innerWidth < 1024;
-
-//     if (mobile !== isMobile) {
-//       setIsMobile(mobile);
-
-//       if (mobile) {
-//         setSidebarOpen(false);
-//       } else {
-//         setSidebarOpen(true);
-//       }
-//     }
-//   };
-
-//   window.addEventListener("resize", handleResize);
-
-//   return () =>
-//     window.removeEventListener("resize", handleResize);
-// }, [isMobile]);
-
-//   useEffect(() => {
-//     setperiodMode(parentperiodmode)
-//   }, [parentperiodmode])
-
-//   useEffect(() => {
-//     setSelectedYear(parentyear)
-//   }, [parentyear])
-
-//   useEffect(() => {
-//     if (selectedCompanyBranch) {
-//       setselectedBranch(selectedCompanyBranch)
-//     }
-//   }, [selectedCompanyBranch])
-
-//   useEffect(() => {
-//     if (!branchlist) return
-
-//     const storedUser = getLocalStorageItem("user")
-//     if (storedUser) {
-//       setUser(storedUser)
-//       setselecteduserName(storedUser.name)
-
-//       const uniqueBranches = storedUser.selected.map((branch) => ({
-//         id: branch.branch_id,
-//         label: branch.branchName
-//       }))
-
-//       setbranchOptions(uniqueBranches)
-//     }
-//   }, [branchlist])
-
-//   useEffect(() => {
-//     if (data?.userWiseResults && data?.userWiseResults.length && user?._id) {
-//       parenttargetData(data)
-//       setselectedPeriod(data?.selectedPeriodName)
-
-//       const uniqueCategories = [
-//         ...new Map(
-//           data.userWiseResults
-//             .flatMap((userItem) => userItem.categories || [])
-//             .map((category) => [
-//               category.categoryId,
-//               {
-//                 categoryId: category.categoryId,
-//                 categoryName: category.categoryName
-//               }
-//             ])
-//         ).values()
-//       ]
-
-//       const selectedUser = data.userWiseResults.find(
-//         (item) => item.userId === user._id
-//       )
-
-//       setloggeduserTarget(selectedUser || [])
-//       setachievedPoints(selectedUser?.incentive || 0)
-
-//       const updatedCategories = uniqueCategories.map((cat) => {
-//         const matchedCategories =
-//           data.userWiseResults
-//             ?.flatMap((userItem) => userItem.categories || [])
-//             .filter((c) => c.categoryId === cat.categoryId) || []
-
-//         const totalTarget = matchedCategories.reduce(
-//           (sum, c) => sum + (c.target || 0),
-//           0
-//         )
-
-//         const totalAchieved = matchedCategories.reduce(
-//           (sum, c) => sum + (c.achieved || 0),
-//           0
-//         )
-
-//         return {
-//           ...cat,
-//           achievedamount: totalAchieved,
-//           targetamount: totalTarget
-//         }
-//       })
-
-//       setcategorylist(updatedCategories)
-//     }
-//   }, [data, user, parenttargetData, setselectedPeriod])
-
-//   const handlepasswordChange = async (payload) => {
-//     try {
-//       const updatepassword = await api.put("/auth/updatepassword", payload)
-
-//       if (updatepassword.status === 200) {
-//         toast.success(updatepassword.data.message)
-//       } else {
-//         toast.error("Something went wrong")
-//       }
-//     } catch (error) {
-//       toast.error(error?.response?.data?.message || "Failed to update password")
-//     }
-//   }
-
-//   const toggleSidebar = () => {
-//     setSidebarOpen((prev) => !prev)
-//   }
-
-//   const handleBranchChange = (branch) => {
-//     setselectedBranch(branch)
-//     setselectedCompanyBranch(branch)
-
-//     if (isMobile) {
-//       setSidebarOpen(false)
-//     }
-//   }
-
-//   return (
-//     <>
-//       <div
-//         className={`${
-//           isMobile ? "fixed left-0 top-0 z-40 h-screen" : "relative h-full"
-//         }`}
-//       >
-//         <div
-//           className={`h-full transition-transform duration-300 ease-in-out ${
-//             isMobile
-//               ? sidebarOpen
-//                 ? "translate-x-0"
-//                 : "-translate-x-full"
-//               : "translate-x-0"
-//           }`}
-//         >
-//           <div
-//             className={`h-full ${
-//               isMobile
-//                 ? "w-[85vw] max-w-[320px] bg-white shadow-2xl"
-//                 : "w-auto"
-//             }`}
-//           >
-//             <Sidebar
-//               handleMoreClick={handleMoreClick}
-//               achievedPoints={achievedPoints}
-//               sidebarOpen={sidebarOpen}
-//               toggleSidebar={toggleSidebar}
-//               user={user}
-//               selectedBranch={selectedBranch}
-//               setselectedParentBranch={setselectedCompanyBranch}
-//               setselectedBranch={handleBranchChange}
-//               branchOptions={branchOptions}
-//               categorylist={categorylist}
-//               targetLoading={targetLoading}
-//               BranchSelect={BranchSelect}
-//               SkeletonTable={SkeletonTable}
-//               setAvatarOpen={setAvatarOpen}
-//               onPasswordChange={handlepasswordChange}
-//               isMobile={isMobile}
-//             />
-//           </div>
-//         </div>
-//       </div>
-
-//       {isMobile && sidebarOpen && (
-//         <button
-//           type="button"
-//           aria-label="Close sidebar overlay"
-//           onClick={() => setSidebarOpen(false)}
-//           className="fixed inset-0 z-30 bg-black/40"
-//         />
-//       )}
-//     </>
-//   )
-// }
-
 import React, { useEffect, useState } from "react"
 import UseFetch from "../../hooks/useFetch"
 import useMediaQuery from "@mui/material/useMediaQuery"
@@ -276,8 +24,8 @@ export const StaticSidebar = ({
   setcategoryId,
   onselectedPeriodChange,
   setselectedCategory,
-setproductList,
-selectedCategory,
+  setproductList,
+  selectedCategory,
   // setselectedPeriod,
   // handleMoreClick,
   setselectedCompanyBranch,
@@ -289,11 +37,11 @@ selectedCategory,
   setTargetData,
   targetData,
   onavataropenClick,
-setacheivedProducts,
-achievedproducts
+  setacheivedProducts,
+  achievedproducts
 }) => {
-console.log(selectedCategory)
-// console.log(setselectedCategory)
+  console.log(selectedCategory)
+  // console.log(setselectedCategory)
   console.log(targetData)
   console.log("hhd")
   // console.log(onpasswordClick)
@@ -307,6 +55,7 @@ console.log(selectedCategory)
   const [selectedYear, setSelectedYear] = useState(yearSelected)
   console.log(selectedYear)
   const [periodMode, setperiodMode] = useState(parentperiodmode)
+  console.log(parentperiodmode)
   const [avatarOpen, setAvatarOpen] = useState(false)
   // const [user, setUser] = useState(null)
   const user = useSelector((state) => state.auth.user)
@@ -333,7 +82,7 @@ console.log(selectedCategory)
       periodMode &&
       `/target/gettargetresult?month=${selectedMonth}&year=${selectedYear}&periodMode=${periodMode}&selectedBranch=${selectedBranch}`
   )
- const { data: branchProduct } = UseFetch(
+  const { data: branchProduct } = UseFetch(
     `/product/getallbranchProduct?branch=${selectedBranch}`
   )
   console.log(selectedMonth)
@@ -343,11 +92,11 @@ console.log(selectedCategory)
   console.log(periodMode)
   console.log(data)
   const { data: branchlist } = UseFetch("/branch/getBranch")
-useEffect(() => {
-console.log("hhhhh")
-console.log(selectedCategory)
+  useEffect(() => {
+    console.log("hhhhhdddd")
+    console.log(selectedCategory)
     if (selectedCategory) {
-console.log('hhhh')
+      console.log("hhhhhhhh")
       const filteredList = branchProduct
         .filter(
           (item) =>
@@ -359,13 +108,33 @@ console.log('hhhh')
         )
         .map((item) => item.productName || item.serviceName)
       setproductList(filteredList)
-console.log(data.userWiseResults)
-const rt=data.userWiseResults.map((item)=>item.userName)
-console.log(rt)
+      // console.log(data.userWiseResults)
+      // console.log(data?.checkvalues)
+      // const m = data?.checkvalues.map((it) => it.leadId)
+      // console.log(m)
+      // const rt = data.userWiseResults.filter(
+      //   (item) => item.userName === "Alina C P"
+      // )
+      // const u = data.userWiseResults.map((it) => it.userName)
+      // console.log(u)
+      // console.log(rt)
+      // const t = rt[0].categories.filter(
+      //   (it) => it.measurementType === "quantity"
+      // )
+      // console.log(t)
+      // const c = t[0]?.achievedLeads.map((it) => it.leadId)
+      // const d = t[1]?.achievedLeads.map((it) => it.leadId)
+      // console.log(d)
+      // console.log(c)
+      // const mSet = new Set(m)
+
+      // const missingFromM = [...d, ...c].filter((leadId) => !mSet.has(leadId))
+
+      // console.log("Missing from m:", missingFromM)
       const filteredloggedUserItem = data?.userWiseResults.filter(
         (item) => item.userId === user._id
       )
-console.log(user)
+      console.log(user)
       console.log(filteredloggedUserItem)
       const filteredselectedCategory =
         filteredloggedUserItem[0]?.categories.filter(
@@ -380,27 +149,54 @@ console.log(user)
         },
         { target: 0, achieved: 0, balance: 0 }
       )
-console.log(filteredselectedCategory)
+      console.log(filteredselectedCategory)
+      const re = filteredselectedCategory?.map(
+        ({ achievedLeads, ...rest }) => rest
+      )
+      console.log(re)
       // setselectedDataPopup(summary)
       console.log(summary)
       if (filteredselectedCategory && filteredselectedCategory.length) {
-console.log("hhhhha")
-console.log(achievedproducts)
-        setacheivedProducts((prev) => [
-          ...prev,
-          ...filteredselectedCategory.flatMap((item) =>
-            (item?.products || []).map((product) => ({
-              productname: product.name,
-              amount: product.achieved
-            }))
-          )
-        ])
+        console.log("hhhhha")
+        console.log(achievedproducts)
+        // setacheivedProducts((prev) => [
+        //   ...prev,
+        //   ...filteredselectedCategory.flatMap((item) =>
+        //     (item?.products || []).map((product) => ({
+        //       productname: product.name,
+        //       amount: product.achieved
+        //     }))
+        //   )
+        // ])
+        const products = filteredselectedCategory.flatMap((item) =>
+          (item?.products || []).map((product) => ({
+            productname: product.name,
+            amount: product.achieved
+          }))
+        )
+
+        const combinedProducts = Object.values(
+          products.reduce((acc, product) => {
+            if (!acc[product.productname]) {
+              acc[product.productname] = {
+                productname: product.productname,
+                amount: 0
+              }
+            }
+
+            acc[product.productname].amount += product.amount || 0
+
+            return acc
+          }, {})
+        )
+
+        setacheivedProducts(combinedProducts)
       } else {
         setacheivedProducts([])
       }
     }
-  }, [data,selectedCategory])
-console.log(achievedPoints)
+  }, [data, selectedCategory])
+  console.log(achievedPoints)
   useEffect(() => {
     setSidebarOpen(!isMobile)
   }, [isMobile])
@@ -434,6 +230,7 @@ console.log(achievedPoints)
   useEffect(() => {
     if (data?.userWiseResults && data?.userWiseResults.length && user?._id) {
       console.log(data)
+
       // parenttargetData(data)
       setTargetData(data)
       setselectedPeriod(data?.selectedPeriodName)
@@ -451,15 +248,19 @@ console.log(achievedPoints)
             ])
         ).values()
       ]
-
+      console.log(uniqueCategories)
       const selectedUser = data.userWiseResults.find(
         (item) => item.userId === user._id
       )
-console.log(data.userWiseResults)
-const aa=data.userWiseResults.map((item)=>item.incentive)
-console.log(aa)
+      console.log(data.userWiseResults)
+      const aa = data.userWiseResults.filter(
+        (item) => item.userName === "Riyas"
+      )
+const names=data.userWiseResults.map((it)=>it.userName)
+console.log(names)
+      console.log(aa)
       setloggeduserTarget(selectedUser || null)
-console.log(selectedUser)
+      console.log(selectedUser)
       setachievedPoints(selectedUser?.incentive || 0)
 
       const updatedCategories = uniqueCategories
@@ -468,17 +269,18 @@ console.log(selectedUser)
             data.userWiseResults
               ?.flatMap((userItem) => userItem.categories || [])
               .filter((c) => c.categoryId === cat.categoryId) || []
-
+        
+          console.log(matchedCategories)
           const totalTarget = matchedCategories.reduce(
             (sum, c) => sum + (c.target || 0),
             0
           )
-
+          console.log(totalTarget)
           const totalAchieved = matchedCategories.reduce(
             (sum, c) => sum + (c.achieved || 0),
             0
           )
-
+          console.log(totalAchieved)
           return {
             ...cat,
             achievedamount: totalAchieved,
@@ -522,20 +324,20 @@ console.log(selectedUser)
     }
   }
   const handleMoreClick = (categoryid, categoryName) => {
-console.log(categoryName)
+    console.log(categoryName)
     console.log(categoryid)
     console.log("hhh")
- const filteredList = branchProduct
-        .filter(
-          (item) =>
-            item.selected?.some(
-              (selectedItem) =>
-                String(selectedItem.category_id) ===
-                String(categoryid)
-            ) || String(item.category_id) === String(categoryid)
-        )
-        .map((item) => item.productName || item.serviceName)
-      setproductList(filteredList)
+    const filteredList = branchProduct
+      .filter(
+        (item) =>
+          item.selected?.some(
+            (selectedItem) =>
+              String(selectedItem.category_id) === String(categoryid)
+          ) || String(item.category_id) === String(categoryid)
+      )
+      .map((item) => item.productName || item.serviceName)
+    console.log(filteredList)
+    setproductList(filteredList)
     setselectedCategory({
       Id: categoryid,
       categoryName
@@ -587,71 +389,6 @@ console.log(categoryName)
   }
 
   return (
-    //     <>
-    //       <div
-    //         className={`${
-    //           isMobile
-    //             ? `fixed left-0 top-0 z-40 h-screen ${
-    //                 sidebarOpen ? "" : "pointer-events-none"
-    //               }`
-    //             : "relative h-full"
-    //         }`}
-    //       >
-    //         <div
-    //           className={`h-full transition-transform duration-300 ease-in-out ${
-    //             isMobile
-    //               ? sidebarOpen
-    //                 ? "translate-x-0 pointer-events-auto"
-    //                 : "-translate-x-full pointer-events-none"
-    //               : "translate-x-0"
-    //           }`}
-    //         >
-    //           <div
-    //             className={`h-full ${
-    //               isMobile ? "w-[74vw] max-w-[280px] bg-white shadow-2xl" : "w-auto"
-    //             }`}
-    //           >
-    //             {targetData && (
-    //               <Sidebar
-    //                 handleMoreClick={handleMoreClick}
-    //                 onpasswordClick={onpasswordClick}
-    //                 onperformanceModalClick={onperformanceModalClick}
-    //                 onLogoutClick={logout}
-    // selectedYear={selectedYear}
-    // setSelectedYear={setSelectedYear}
-    //                 targetData={targetData}
-    //                 onselectedPeriodChange={onselectedPeriodChange}
-    //                 onavataropenClick={onavataropenClick}
-    //                 achievedPoints={achievedPoints}
-    //                 sidebarOpen={sidebarOpen}
-    //                 toggleSidebar={toggleSidebar}
-    //                 user={user}
-    //                 selectedBranch={selectedBranch}
-    //                 setselectedBranch={handleBranchChange}
-    //                 branchOptions={branchOptions}
-    //                 categorylist={categorylist}
-    //                 targetLoading={targetLoading}
-    //                 BranchSelect={BranchSelect}
-    //                 SkeletonTable={SkeletonTable}
-    //                 setAvatarOpen={setAvatarOpen}
-    //                 onPasswordChange={handlepasswordChange}
-    //                 isMobile={isMobile}
-    //               />
-    //             )}
-    //           </div>
-    //         </div>
-    //       </div>
-
-    //       {isMobile && sidebarOpen && (
-    //         <button
-    //           type="button"
-    //           aria-label="Close sidebar overlay"
-    //           onClick={() => setSidebarOpen(false)}
-    //           className="fixed inset-0 z-30 bg-black/40"
-    //         />
-    //       )}
-    //     </>
-
     <>
       <div
         className={`${

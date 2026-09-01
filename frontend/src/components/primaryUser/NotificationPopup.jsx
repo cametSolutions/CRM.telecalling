@@ -22,11 +22,11 @@ import {
   CalendarRange,
   PiggyBank
 } from "lucide-react"
-export const  NotificationPopup=({open, onClose, notificationData })=> {
-if(!open)return
+export const NotificationPopup = ({ open, onClose, notificationData }) => {
+  if (!open) return
   const [showTasks, setShowTasks] = useState(false)
   const [showFollowups, setShowFollowups] = useState(false)
-    const notifications = [
+  const notifications = [
     {
       type: "news",
       title: "New Notification",
@@ -67,8 +67,8 @@ if(!open)return
       data: notificationData.yearlyAchievers ?? []
     }
   ]
-console.log(notifications)
- const formatDateToDDMMYYYY = (dateValue) => {
+  console.log(notifications)
+  const formatDateToDDMMYYYY = (dateValue) => {
     if (!dateValue) return ""
     const date = new Date(dateValue)
     if (Number.isNaN(date.getTime())) return ""
@@ -77,7 +77,7 @@ console.log(notifications)
     const year = date.getFullYear()
     return `${day}-${month}-${year}`
   }
-console.log(notifications)
+  console.log(notifications)
 
   return (
     <div className="fixed bottom-3 right-3 z-50 flex w-72 max-h-[calc(100vh-24px)] flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
@@ -103,7 +103,6 @@ console.log(notifications)
 
       {/* Notification List */}
       <div className="flex-1 overflow-y-auto bg-slate-900 p-3 space-y-3">
-       
         <div className="flex-1 space-y-3 overflow-y-auto bg-slate-900 ">
           <div className="flex-1 space-y-3 overflow-y-auto bg-slate-900 ">
             {notifications.map((item, index) => (
@@ -225,8 +224,6 @@ console.log(notifications)
                   </div>
                 )}
 
-
-              
                 {/* Leave */}
                 {item.type === "leave" && (
                   <div className="space-y-1">
@@ -236,64 +233,45 @@ console.log(notifications)
                         className="rounded-md bg-slate-700 px-2 py-1 text-xs text-slate-200"
                       >
                         {staff.name.toUpperCase()}
-<span className="ml-2 text-orange-400">{staff.leaveStatus.toUpperCase()}</span>
+                        <span className="ml-2 text-orange-400">
+                          {staff.leaveStatus.toUpperCase()}
+                        </span>
                       </div>
                     ))}
                   </div>
                 )}
 
-                {/* Birthday */}
-                {/* {item.type === "birthday" && (
+                {item.type === "birthday" && (
                   <div className="space-y-1">
-                    {item.data.map((staff, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center justify-between rounded-md bg-slate-700 px-2 py-1"
-                      >
-                        <span className="text-xs text-white">
-                          🎂 {staff.name.toUpperCase()}
-                        </span>
+                    {item.data.map((staff, i) => {
+                      const dob = new Date(staff.dateofbirth)
+                      const today = new Date()
 
-                        <span className="text-[10px] text-slate-300">
-{staff?.dateofbirth
-  ? new Date(staff.dateofbirth).toLocaleDateString("en-GB")
-  : ""}
-                        </span>
-                      </div>
-                    ))}
+                      const isBirthday =
+                        dob.getDate() === today.getDate() &&
+                        dob.getMonth() === today.getMonth()
+
+                      return (
+                        <div
+                          key={i}
+                          className="flex items-center justify-between rounded-md bg-slate-700 px-2 py-1"
+                        >
+                          <span className="text-xs text-white">
+                            {isBirthday && "🎂 "} {staff.name.toUpperCase()}
+                          </span>
+
+                          <span className="text-[10px] text-slate-300">
+                            {staff?.dateofbirth
+                              ? new Date(staff.dateofbirth)
+                                  .toLocaleDateString("en-GB")
+                                  .replace(/\//g, "-")
+                              : ""}
+                          </span>
+                        </div>
+                      )
+                    })}
                   </div>
-                )} */}
-{item.type === "birthday" && (
-  <div className="space-y-1">
-    {item.data.map((staff, i) => {
-      const dob = new Date(staff.dateofbirth);
-      const today = new Date();
-
-      const isBirthday =
-        dob.getDate() === today.getDate() &&
-        dob.getMonth() === today.getMonth();
-
-      return (
-        <div
-          key={i}
-          className="flex items-center justify-between rounded-md bg-slate-700 px-2 py-1"
-        >
-          <span className="text-xs text-white">
-            {isBirthday && "🎂 "} {staff.name.toUpperCase()}
-          </span>
-
-          <span className="text-[10px] text-slate-300">
-            {staff?.dateofbirth
-              ? new Date(staff.dateofbirth)
-                  .toLocaleDateString("en-GB")
-                  .replace(/\//g, "-")
-              : ""}
-          </span>
-        </div>
-      );
-    })}
-  </div>
-)}
+                )}
 
                 {/* Holidays */}
                 {item.type === "holiday" && (
@@ -304,11 +282,20 @@ console.log(notifications)
                         className="flex items-center justify-between rounded-md bg-slate-700 px-2 py-1"
                       >
                         <span className="text-xs text-white">
-                          📅 {holiday.holiday}
+                          📅 {holiday.customTextInput}
                         </span>
 
                         <span className="text-[10px] text-slate-300">
-                          {holiday.date}
+                          {holiday?.holyDate
+                            ? new Date(holiday.holyDate).toLocaleDateString(
+                                "en-IN",
+                                {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric"
+                                }
+                              )
+                            : ""}
                         </span>
                       </div>
                     ))}
