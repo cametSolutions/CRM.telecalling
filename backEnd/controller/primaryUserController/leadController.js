@@ -19,6 +19,7 @@ import getLeadMetricsForSingleDay from "../../helper/leadandtaskcount.js";
 import { getCallMetricsForSingleDay } from "../../helper/callcount.js";
 import { formatDate } from "../../../frontend/src/utils/dateUtils.js";
 import License from "../../model/secondaryUser/licenseSchema.js";
+import { mapLeadItemsForUpdate } from "../../helper/leadUpdatePayload.js";
 
 ////
 
@@ -5567,28 +5568,10 @@ export const UpdateLeadRegister = async (req, res) => {
         console.log("[reverse-gate] SKIPPED - from !== 'closedlead'");
       }
 
-      const mappedLeadData = leadData.map((item) => {
-        const productPrice = toNumber(item?.productPrice);
-        const netAmount = toNumber(item?.netAmount);
-        const hsn = toNumber(item?.hsn);
-        const actualHsn = toNumber(item?.actualHsn);
-        const taxAmount = netAmount - productPrice;
-
-        return {
-          licenseNumber: item?.licenseNumber ?? null,
-          productorServiceName: safeString(item?.productorServiceName),
-          productorServiceId: toObjectIdOrNull(item?.productorServiceId),
-          productorServicemodel: safeString(item?.itemType || item?.productorServicemodel),
-          price: item?.price ?? null,
-          productPrice,
-          hsn,
-          actualHsn,
-          netAmount,
-          taxAmount,
-          productorservicetype: safeString(item?.productorservicetype),
-          company_id: toObjectIdOrNull(item?.company_id),
-          branch_id: toObjectIdOrNull(item?.branch_id),
-        };
+      const mappedLeadData = mapLeadItemsForUpdate(leadData, {
+        toNumber,
+        toObjectIdOrNull,
+        safeString,
       });
 
       const newTaxableAmount = mappedLeadData.reduce(
