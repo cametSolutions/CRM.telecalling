@@ -18,6 +18,12 @@ import Breadcrumb from "../../components/common/Breadcrumb"
 import { Loader } from "lucide-react"
 import { setsliceselectedBranch } from "../../../slices/companyBranchSlice"
 import FullScreenLoader from "../../components/common/FullScreenLoader"
+
+let leadRowSequence = 0
+const createLeadRowId = () => {
+  leadRowSequence += 1
+  return `lead-row-${Date.now()}-${leadRowSequence}`
+}
 // import { parse } from "path"
 // ─────────────────────────────────────────────────────────────────────────────
 // DropdownPortal — keeps dropdown aligned on scroll/resize
@@ -88,7 +94,9 @@ function LicenseDropdown({
   setTakenLicense
 }) {
   console.log(item)
-  const isMulti = item?.productorservicetype === "Additionalservice"
+  const isMulti =
+    String(item?.productorservicetype || "").toLowerCase() ===
+    "additionalservice"
 
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState("")
@@ -356,6 +364,7 @@ function ProductDropdown({
   index,
   item,
   process,
+  from,
   isReadOnly,
   leadList,
   selectedleadlist,
@@ -418,6 +427,90 @@ function ProductDropdown({
     })
   }
 
+  const getRowId = (value) => {
+    return String(value?._id || value?.id || value || "")
+  }
+
+  const getRowType = (row) =>
+    String(row?.productorservicetype || "").toLowerCase()
+
+  const getCleanProductRow = (overrides = {}) => ({
+    ...emptyRow,
+    rowId: item?.rowId || createLeadRowId(),
+    itemType: "",
+    productPrice: "",
+    productorservicetype: "",
+    hsn: "",
+    netAmount: "",
+    actualHsn: "",
+    actualproductPrice: "",
+    actualNetAmount: "",
+    softwareTrade: "",
+    applicationDate: "",
+    status: "Running",
+    isActive: "Running",
+    nextDue: "",
+    quantityUsers: "",
+    noofusers: "",
+    serialNumber: "",
+    amount: "",
+    discountAmount: "",
+    taggeddata: [],
+    company_id: "",
+    branch_id: "",
+    ...overrides
+  })
+
+  const removeAttachedAdditionalServiceRows = (rows, rowIndex) => {
+    const productId = getRowId(rows?.[rowIndex]?.productorServiceId)
+    const removedRows = []
+    let reachedNextPrimary = false
+
+    const filteredRows = (rows || []).filter((row, idx) => {
+      if (idx <= rowIndex) return true
+      if (reachedNextPrimary) return true
+
+      const rowType = getRowType(row)
+      if (rowType === "primaryproduct") {
+        reachedNextPrimary = true
+        return true
+      }
+
+      const parentId = getRowId(row?.parentPrimaryProductId)
+      const shouldRemove =
+        rowType === "additionalservice" &&
+        (!parentId || parentId === productId || row?.isDefaultService)
+
+      if (shouldRemove) {
+        removedRows.push(row)
+        return false
+      }
+
+      return true
+    })
+
+    return { filteredRows, removedRows }
+  }
+
+  const clearTakenLicensesForRows = (rows) => {
+    if (!rows?.length || !setTakenLicense) return
+
+    setTakenLicense((prev) => {
+      const updated = { ...prev }
+
+      rows.forEach((row) => {
+        const serviceName = row?.productorServiceName || ""
+        const keyToDelete = Object.keys(updated).find(
+          (key) => key.toLowerCase() === serviceName.toLowerCase()
+        )
+
+        if (keyToDelete) delete updated[keyToDelete]
+      })
+
+      return updated
+    })
+  }
+
   const removeOldLicensesFromCustomerTable = () => {
     console.log("hh")
     const oldSingleLicense = item?.licenseNumber
@@ -468,42 +561,29 @@ function ProductDropdown({
       return
     }
 
-    const getRowId = (value) => {
-      return String(value?._id || value?.id || value || "")
-    }
-
     const base = selectedleadlist?.length
       ? [...selectedleadlist]
       : [{ ...emptyRow }]
 
     let updated = [...base]
-
-    updated = updated.filter(
-      (row, idx) => idx === index || !row?.isDefaultService
+    const { filteredRows, removedRows } = removeAttachedAdditionalServiceRows(
+      updated,
+      index
     )
+    updated = filteredRows
+    clearTakenLicensesForRows(removedRows)
     console.log("hhh")
     if (!prod) {
       console.log("hhh")
       clearPreviousTakenLicense(previousProductKey)
       // removeOldLicensesFromCustomerTable()
 
-      updated[index] = {
-        ...updated[index],
+      updated[index] = getCleanProductRow({
         productorServiceId: "",
         productorServiceName: "",
-        itemType: "",
-        productPrice: "",
-        productorservicetype: "",
-        hsn: "",
-        netAmount: "",
-        actualHsn: "",
-        actualproductPrice: "",
-        actualNetAmount: "",
         licenseNumber: "",
-        licenseNumbers: [],
-        company_id: "",
-        branch_id: ""
-      }
+        licenseNumbers: []
+      })
 
       setSearch("")
       setSelectedLeadList(updated)
@@ -524,8 +604,7 @@ function ProductDropdown({
     console.log("hhhh")
     // removeOldLicensesFromCustomerTable()
 
-    updated[index] = {
-      ...updated[index],
+    updated[index] = getCleanProductRow({
       productorServiceId: prod._id,
       productorServiceName: prod.productName || prod.serviceName,
       itemType: prod.productName ? "Product" : "Service",
@@ -540,10 +619,14 @@ function ProductDropdown({
       actualNetAmount: netAmount,
       licenseNumber: "",
       licenseNumbers: []
-    }
+    })
 
-    if (prod?.defaultservices?.length > 0 && process === "closing") {
+    const shouldAddDefaultServices =
+      process === "closing" || from === "closedlead"
+
+    if (prod?.defaultservices?.length > 0 && shouldAddDefaultServices) {
       const primaryId = getRowId(prod)
+      const primaryLicense = updated[index]?.licenseNumber || ""
 
       const defaultServiceRows = prod.defaultservices.map((service) => {
         const matchbranchrate = service.selected?.find(
@@ -561,8 +644,19 @@ function ProductDropdown({
 
         return {
           ...emptyRow,
+          rowId: createLeadRowId(),
           licenseNumber: "",
-          licenseNumbers: [],
+          licenseNumbers: primaryLicense
+            ? [
+                {
+                  licenseNumber: primaryLicense,
+                  productorServiceId: getRowId(service),
+                  productorServiceName:
+                    service?.productName || service?.serviceName || "",
+                  sourceIndex: index
+                }
+              ]
+            : [],
           productorServiceId: getRowId(service),
           productorServiceName:
             service?.productName || service?.serviceName || "",
@@ -574,6 +668,28 @@ function ProductDropdown({
           netAmount: 0,
           isDefaultService: true,
           parentPrimaryProductId: primaryId,
+          taggeddata: primaryLicense
+            ? [
+                {
+                  licensenumber: primaryLicense,
+                  nextDue: "",
+                  noofusers: "",
+                  serialNumber: "",
+                  nextDueAmount: service?.productPrice || 0,
+                  totalnextDueAmount: actualNetAmount,
+                  nextDueTax: hsn,
+                  productAmount: actualNetAmount,
+                  taxexclusiveAmount: servicePrice,
+                  taxinclusiveamount: actualNetAmount,
+                  hsn,
+                  originalHsn: hsn,
+                  leadAmount: servicePrice,
+                  totalleadAmount: actualNetAmount,
+                  leadTax: hsn,
+                  sourceIndex: index
+                }
+              ]
+            : [],
           actualHsn: hsn,
           actualproductPrice: service?.productPrice,
           actualNetAmount,
@@ -583,6 +699,16 @@ function ProductDropdown({
       })
 
       updated.splice(index + 1, 0, ...defaultServiceRows)
+
+      if (primaryLicense) {
+        setTakenLicense((prevTaken) => {
+          const nextTaken = { ...prevTaken }
+          defaultServiceRows.forEach((serviceRow) => {
+            nextTaken[serviceRow?.productorServiceName] = [primaryLicense]
+          })
+          return nextTaken
+        })
+      }
     }
 
     setSearch(prod.productName || prod.serviceName || "")
@@ -701,6 +827,9 @@ const LeadMaster = ({
     console.log("hhh")
   }
   console.log(isReadOnly)
+  console.log("abhidas")
+  const isClosedLeadEdit = from === "closedlead"
+  const isClosingFlow = process === "closing" || isClosedLeadEdit
 
   const {
     register: registerMain,
@@ -768,6 +897,7 @@ const LeadMaster = ({
   console.log(showdetailsopen)
   const [detailsItem, setDetailsItem] = useState(null)
   const [detailsIndex, setDetailsIndex] = useState(null)
+  const [detailsRowId, setDetailsRowId] = useState(null)
   const [detailsForm, setDetailsForm] = useState({
     name: "",
     licenseNumber: "",
@@ -985,6 +1115,7 @@ const LeadMaster = ({
   const debounceTimersRef = useRef({})
   console.log(selectedleadlist)
   const emptyRow = {
+    rowId: createLeadRowId(),
     licenseNumber: "",
     productorServiceId: "",
     productorServiceName: "",
@@ -1264,28 +1395,113 @@ const LeadMaster = ({
       setValueMain("remark", Data[0].remark)
       setSelectedCustomer(Data[0]?.customerName)
       console.log(Data[0].leadFor)
-      const leadData = Data[0]?.leadFor.map((item) => ({
-        licenseNumber: item?.licenseNumber,
-        productorServiceName:
-          item?.productorServiceId?.productName ||
-          item?.productorServiceId?.serviceName,
-        softwareTrade: item?.softwareTrade,
-        applicationDate: item?.applicationDate,
-        status: item?.status || item?.isActive,
-        productorServiceId: item?.productorServiceId?._id,
-        itemType: item?.productorServicemodel,
-        productPrice: item?.productPrice,
-        hsn: item?.hsn,
-        actualHsn: item?.actualHsn,
-        netAmount: item?.netAmount,
-        price: item?.price,
-        company_id: item?.company_id,
-        branch_id: item?.branch_id,
-        productorservicetype: item?.productorservicetype
-      }))
+      let currentPrimaryLicense = ""
+      let leadData = Data[0]?.leadFor.map((item, index) => {
+        const itemType = String(item?.productorservicetype || "").toLowerCase()
+        const isPrimaryProduct = itemType === "primaryproduct"
+        const isAdditionalService = itemType === "additionalservice"
+
+        if (isPrimaryProduct && item?.licenseNumber) {
+          currentPrimaryLicense = item.licenseNumber
+        }
+
+        const fallbackTaggedLicense = isAdditionalService
+          ? item?.licenseNumber || currentPrimaryLicense
+          : ""
+
+        let taggeddata = Array.isArray(item?.taggeddata)
+          ? item.taggeddata.map((tag) => ({
+              ...tag,
+              licensenumber: tag?.licensenumber || tag?.licenseNumber || "",
+              nextDue: tag?.nextDue ? String(tag.nextDue).split("T")[0] : ""
+            }))
+          : []
+
+        if (!taggeddata.length && fallbackTaggedLicense) {
+          taggeddata = [
+            {
+              licensenumber: fallbackTaggedLicense,
+              nextDue: item?.nextDue ? String(item.nextDue).split("T")[0] : "",
+              noofusers: item?.noofusers || "",
+              serialNumber: item?.serialNumber || "",
+              nextDueAmount:
+                item?.nextDueAmount ??
+                item?.actualproductPrice ??
+                item?.productPrice ??
+                0,
+              totalnextDueAmount:
+                item?.totalnextDueAmount ??
+                item?.actualNetAmount ??
+                item?.netAmount ??
+                0,
+              nextDueTax: item?.nextDueTax ?? item?.actualHsn ?? item?.hsn ?? 0
+            }
+          ]
+        }
+
+        const licenseNumbers =
+          Array.isArray(item?.licenseNumbers) && item.licenseNumbers.length
+            ? item.licenseNumbers
+            : taggeddata
+                .filter((tag) =>
+                  String(tag?.licensenumber || tag?.licenseNumber || "").trim()
+                )
+                .map((tag) => ({
+                  licenseNumber: tag?.licensenumber || tag?.licenseNumber || "",
+                  productorServiceId: item?.productorServiceId?._id || "",
+                  productorServiceName:
+                    item?.productorServiceId?.productName ||
+                    item?.productorServiceId?.serviceName ||
+                    "",
+                  sourceIndex: index
+                }))
+
+        return {
+          rowId: item?.rowId || item?._id || createLeadRowId(),
+          licenseNumber: item?.licenseNumber,
+          licenseNumbers,
+          productorServiceName:
+            item?.productorServiceId?.productName ||
+            item?.productorServiceId?.serviceName ||
+            item?.productorServiceName,
+          softwareTrade: item?.softwareTrade,
+          applicationDate: item?.applicationDate
+            ? String(item.applicationDate).split("T")[0]
+            : "",
+          status: item?.status || item?.isActive,
+          nextDue: item?.nextDue ? String(item.nextDue).split("T")[0] : "",
+          quantityUsers: item?.quantityUsers,
+          noofusers: item?.noofusers,
+          serialNumber: item?.serialNumber,
+          amount: item?.amount,
+          discountAmount: item?.discountAmount,
+          taggeddata,
+          productorServiceId: item?.productorServiceId?._id,
+          itemType: item?.productorServicemodel,
+          productPrice: item?.productPrice,
+          hsn: item?.hsn,
+          actualHsn: item?.actualHsn,
+          netAmount: item?.netAmount,
+          actualNetAmount: item?.actualNetAmount,
+          actualproductPrice: item?.actualproductPrice,
+          price: item?.price,
+          company_id: item?.company_id,
+          branch_id: item?.branch_id,
+          productorservicetype: item?.productorservicetype,
+          parentPrimaryProductId: item?.parentPrimaryProductId,
+          isDefaultService: Boolean(item?.isDefaultService),
+          version: item?.version
+        }
+      })
+      leadData = normalizeLeadRows(leadData)
       console.log(leadData)
       const fetchedLicenses = leadData
-        .filter((item) => item?.licenseNumber)
+        .filter(
+          (item) =>
+            item?.licenseNumber &&
+            String(item?.productorservicetype || "").toLowerCase() !==
+              "additionalservice"
+        )
         .map((item, index) => ({
           licenseNumber: item.licenseNumber,
           productName: item.productorServiceName,
@@ -1295,13 +1511,32 @@ const LeadMaster = ({
         }))
 
       setOriginalCustomerTableData(fetchedLicenses)
+      const taggedLicensesByService = leadData.reduce((acc, item) => {
+        const isAdditionalService =
+          String(item?.productorservicetype || "").toLowerCase() ===
+          "additionalservice"
+        if (!isAdditionalService) return acc
+
+        const licenses = (item?.licenseNumbers || [])
+          .map((lic) => String(lic?.licenseNumber || "").trim())
+          .filter(Boolean)
+
+        if (licenses.length) {
+          acc[item?.productorServiceName || item?.productorServiceId] = licenses
+        }
+
+        return acc
+      }, {})
+      setTakenLicense(taggedLicensesByService)
       console.log(leadData)
       console.log(process)
       const ihaveprimaryproduct =
-        leadData[0]?.productorservicetype === "Primaryproduct"
+        String(leadData[0]?.productorservicetype || "").toLowerCase() ===
+        "primaryproduct"
       if (
-        process === "closing" &&
-        leadData[0]?.productorservicetype === "Primaryproduct"
+        isClosingFlow &&
+        String(leadData[0]?.productorservicetype || "").toLowerCase() ===
+          "primaryproduct"
       ) {
         sethaveprimaryProduct(true)
         const primary = leadData[0]
@@ -1324,7 +1559,7 @@ const LeadMaster = ({
 
           // If there are no default services, just return the lead data.
           if (!defaultServices.length) {
-            return rows
+            return normalizeLeadRows(rows)
           }
 
           const existingIds = getExistingAdditionalServiceIdsForPrimary(
@@ -1339,7 +1574,7 @@ const LeadMaster = ({
           })
 
           if (!servicesToAdd.length) {
-            return rows
+            return normalizeLeadRows(rows)
           }
 
           const newRows = servicesToAdd.map((service) => {
@@ -1348,14 +1583,26 @@ const LeadMaster = ({
             const productPrice = Number(service?.productPrice ?? 0)
             const taxAmount = (productPrice * igstRate) / 100
             const actualNetAmount = productPrice + taxAmount
+            const primaryLicense = primary?.licenseNumber || ""
             console.log(service)
             console.log(igstRate)
             console.log(productPrice)
             console.log(taxAmount)
             return {
               ...emptyRow,
+              rowId: createLeadRowId(),
               licenseNumber: "",
-              licenseNumbers: [],
+              licenseNumbers: primaryLicense
+                ? [
+                    {
+                      licenseNumber: primaryLicense,
+                      productorServiceId: serviceId,
+                      productorServiceName:
+                        service?.shortName || service?.productName || "",
+                      sourceIndex: 0
+                    }
+                  ]
+                : [],
               productorServiceId: serviceId,
               productorServiceName:
                 service?.shortName || service?.productName || "",
@@ -1367,6 +1614,28 @@ const LeadMaster = ({
               netAmount: 0,
               isDefaultService: true,
               parentPrimaryProductId: primaryProductId,
+              taggeddata: primaryLicense
+                ? [
+                    {
+                      licensenumber: primaryLicense,
+                      nextDue: "",
+                      noofusers: "",
+                      serialNumber: "",
+                      nextDueAmount: productPrice,
+                      totalnextDueAmount: actualNetAmount,
+                      nextDueTax: igstRate,
+                      productAmount: actualNetAmount,
+                      taxexclusiveAmount: productPrice,
+                      taxinclusiveamount: actualNetAmount,
+                      hsn: igstRate,
+                      originalHsn: igstRate,
+                      leadAmount: productPrice,
+                      totalleadAmount: actualNetAmount,
+                      leadTax: igstRate,
+                      sourceIndex: 0
+                    }
+                  ]
+                : [],
               company_id: service?.selected?.[0]?.company_id,
               branch_id: service?.selected?.[0]?.branch_id,
               actualproductPrice: productPrice,
@@ -1389,9 +1658,10 @@ const LeadMaster = ({
 
           rows.splice(insertAt, 0, ...newRows)
 
-          return rows
+          return normalizeLeadRows(rows)
         })
       } else {
+        sethaveprimaryProduct(false)
         console.log(leadData)
         setSelectedLeadList(leadData)
       }
@@ -1653,20 +1923,156 @@ console.log(e)
   //     )
   //   )
   // }
+  const createServiceTagForLicense = (row, licenseNumber, sourceIndex) => {
+    const amount = Number(row?.actualproductPrice ?? row?.productPrice ?? 0)
+    const tax = Number(row?.actualHsn ?? row?.hsn ?? 0)
+    const total =
+      Number(row?.actualNetAmount || row?.netAmount) ||
+      amount + (amount * tax) / 100
+
+    return {
+      sourceIndex,
+      licensenumber: licenseNumber,
+      nextDue: "",
+      noofusers: row?.noofusers || "",
+      serialNumber: row?.serialNumber || "",
+      nextDueAmount: amount,
+      totalnextDueAmount: total,
+      nextDueTax: tax,
+      productAmount: total,
+      taxexclusiveAmount: amount,
+      taxinclusiveamount: total,
+      hsn: tax,
+      originalHsn: tax,
+      leadAmount: amount,
+      totalleadAmount: total,
+      leadTax: tax,
+      discountAmount: row?.discountAmount ?? 0
+    }
+  }
+
   const updateLicense = (index, licenseNumber) => {
     console.log(licenseNumber)
     console.log(selectedleadlist)
     console.log(index)
-    setSelectedLeadList((prev) =>
-      prev.map((row, i) =>
-        i === index
-          ? {
-              ...row,
-              licenseNumber
-            }
-          : row
-      )
+    const previousLicense = selectedleadlist?.[index]?.licenseNumber || ""
+    const hasPreviousLicense = String(previousLicense).trim() !== ""
+    const primaryProductId = getRowId(
+      selectedleadlist?.[index]?.productorServiceId
     )
+    setSelectedLeadList((prev) =>
+      prev.map((row, i) => {
+        if (i === index) {
+          return {
+            ...row,
+            licenseNumber
+          }
+        }
+
+        const rowType = String(row?.productorservicetype || "").toLowerCase()
+        const parentId = getRowId(row?.parentPrimaryProductId)
+        const isAttachedAdditionalService =
+          rowType === "additionalservice" && parentId === primaryProductId
+
+        if (!isAttachedAdditionalService) {
+          return {
+            ...row,
+            licenseNumbers: (row.licenseNumbers || []).map((lic) =>
+              String(lic?.sourceIndex) === String(index) ||
+              (hasPreviousLicense &&
+                String(lic?.licenseNumber) === String(previousLicense))
+                ? {
+                    ...lic,
+                    licenseNumber
+                  }
+                : lic
+            ),
+            taggeddata: Array.isArray(row?.taggeddata)
+              ? row.taggeddata.map((tag) =>
+                  String(tag?.sourceIndex) === String(index) ||
+                  (hasPreviousLicense &&
+                    String(tag?.licensenumber || tag?.licenseNumber) ===
+                      String(previousLicense))
+                    ? {
+                        ...tag,
+                        licensenumber: licenseNumber
+                      }
+                    : tag
+                )
+              : row?.taggeddata
+          }
+        }
+
+        const serviceLicense = {
+          licenseNumber,
+          productorServiceId: row?.productorServiceId || "",
+          productorServiceName: row?.productorServiceName || "",
+          sourceIndex: index
+        }
+        const updatedTaggedData = Array.isArray(row?.taggeddata)
+          ? row.taggeddata.map((tag) =>
+              String(tag?.sourceIndex) === String(index) ||
+              (hasPreviousLicense &&
+                String(tag?.licensenumber || tag?.licenseNumber) ===
+                  String(previousLicense))
+                ? {
+                    ...tag,
+                    licensenumber: licenseNumber
+                  }
+                : tag
+            )
+          : []
+        const hasLinkedTag = updatedTaggedData.some(
+          (tag) =>
+            String(tag?.sourceIndex) === String(index) ||
+            String(tag?.licensenumber || tag?.licenseNumber) ===
+              String(licenseNumber)
+        )
+
+        return {
+          ...row,
+          licenseNumbers: licenseNumber ? [serviceLicense] : [],
+          taggeddata: licenseNumber
+            ? hasLinkedTag
+              ? updatedTaggedData
+              : [
+                  createServiceTagForLicense(row, licenseNumber, index),
+                  ...updatedTaggedData
+                ]
+            : []
+        }
+      })
+    )
+
+    setTakenLicense((prev) => {
+      const updated = { ...prev }
+      Object.keys(updated).forEach((key) => {
+        updated[key] = (updated[key] || []).map((value) =>
+          hasPreviousLicense && String(value) === String(previousLicense)
+            ? licenseNumber
+            : value
+        )
+      })
+
+      selectedleadlist.forEach((row) => {
+        const rowType = String(row?.productorservicetype || "").toLowerCase()
+        const parentId = getRowId(row?.parentPrimaryProductId)
+        if (rowType !== "additionalservice" || parentId !== primaryProductId) {
+          return
+        }
+
+        const serviceName = row?.productorServiceName || ""
+        if (!serviceName) return
+
+        if (licenseNumber) {
+          updated[serviceName] = [licenseNumber]
+        } else {
+          delete updated[serviceName]
+        }
+      })
+
+      return updated
+    })
   }
   console.log(selectedleadlist)
 
@@ -1894,6 +2300,98 @@ console.log(e)
     return String(value._id ?? value.id ?? value).trim()
   } //new code
 
+  const getRowType = (row) =>
+    String(row?.productorservicetype || "").toLowerCase()
+
+  const mergeUniqueBy = (primary = [], secondary = [], keyGetter) => {
+    const merged = []
+    const seen = new Set()
+
+    ;[...(primary || []), ...(secondary || [])].forEach((item) => {
+      const key = String(keyGetter(item) || "").trim()
+      if (!key || seen.has(key)) return
+
+      seen.add(key)
+      merged.push(item)
+    })
+
+    return merged
+  }
+
+  const mergeAdditionalServiceRows = (existing, duplicate) => ({
+    ...duplicate,
+    ...existing,
+    licenseNumbers: mergeUniqueBy(
+      existing?.licenseNumbers,
+      duplicate?.licenseNumbers,
+      (item) => item?.licenseNumber
+    ),
+    taggeddata: mergeUniqueBy(
+      existing?.taggeddata,
+      duplicate?.taggeddata,
+      (item) => item?.licensenumber || item?.licenseNumber
+    )
+  })
+
+  const normalizeLeadRows = (rows = []) => {
+    const normalized = []
+    const serviceIndexByBlock = new Map()
+    const usedRowIds = new Set()
+    let currentPrimaryProductId = ""
+
+    rows.forEach((sourceRow) => {
+      const requestedRowId = sourceRow?.rowId
+      const rowId =
+        requestedRowId && !usedRowIds.has(requestedRowId)
+          ? requestedRowId
+          : createLeadRowId()
+      usedRowIds.add(rowId)
+      const row = { ...sourceRow, rowId }
+      const rowType = getRowType(row)
+
+      if (rowType === "primaryproduct") {
+        currentPrimaryProductId = getRowId(row?.productorServiceId)
+        normalized.push(row)
+        return
+      }
+
+      if (rowType !== "additionalservice") {
+        normalized.push(row)
+        return
+      }
+
+      const serviceId = getRowId(row?.productorServiceId)
+      if (!serviceId) {
+        normalized.push(row)
+        return
+      }
+
+      const parentId = getRowId(row?.parentPrimaryProductId)
+      const blockKey = parentId || currentPrimaryProductId || "no-primary"
+      const duplicateKey = `${blockKey}:${serviceId}`
+
+      if (serviceIndexByBlock.has(duplicateKey)) {
+        const existingIndex = serviceIndexByBlock.get(duplicateKey)
+        normalized[existingIndex] = mergeAdditionalServiceRows(
+          normalized[existingIndex],
+          row
+        )
+        return
+      }
+
+      serviceIndexByBlock.set(duplicateKey, normalized.length)
+      normalized.push({
+        ...row,
+        parentPrimaryProductId: parentId || currentPrimaryProductId
+      })
+    })
+
+    return normalized
+  }
+
+  const toLeadPayloadRows = (rows = []) =>
+    rows.map(({ rowId, ...row }) => row)
+
   const getPrimaryProductFromLeadList = (row) => {
     const primaryProductId = getRowId(row?.productorServiceId)
     console.log(leadList)
@@ -1949,15 +2447,12 @@ console.log(e)
 
     while (pointer < rows.length) {
       const row = rows[pointer]
-      const rowType = String(row?.productorservicetype || "").toLowerCase()
+      const rowType = getRowType(row)
 
       // Stop when the next primary product starts
       if (rowType === "primaryproduct") break
 
-      if (
-        rowType === "additionalservice" &&
-        getRowId(row?.parentPrimaryProductId) === getRowId(primaryProductId)
-      ) {
+      if (rowType === "additionalservice") {
         existingIds.add(getRowId(row?.productorServiceId))
       }
 
@@ -1999,6 +2494,7 @@ console.log(e)
     if (!row?.productorServiceId) return
 
     const primaryProductId = getRowId(row?.productorServiceId)
+    const primaryLicense = row?.licenseNumber || ""
     const primaryProduct = getPrimaryProductFromLeadList(row)
     console.log(primaryProduct)
     if (!primaryProduct) {
@@ -2047,8 +2543,19 @@ console.log(e)
         const actualNetAmount = productPrice + taxAmount
         return {
           ...emptyRow,
+          rowId: createLeadRowId(),
           licenseNumber: "",
-          licenseNumbers: [],
+          licenseNumbers: primaryLicense
+            ? [
+                {
+                  licenseNumber: primaryLicense,
+                  productorServiceId: serviceId,
+                  productorServiceName:
+                    service?.productName || service?.serviceName || "",
+                  sourceIndex: rowIndex
+                }
+              ]
+            : [],
           productorServiceId: serviceId,
           productorServiceName:
             service?.productName || service?.serviceName || "",
@@ -2060,8 +2567,32 @@ console.log(e)
           netAmount: 0,
           isDefaultService: true,
           parentPrimaryProductId: primaryProductId,
+          taggeddata: primaryLicense
+            ? [
+                {
+                  licensenumber: primaryLicense,
+                  nextDue: "",
+                  noofusers: "",
+                  serialNumber: "",
+                  nextDueAmount: productPrice,
+                  totalnextDueAmount: actualNetAmount,
+                  nextDueTax: igstRate,
+                  productAmount: actualNetAmount,
+                  taxexclusiveAmount: productPrice,
+                  taxinclusiveamount: actualNetAmount,
+                  hsn: igstRate,
+                  originalHsn: igstRate,
+                  leadAmount: productPrice,
+                  totalleadAmount: actualNetAmount,
+                  leadTax: igstRate,
+                  sourceIndex: rowIndex
+                }
+              ]
+            : [],
           company_id: service?.selected[0]?.company_id,
           branch_id: service?.selected[0]?.branch_id,
+          actualproductPrice: productPrice,
+          actualHsn: igstRate,
           actualNetAmount
         }
       })
@@ -2076,7 +2607,18 @@ console.log(e)
       }
       console.log(newRows)
       rows.splice(insertAt, 0, ...newRows)
-      return rows
+
+      if (primaryLicense) {
+        setTakenLicense((prevTaken) => {
+          const updated = { ...prevTaken }
+          newRows.forEach((serviceRow) => {
+            updated[serviceRow?.productorServiceName] = [primaryLicense]
+          })
+          return updated
+        })
+      }
+
+      return normalizeLeadRows(rows)
     })
   }
   console.log(selectedleadlist)
@@ -2389,21 +2931,58 @@ console.log(e)
     console.log(item)
     console.log(takenLicenses)
     const productId = item.productorServiceId || item?.productId
+    const isPrimaryProduct = getRowType(item) === "primaryproduct"
+    const primaryProductId = getRowId(item?.productorServiceId)
+    const rowsToRemove = []
+    let reachedNextPrimary = false
+    const filteredLeadlist = selectedleadlist.filter((row, index) => {
+      if (index === indexNum) {
+        rowsToRemove.push(row)
+        return false
+      }
+
+      if (!isPrimaryProduct || index < indexNum) return true
+      if (reachedNextPrimary) return true
+
+      const rowType = getRowType(row)
+      if (rowType === "primaryproduct") {
+        reachedNextPrimary = true
+        return true
+      }
+
+      const parentId = getRowId(row?.parentPrimaryProductId)
+      const shouldRemove =
+        rowType === "additionalservice" &&
+        (!parentId || parentId === primaryProductId)
+
+      if (shouldRemove) {
+        rowsToRemove.push(row)
+        return false
+      }
+
+      return true
+    })
+
     setunselectedtaggedlicense((prev) => {
       const updated = { ...prev }
-      delete updated[productId]
+      rowsToRemove.forEach((row) => {
+        delete updated[row?.productorServiceId || row?.productId]
+      })
       return updated
     })
     setTakenLicense((prev) => {
       const updated = { ...prev }
 
-      const keyToDelete = Object.keys(updated).find(
-        (key) => key.toLowerCase() === item.productorServiceName.toLowerCase()
-      )
+      rowsToRemove.forEach((row) => {
+        const serviceName = row?.productorServiceName || ""
+        const keyToDelete = Object.keys(updated).find(
+          (key) => key.toLowerCase() === serviceName.toLowerCase()
+        )
 
-      if (keyToDelete) {
-        delete updated[keyToDelete]
-      }
+        if (keyToDelete) {
+          delete updated[keyToDelete]
+        }
+      })
 
       return updated
     })
@@ -2431,9 +3010,6 @@ console.log(e)
       setlicenseWithoutProductSelection(updatedProductList)
     }
 
-    const filteredLeadlist = selectedleadlist.filter(
-      (row, index) => index !== indexNum
-    )
     setSelectedLeadList(
       filteredLeadlist.length ? filteredLeadlist : [{ ...emptyRow }]
     )
@@ -2878,7 +3454,13 @@ console.log(e)
       delete submitData.dueDate
     }
     try {
-      if (hasDuplicateLeadRows(selectedleadlist)) {
+      const cleanedSelectedLeadList = normalizeLeadRows(selectedleadlist)
+
+      if (cleanedSelectedLeadList.length !== selectedleadlist.length) {
+        setSelectedLeadList(cleanedSelectedLeadList)
+      }
+
+      if (hasDuplicateLeadRows(cleanedSelectedLeadList)) {
         setValidateError((prev) => ({
           ...prev,
           duplicate:
@@ -2892,8 +3474,10 @@ console.log(e)
 
       if (process === "Registration") {
         console.log("HHH")
-        const filteredleadlist = selectedleadlist.filter(
-          (item) => item.productorServiceId && item.productorServiceId !== ""
+        const filteredleadlist = toLeadPayloadRows(
+          cleanedSelectedLeadList.filter(
+            (item) => item.productorServiceId && item.productorServiceId !== ""
+          )
         )
         if (filteredleadlist.length === 0) {
           setValidateError((prev) => ({
@@ -2922,7 +3506,10 @@ console.log(e)
           setPopupOpen(true)
         }
         setIseligible(validation.eligible)
-      } else if (process === "edit") {
+      } else if (
+        process === "edit" ||
+        (isClosedLeadEdit && process !== "closing")
+      ) {
         if (isReadOnly) {
           setValidateError((prev) => ({
             ...prev,
@@ -2932,7 +3519,9 @@ console.log(e)
           setsubmitLoading(false)
           return
         }
-        const validationMessage = validateSelectedLeadList(selectedleadlist)
+        const validationMessage = validateSelectedLeadList(
+          cleanedSelectedLeadList
+        )
         console.log(validationMessage)
         if (validationMessage) {
           toast.warning(validationMessage)
@@ -2941,28 +3530,30 @@ console.log(e)
         seteditLoadingState(true)
         const updated = await handleEditData(
           data,
-          selectedleadlist,
+          toLeadPayloadRows(cleanedSelectedLeadList),
           Data[0]?._id,
           from,
           previousLeadCustomer,
           isCustomerChanged
         )
       } else if (process === "closing") {
-        const validationMessage = validateSelectedLeadList(selectedleadlist)
+        const validationMessage = validateSelectedLeadList(
+          cleanedSelectedLeadList
+        )
         console.log(validationMessage)
         if (validationMessage) {
           toast.warning(validationMessage)
           return
         }
 
-        console.log(selectedleadlist)
+        console.log(cleanedSelectedLeadList)
         console.log(loggeduser)
         console.log(data)
 
         seteditLoadingState(true)
         const updated = await handleclosingData(
           data,
-          selectedleadlist,
+          toLeadPayloadRows(cleanedSelectedLeadList),
           Data[0]?._id,
           loggeduser._id,
           loggeduser?.role
@@ -2979,8 +3570,11 @@ console.log(e)
     console.log(formData)
     console.log(leadData)
     setPopupOpen(false)
-    const filteredleadlist = selectedleadlist.filter(
-      (item) => item.productorServiceId && item.productorServiceId !== ""
+    const cleanedSelectedLeadList = normalizeLeadRows(selectedleadlist)
+    const filteredleadlist = toLeadPayloadRows(
+      cleanedSelectedLeadList.filter(
+        (item) => item.productorServiceId && item.productorServiceId !== ""
+      )
     )
     console.log(filteredleadlist)
     let response
@@ -3008,6 +3602,22 @@ console.log(e)
       [name]: value
     }))
   }
+
+  const updateSelectedLeadItem = (rowId, getUpdates, transformRows) => {
+    if (!rowId) return
+
+    setSelectedLeadList((prev) => {
+      const updatedRows = prev.map((row) => {
+        if (row?.rowId !== rowId) return row
+
+        const updates =
+          typeof getUpdates === "function" ? getUpdates(row) : getUpdates
+        return { ...row, ...updates }
+      })
+
+      return transformRows ? transformRows(updatedRows) : updatedRows
+    })
+  }
   console.log(selectedleadlist)
   console.log(detailsForm)
   const handleDetailsSave = () => {
@@ -3024,7 +3634,11 @@ console.log(e)
           .map((tag) => ({
             licensenumber: String(tag?.licensenumber || "").trim(),
             nextDue: String(tag?.nextDue || "").trim(),
-            productAmount: tag?.totalnextDueAmount, //tax inclusive if have tax
+            productAmount:
+              tag?.productAmount ??
+              tag?.taxinclusiveamount ??
+              tag?.totalleadAmount ??
+              0,
             taxexclusiveAmount: tag?.taxexclusiveAmount,
             taxinclusiveamount: tag?.taxinclusiveamount,
             hsn: tag?.hsn,
@@ -3041,6 +3655,58 @@ console.log(e)
           }))
           .filter((tag) => tag.licensenumber !== "")
       : []
+
+    if (itemType === "primaryproduct") {
+      if (!String(detailsForm.softwareTrade || "").trim()) {
+        toast.warning("Software Trade is required")
+        return
+      }
+
+      if (!detailsForm.applicationDate) {
+        toast.warning("Application Date is required")
+        return
+      }
+    }
+
+    if (itemType === "additionalservice") {
+      if (cleanedTaggedData.length > 0) {
+        const invalidTag = cleanedTaggedData.find((tag) => {
+          const missingLeadAmount =
+            !haveprimaryProduct && Number(tag?.taxexclusiveAmount) <= 0
+          return (
+            !tag?.licensenumber ||
+            !tag?.nextDue ||
+            Number(tag?.nextDueAmount) <= 0 ||
+            missingLeadAmount
+          )
+        })
+
+        if (invalidTag) {
+          const licenseLabel = invalidTag?.licensenumber
+            ? ` for ${invalidTag.licensenumber}`
+            : ""
+
+          if (!invalidTag?.licensenumber) {
+            toast.warning("Tagged license number is required")
+          } else if (
+            !haveprimaryProduct &&
+            Number(invalidTag?.taxexclusiveAmount) <= 0
+          ) {
+            toast.warning(`Lead Amount must be greater than 0${licenseLabel}`)
+          } else if (!invalidTag?.nextDue) {
+            toast.warning(`Next Due is required${licenseLabel}`)
+          } else {
+            toast.warning(
+              `Next Due Amount must be greater than 0${licenseLabel}`
+            )
+          }
+          return
+        }
+      } else if (!detailsForm.nextDue) {
+        toast.warning("Next Due is required")
+        return
+      }
+    }
     console.log(detailsForm)
     const totaltaxexclusiveAmount = detailsForm?.taggeddata.reduce(
       (sum, item) => {
@@ -3071,22 +3737,67 @@ console.log(e)
     console.log(updatedNetAmount)
     console.log(selectedleadlist)
     console.log(detailsForm)
-    setSelectedLeadList((prev) =>
-      prev.map((row, i) => {
-        if (i !== detailsIndex) return row
+    const isClosingPrimary =
+      itemType === "primaryproduct" &&
+      String(detailsForm.status || "").toLowerCase() === "closed"
+    const primaryProductId = getRowId(detailsItem?.productorServiceId)
+    const closingPrimaryRowsToRemove = []
 
+    if (isClosingPrimary) {
+      let reachedNextPrimary = false
+      selectedleadlist.forEach((row, i) => {
+        if (i <= detailsIndex || reachedNextPrimary) return
+
+        const rowType = getRowType(row)
+        if (rowType === "primaryproduct") {
+          reachedNextPrimary = true
+          return
+        }
+
+        const parentId = getRowId(row?.parentPrimaryProductId)
+        if (
+          rowType === "additionalservice" &&
+          (!parentId || parentId === primaryProductId)
+        ) {
+          closingPrimaryRowsToRemove.push(row)
+        }
+      })
+
+      setunselectedtaggedlicense((prev) => {
+        const updated = { ...prev }
+        closingPrimaryRowsToRemove.forEach((row) => {
+          delete updated[row?.productorServiceId || row?.productId]
+        })
+        return updated
+      })
+
+      setTakenLicense((prev) => {
+        const updated = { ...prev }
+        closingPrimaryRowsToRemove.forEach((row) => {
+          const serviceName = row?.productorServiceName || ""
+          const keyToDelete = Object.keys(updated).find(
+            (key) => key.toLowerCase() === serviceName.toLowerCase()
+          )
+
+          if (keyToDelete) delete updated[keyToDelete]
+        })
+        return updated
+      })
+    }
+
+    updateSelectedLeadItem(
+      detailsRowId,
+      (row) => {
         if (itemType === "additionalservice") {
           const hasTaggedLicenses = cleanedTaggedData.length > 0
 
           return {
-            ...row,
             applicationDate: detailsForm.applicationDate,
             productPrice: haveprimaryProduct
               ? row?.productPrice
               : totaltaxexclusiveAmount,
             netAmount: haveprimaryProduct ? row?.netAmount : updatedNetAmount,
             noofusers: detailsForm.noofusers,
-
             amount: detailsForm.amount,
             status: detailsForm.status,
             isActive: detailsForm.status,
@@ -3099,13 +3810,34 @@ console.log(e)
         }
 
         return {
-          ...row,
           applicationDate: detailsForm.applicationDate,
           softwareTrade: detailsForm.softwareTrade,
           status: detailsForm.status,
           isActive: detailsForm.status
         }
-      })
+      },
+      (rows) => {
+      let reachedNextPrimary = false
+
+        const filteredRows = rows.filter((row, i) => {
+          if (!isClosingPrimary || i <= detailsIndex) return true
+          if (reachedNextPrimary) return true
+
+          const rowType = getRowType(row)
+          if (rowType === "primaryproduct") {
+            reachedNextPrimary = true
+            return true
+          }
+
+          const parentId = getRowId(row?.parentPrimaryProductId)
+          return !(
+            rowType === "additionalservice" &&
+            (!parentId || parentId === primaryProductId)
+          )
+        })
+
+        return filteredRows.length ? filteredRows : [{ ...emptyRow }]
+      }
     )
 
     setValueMain("discamnt", totaldiscount)
@@ -3251,20 +3983,25 @@ console.log(e)
     console.log(item)
     console.log(leadList)
     const productId = item.productorServiceId
-    if (item?.productorservicetype === "Additionalservice") {
-      if (!item?.licenseNumbers?.length) {
+    if (
+      String(item?.productorservicetype || "").toLowerCase() ===
+      "additionalservice"
+    ) {
+      const hasTaggedLicenses =
+        item?.licenseNumbers?.length || item?.taggeddata?.length
+
+      if (!hasTaggedLicenses) {
         setunselectedtaggedlicense((prev) => ({
           ...prev,
           [productId]: "Please tag any of the license"
         }))
-        return
+      } else {
+        setunselectedtaggedlicense((prev) => {
+          const updated = { ...prev }
+          delete updated[productId]
+          return updated
+        })
       }
-
-      setunselectedtaggedlicense((prev) => {
-        const updated = { ...prev }
-        delete updated[productId]
-        return updated
-      })
     }
 
     const isAdditionalService =
@@ -3309,8 +4046,12 @@ console.log(e)
             console.log(filteredproduct[0])
 
             // 2. Find tag inside that primary product’s taggeddata
+            const shouldUseCustomerTag =
+              !item?.isDefaultService && !getRowId(item?.parentPrimaryProductId)
             const existingTag =
-              primaryProduct && Array.isArray(primaryProduct.taggeddata)
+              shouldUseCustomerTag &&
+              primaryProduct &&
+              Array.isArray(primaryProduct.taggeddata)
                 ? primaryProduct.taggeddata.find(
                     (tag) =>
                       String(tag?.licensenumber) === String(lic?.licenseNumber)
@@ -3325,9 +4066,9 @@ console.log(e)
             // 3. Decide productAmount
             const productAmount =
               existing?.productAmount ??
-              existingTag?.productAmount ??
               item?.actualNetAmount ??
               item?.netAmount ??
+              existingTag?.productAmount ??
               0
             console.log(productAmount)
             console.log(existing?.nextDueTax)
@@ -3352,21 +4093,23 @@ console.log(e)
                 0,
               nextDueAmount:
                 existing?.nextDueAmount ??
-                existingTag?.nextDueAmount ??
                 item?.actualproductPrice ??
-                item?.productPrice,
+                item?.productPrice ??
+                existingTag?.nextDueAmount ??
+                0,
               sourceIndex: lic?.sourceIndex,
               productAmount,
               taxexclusiveAmount:
                 existing?.taxexclusiveAmount ??
-                existingTag?.taxexclusiveAmount ??
                 item?.actualproductPrice ??
-                item?.productPrice,
+                item?.productPrice ??
+                existingTag?.taxexclusiveAmount ??
+                0,
               taxinclusiveamount:
                 existing?.taxinclusiveamount ??
-                existingTag?.taxinclusiveamount ??
                 item?.actualNetAmount ??
                 item?.netAmount ??
+                existingTag?.taxinclusiveamount ??
                 0,
               hsn:
                 // existing?.hsn ??
@@ -3376,25 +4119,30 @@ console.log(e)
 
                 getPositiveInteger(
                   existing?.hsn,
-                  existingTag?.hsn,
                   item?.actualHsn,
-                  item?.hsn
+                  item?.hsn,
+                  existingTag?.hsn
                 ) ?? 0,
               originalHsn: item?.actualHsn ?? item?.hsn,
               leadAmount:
                 existing?.leadAmount ??
+                item?.actualproductPrice ??
+                item?.productPrice ??
                 existingTag?.leadAmount ??
-                item?.productPrice,
+                0,
               totalleadAmount:
                 existing?.totalleadAmount ??
+                item?.actualNetAmount ??
+                item?.netAmount ??
                 existingTag?.totalleadAmount ??
-                item?.netAmount,
+                0,
               totalnextDueAmount:
                 existing?.totalnextDueAmount ??
-                existingTag?.totalnextDueAmount ??
                 item?.actualNetAmount ??
-                item?.netAmount,
-              leadTax: existing?.hsn ?? existingTag?.hsn ?? item?.hsn,
+                item?.netAmount ??
+                existingTag?.totalnextDueAmount ??
+                0,
+              leadTax: existing?.leadTax ?? existing?.hsn ?? item?.actualHsn ?? item?.hsn ?? existingTag?.hsn,
               nextDueTax:
                 // existing?.nextDueTax ??
                 // existingTag?.nextDueTax ??
@@ -3402,9 +4150,9 @@ console.log(e)
                 // item?.actualHsn,
                 getPositiveInteger(
                   existing?.nextDueTax,
-                  existingTag?.nextDueTax,
                   item?.hsn,
-                  item?.actualHsn
+                  item?.actualHsn,
+                  existingTag?.nextDueTax
                 ) ?? 0,
               discountAmount:
                 existing?.discountAmount ?? item?.discountAmount ?? 0,
@@ -3420,20 +4168,61 @@ console.log(e)
           })
         : Array.isArray(item?.taggeddata)
           ? item.taggeddata.map((tag) => ({
-              licensenumber: tag?.licensenumber || "",
-              nextDue: tag?.nextDue || "",
+              licensenumber: tag?.licensenumber || tag?.licenseNumber || "",
+              nextDue: tag?.nextDue ? String(tag.nextDue).split("T")[0] : "",
+              noofusers: tag?.noofusers ?? item?.noofusers ?? "",
+              serialNumber: tag?.serialNumber ?? item?.serialNumber ?? "",
               productAmount:
                 tag?.productAmount ??
                 item?.actualNetAmount ??
                 item?.netAmount ??
                 0,
+              taxexclusiveAmount:
+                tag?.taxexclusiveAmount ??
+                tag?.leadAmount ??
+                item?.actualproductPrice ??
+                item?.productPrice ??
+                0,
+              taxinclusiveamount:
+                tag?.taxinclusiveamount ??
+                tag?.totalleadAmount ??
+                item?.actualNetAmount ??
+                item?.netAmount ??
+                0,
+              hsn: tag?.hsn ?? tag?.leadTax ?? item?.actualHsn ?? item?.hsn,
+              originalHsn: tag?.originalHsn ?? item?.actualHsn ?? item?.hsn,
+              leadAmount: tag?.leadAmount ?? item?.productPrice,
+              totalleadAmount: tag?.totalleadAmount ?? item?.netAmount,
+              nextDueAmount:
+                tag?.nextDueAmount ??
+                item?.actualproductPrice ??
+                item?.productPrice ??
+                0,
+              totalnextDueAmount:
+                tag?.totalnextDueAmount ??
+                item?.actualNetAmount ??
+                item?.netAmount ??
+                0,
+              leadTax: tag?.leadTax ?? tag?.hsn ?? item?.hsn,
+              nextDueTax: tag?.nextDueTax ?? item?.actualHsn ?? item?.hsn,
+              discountAmount: tag?.discountAmount ?? item?.discountAmount ?? 0,
               actualNetAmount: item?.netAmount
             }))
           : []
     console.log(item)
     console.log(normalizedTaggedData)
-    setDetailsItem(item)
+    const rowId = item?.rowId || createLeadRowId()
+    if (!item?.rowId) {
+      setSelectedLeadList((prev) =>
+        prev.map((row, rowIndex) =>
+          rowIndex === index ? { ...row, rowId } : row
+        )
+      )
+    }
+
+    setDetailsItem({ ...item, rowId })
     setDetailsIndex(index)
+    setDetailsRowId(rowId)
     console.log("hhh")
     setDetailsForm({
       name: item?.productorServiceName || "",
@@ -3493,6 +4282,13 @@ console.log(e)
   console.log(submitLoading)
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#ADD8E6]">
+      <h1>abhida</h1>
+      <button
+        type="button"
+        className="m-3 w-fit rounded bg-[#1B2A4A] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#243660]"
+      >
+        press
+      </button>
       {(modalloader ||
         loadingState ||
         editloadingState ||
@@ -3850,7 +4646,7 @@ convertexcel
                       <col style={{ width: "12%" }} />
                       <col style={{ width: "15%" }} />
                       <col style={{ width: "7%" }} />
-                      {process === "closing" && <col style={{ width: "7%" }} />}
+                      {isClosingFlow && <col style={{ width: "7%" }} />}
                     </colgroup>
                     <thead>
                       <tr className="bg-[#1B2A4A] text-white">
@@ -3878,7 +4674,7 @@ convertexcel
                         >
                           Action
                         </th>
-                        {(process === "closing" || from === "closedlead") && (
+                        {isClosingFlow && (
                           <th
                             rowSpan={2}
                             className="border border-blue-900 px-2 py-2 text-center text-xs"
@@ -3904,7 +4700,9 @@ convertexcel
                       {tableRows.map((item, index) => {
                         console.log(item)
                         const showLicenseDropdown =
-                          item?.productorservicetype === "Additionalservice"
+                          String(
+                            item?.productorservicetype || ""
+                          ).toLowerCase() === "additionalservice"
                         console.log("jjj")
                         console.log(showLicenseDropdown)
                         const isAmountLocked =
@@ -3930,7 +4728,7 @@ convertexcel
                         console.log(remainingAdditionalServicesCount)
                         return (
                           <tr
-                            key={index}
+                            key={item?.rowId || index}
                             className="border-b even:bg-blue-50 bg-white hover:bg-blue-50 transition-colors"
                           >
                             <td className="border border-gray-300 px-1 py-1">
@@ -3938,6 +4736,7 @@ convertexcel
                                 index={index}
                                 item={item}
                                 process={process}
+                                from={from}
                                 isReadOnly={isReadOnly}
                                 leadList={leadList}
                                 selectedleadlist={selectedleadlist}
@@ -4056,7 +4855,7 @@ convertexcel
                             <td className="border border-gray-300 px-1 py-1 text-center">
                               <div className="flex items-center justify-center gap-1">
                                 {isPrimaryProduct &&
-                                  process === "closing" &&
+                                  isClosingFlow &&
                                   remainingAdditionalServicesCount > 0 && (
                                     <button
                                       type="button"
@@ -4083,11 +4882,6 @@ convertexcel
                                   disabled={isReadOnly}
                                   onClick={() => {
                                     console.log(item)
-                                    if (
-                                      item?.productorservicetype.toLowerCase() ===
-                                      "primaryproduct"
-                                    )
-                                      return
                                     console.log(selectedleadlist)
                                     if (selectedleadlist.length === 1) return
                                     console.log("jjjjj")
@@ -4115,8 +4909,7 @@ convertexcel
                                 </button>
                               </div>
                             </td>
-                            {(process === "closing" ||
-                              from === "closedlead") && (
+                            {isClosingFlow && (
                               <td className="border border-gray-300 px-1 py-1 text-center">
                                 <div className="relative inline-block group">
                                   <button
@@ -4224,7 +5017,7 @@ convertexcel
                         field: "taxAmount",
                         viewonly: true
                       },
-                      ...(process === "closing"
+                      ...(isClosingFlow
                         ? [
                             {
                               label: "Disc.Amount",
