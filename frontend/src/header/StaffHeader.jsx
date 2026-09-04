@@ -1759,12 +1759,6 @@
 //   )
 // }
 
-
-
-
-
-
-
 ////current git code ui//
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
@@ -1831,7 +1825,7 @@ export default function StaffHeader({
       }
     }
   }, [])
-console.log(user)
+  console.log(user)
   useEffect(() => {
     if (!showUserMenu) return
 
@@ -2072,6 +2066,12 @@ console.log(user)
             label: "Lost Leads",
             icon: FiUserX,
             control: permissions.LostLeads ?? false
+          },
+          {
+            to: "/staff/transaction/lead/closed-leads",
+            label: "Closed Leads",
+            icon: FiUserX,
+            control: permissions.ClosedLeads ?? false
           }
         ]
       },

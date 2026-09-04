@@ -20,7 +20,7 @@ const staffSchema = new Schema(
 
       match: /^[0-9]{10}$/ // Example for a 10-digit Indian number
     },
-passwordExpiryAt:{type:Date},
+    passwordExpiryAt: { type: Date },
 
     password: {
       type: String,
@@ -121,14 +121,14 @@ passwordExpiryAt:{type:Date},
         Lead: Boolean,
         LeadAllocation: Boolean,
         LeadFollowUp: Boolean,
-LostLeads:Boolean,
-OwnLead:Boolean,
+        LostLeads: Boolean,
+        OwnLead: Boolean,
         CallRegistration: Boolean,
-SupportDepartment:Boolean,
-FollowupSummary:Boolean,
-ProductWiseReport:Boolean,
-SalesFunnel:Boolean,
-
+        SupportDepartment: Boolean,
+        FollowupSummary: Boolean,
+        ProductWiseReport: Boolean,
+        SalesFunnel: Boolean,
+        ClosedLeads: Boolean,
         LeaveApplication: { type: Boolean, default: true },
         SignUpCustomer: Boolean,
         ProductMerge: Boolean,
@@ -138,7 +138,7 @@ SalesFunnel:Boolean,
         ExcelConverter: Boolean,
         Summary: Boolean,
         ExpiryRegister: Boolean,
-DailyStaffActivity:Boolean,
+        DailyStaffActivity: Boolean,
         ExpiredCustomerCalls: Boolean,
         CustomerCallsSummary: Boolean,
         CustomerContacts: Boolean,
@@ -200,7 +200,7 @@ const adminSchema = new Schema(
       type: String,
       required: [true, "Password is required"]
     },
-passwordExpiryAt:{type:Date},
+    passwordExpiryAt: { type: Date },
     role: {
       type: String,
       required: [true, "Role is required"],
