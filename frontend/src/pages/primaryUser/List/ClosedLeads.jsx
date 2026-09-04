@@ -35,6 +35,13 @@ import { PerformanceModal } from "../../../components/primaryUser/PerformanceMod
 import { PropagateLoader } from "react-spinners"
 import { toast } from "react-toastify"
 
+const formatDateForInput = (date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
 export default function ClosedLeads() {
   console.log("hh")
   const [showFullName, setShowFullName] = useState(false)
@@ -58,6 +65,19 @@ export default function ClosedLeads() {
   const [collectionupdateModal, setcollectionUpdateModal] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [selectedData, setselectedData] = useState(null)
+  const [closedDateRange, setClosedDateRange] = useState(() => {
+    const today = new Date()
+    const firstDayOfCurrentMonth = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      1
+    )
+
+    return {
+      startDate: formatDateForInput(firstDayOfCurrentMonth),
+      endDate: formatDateForInput(today)
+    }
+  })
 
   console.log(selectedData)
   const [selectedLeadId, setselectedLeadId] = useState(null)
@@ -101,10 +121,30 @@ export default function ClosedLeads() {
       loggedUser &&
       `/lead/collectionLeads?selectedBranch=${selectedreduxbranch}&verified=${verifiedLead}&isAccountant=${isdepartmentisAccountant}&loggeduserby=${loggedUser._id}`
   )
-  const { data: closedleads } = UseFetch(
-    selectedreduxbranch &&
-      `/lead/closedleads?selectedBranch=${selectedreduxbranch}`
-  )
+  const closedLeadsUrl = useMemo(() => {
+    if (
+      !selectedreduxbranch ||
+      !closedDateRange.startDate ||
+      !closedDateRange.endDate
+    ) {
+      return null
+    }
+
+    const params = new URLSearchParams({
+      selectedBranch: selectedreduxbranch,
+      startDate: closedDateRange.startDate,
+      endDate: closedDateRange.endDate
+    })
+
+    return `/lead/closedleads?${params.toString()}`
+  }, [
+    selectedreduxbranch,
+    closedDateRange.startDate,
+    closedDateRange.endDate
+  ])
+  const { data: closedleads, loading: closedLeadsLoading } =
+    UseFetch(closedLeadsUrl)
+  const pageLoading = loading || closedLeadsLoading
   console.log(closedleads)
   console.log(selectedreduxbranch)
   console.log(verifiedLead)
@@ -343,6 +383,7 @@ export default function ClosedLeads() {
     setselectedLeadId(null)
   }
   const handleHistory = (Item) => {
+console.log(Item)
     console.log("hh")
     setselectedData(Item.activityLog)
     setHistoryList(Item.activityLog)
@@ -860,7 +901,7 @@ export default function ClosedLeads() {
           ) : (
             <tr>
               <td colSpan={9} className="text-center text-gray-500 py-6">
-                {loading ? (
+                {pageLoading ? (
                   <div className="flex justify-center">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
                   </div>
@@ -924,7 +965,7 @@ export default function ClosedLeads() {
             className="
       mt-2 grid grid-cols-1 gap-1.5
       sm:grid-cols-[minmax(0,1fr)_auto]
-      lg:grid-cols-[minmax(220px,1fr)_auto_auto]
+      lg:grid-cols-[minmax(220px,1fr)_auto_auto_auto]
     "
           >
             <div className="min-w-0">
@@ -933,6 +974,50 @@ export default function ClosedLeads() {
                 onFilteredData={handleFilteredLeads}
                 placeholder="Search customer, mobile, license or product..."
               />
+            </div>
+
+            <div className="flex h-8 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2">
+              <Calendar className="h-3.5 w-3.5 shrink-0 text-slate-500" />
+              <input
+                type="date"
+                aria-label="Closed from date"
+                value={closedDateRange.startDate}
+                max={closedDateRange.endDate || undefined}
+                onChange={(event) =>
+                  setClosedDateRange((previous) => ({
+                    ...previous,
+                    startDate: event.target.value
+                  }))
+                }
+                className="min-w-0 bg-transparent text-[11px] text-slate-700 outline-none"
+              />
+              <span className="text-[10px] text-slate-400">to</span>
+              <input
+                type="date"
+                aria-label="Closed to date"
+                value={closedDateRange.endDate}
+                min={closedDateRange.startDate || undefined}
+                onChange={(event) =>
+                  setClosedDateRange((previous) => ({
+                    ...previous,
+                    endDate: event.target.value
+                  }))
+                }
+                className="min-w-0 bg-transparent text-[11px] text-slate-700 outline-none"
+              />
+              {(closedDateRange.startDate || closedDateRange.endDate) && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setClosedDateRange({ startDate: "", endDate: "" })
+                  }
+                  className="rounded px-1 text-sm leading-none text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                  aria-label="Clear closed date range"
+                  title="Clear date range"
+                >
+                  ×
+                </button>
+              )}
             </div>
 
             {isdepartmentisAccountant && !verifiedLead && (
@@ -1081,7 +1166,7 @@ export default function ClosedLeads() {
                     (group) => group?.leads?.length > 0
                   )
 
-                  if (loading) {
+                  if (pageLoading) {
                     return <SkeletonTable />
                   }
 
