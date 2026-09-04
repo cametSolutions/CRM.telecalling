@@ -97,6 +97,7 @@ console.log(selectedMonth)
     "/staff/transaction/lead/lostLeads",
     "/admin/transaction/lead/lostLeads",
 "/admin/reports/closed-leads",
+"/staff/transaction/lead/closed-leads",
     "/staff/reports/summary",
     "/admin/reports/summary",
     "/staff/reports/expiry-register",

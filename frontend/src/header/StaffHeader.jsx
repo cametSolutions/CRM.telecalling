@@ -2072,6 +2072,12 @@ console.log(user)
             label: "Lost Leads",
             icon: FiUserX,
             control: permissions.LostLeads ?? false
+          },
+ {
+            to: "/staff/transaction/lead/closed-leads",
+            label: "Closed Leads",
+            icon: FiUserX,
+            control: permissions.ClosedLeads ?? false
           }
         ]
       },

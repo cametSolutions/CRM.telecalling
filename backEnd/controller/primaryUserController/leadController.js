@@ -5064,9 +5064,9 @@ export const UpdateLeadRegister = async (req, res) => {
       const exists = merged.some(
         (l) =>
           String(l?.licenseNumber ?? "") ===
-            String(normalizedLicense.licenseNumber ?? "") &&
+          String(normalizedLicense.licenseNumber ?? "") &&
           String(l?.productorServiceId || "") ===
-            String(normalizedLicense.productorServiceId || "")
+          String(normalizedLicense.productorServiceId || "")
       );
 
       if (!exists) merged.push(normalizedLicense);
@@ -5278,7 +5278,7 @@ export const UpdateLeadRegister = async (req, res) => {
           // license (last match in the array), representing the state
           // immediately before this lead's overwrite.
           let prevIndex = -1;
-          for (let i = previousTaggedData.length - 1; i >= 0; i--) {
+          for (let i = previousTaggedData.length - 1;i >= 0;i--) {
             if (toLicenseNumber(previousTaggedData[i]?.licensenumber) === licenseNumber) {
               prevIndex = i;
               break;
@@ -5387,12 +5387,12 @@ export const UpdateLeadRegister = async (req, res) => {
           nextDue: item?.nextDue || "",
           licenseNumbers: Array.isArray(item?.licenseNumbers)
             ? item.licenseNumbers.map((license) => ({
-                ...(license?.toObject ? license.toObject() : license),
-                licenseNumber: toLicenseNumber(license?.licenseNumber),
-                productorServiceId: license?.productorServiceId || null,
-                productorServiceName: license?.productorServiceName || "",
-                sourceIndex: license?.sourceIndex,
-              }))
+              ...(license?.toObject ? license.toObject() : license),
+              licenseNumber: toLicenseNumber(license?.licenseNumber),
+              productorServiceId: license?.productorServiceId || null,
+              productorServiceName: license?.productorServiceName || "",
+              sourceIndex: license?.sourceIndex,
+            }))
             : [],
           taggeddata: buildCustomerTaggedDataForAdditionalOnly(item?.taggeddata),
           // A brand-new additional service starts with no history. If the
@@ -10015,6 +10015,10 @@ export const GetclosedLeads = async (req, res) => {
           phone
           email
         `,
+      })
+      .populate({
+        path: "leadBy",
+        select: "name",
       })
       .populate({
         path: "leadFor.productorServiceId",
