@@ -1,5 +1,5 @@
 
-
+import React from "react"
 import { useEffect, useRef, useState } from "react"
 import { useSelector, useDispatch } from "react-redux"
 import { useLocation, matchPath } from "react-router-dom"
@@ -96,6 +96,7 @@ console.log(selectedMonth)
     "/admin/transaction/lead/collectionUpdate",
     "/staff/transaction/lead/lostLeads",
     "/admin/transaction/lead/lostLeads",
+"/admin/reports/closed-leads",
     "/staff/reports/summary",
     "/admin/reports/summary",
     "/staff/reports/expiry-register",

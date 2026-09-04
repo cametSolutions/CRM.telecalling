@@ -1474,7 +1474,7 @@
 // }//updated new code with bg full header
 
 
-
+import React from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
@@ -1660,6 +1660,7 @@ onpasswordClick,
           { to: "/admin/transaction/lead/leadFollowUp", label: "In Follow-Up", icon: FiClock },
           { to: "/admin/transaction/lead/ownedLeadlist", label: "Own Lead", icon: FiUserCheck },
           { to: "/admin/transaction/lead/lostLeads", label: "Lost Leads", icon: FiUserX },
+{to:"/admin/reports/closed-leads",label:"Closed Leads",icon:FiUserCheck}
         ],
       },
       {

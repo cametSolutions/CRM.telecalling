@@ -51,13 +51,14 @@ getBranchwiseMarketingPendingTasks,
 getTodayVerifiedCollection,
 getverifiedCollectionLeads,
 getNotificationData,
-RejectTask
+RejectTask,
+GetclosedLeads
 } from "../../controller/primaryUserController/leadController.js";
 const router = express.Router();
 // router.get("/export-branch-wise-product-usage",exportBranchWiseProductUsage)
 router.get("/getstaffdailyreports", authMiddleware, Getdailystaffreport)
 router.get("/getnotificationData",authMiddleware,getNotificationData)
-
+router.get("/closedleads",authMiddleware,GetclosedLeads)
 router.get("/getsalesfunnels", authMiddleware, Getallsalesfunnels)
 router.get(
   "/branchwise-marketing-pending-tasks",
