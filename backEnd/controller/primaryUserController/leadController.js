@@ -19,6 +19,7 @@ import getLeadMetricsForSingleDay from "../../helper/leadandtaskcount.js";
 import { getCallMetricsForSingleDay } from "../../helper/callcount.js";
 import { formatDate } from "../../../frontend/src/utils/dateUtils.js";
 import License from "../../model/secondaryUser/licenseSchema.js";
+import { mapLeadItemsForUpdate } from "../../helper/leadUpdatePayload.js";
 
 ////
 
@@ -4727,6 +4728,9 @@ export const Leadclosing = async (req, res) => {
 
       const leadUpdatePayload = {
         ...data,
+        leadClosedDate: isNonEmpty(data?.leadClosedDate)
+          ? data.leadClosedDate
+          : new Date(),
         discountAmount,
         leadConfirmed: true,
         taxableAmount: newTaxableAmount,
@@ -5567,28 +5571,10 @@ export const UpdateLeadRegister = async (req, res) => {
         console.log("[reverse-gate] SKIPPED - from !== 'closedlead'");
       }
 
-      const mappedLeadData = leadData.map((item) => {
-        const productPrice = toNumber(item?.productPrice);
-        const netAmount = toNumber(item?.netAmount);
-        const hsn = toNumber(item?.hsn);
-        const actualHsn = toNumber(item?.actualHsn);
-        const taxAmount = netAmount - productPrice;
-
-        return {
-          licenseNumber: item?.licenseNumber ?? null,
-          productorServiceName: safeString(item?.productorServiceName),
-          productorServiceId: toObjectIdOrNull(item?.productorServiceId),
-          productorServicemodel: safeString(item?.itemType || item?.productorServicemodel),
-          price: item?.price ?? null,
-          productPrice,
-          hsn,
-          actualHsn,
-          netAmount,
-          taxAmount,
-          productorservicetype: safeString(item?.productorservicetype),
-          company_id: toObjectIdOrNull(item?.company_id),
-          branch_id: toObjectIdOrNull(item?.branch_id),
-        };
+      const mappedLeadData = mapLeadItemsForUpdate(leadData, {
+        toNumber,
+        toObjectIdOrNull,
+        safeString,
       });
 
       const newTaxableAmount = mappedLeadData.reduce(
@@ -9925,7 +9911,7 @@ export const RejectTask = async (req, res) => {
 
 export const GetclosedLeads = async (req, res) => {
   try {
-    const { selectedBranch } = req.query;
+    const { selectedBranch, startDate, endDate } = req.query;
 
     if (!selectedBranch) {
       return res.status(400).json({
@@ -9946,6 +9932,47 @@ export const GetclosedLeads = async (req, res) => {
       leadConfirmed: true,
       leadClosed: true,
     };
+
+    if (startDate || endDate) {
+      const closedDateRange = {};
+
+      if (startDate) {
+        const parsedStartDate = new Date(
+          `${startDate}T00:00:00.000+05:30`
+        );
+        if (Number.isNaN(parsedStartDate.getTime())) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid startDate",
+          });
+        }
+        closedDateRange.$gte = parsedStartDate;
+      }
+
+      if (endDate) {
+        const parsedEndDate = new Date(`${endDate}T23:59:59.999+05:30`);
+        if (Number.isNaN(parsedEndDate.getTime())) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid endDate",
+          });
+        }
+        closedDateRange.$lte = parsedEndDate;
+      }
+
+      if (
+        closedDateRange.$gte &&
+        closedDateRange.$lte &&
+        closedDateRange.$gte > closedDateRange.$lte
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "startDate cannot be after endDate",
+        });
+      }
+
+      query.leadClosedDate = closedDateRange;
+    }
 
     const closedLeads = await LeadMaster.find(query)
       .select(`
@@ -9994,12 +10021,82 @@ export const GetclosedLeads = async (req, res) => {
         model: Product,
         select: "productName shortName",
       })
+      .populate({
+        path: "activityLog.taskBy",
+        select: "taskName code listed",
+      })
+      .populate({
+        path: "activityLog.taskId",
+        select: "taskName code listed",
+      })
       .sort({
         leadClosedDate: -1,
         leadConvertedDate: -1,
         leadDate: -1,
       })
       .lean();
+
+    const activityUserFields = [
+      { path: "submittedUser", modelPath: "submissiondoneByModel" },
+      { path: "taskallocatedBy", modelPath: "taskallocatedByModel" },
+      { path: "taskallocatedTo", modelPath: "taskallocatedToModel" },
+    ];
+    const activityUserIds = {
+      Staff: new Set(),
+      Admin: new Set(),
+    };
+
+    closedLeads.forEach((lead) => {
+      (lead.activityLog || []).forEach((log) => {
+        activityUserFields.forEach(({ path, modelPath }) => {
+          const modelName = log?.[modelPath];
+          const userId = toIdString(log?.[path]);
+
+          if (
+            userId &&
+            mongoose.isValidObjectId(userId) &&
+            activityUserIds[modelName]
+          ) {
+            activityUserIds[modelName].add(userId);
+          }
+        });
+      });
+    });
+
+    const [activityStaff, activityAdmins] = await Promise.all([
+      Staff.find({ _id: { $in: [...activityUserIds.Staff] } })
+        .select("name email role department")
+        .lean(),
+      Admin.find({ _id: { $in: [...activityUserIds.Admin] } })
+        .select("name email role department")
+        .lean(),
+    ]);
+    const activityUsersByModel = {
+      Staff: new Map(
+        activityStaff.map((user) => [String(user._id), user])
+      ),
+      Admin: new Map(
+        activityAdmins.map((user) => [String(user._id), user])
+      ),
+    };
+
+    closedLeads.forEach((lead) => {
+      lead.activityLog = (lead.activityLog || []).map((log) => {
+        const populatedLog = { ...log };
+
+        activityUserFields.forEach(({ path, modelPath }) => {
+          const currentValue = log?.[path];
+          if (!currentValue) return;
+
+          const modelName = log?.[modelPath];
+          const userId = toIdString(currentValue);
+          populatedLog[path] =
+            activityUsersByModel[modelName]?.get(userId) || null;
+        });
+
+        return populatedLog;
+      });
+    });
 
     console.log(
       `Closed leads fetched: ${closedLeads.length} | Branch: ${selectedBranch}`

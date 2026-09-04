@@ -6,6 +6,7 @@ import UserPermissionList from "../../../components/primaryUser/UserPermissionLi
 import { Search,  Shield,  Users } from "lucide-react"
 const UserPermissions = () => {
   const [user, setUser] = useState([])
+console.log("jjj")
   const [cachedusers, setcachedusers] = useState([])
   const [searchQuery, setSearchQuery] = useState("")
   const [debouncedQuery, setDebouncedQuery] = useState(searchQuery)

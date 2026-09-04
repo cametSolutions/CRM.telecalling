@@ -445,6 +445,7 @@ export const LeadhistoryModal = ({
   historyList,
   handlecloseModal,
 }) => {
+console.log(historyList)
   useEffect(() => {
     const handleEscape = (event) => {
       if (event.key === "Escape") handlecloseModal();
