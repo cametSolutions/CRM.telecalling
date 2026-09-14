@@ -12714,6 +12714,8 @@ export const GetcollectionLeads = async (req, res) => {
         leadDate: 1,
         customerName: 1,
         partner: 1,
+        netAmount: 1,
+        totalPaidAmount: 1,
         balanceAmount: 1,
         leadBy: 1,
         leadByModel: 1,

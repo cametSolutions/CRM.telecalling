@@ -1759,12 +1759,6 @@
 //   )
 // }
 
-
-
-
-
-
-
 ////current git code ui//
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
@@ -1789,7 +1783,8 @@ import {
   FiClipboard,
   FiActivity,
   FiUserCheck,
-  FiUserX
+  FiUserX,
+  FiDollarSign
 } from "react-icons/fi"
 import {
   MessageSquareText,
@@ -1831,7 +1826,7 @@ export default function StaffHeader({
       }
     }
   }, [])
-console.log(user)
+  console.log(user)
   useEffect(() => {
     if (!showUserMenu) return
 
@@ -2072,6 +2067,19 @@ console.log(user)
             label: "Lost Leads",
             icon: FiUserX,
             control: permissions.LostLeads ?? false
+          },
+          {
+            to: "/staff/transaction/lead/closed-leads",
+            label: "Closed Leads",
+            icon: FiUserX,
+            control: permissions.ClosedLeads ?? false
+          },
+          {
+            to: "/staff/reports/incentiveReport",
+            label: "Incentive",
+            icon: FiDollarSign,
+            state: { incentiveEntry: "navbar" },
+            control: permissions.IncentiveReport ?? false
           }
         ]
       },
@@ -2275,7 +2283,7 @@ console.log(user)
                 <button
                   key={child.to}
                   type="button"
-                  onClick={() => handleSafeNavigate(child.to)}
+                  onClick={() => handleSafeNavigate(child.to, { state: child.state })}
                   className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[13px] font-medium transition ${
                     isPathActive(child.to)
                       ? "bg-[#243145] text-white"
@@ -2642,7 +2650,7 @@ console.log(user)
                                         key={child.to}
                                         type="button"
                                         onClick={() =>
-                                          handleSafeNavigate(child.to)
+                                          handleSafeNavigate(child.to, { state: child.state })
                                         }
                                         className={`flex w-full items-center gap-1.5 rounded-xl px-3 py-2 text-left text-[13px] font-medium ${
                                           isPathActive(child.to)

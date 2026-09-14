@@ -15,6 +15,7 @@ import PaymentHistory from "../../pages/primaryUser/List/PaymentHistory"
 import CollectionUpdate from "../../pages/primaryUser/List/CollectionUpdate"
 import LeadClosed from "../../pages/primaryUser/edit/LeadClosed"
 import LostLeads from "../../pages/common/LostLeads"
+import ClosedLeads from "../../pages/primaryUser/List/ClosedLeads"
 import VerifiedCollections from "../../pages/primaryUser/List/VerifiedCollections"
 import { components } from "react-select"
 const stafftransactionsRoutes = [
@@ -34,6 +35,7 @@ const stafftransactionsRoutes = [
   { path: "/staff/transaction/lead/leadFollowUp", component: LeadFollowUp },
   { path: "/staff/transaction/lead/leadTask", component: LeadTask },
   { path: "/staff/transaction/lead/lostLeads", component: LostLeads },
+{path:"/staff/transaction/lead/closed-leads",component:ClosedLeads},
   { path: "/staff/transaction/lead/leadReallocation", component: Reallocation },
   { path: "/staff/transaction/lead/reallocationTable/:label", component: ReallocationTable },
   { path: "/staff/transaction/lead/collectionUpdate", component: CollectionUpdate },

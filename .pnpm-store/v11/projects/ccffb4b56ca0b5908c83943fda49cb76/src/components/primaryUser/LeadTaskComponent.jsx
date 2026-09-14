@@ -491,6 +491,8 @@ export default function LeadTaskComponent({
         : [];
       const lastLog = activityLogs[activityLogs.length - 1];
       const remark = item?.matchedlog?.remarks;
+      const customerName =
+        item?.customerName?.customerName || item?.customerName || "-";
 
       const isAllocatedToeditable = activityLogs.some(
         (it) =>
@@ -512,8 +514,13 @@ export default function LeadTaskComponent({
               )}
             </td>
 
-            <td className="px-3 py-2 font-semibold text-gray-900 text-xs border border-gray-200 whitespace-nowrap">
-              {item?.customerName?.customerName || item?.customerName || "-"}
+            <td className="max-w-0 overflow-hidden border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-900">
+              <span
+                title={customerName}
+                className="block w-full truncate uppercase"
+              >
+                {customerName}
+              </span>
             </td>
 
             <td className="px-3 py-2 text-gray-700 text-xs border border-gray-200 whitespace-nowrap">
@@ -751,7 +758,9 @@ export default function LeadTaskComponent({
         <thead className="whitespace-nowrap bg-gradient-to-r from-blue-600 to-blue-700 text-white sticky top-0 z-30 text-xs">
           <tr>
             <th className="border border-blue-500 w-5" />
-            <th className="border border-blue-500 px-3 py-2 text-left">Customer Name</th>
+            <th className="w-[18%] border border-blue-500 px-3 py-2 text-left">
+              Customer Name
+            </th>
             <th className="border border-blue-500 px-3 py-2 text-left">Mobile</th>
 
             {pending && (
