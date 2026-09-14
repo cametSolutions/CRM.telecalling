@@ -656,6 +656,7 @@ app.use((err, req, res, next) => {
 /* ===============================
    PROD / DEV
 ================================ */
+console.log("proces.env",process.env.NODE_ENV)
 if (process.env.NODE_ENV === "production") {
   const parentDir = path.join(__dirname, "..")
   app.use(express.static(path.join(parentDir, "frontend/dist")))
