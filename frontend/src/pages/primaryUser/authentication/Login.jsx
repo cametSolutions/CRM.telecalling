@@ -40,11 +40,14 @@ const Login = () => {
 
       if (response.status === 200) {
         const selectedCompany = User.selected[0]
+        // Persist the token before the first protected request. On hosted
+        // deployments this also provides the Authorization-header fallback
+        // when a browser has not yet returned the auth cookie.
+        localStorage.setItem("authToken", token)
         const res = await api.get("/branch/getBranch")
         if (res.status === 200) {
           const allcompanybranches = res.data?.data?.map((b) => b._id) || []
           const loggeduserbranches = User.selected?.map((a) => a.branch_id)
-          localStorage.setItem("authToken", token)
           localStorage.setItem("user", JSON.stringify(User))
           const uniqueBranches = (User.selected || []).map((branch) => ({
             id: branch.branch_id,
