@@ -1,0 +1,3293 @@
+import React, { useEffect, useState } from "react"
+import { toast } from "react-toastify"
+import { useSelector } from "react-redux"
+import dayjs from "dayjs"
+import { FaArrowRight } from "react-icons/fa"
+import BarLoader from "react-spinners/BarLoader"
+import { HiChevronLeft, HiChevronRight } from "react-icons/hi"
+import UseFetch from "../../hooks/useFetch"
+import api from "../../api/api"
+import { StaticSidebar } from "./StaticSidebar"
+import { PerformanceModal } from "./PerformanceModal"
+import AdminHeader from "../../header/AdminHeader"
+import StaffHeader from "../../header/StaffHeader"
+import PopUp from "../common/PopUp"
+import {
+  Eye,
+  Phone,
+  Mail,
+  Settings,
+  MessageSquareText,
+  User,
+  Calendar,
+  Clock,
+  UserPlus,
+  UserCheck,
+  IndianRupee,
+  BellRing,
+  History,
+  ChevronDown,
+  ChevronRight,
+  X
+} from "lucide-react"
+function LeaveApplication() {
+  const checkinTime = useSelector((time) => time.auth.checkInTime)
+  console.log(checkinTime)
+  const [events, setEvents] = useState([])
+  const [edit, setEdit] = useState(null)
+const [resolveSubmit, setResolveSubmit] = useState(null);
+  const [activeUserId, setActiveUserId] = useState(null)
+  const [popupOpen, setPopupOpen] = useState(false)
+  const [showTypeSelector, setShowTypeSelector] = useState(false)
+  const [selectedType, setSelectedType] = useState("")
+  const [isHaveCompensatoryleave, setcompensatoryLeave] = useState(false)
+  const [selectedDate, setSelectedDate] = useState(new Date())
+  const [visibleDays, setVisibleDays] = useState([])
+  const [BalanceprivilegeleaveCount, setBalanceprivilegeLeaveCount] =
+    useState(0)
+  const [BalancesickleaveCount, setBalansickLeaveCount] = useState(0)
+  const [visibleMonth, setVisibleMonth] = useState("")
+  const [currentDate, setCurrentDate] = useState(new Date())
+  const [leaveBalance, setLeaveBalance] = useState({})
+  const [BalancedcasualleaveCount, setBalancecasualLeaveCount] = useState(0)
+  const [BalancecompensatoryleaveCount, setBalancecompensatoryLeaveCount] =
+    useState(0)
+  const [allleaves, setAllleaves] = useState([])
+  const [allOnsites, setAllOnsite] = useState([])
+  const [errors, setErrors] = useState({})
+  console.log(errors)
+  const [MonthData, setMonthData] = useState({})
+  const [currentMonthData, setcurrentMonthData] = useState({})
+  const [currentMonth, setCurrentMonth] = useState(null)
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear())
+  const [message, setMessage] = useState({
+    top: "",
+    bottom: ""
+  })
+  const [selectedUserName, setselecteduserName] = useState(null)
+  const [selectedCategory, setselectedCategory] = useState(null)
+  const [selectedDatapopup, setselectedDataPopup] = useState({})
+  const now = new Date()
+const [popupMessage,setPopupMessage]=useState(null)
+  const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
+  const [periodMode, setperiodMode] = useState("all")
+  const [targetData, settargetData] = useState([])
+  console.log(targetData)
+  const [openModal, setOpenModal] = useState(false)
+  const [productlist, setproductList] = useState([])
+  const [achievedproducts, setacheivedProducts] = useState([])
+  const [selectedPeriod, setselectedPeriod] = useState("")
+  const [showModal, setShowModal] = useState(false)
+  const [pastDate, setPastDate] = useState(null)
+  const [selectedTab, setSelectedTab] = useState("Leave")
+  const [formData, setFormData] = useState({
+    leaveDate: "",
+    onsiteDate: "",
+    formerOnsiteDate: "",
+    leaveType: "Full Day",
+    onsiteType: "Full Day",
+    halfDayPeriod: "Morning",
+    onsite: false,
+    leaveCategory: "",
+    reason: "",
+    description: "",
+    eventId: null,
+    misspunchDate: "",
+    mispunchType: "",
+    misspunchTime: "",
+    remark: "",
+    showMisspunchTime: false,
+    isTimeEditable: false,
+    editHour: "09",
+    editMinute: "30",
+    editPeriod: "AM"
+  })
+  const [isOnsite, setIsOnsite] = useState(false)
+  const [loader, setLoader] = useState(false)
+  const [tableRows, setTableRows] = useState([])
+  const [clickedDate, setclickedDate] = useState(null)
+  const [currentmonthleaveData, setcurrentmonthLeaveData] = useState([])
+  const [currentmonthonsiteData, setcurrentmonthOnsiteData] = useState([])
+  console.log(currentmonthonsiteData)
+  const [currentmonthmisspunchData, setcurrentmonthMisspunchData] = useState([])
+
+  console.log("hhh")
+  const userData = localStorage.getItem("user")
+
+  const tabs = [
+    "Leave",
+    "New Leave",
+    "Edit Leave",
+    "Onsite",
+    "New Onsite",
+    "Edit Onsite",
+    "Mispunch",
+    "New Mispunch"
+  ]
+  const user = JSON.parse(userData)
+  const [selectedcompanyBranch, setselectedcompanyBranch] = useState(
+    user?.selected[0]?.branch_id
+  )
+
+  const { data: leaves, refreshHook } = UseFetch(
+    user && `/auth/getallLeave?userid=${user._id}`
+  )
+  const { data: branchProduct } = UseFetch(
+    `/product/getallbranchProduct?branch=${selectedcompanyBranch}`
+  )
+  const { data: misspunchData, refreshHook: misspunchRefresh } = UseFetch(
+    user && `/auth/getallmisspunch?userid=${user._id}&from="leaveApplicatiion"`
+  )
+
+  const { data: compensatoryleaves, refreshHook: refreshHookCompensatory } =
+    UseFetch(user && `/auth/getallcompensatoryleave?userid=${user._id}`)
+
+  const { data: monthlyHoly } = UseFetch(
+    currentMonth &&
+      `/customer/getallCurrentmonthHoly?currentmonth=${currentMonth}`
+  )
+
+  const { data: allonsite, refreshHook: refreshHookOnsite } = UseFetch(
+    user && `/auth/getallOnsite?userid=${user._id}`
+  )
+
+  const { data: leavemasterleavecount } = UseFetch(
+    "/auth/getleavemasterleavecount"
+  )
+
+  useEffect(() => {
+    if (MonthData && currentMonth) {
+      console.log("hhh")
+      setcurrentMonthData(MonthData[currentMonth])
+    }
+  }, [currentMonth, MonthData])
+
+  useEffect(() => {
+    console.log("hh")
+    const year = currentDate.getFullYear()
+    const month = String(currentDate.getMonth() + 1).padStart(2, "0")
+    setCurrentMonth(`${year}-${month}`)
+  }, [currentDate])
+  useEffect(() => {
+    if (selectedCategory) {
+      console.log("jj")
+      const Datas = targetData?.userWiseResults
+
+      const filteredList = branchProduct
+        .filter(
+          (item) =>
+            item.selected?.some(
+              (selectedItem) =>
+                String(selectedItem.category_id) ===
+                String(selectedCategory?.Id)
+            ) || String(item.category_id) === String(selectedCategory?.Id)
+        )
+        .map((item) => item.productName || item.serviceName)
+      console.log(filteredList)
+      setproductList(filteredList)
+      console.log("J")
+      console.log(targetData)
+
+      console.log("hhh")
+
+      console.log(Datas)
+      console.log("hhhh")
+
+      const filteredselectedCategory = Datas.flatMap(
+        (user) => user.categories || []
+      ).filter((item) => item.categoryId === selectedCategory?.Id)
+      console.log(filteredselectedCategory)
+      console.log("Hh")
+      const summary = filteredselectedCategory.reduce(
+        (acc, cur) => {
+          acc.target += Number(cur.target || 0)
+          acc.achieved += Number(cur.achieved || 0)
+          acc.balance += Number(cur.balance || 0)
+          return acc
+        },
+        { target: 0, achieved: 0, balance: 0 }
+      )
+      console.log("hhh")
+      setselectedDataPopup(summary)
+      console.log(filteredselectedCategory && filteredselectedCategory.length)
+      if (filteredselectedCategory && filteredselectedCategory.length) {
+        console.log("hh")
+        console.log(filteredselectedCategory)
+        setacheivedProducts((prev) => [
+          ...prev,
+          ...filteredselectedCategory.flatMap((item) =>
+            (item?.products || []).map((product) => ({
+              productname: product.name,
+              amount: product.achieved
+            }))
+          )
+        ])
+      } else {
+        setacheivedProducts([])
+      }
+    }
+  }, [targetData])
+  useEffect(() => {
+    console.log("hh")
+    const filteredcurrentmonthlyLeaves = allleaves?.filter((leave) => {
+      const leaveMonth = leave.leaveDate.split("T")[0].slice(0, 7)
+      return leaveMonth === currentMonth
+    })
+    setcurrentmonthLeaveData(filteredcurrentmonthlyLeaves || [])
+  }, [allleaves, currentDate, currentMonth])
+
+  useEffect(() => {
+    if ((leaves && leaves.length > 0) || (allonsite && allonsite.length) > 0) {
+      setAllleaves(leaves || [])
+      setAllOnsite(allonsite || [])
+      console.log("hhh")
+    }
+  }, [leaves, allonsite])
+
+  useEffect(() => {
+    if (allOnsites && allOnsites.length > 0) {
+      console.log(allOnsites)
+      const filteredcurrentmonthlyOnsites = allOnsites?.filter((onsite) => {
+        const onsiteMonth = onsite.onsiteDate.split("T")[0].slice(0, 7)
+        return onsiteMonth === currentMonth
+      })
+      console.log(allOnsites.length)
+      console.log(filteredcurrentmonthlyOnsites)
+      console.log("hh")
+      setcurrentmonthOnsiteData(filteredcurrentmonthlyOnsites || [])
+    } else {
+      console.log(currentmonthonsiteData)
+      console.log("H")
+      setcurrentmonthOnsiteData([])
+    }
+  }, [allOnsites, currentMonth])
+  console.log(allOnsites?.length)
+  useEffect(() => {
+    if (misspunchData?.length > 0 && currentMonth) {
+      const filteredCurrentMonthlyMisspunch = misspunchData.filter((item) => {
+        const misspunchMonth = item.misspunchDate?.split("T")[0]?.slice(0, 7)
+        return misspunchMonth === currentMonth
+      })
+      console.log("h")
+      setcurrentmonthMisspunchData(filteredCurrentMonthlyMisspunch)
+    } else {
+      console.log("h")
+      setcurrentmonthMisspunchData([])
+    }
+  }, [misspunchData, currentMonth])
+
+  useEffect(() => {
+    const days = []
+    const year = currentDate.getFullYear()
+    const month = currentDate.getMonth() + 1
+    setCurrentYear(year)
+
+    setVisibleMonth(
+      `${currentDate.toLocaleString("default", { month: "long" })} ${year}`
+    )
+
+    const lastDay = new Date(year, month, 0).getDate()
+
+    for (let i = 1; i <= lastDay; i++) {
+      const date = new Date(year, month - 1, i + 1)
+
+      days.push({
+        fullDate: date.toISOString().split("T")[0],
+        fullMonthDay: date.toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+          timeZone: "UTC"
+        }),
+        day: date
+      })
+    }
+    console.log("hhh")
+    setVisibleDays(days)
+  }, [currentDate])
+
+  useEffect(() => {
+    const today = dayjs().format("YYYY-MM-DD")
+    const isPastDate =
+      formData?.leaveDate && dayjs(formData.leaveDate).isBefore(today)
+    setPastDate(isPastDate)
+    console.log("hh")
+  }, [formData])
+
+  useEffect(() => {
+    if (
+      allleaves &&
+      allleaves.length > 0 &&
+      leavemasterleavecount &&
+      compensatoryleaves >= 0
+    ) {
+      console.log("Hh")
+      const currentDate = new Date()
+      const currentYear = currentDate.getFullYear()
+      const currentmonth = currentDate.getMonth() + 1
+      const leaveDate = formData?.leaveDate
+        ? new Date(formData?.leaveDate)
+        : new Date()
+      const leaveYear = leaveDate.getFullYear()
+      const privileageDate = new Date(user?.privilegeleavestartsfrom)
+      const privileagestartYear = privileageDate.getFullYear()
+      const privileagestartmonth = privileageDate.getMonth() + 1
+      const casualstartDate = new Date(user?.casualleavestartsfrom)
+      const casualstartYear = casualstartDate.getFullYear()
+      const casualstartmonth = casualstartDate.getMonth() + 1
+
+      const totalprivilegeLeave = leavemasterleavecount?.totalprivilegeLeave
+      const privilegePerMonth = totalprivilegeLeave / 12
+      const totalcasualLeave = leavemasterleavecount?.totalcasualleave
+      const casualPerMonth = totalcasualLeave / 12
+
+      let ownedprivilegeCount = 0
+      let ownedcasualCount = 0
+
+      if (casualstartYear < currentYear) {
+        let casualCount
+        if (casualstartYear < leaveYear && leaveYear < currentYear) {
+          casualCount = casualPerMonth
+        } else if (casualstartYear < leaveYear) {
+          casualCount = casualPerMonth
+        } else if (casualstartYear === leaveYear) {
+          casualCount = casualPerMonth
+        }
+        ownedcasualCount = casualCount
+      } else if (casualstartYear === currentYear) {
+        if (currentmonth >= casualstartmonth) {
+          ownedcasualCount = casualPerMonth
+        } else {
+          ownedcasualCount = 0
+        }
+      } else {
+        ownedcasualCount = 0
+      }
+
+      if (privileagestartYear < currentYear) {
+        let privilegeCount
+        if (privileagestartYear < leaveYear && leaveYear < currentYear) {
+          privilegeCount = 12 * privilegePerMonth
+        } else if (privileagestartYear < leaveYear) {
+          privilegeCount = currentmonth * privilegePerMonth
+        } else if (privileagestartYear === leaveYear) {
+          const monthsRemainingInStartYear = 12 - privileagestartmonth + 1
+          privilegeCount = monthsRemainingInStartYear * privilegePerMonth
+        }
+        ownedprivilegeCount = privilegeCount
+      } else if (privileagestartYear === currentYear) {
+        if (currentmonth >= privileagestartmonth) {
+          ownedprivilegeCount =
+            (currentmonth - privileagestartmonth + 1) * privilegePerMonth
+        } else {
+          ownedprivilegeCount = 0
+        }
+      } else {
+        ownedprivilegeCount = 0
+      }
+
+      const usedCasualCount = allleaves?.reduce((count, leave) => {
+        if (!leave.leaveDate) return count
+        const leaveDate = new Date(formData.leaveDate)
+        const leaveMonthYear = `${leaveDate.getFullYear()}-${String(
+          leaveDate.getMonth() + 1
+        ).padStart(2, "0")}`
+
+        const leaveDateObj = new Date(leave.leaveDate)
+        const leaveMonthYearFromData = `${leaveDateObj.getFullYear()}-${String(
+          leaveDateObj.getMonth() + 1
+        ).padStart(2, "0")}`
+
+        if (
+          leave.leaveCategory === "casual Leave" &&
+          leaveMonthYear === leaveMonthYearFromData
+        ) {
+          return count + (leave.leaveType === "Half Day" ? 0.5 : 1)
+        }
+
+        return count
+      }, 0)
+
+      const takenPrivilegeCount = allleaves?.reduce((count, leave) => {
+        if (!leave.leaveDate) return count
+
+        const leaveYear = new Date(formData.leaveDate).getFullYear()
+        const leaveYearFromData = new Date(leave.leaveDate).getFullYear()
+
+        if (
+          leave.leaveCategory === "privileage Leave" &&
+          leaveYear === leaveYearFromData
+        ) {
+          return count + (leave.leaveType === "Half Day" ? 0.5 : 1)
+        }
+
+        return count
+      }, 0)
+
+      const balancecasualcount = ownedcasualCount - usedCasualCount
+      const balanceprivilege = ownedprivilegeCount - takenPrivilegeCount
+
+      setBalanceprivilegeLeaveCount(Math.max(balanceprivilege, 0))
+      setBalancecasualLeaveCount(Math.max(balancecasualcount, 0))
+      setBalancecompensatoryLeaveCount(compensatoryleaves)
+      setLeaveBalance({
+        casual: Math.max(balancecasualcount, 0),
+        privilege: Math.max(balanceprivilege, 0),
+        sick: BalancesickleaveCount,
+        compensatory: compensatoryleaves
+      })
+    } else if (
+      (!allleaves && leavemasterleavecount) ||
+      (allleaves && allleaves.length === 0 && leavemasterleavecount) ||
+      compensatoryleaves >= 0
+    ) {
+      console.log("h")
+      const currentDate = new Date()
+      const currentYear = currentDate.getFullYear()
+      const currentmonth = currentDate.getMonth() + 1
+      const leaveDate = formData.leaveDate
+        ? new Date(formData.leaveDate)
+        : new Date()
+      const leaveYear = leaveDate.getFullYear()
+      const privileagestartDate = new Date(user?.privilegeleavestartsfrom)
+      const privileagestartYear = privileagestartDate.getFullYear()
+      const privileagestartmonth = privileagestartDate.getMonth() + 1
+      const casualstartDate = new Date(user?.privilegeleavestartsfrom)
+      const casualstartYear = casualstartDate.getFullYear()
+      const casualstartmonth = casualstartDate.getMonth() + 1
+      const totalprivilegeLeave =
+        leavemasterleavecount?.totalprivilegeLeave || 0
+      const privilegePerMonth = totalprivilegeLeave / 12
+      const totalcasualLeave = leavemasterleavecount?.totalcasualleave || 0
+      const casualPerMonth = totalcasualLeave / 12
+
+      let ownedprivilegeCount = 0
+      let ownedcasualCount = 0
+
+      if (casualstartYear < currentYear) {
+        let casualCount
+        if (casualstartYear < leaveYear && leaveYear < currentYear) {
+          casualCount = casualPerMonth
+        } else if (casualstartYear < leaveYear) {
+          casualCount = casualPerMonth
+        } else if (casualstartYear === leaveYear) {
+          casualCount = casualPerMonth
+        }
+        ownedcasualCount = casualCount
+      } else if (casualstartYear === currentYear) {
+        if (currentmonth >= casualstartmonth) {
+          ownedcasualCount = casualPerMonth
+        } else {
+          ownedcasualCount = 0
+        }
+      } else {
+        ownedcasualCount = 0
+      }
+
+      if (privileagestartYear < currentYear) {
+        let privilegeCount
+        if (privileagestartYear < leaveYear && leaveYear < currentYear) {
+          privilegeCount = 12 * privilegePerMonth
+        } else if (privileagestartYear < leaveYear) {
+          privilegeCount = currentmonth * privilegePerMonth
+        } else if (privileagestartYear === leaveYear) {
+          const monthsRemainingInStartYear = 12 - privileagestartmonth + 1
+          privilegeCount = monthsRemainingInStartYear * privilegePerMonth
+        }
+        ownedprivilegeCount = privilegeCount
+      } else if (privileagestartYear === currentYear) {
+        if (currentmonth >= privileagestartmonth) {
+          ownedprivilegeCount =
+            (currentmonth - privileagestartmonth + 1) * privilegePerMonth
+        } else {
+          ownedprivilegeCount = 0
+        }
+      } else {
+        ownedprivilegeCount = 0
+      }
+
+      setBalanceprivilegeLeaveCount(ownedprivilegeCount)
+      setBalancecasualLeaveCount(ownedcasualCount)
+      setBalancecompensatoryLeaveCount(compensatoryleaves)
+      setLeaveBalance({
+        casual: ownedcasualCount,
+        privilege: ownedprivilegeCount,
+        sick: BalancesickleaveCount,
+        compensatory: compensatoryleaves
+      })
+    }
+  }, [
+    currentMonth,
+    allleaves,
+    leavemasterleavecount,
+    formData,
+    compensatoryleaves
+  ])
+  console.log("hh")
+  useEffect(() => {
+    if (isOnsite) {
+      setFormData((prev) => ({
+        ...prev,
+        onsite: true
+      }))
+    }
+  }, [isOnsite])
+
+  useEffect(() => {
+    if (
+      allleaves &&
+      allleaves.length > 0 &&
+      allOnsites &&
+      allOnsites.length > 0
+    ) {
+      const events = [...allleaves, ...allOnsites]
+      setEvents(events)
+    } else if (
+      (allleaves && allleaves.length > 0) ||
+      (allOnsites && allOnsites.length > 0)
+    ) {
+      if (allleaves) {
+        setEvents(allleaves)
+      } else if (allOnsites) {
+        setEvents(allOnsites)
+      }
+    }
+  }, [allleaves, allOnsites])
+
+  useEffect(() => {
+    if (!showModal) {
+      setIsOnsite(false)
+    }
+  }, [showModal])
+
+  useEffect(() => {
+    if (isOnsite && clickedDate) {
+      const existingEvent = events.filter((event) => {
+        const eventDate = event?.onsiteDate
+        if (!eventDate) return false
+        return (
+          event.onsiteDate.toString().split("T")[0] === clickedDate &&
+          event.onsiteData
+        )
+      })
+
+      if (existingEvent && existingEvent.length > 0) {
+        const matchedOnsiteData = existingEvent[0]?.onsiteData
+          ?.flat()
+          ?.map((status) => ({
+            siteName: status.siteName,
+            place: status.place,
+            Start: status.Start,
+            End: status.End,
+            km: status.km,
+            kmExpense: status.kmExpense,
+            foodExpense: status.foodExpense
+          }))
+
+        setTableRows(matchedOnsiteData)
+      }
+    }
+  }, [isOnsite, clickedDate, events])
+
+  const addRow = () => {
+    setTableRows([
+      ...tableRows,
+      {
+        siteName: "",
+        place: "",
+        Start: "",
+        End: "",
+        km: "",
+        kmExpense: "",
+        foodExpense: ""
+      }
+    ])
+  }
+  const handleMoreClick = (id, name) => {
+    const Datas = targetData?.userWiseResults
+    console.log(id)
+    console.log(name)
+    console.log("hh")
+    const filteredList = branchProduct
+      .filter(
+        (item) =>
+          item.selected?.some(
+            (selectedItem) => String(selectedItem.category_id) === String(id)
+          ) || String(item.category_id) === String(id)
+      )
+      .map((item) => item.productName || item.serviceName)
+    console.log(filteredList)
+    setproductList(filteredList)
+    setselectedCategory({ Id: id, categoryName: name })
+    console.log("J")
+    console.log(targetData)
+    console.log(user?._id)
+
+    const filteredselectedCategory = Datas.flatMap(
+      (user) => user.categories || []
+    ).filter((item) => item.categoryId === id)
+    console.log("Hh")
+    const summary = filteredselectedCategory.reduce(
+      (acc, cur) => {
+        acc.target += Number(cur.target || 0)
+        acc.achieved += Number(cur.achieved || 0)
+        acc.balance += Number(cur.balance || 0)
+        return acc
+      },
+      { target: 0, achieved: 0, balance: 0 }
+    )
+    console.log("hhh")
+    setselectedDataPopup(summary)
+    console.log(filteredselectedCategory && filteredselectedCategory.length)
+    if (filteredselectedCategory && filteredselectedCategory.length) {
+      setacheivedProducts((prev) => [
+        ...prev,
+        ...filteredselectedCategory.flatMap((item) =>
+          (item?.products || []).map((product) => ({
+            productname: product.name,
+            amount: product.achieved
+          }))
+        )
+      ])
+    } else {
+      setacheivedProducts([])
+    }
+    setOpenModal(true)
+  }
+  const handleSelectedUser = (category, userId, userName) => {
+    setActiveUserId(userId)
+    setselecteduserName(userName)
+    setselectedCategory({
+      Id: category.Id,
+      categoryName: category.categoryName
+    })
+    const filteredloggedUserItem = targetData?.userWiseResults.filter(
+      (item) => item.userId === userId
+    )
+    const filteredselectedCategory =
+      filteredloggedUserItem[0].categories.filter(
+        (item) => item.categoryId === category.Id
+      )
+    const summary = filteredselectedCategory.reduce(
+      (acc, cur) => {
+        acc.target += Number(cur.target || 0)
+        acc.achieved += Number(cur.achieved || 0)
+        acc.balance += Number(cur.balance || 0)
+        return acc
+      },
+      { target: 0, achieved: 0, balance: 0 }
+    )
+
+    setselectedDataPopup(summary)
+    if (filteredselectedCategory && filteredselectedCategory.length) {
+      // setacheivedProducts(
+      //   filteredselectedCategory[0]?.products?.map((product) => ({
+      //     productname: product.name,
+      //     amount: product.achieved
+      //   })) || []
+      // )
+      setacheivedProducts(
+        filteredselectedCategory.flatMap((item) =>
+          (item.products || []).map((product) => ({
+            productname: product.name,
+            amount: product.achieved
+          }))
+        )
+      )
+    } else {
+      setacheivedProducts([])
+    }
+  }
+  const handledelete = async (data) => {
+    try {
+      setLoader(true)
+      console.log(data)
+      const payload = {
+        ...(data.onsite
+          ? {
+              docId: data?.onsiteId,
+              onsiteType: data.onsiteType,
+              description: data.description,
+              onsiteDate: data.onsiteDate
+            }
+          : {
+              leaveType: data.leaveType,
+              reason: data.reason,
+              leaveDate: data.leaveDate,
+              leaveCategory: data.leaveCategory,
+              prevCategory: formData.prevCategory
+            })
+      }
+      console.log(payload)
+
+      const isLeave = "leaveType" in payload
+      const isOnsitePayload = "onsiteType" in payload
+      let type = ""
+
+      if (isLeave) {
+        console.log(isLeave)
+        type = "leave"
+        const response = await api.post(
+          `/auth/deleteEvent?type=${type}&userid=${user._id}`,
+          payload
+        )
+        const data = response?.data?.data
+
+        if (response.status === 200 || response.status === 201) {
+          setLoader(false)
+          setAllleaves(Array.isArray(data) ? data : [])
+          setShowModal(false)
+          setFormData({
+            leaveDate: "",
+            onsiteDate: "",
+            formerOnsiteDate: "",
+            leaveType: "Full Day",
+            onsiteType: "Full Day",
+            halfDayPeriod: "Morning",
+            onsite: false,
+            leaveCategory: "",
+            reason: "",
+            description: "",
+            eventId: null,
+            misspunchDate: "",
+            mispunchType: "",
+            misspunchTime: "",
+            remark: "",
+            showMisspunchTime: false,
+            isTimeEditable: false,
+            editHour: "09",
+            editMinute: "30",
+            editPeriod: "AM"
+          })
+          setSelectedTab("Leave")
+          toast.success(response.data.message)
+        }
+      } else if (isOnsitePayload) {
+        console.log("hhh")
+        type = "onsite"
+        const response = await api.post(
+          `/auth/deleteEvent?type=${type}&userid=${user._id}`,
+          payload
+        )
+        const data = response.data.data
+        if (response.status === 200 || response.status === 201) {
+          console.log("hhh")
+          setLoader(false)
+          setMessage({ top: "", bottom: "" })
+          setAllOnsite(Array.isArray(data) ? data : [])
+          console.log(allOnsites.length)
+          console.log(data.length)
+          const filteredcurrentmonthlyOnsites = data?.filter((onsite) => {
+            const onsiteMonth = onsite.onsiteDate.split("T")[0].slice(0, 7)
+            return onsiteMonth === currentMonth
+          })
+          console.log(allOnsites.length)
+          console.log(filteredcurrentmonthlyOnsites)
+          console.log("hh")
+          setcurrentmonthOnsiteData(filteredcurrentmonthlyOnsites || [])
+          refreshHook()
+          refreshHookCompensatory()
+          setTableRows([])
+          setSelectedTab("Leave")
+          setShowModal(false)
+          setFormData({
+            leaveDate: "",
+            onsiteDate: "",
+            formerOnsiteDate: "",
+            leaveType: "Full Day",
+            onsiteType: "Full Day",
+            halfDayPeriod: "Morning",
+            onsite: false,
+            leaveCategory: "",
+            reason: "",
+            description: "",
+            eventId: null,
+            misspunchDate: "",
+            mispunchType: "",
+            misspunchTime: "",
+            remark: "",
+            showMisspunchTime: false,
+            isTimeEditable: false,
+            editHour: "09",
+            editMinute: "30",
+            editPeriod: "AM"
+          })
+          toast.success(response.data.message)
+        }
+      }
+    } catch (error) {
+      setLoader(false)
+      setMessage((prev) => ({
+        ...prev,
+        bottom: error?.response?.data?.message || "Something went wrong"
+      }))
+    }
+  }
+
+  const handleDateClick = (date) => {
+    setclickedDate(date)
+    const clickedDate = date
+    const dayOfWeek = new Date(clickedDate).getDay()
+    const isSunday = dayOfWeek === 0
+
+    const isHoliday = monthlyHoly?.some((holiday) => {
+      const formattedHolyDate = holiday.holyDate.split("T")[0]
+      return formattedHolyDate === date
+    })
+
+    if (isHoliday || isSunday) {
+      setcompensatoryLeave(true)
+    }
+
+    const existingEvent = events?.filter((event) => {
+      const eventDate = event?.leaveDate
+      if (!eventDate) return false
+      return eventDate.toString().split("T")[0] === clickedDate
+    })
+
+    if (existingEvent && existingEvent.length > 0) {
+      setFormData((prev) => ({
+        ...prev,
+        leaveDate: existingEvent[0]?.leaveDate.toString().split("T")[0],
+        halfDayPeriod: existingEvent?.halfDayPeriod || "",
+        leaveType: existingEvent?.leaveType || "Full Day",
+        reason: existingEvent?.reason || ""
+      }))
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        leaveDate: clickedDate,
+        onsiteDate: clickedDate,
+        misspunchDate: clickedDate,
+        leaveType: "Full Day",
+        reason: "",
+        description: "",
+        mispunchType: "",
+        misspunchTime: "",
+        remark: "",
+        showMisspunchTime: false,
+        isTimeEditable: false,
+        editHour: "09",
+        editMinute: "30",
+        editPeriod: "AM"
+      }))
+    }
+
+    setSelectedType("")
+    setShowTypeSelector(true)
+  }
+
+  const isSelected = (date) => {
+    return date.toDateString() === selectedDate.toDateString()
+  }
+
+  const isToday = (date) => {
+    const today = new Date()
+    return date.toDateString() === today.toDateString()
+  }
+
+  const prevMonth = () => {
+    const newDate = new Date(currentDate)
+    newDate.setMonth(newDate.getMonth() - 1)
+    setCurrentDate(newDate)
+  }
+
+  const nextMonth = () => {
+    console.log("hhh")
+    const newDate = new Date(currentDate)
+    newDate.setMonth(newDate.getMonth() + 1)
+    setCurrentDate(newDate)
+  }
+
+  const goToToday = () => {
+    setCurrentDate(new Date())
+  }
+
+  const handleDataChange = (e) => {
+    setMessage((prev) => ({
+      ...prev,
+      top: "",
+      bottom: ""
+    }))
+
+    const { name, value } = e.target
+
+    if (name === "onsiteDate") {
+      const dayOfWeek = new Date(value).getDay()
+      const isSunday = dayOfWeek === 0
+
+      const isHoliday = monthlyHoly?.some((holiday) => {
+        const formattedHolyDate = holiday.holyDate.split("T")[0]
+        return formattedHolyDate === value
+      })
+
+      if (isHoliday || isSunday) {
+        setcompensatoryLeave(true)
+      } else {
+        setcompensatoryLeave(false)
+      }
+    }
+
+    const selectedCategory =
+      name === "leaveCategory" ? value : formData.leaveCategory
+
+    const balances = {
+      "casual Leave": BalancedcasualleaveCount,
+      "privileage Leave": BalanceprivilegeleaveCount,
+      "compensatory Leave": BalancecompensatoryleaveCount,
+      "sick Leave": BalancesickleaveCount,
+      "other Leave": 1
+    }
+
+    const selectedBalance = balances[selectedCategory] ?? 0
+
+    if (
+      name === "leaveType" &&
+      value === "Full Day" &&
+      selectedCategory &&
+      (edit && formData.prevCategory === selectedCategory
+        ? selectedBalance + 0.5 < 1
+        : selectedBalance < 1)
+    ) {
+      setMessage((prev) => ({
+        ...prev,
+        top: `You don't have enough ${selectedCategory} for a Full Day leave.`
+      }))
+      return
+    }
+
+    if (value === "Half Day") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+        halfDayPeriod: "Morning"
+      }))
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value
+      }))
+    }
+
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }))
+    }
+  }
+const onClose = () => {
+    setPopupOpen(false)
+  }
+  const formatTo12Hour = (time) => {
+    if (!time) return "--:--"
+    if (time.includes("AM") || time.includes("PM")) return time
+
+    const [hours, minutes] = time.split(":").map(Number)
+    const suffix = hours >= 12 ? "PM" : "AM"
+    const hour12 = hours % 12 || 12
+
+    return `${String(hour12).padStart(2, "0")}:${String(minutes).padStart(
+      2,
+      "0"
+    )} ${suffix}`
+  }
+
+  const convertTimeStringToParts = (time) => {
+    if (!time) {
+      return { hour: "09", minute: "30", period: "AM" }
+    }
+
+    if (time.includes("AM") || time.includes("PM")) {
+      const [timePart, period] = time.split(" ")
+      const [hour, minute] = timePart.split(":")
+
+      return {
+        hour: hour.padStart(2, "0"),
+        minute: minute.padStart(2, "0"),
+        period
+      }
+    }
+
+    const [hours, minutes] = time.split(":").map(Number)
+    const period = hours >= 12 ? "PM" : "AM"
+    const hour12 = hours % 12 || 12
+
+    return {
+      hour: String(hour12).padStart(2, "0"),
+      minute: String(minutes).padStart(2, "0"),
+      period
+    }
+  }
+
+  const updateMisspunchTime = (hour, minute, period) => {
+    const finalTime = `${hour}:${minute} ${period}`
+
+    setFormData((prev) => ({
+      ...prev,
+      editHour: hour,
+      editMinute: minute,
+      editPeriod: period,
+      misspunchTime: finalTime
+    }))
+  }
+  console.log(formData)
+  const handleSubmit = async (tab) => {
+    console.log(tab)
+    try {
+      if (tab === "New Leave" || tab === "Edit Leave") {
+        const dayOfWeek = new Date(formData.leaveDate).getDay()
+        const isSunday = dayOfWeek === 0
+
+        const isHoliday = monthlyHoly?.some((holiday) => {
+          const formattedHolyDate = holiday.holyDate.split("T")[0]
+          return formattedHolyDate === formData.leaveDate
+        })
+
+        if (isSunday || isHoliday) {
+          setMessage((prev) => ({
+            ...prev,
+            bottom: "It's a holiday—you can't request leave."
+          }))
+          return false
+        }
+        const now = new Date()
+
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+
+        const leaveDate = new Date(formData.leaveDate)
+        leaveDate.setHours(0, 0, 0, 0)
+
+        if (leaveDate < today) {
+         
+          setPopupMessage(
+    "This is a backdated leave request. Previous Sunday/holiday attendance will be washed out."
+  );
+  setPopupOpen(true);
+
+  const confirmed = await new Promise((resolve) => {
+    setResolveSubmit(() => resolve);
+  });
+
+  if (!confirmed) return false;
+          
+        }
+        console.log(leaveDate.getTime())
+        console.log(today.getTime())
+        if (leaveDate.getTime() === today.getTime()) {
+console.log(checkinTime)
+          // Same-day leave - check punch-in time
+          const [time, period] = checkinTime.split(" ") // "9:30", "AM"
+          let [hours, minutes] = time.split(":")
+
+          hours = Number(hours)
+          minutes = Number(minutes)
+
+          if (period === "PM" && hours !== 12) {
+            hours += 12
+          }
+
+          if (period === "AM" && hours === 12) {
+            hours = 0
+          }
+
+          const punchInTime = new Date()
+          punchInTime.setHours(hours, minutes, 0, 0)
+
+          console.log(punchInTime)
+          console.log(now)
+          console.log(punchInTime)
+          if (now > punchInTime) {
+            // <PopUp
+            //   isOpen={popupOpen}
+            //   onClose={()=>onClose}
+            //   message={
+            //     "This leave request is being submitted after the punch-in time. Previous Sunday/holiday attendance will be washed out."
+            //   }
+            // />
+  setPopupMessage(
+     "This leave request is being submitted after the punch-in time. Previous Sunday/holiday attendance will be washed out."
+  );
+  setPopupOpen(true);
+
+  const confirmed = await new Promise((resolve) => {
+    setResolveSubmit(() => resolve);
+  });
+
+  if (!confirmed) return false;
+           
+      
+          }
+        }
+      }
+
+      if (tab === "Leave" || tab === "New Leave" || tab === "Edit Leave") {
+        let newErrors = {}
+        if (!formData.leaveType) newErrors.leaveType = "Shift is required"
+        if (formData.leaveType === "Half Day" && !formData.halfDayPeriod)
+          newErrors.halfDayPeriod = "Please select Half Day period"
+        if (!formData.leaveDate) newErrors.leaveDate = "Leave Date is required"
+        if (!formData.leaveCategory)
+          newErrors.leaveCategory = "Leave Type is required"
+        if (!formData.reason) newErrors.reason = "Reason is required"
+
+        if (Object.keys(newErrors).length > 0) {
+          setErrors(newErrors)
+          return false
+        }
+
+        let isApprovedLeave
+        if (formData.leaveId) {
+          isApprovedLeave = allleaves?.find((leave) => {
+            const matchedid = leave._id === formData.leaveId
+            return (
+              matchedid && (leave.adminverified || leave.departmentverified)
+            )
+          })
+        }
+
+        if (isApprovedLeave) {
+          setMessage((prev) => ({
+            ...prev,
+            bottom: "This leave is already approved. Do not make any changes."
+          }))
+          return false
+        } else {
+          console.log("GGGGGGGGGggggggggggggggggggggggggg")
+          setMessage({ top: "", bottom: "" })
+          // const response = await fetch(
+          //   `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+          //   {
+          //     method: "POST",
+          //     headers: {
+          //       "Content-Type": "application/json"
+          //     },
+          //     body: JSON.stringify(formData),
+          //     credentials: "include"
+          //   }
+          // )
+          const response = await fetch(
+            `https://crmtest.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify(formData),
+              credentials: "include"
+            }
+          )
+
+          const responseData = await response.json()
+
+          if (!response.ok) {
+            throw new Error("Failed to apply for leave")
+          } else {
+            setLoader(false)
+            setEdit(false)
+            if (response.status === 200) {
+              setSelectedTab("Leave")
+              refreshHook()
+              refreshHookCompensatory()
+              setFormData((prev) => ({
+                ...prev,
+                leaveDate: "",
+                leaveType: "Full Day",
+                onsiteType: "Full Day",
+                halfDayPeriod: "Morning",
+                onsite: false,
+                leaveCategory: "",
+                reason: "",
+                description: ""
+              }))
+              setErrors({})
+              setShowModal(false)
+              toast.success(responseData.message)
+              return true
+            } else if (response.status === 201) {
+              setMessage((prev) => ({
+                ...prev,
+                bottom: responseData.message
+              }))
+              return false
+            }
+          }
+        }
+      } else if (tab === "New Onsite" || tab === "Edit Onsite") {
+        let newErrors = {}
+        if (!formData.onsiteType) newErrors.onsiteType = "Shift is required"
+        if (formData.onsiteType === "Half Day" && !formData.halfDayPeriod)
+          newErrors.halfDayPeriod = "Please select Half Day period"
+        if (!formData.onsiteDate)
+          newErrors.onsiteDate = "Onsite Date is required"
+        if (tableRows.length === 0)
+          newErrors.tabledataError = "Please add table data"
+        if (!formData.description)
+          newErrors.description = "Description is required"
+
+        if (Object.keys(newErrors).length > 0) {
+          setErrors(newErrors)
+          return false
+        }
+
+        const checkApprovedOnsiteByDate = (date) => {
+          return allOnsites?.find((onsite) => {
+            const onsiteDate = new Date(onsite.onsiteDate)
+
+            const isSameDate =
+              onsiteDate.getFullYear() === date.getFullYear() &&
+              onsiteDate.getMonth() === date.getMonth() &&
+              onsiteDate.getDate() === date.getDate()
+
+            return (
+              isSameDate && (onsite.adminverified || onsite.departmentverified)
+            )
+          })
+        }
+
+        const isSameDate = (date1, date2) => {
+          return (
+            date1.getFullYear() === date2.getFullYear() &&
+            date1.getMonth() === date2.getMonth() &&
+            date1.getDate() === date2.getDate()
+          )
+        }
+
+        if (tab === "Edit Onsite" && formData.formerOnsiteDate) {
+          const approvedFormerOnsite = checkApprovedOnsiteByDate(
+            new Date(formData.formerOnsiteDate)
+          )
+
+          if (approvedFormerOnsite) {
+            const isDateChanged = !isSameDate(
+              new Date(formData.onsiteDate),
+              new Date(formData.formerOnsiteDate)
+            )
+
+            const isOnsiteTypeChanged =
+              formData.onsiteType !== formData.formerOnsiteType
+
+            if (isDateChanged || isOnsiteTypeChanged) {
+              setMessage((prev) => ({
+                ...prev,
+                bottom:
+                  "This onsite is already approved. You cannot change the date or onsite type. Only table data and description can be edited."
+              }))
+              return false
+            }
+          }
+        }
+
+        const approvedOnsiteOnNewDate = checkApprovedOnsiteByDate(
+          new Date(formData.onsiteDate)
+        )
+
+        if (approvedOnsiteOnNewDate && tab === "New Onsite") {
+          setMessage((prev) => ({
+            ...prev,
+            bottom: "An approved onsite already exists for this date."
+          }))
+          return false
+        }
+
+        setMessage({ top: "", bottom: "" })
+        setLoader(true)
+
+        // const response = await api.post(
+        //   `http://localhost:9000/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
+        //   { formData, tableRows }
+        // )
+        const response = await api.post(
+          `https://crmtest.camet.in/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
+          { formData, tableRows }
+        )
+
+        if (response.status === 200) {
+          setcompensatoryLeave(false)
+          setLoader(false)
+          toast.success("Onsite applied successfully")
+          setSelectedTab("Leave")
+          setFormData((prev) => ({
+            ...prev,
+            leaveDate: "",
+            description: "",
+            onsite: false,
+            halfDayPeriod: "Morning",
+            onsiteType: "Full Day",
+            leaveType: "Full Day"
+          }))
+          setTableRows([
+            {
+              siteName: "",
+              place: "",
+              Start: "",
+              End: "",
+              km: "",
+              kmExpense: "",
+              foodExpense: ""
+            }
+          ])
+          setShowModal(false)
+          refreshHook()
+          refreshHookOnsite()
+          refreshHookCompensatory()
+          return true
+        } else if (response.status === 201) {
+          setLoader(false)
+          setMessage((prev) => ({
+            ...prev,
+            bottom: response.data.message
+          }))
+          return false
+        }
+      } else if (tab === "New Mispunch") {
+        console.log("hhh")
+        let newErrors = {}
+        if (!formData.misspunchDate)
+          newErrors.misspunchDate = "Misspunch date is required"
+        if (!formData.mispunchType)
+          newErrors.mispunchType = "Punch type is required"
+        if (!formData.remark) newErrors.remark = "Remark is required"
+
+        if (Object.keys(newErrors).length > 0) {
+          console.log("hhh")
+          setErrors(newErrors)
+          return false
+        }
+        console.log("hh")
+        setLoader(true)
+
+        const misspunchPayload = {
+          misspunchDate: formData.misspunchDate,
+          remark: formData.remark,
+          misspunchTime: formData.misspunchTime,
+          misspunchType: formData.mispunchType,
+          userId: user?._id,
+          userModel: user?.role,
+          assignedto: user?.assignedto
+        }
+
+        // const response = await api.post(
+        //   "http://localhost:9000/api/auth/misspunchRegister",
+        //   misspunchPayload
+        // )
+        const response = await api.post(
+          "https://crmtest.camet.in/api/auth/misspunchRegister",
+          misspunchPayload
+        )
+
+        if (response.status === 201 || response.status === 200) {
+          toast.success("Misspunch registered")
+          setLoader(false)
+          misspunchRefresh()
+          setSelectedTab("Mispunch")
+          return true
+        }
+      }
+
+      return false
+    } catch (error) {
+console.log(error)
+      setLoader(false)
+      setMessage((prev) => ({
+        ...prev,
+        bottom: error?.response?.data?.message || "An error occurred"
+      }))
+      toast.error(error?.response?.data?.message || "error occured")
+      return false
+    }
+  }
+
+  const resetApplicationFlow = () => {
+    setShowModal(false)
+    setShowTypeSelector(false)
+    setSelectedType("")
+    setSelectedDate(null)
+    setcompensatoryLeave(false)
+    setEdit(false)
+    setSelectedTab("Leave")
+    setTableRows([])
+    setMessage({ top: "", bottom: "" })
+    setErrors({})
+    setIsOnsite(false)
+    setFormData({
+      leaveDate: "",
+      onsiteDate: "",
+      formerOnsiteDate: "",
+      leaveType: "Full Day",
+      onsiteType: "Full Day",
+      halfDayPeriod: "Morning",
+      onsite: false,
+      leaveCategory: "",
+      reason: "",
+      description: "",
+      eventId: null,
+      misspunchDate: "",
+      mispunchType: "",
+      misspunchTime: "",
+      remark: "",
+      showMisspunchTime: false,
+      isTimeEditable: false,
+      editHour: "09",
+      editMinute: "30",
+      editPeriod: "AM"
+    })
+  }
+
+  const handleTypeSelection = (type, date) => {
+    setSelectedType(type)
+
+    if (type === "leave") {
+      setSelectedTab("Leave")
+      setIsOnsite(false)
+    }
+
+    if (type === "onsite") {
+      setSelectedTab("Onsite")
+      setIsOnsite(true)
+    }
+
+    if (type === "mispunch") {
+      setSelectedTab("Mispunch")
+      setIsOnsite(false)
+    }
+
+    handleDateClick(date.fullDate)
+    setShowTypeSelector(false)
+    setShowModal(true)
+  }
+
+  const handleSubmitAndReset = async (tabName) => {
+    console.log("hhh")
+    const success = await handleSubmit(tabName)
+    if (success && tabName !== "New Mispunch") {
+      resetApplicationFlow()
+    }
+    if (success && tabName === "New Mispunch") {
+      setFormData((prev) => ({
+        ...prev,
+        mispunchType: "",
+        misspunchTime: "",
+        remark: "",
+        showMisspunchTime: false,
+        isTimeEditable: false,
+        editHour: "09",
+        editMinute: "30",
+        editPeriod: "AM"
+      }))
+    }
+  }
+
+  const selectedTabContent = (value) => {
+    let existingEvent
+    switch (true) {
+      case value === "Leave":
+        existingEvent = events?.filter((event) => {
+          const eventDate = event?.leaveDate
+          if (!eventDate) return false
+          return eventDate === clickedDate
+        })
+
+        if (existingEvent && existingEvent.length > 0) {
+          setFormData((prev) => ({
+            ...prev,
+            leaveDate: existingEvent?.leaveDate,
+            halfDayPeriod: existingEvent?.halfDayPeriod || "",
+            leaveType: existingEvent?.leaveType || "",
+            reason: existingEvent?.reason || "",
+            onsite: false
+          }))
+        } else {
+          setFormData((prev) => ({
+            ...prev,
+            leaveDate: clickedDate,
+            leaveType: "Full Day",
+            reason: "",
+            onsiteType: "",
+            onsite: false
+          }))
+        }
+        break
+
+      case value === "Onsite":
+        existingEvent = events?.filter((event) => {
+          const eventDate = event?.onsiteDate
+          if (!eventDate) return false
+          return eventDate.toString().split("T")[0] === clickedDate
+        })
+
+        if (existingEvent && existingEvent.length > 0) {
+          setFormData((prev) => ({
+            ...prev,
+            onsiteDate: existingEvent[0]?.onsiteDate.toString().split("T")[0],
+            formerOnsiteDate: existingEvent[0]?.onsiteDate
+              .toString()
+              .split("T")[0],
+            formerOnsiteType: existingEvent[0]?.onsiteType,
+            onsiteType: existingEvent[0]?.onsiteType || "",
+            halfDayPeriod: existingEvent[0]?.halfDayPeriod || "",
+            description: existingEvent[0]?.description || "",
+            onsite: true
+          }))
+        } else {
+          setFormData((prev) => ({
+            ...prev,
+            onsiteDate: clickedDate,
+            onsiteType: "Full Day",
+            leaveType: "",
+            description: "",
+            onsite: true
+          }))
+        }
+        break
+
+      case value === "Mispunch":
+        setFormData((prev) => ({
+          ...prev,
+          misspunchDate: clickedDate,
+          mispunchType: "",
+          misspunchTime: "",
+          remark: "",
+          showMisspunchTime: false,
+          isTimeEditable: false,
+          editHour: "09",
+          editMinute: "30",
+          editPeriod: "AM"
+        }))
+        break
+
+      default:
+        break
+    }
+  }
+
+  const renderContent = () => {
+    switch (selectedTab) {
+      case "Leave":
+        return (
+          <div className=" rounded-lg shadow-lg max-w-[380px]  min-w-[300px] z-40 border border-gray-300 overflow-hidden">
+            <div className="p-2">
+              <h2 className="text-gray-600 font-semibold text-lg ">
+                Leave Balance
+              </h2>
+              <p className="text-2xl font-bold text-gray-800">
+                {BalanceprivilegeleaveCount +
+                  BalancedcasualleaveCount +
+                  BalancecompensatoryleaveCount}
+                leaves
+              </p>
+              <div className="grid grid-cols-2 gap-1 border border-gray-300 rounded-lg p-2 bg-gray-50">
+                <div className="font-semibold text-gray-700 text-left">
+                  Category
+                </div>
+                <div className="font-semibold text-gray-700 text-right">
+                  Balance
+                </div>
+
+                {Object.entries(leaveBalance).map(([category, balance]) => (
+                  <React.Fragment key={category}>
+                    <div className="capitalize text-gray-600 text-left">
+                      {category} Leave
+                    </div>
+                    <div className="text-gray-600 text-right font-medium">
+                      {balance}
+                    </div>
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+
+            <div className="border-t border-gray-300"></div>
+
+            <div className="p-2 text-center">
+              {currentmonthleaveData?.length > 0 && (
+                <h2 className="text-gray-600 font-semibold text-sm mb-2">
+                  Upcoming Leaves
+                </h2>
+              )}
+
+              <div className="space-y-3 max-h-36 overflow-y-auto">
+                {currentmonthleaveData?.length > 0 ? (
+                  currentmonthleaveData.map((leave, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between bg-gray-50 border border-gray-300 p-3 rounded-lg shadow-sm hover:cursor-pointer"
+                    >
+                      <div className="text-gray-700 font-semibold w-24 text-sm">
+                        {leave.leaveDate
+                          .split("T")[0]
+                          .split("-")
+                          .reverse()
+                          .join("-")}
+                      </div>
+
+                      <div className="flex flex-col text-gray-600">
+                        <span className="text-sm">{leave?.leaveType}</span>
+                        <span className="text-sm font-semibold">
+                          {leave?.leaveCategory}
+                        </span>
+                      </div>
+
+                      <div
+                        className={`px-3 py-1 text-sm rounded-full text-white ${
+                          leave.departmentstatus === "Dept Approved" ||
+                          leave.hrstatus === "HR/Onsite Approved"
+                            ? "bg-green-500"
+                            : leave.departmentstatus === "Not Approved" &&
+                                leave.hrstatus === "Not Approved"
+                              ? "bg-yellow-500"
+                              : "bg-red-500"
+                        }`}
+                      >
+                        {leave.departmentstatus === "Dept Approved" ||
+                        leave.hrstatus === "HR/Onsite Approved"
+                          ? "Approved"
+                          : leave.departmentstatus === "Not Approved" &&
+                              leave.hrstatus === "Not Approved"
+                            ? "Pending"
+                            : ""}
+                      </div>
+
+                      <FaArrowRight
+                        className=" ml-2 text-gray-500 cursor-pointer transition-transform duration-200 ease-in-out hover:scale-125"
+                        onClick={() => {
+                          setSelectedTab("Edit Leave")
+                          setEdit(true)
+
+                          setFormData((prev) => ({
+                            ...prev,
+                            leaveId: leave._id,
+                            leaveDate: leave.leaveDate.toString().split("T")[0],
+                            leaveType: leave.leaveType,
+                            halfDayPeriod:
+                              leave.leaveType === "Half Day"
+                                ? leave.halfDayPeriod
+                                : undefined,
+                            leaveCategory: leave.leaveCategory,
+                            prevCategory: leave.leaveCategory,
+                            reason: leave.reason
+                          }))
+                        }}
+                      />
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-sm italic text-center">
+                    No Upcoming Leaves
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+
+      case "Onsite":
+        return (
+          <div className="p-2 text-center border border-gray-300 rounded-lg min-w-[320px] max-w-[380px] ">
+            {currentmonthonsiteData?.length > 0 && (
+              <h2 className="text-gray-600 font-semibold text-sm mb-2">
+                Upcoming Onsite
+              </h2>
+            )}
+
+            <div className="space-y-3 max-h-96 min-h-36 overflow-y-auto">
+              {currentmonthonsiteData?.length > 0 ? (
+                [...currentmonthonsiteData]
+                  .sort(
+                    (a, b) => new Date(a.onsiteDate) - new Date(b.onsiteDate)
+                  )
+                  .map((onsite, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between bg-gray-50 border border-gray-300 p-3 rounded-lg shadow-sm hover:cursor-pointer"
+                    >
+                      <div className="text-gray-700 font-semibold w-24 text-sm">
+                        {onsite.onsiteDate
+                          .split("T")[0]
+                          .split("-")
+                          .reverse()
+                          .join("-")}
+                      </div>
+
+                      <div className="flex flex-col text-gray-600">
+                        <span className="text-sm">{onsite?.onsiteType}</span>
+                      </div>
+
+                      <div
+                        className={`px-3 py-1 text-sm rounded-full text-white ${
+                          onsite.departmentstatus === "Dept Approved" ||
+                          onsite.hrstatus === "HR/Onsite Approved"
+                            ? "bg-green-500"
+                            : onsite.departmentstatus === "Not Approved" &&
+                                onsite.hrstatus === "Not Approved"
+                              ? "bg-yellow-500"
+                              : "bg-red-500"
+                        }`}
+                      >
+                        {onsite.departmentstatus === "Dept Approved" ||
+                        onsite.hrstatus === "HR/Onsite Approved"
+                          ? "Approved"
+                          : onsite.departmentstatus === "Not Approved" &&
+                              onsite.hrstatus === "Not Approved"
+                            ? "Pending"
+                            : ""}
+                      </div>
+
+                      <FaArrowRight
+                        className="text-gray-500 cursor-pointer transition-transform duration-200 ease-in-out hover:scale-125"
+                        onClick={() => {
+                          setSelectedTab("Edit Onsite")
+                          setEdit(true)
+
+                          setFormData((prev) => ({
+                            ...prev,
+                            onsiteId: onsite._id,
+                            onsiteDate: onsite.onsiteDate
+                              .toString()
+                              .split("T")[0],
+                            formerOnsiteDate: onsite.onsiteDate
+                              .toString()
+                              .split("T")[0],
+                            formerOnsiteType: onsite.onsiteType,
+                            onsiteType: onsite.onsiteType,
+                            halfDayPeriod:
+                              onsite.onsiteType === "Half Day"
+                                ? onsite.halfDayPeriod
+                                : undefined,
+                            description: onsite.description
+                          }))
+
+                          if (
+                            onsite.onsiteData &&
+                            onsite.onsiteData.length > 0
+                          ) {
+                            const matchedOnsiteData = onsite.onsiteData[0]
+                              ?.flat()
+                              ?.map((status) => ({
+                                siteName: status.siteName,
+                                place: status.place,
+                                Start: status.Start,
+                                End: status.End,
+                                km: status.km,
+                                kmExpense: status.kmExpense,
+                                foodExpense: status.foodExpense
+                              }))
+                            setTableRows(matchedOnsiteData)
+                          }
+                        }}
+                      />
+                    </div>
+                  ))
+              ) : (
+                <p className="text-gray-500 text-sm italic text-center">
+                  No Upcoming Onsites
+                </p>
+              )}
+            </div>
+          </div>
+        )
+
+      case "Mispunch":
+        return (
+          <div className="rounded-lg border border-gray-300 p-2 text-center min-w-[320px] max-w-[380px]">
+            <h2 className="mb-2 text-sm font-semibold text-gray-600">
+              Misspunch Requests
+            </h2>
+
+            <div className="space-y-3 max-h-96 min-h-36 overflow-y-auto">
+              {currentmonthmisspunchData?.length > 0 ? (
+                [...currentmonthmisspunchData]
+                  .sort(
+                    (a, b) =>
+                      new Date(a.misspunchDate) - new Date(b.misspunchDate)
+                  )
+                  .map((item, index) => (
+                    <div
+                      key={item._id || index}
+                      className="rounded-lg border border-gray-300 bg-gray-50 p-3 shadow-sm"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="w-24 text-sm font-semibold text-gray-700">
+                          {item.misspunchDate
+                            ?.split("T")[0]
+                            ?.split("-")
+                            ?.reverse()
+                            ?.join("-")}
+                        </div>
+
+                        <div className="flex flex-col text-left text-gray-600">
+                          <span className="text-sm">
+                            {item?.misspunchType} Punch
+                          </span>
+                          <span className="text-xs font-medium">
+                            {item?.misspunchTime || "--"}
+                          </span>
+                        </div>
+
+                        <div
+                          className={`rounded-full px-3 py-1 text-sm text-white ${
+                            item.departmentstatus === "Dept Approved" ||
+                            item.hrstatus === "HR Approved"
+                              ? "bg-green-500"
+                              : item.departmentstatus === "Not Approved" &&
+                                  item.hrstatus === "Not Approved"
+                                ? "bg-yellow-500"
+                                : "bg-red-500"
+                          }`}
+                        >
+                          {item.departmentstatus === "Dept Approved" ||
+                          item.hrstatus === "HR Approved"
+                            ? "Approved"
+                            : item.departmentstatus === "Not Approved" &&
+                                item.hrstatus === "Not Approved"
+                              ? "Pending"
+                              : "Rejected"}
+                        </div>
+                      </div>
+
+                      <div className="mt-2 text-left">
+                        <p className="text-xs text-gray-500">
+                          {item?.remark || "No remark"}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+              ) : (
+                <p className="text-sm italic text-gray-500 text-center">
+                  No misspunch requests this month
+                </p>
+              )}
+            </div>
+          </div>
+        )
+
+      case "New Mispunch":
+        return (
+          <div className="max-h-[calc(100vh-280px)] space-y-4 overflow-y-auto px-1 min-w-[320px] max-w-[420px]">
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-blue-900">
+                    Request Date
+                  </span>
+                </div>
+
+                <span className="text-sm font-semibold text-blue-700">
+                  {(formData.misspunchDate
+                    ? new Date(formData.misspunchDate)
+                    : new Date()
+                  ).toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric"
+                  })}
+                </span>
+              </div>
+            </div>
+
+            <div className="rounded-lg border-l-4 border-amber-500 bg-gradient-to-r from-amber-50 to-orange-50 p-3">
+              <div className="flex items-start gap-2">
+                <div>
+                  <h3 className="mb-0.5 text-sm font-semibold text-gray-800">
+                    Report a Misspunch
+                  </h3>
+                  <p className="text-xs leading-tight text-gray-600">
+                    Missed clocking in or out? Let us know and we&apos;ll help
+                    correct your attendance.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="mb-2 flex items-center gap-1.5 text-xs font-medium text-gray-700">
+                  Punch Type
+                </label>
+
+                <div className="grid grid-cols-2 gap-2.5">
+                  {["In", "Out"].map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => {
+                        const defaultTime =
+                          type === "In" ? "09:30 AM" : "05:30 PM"
+                        const selectedTime =
+                          formData.mispunchType === type &&
+                          formData.misspunchTime
+                            ? formData.misspunchTime
+                            : defaultTime
+
+                        const timeParts = convertTimeStringToParts(selectedTime)
+
+                        setFormData((prev) => ({
+                          ...prev,
+                          mispunchType: type,
+                          showMisspunchTime: true,
+                          isTimeEditable: false,
+                          misspunchTime: selectedTime,
+                          editHour: timeParts.hour,
+                          editMinute: timeParts.minute,
+                          editPeriod: timeParts.period
+                        }))
+                      }}
+                      className={`relative rounded-lg border-2 px-3 py-2.5 transition-all duration-200 ${
+                        formData.mispunchType === type
+                          ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm"
+                          : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                      }`}
+                    >
+                      <div className="flex items-center justify-center gap-1.5">
+                        <span className="text-sm font-medium">
+                          Punch {type}
+                        </span>
+                      </div>
+
+                      {formData.mispunchType === type && (
+                        <div className="absolute -right-1 -top-1 rounded-full bg-blue-500 p-0.5 text-white">
+                          <svg
+                            className="h-2.5 w-2.5"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              clipRule="evenodd"
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            />
+                          </svg>
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                {errors.mispunchType && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.mispunchType}
+                  </p>
+                )}
+              </div>
+
+              {formData.showMisspunchTime && (
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                  <div className="mb-2 flex items-center justify-between">
+                    <label className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
+                      {formData.mispunchType === "In"
+                        ? "Punch In Time"
+                        : "Punch Out Time"}
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          isTimeEditable: !prev.isTimeEditable
+                        }))
+                      }
+                      className={`rounded-md px-3 py-1 text-xs font-medium transition ${
+                        formData.isTimeEditable
+                          ? "bg-green-100 text-green-700 hover:bg-green-200"
+                          : "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                      }`}
+                    >
+                      {formData.isTimeEditable ? "Done" : "Edit"}
+                    </button>
+                  </div>
+
+                  {!formData.isTimeEditable ? (
+                    <div className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2">
+                      <span className="text-sm text-gray-600">
+                        Selected Time
+                      </span>
+                      <span className="text-sm font-semibold text-gray-800">
+                        {formatTo12Hour(formData.misspunchTime)}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-white px-2 py-1.5">
+                      <select
+                        value={formData.editHour || "09"}
+                        onChange={(e) =>
+                          updateMisspunchTime(
+                            e.target.value,
+                            formData.editMinute || "30",
+                            formData.editPeriod || "AM"
+                          )
+                        }
+                        className="h-8 w-14 rounded-md border border-gray-200 bg-white px-1 text-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200"
+                      >
+                        {Array.from({ length: 12 }, (_, i) => {
+                          const hour = String(i + 1).padStart(2, "0")
+                          return (
+                            <option key={hour} value={hour}>
+                              {hour}
+                            </option>
+                          )
+                        })}
+                      </select>
+
+                      <span className="text-xs text-gray-500">:</span>
+
+                      <select
+                        value={formData.editMinute || "30"}
+                        onChange={(e) =>
+                          updateMisspunchTime(
+                            formData.editHour || "09",
+                            e.target.value,
+                            formData.editPeriod || "AM"
+                          )
+                        }
+                        className="h-8 w-14 rounded-md border border-gray-200 bg-white px-1 text-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200"
+                      >
+                        {Array.from({ length: 60 }, (_, i) => {
+                          const minute = String(i).padStart(2, "0")
+                          return (
+                            <option key={minute} value={minute}>
+                              {minute}
+                            </option>
+                          )
+                        })}
+                      </select>
+
+                      <select
+                        value={formData.editPeriod || "AM"}
+                        onChange={(e) =>
+                          updateMisspunchTime(
+                            formData.editHour || "09",
+                            formData.editMinute || "30",
+                            e.target.value
+                          )
+                        }
+                        className="h-8 w-14 rounded-md border border-gray-200 bg-white px-1 text-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200"
+                      >
+                        <option value="AM">AM</option>
+                        <option value="PM">PM</option>
+                      </select>
+                    </div>
+                  )}
+
+                  <p className="mt-2 text-xs text-gray-500">
+                    Default time is shown based on selected punch type. Click
+                    Edit to change it.
+                  </p>
+                </div>
+              )}
+
+              <div>
+                <label className="mb-2 flex items-center gap-1.5 text-xs font-medium text-gray-700">
+                  Reason for Misspunch
+                </label>
+
+                <textarea
+                  className="w-full resize-none rounded-lg border-2 border-gray-200 px-3 py-2 text-sm transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  rows={3}
+                  placeholder="Please explain why you missed the punch"
+                  value={formData.remark || ""}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      remark: e.target.value
+                    }))
+                  }
+                />
+                {errors.remark && (
+                  <p className="text-red-500 text-sm mt-1">{errors.remark}</p>
+                )}
+              </div>
+
+              <div className="text-center text-red-700">
+                <p>{message?.bottom}</p>
+              </div>
+            </div>
+          </div>
+        )
+
+      case "New Onsite":
+      case "Edit Onsite":
+        return (
+          <div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
+              <div>
+                <label className="block mb-1">Onsite Date</label>
+                <input
+                  type="date"
+                  name="onsiteDate"
+                  value={formData.onsiteDate}
+                  onChange={handleDataChange}
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1">Onsite Type</label>
+                <select
+                  name="onsiteType"
+                  value={formData.onsiteType}
+                  onChange={handleDataChange}
+                  className="border p-2 rounded w-full"
+                >
+                  <option value="Full Day">Full Day</option>
+                  <option value="Half Day">Half Day</option>
+                </select>
+              </div>
+
+              {errors.onsiteType && (
+                <p className="text-red-500">{errors.onsiteType}</p>
+              )}
+
+              {formData.onsiteType === "Half Day" && (
+                <>
+                  <div>
+                    <label className="block mb-1">Select Half Day Period</label>
+                    <select
+                      name="halfDayPeriod"
+                      value={formData.halfDayPeriod}
+                      onChange={handleDataChange}
+                      className="border p-2 rounded w-full appearance-none"
+                    >
+                      <option value="Morning">Morning</option>
+                      <option value="Afternoon">Afternoon</option>
+                    </select>
+                  </div>
+
+                  {errors.halfDayPeriod && (
+                    <p className="text-red-500">{errors.halfDayPeriod}</p>
+                  )}
+                </>
+              )}
+            </div>
+
+            <div className="mb-4">
+              <div className="overflow-x-auto overflow-y-auto">
+                <table className="border border-gray-200 text-center w-full">
+                  <thead className="text-sm overflow-x-auto">
+                    <tr>
+                      <th className="border px-2 py-1 min-w-[150px]">
+                        Site Name
+                      </th>
+                      <th className="border px-2 py-1 min-w-[150px]">Place</th>
+                      <th className="border px-2 py-1 min-w-[80px]">Start</th>
+                      <th className="border px-2 py-1 min-w-[80px]">End</th>
+                      <th className="border px-2 py-1 min-w-[80px]">KM</th>
+                      <th className="border px-2 py-1 min-w-[100px]">TA</th>
+                      <th className="border px-2 py-1 min-w-[100px]">Food</th>
+                      <th className="border px-2 py-1 min-w-[80px]">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tableRows?.map((row, index) => (
+                      <tr key={index}>
+                        <td className="border p-1.5">
+                          <input
+                            type="text"
+                            value={row.siteName}
+                            onChange={(e) => {
+                              const updatedRows = [...tableRows]
+                              updatedRows[index].siteName = e.target.value
+                              setTableRows(updatedRows)
+                              setErrors((prev) => ({
+                                ...prev,
+                                tabledataError: ""
+                              }))
+                            }}
+                            className="border p-1 rounded w-full"
+                          />
+                        </td>
+                        <td className="border p-1.5">
+                          <input
+                            type="text"
+                            value={row.place}
+                            onChange={(e) => {
+                              const updatedRows = [...tableRows]
+                              updatedRows[index].place = e.target.value
+                              setTableRows(updatedRows)
+                              setErrors((prev) => ({
+                                ...prev,
+                                tabledataError: ""
+                              }))
+                            }}
+                            className="border p-1 rounded"
+                          />
+                        </td>
+                        <td className="border p-1.5">
+                          <input
+                            type="number"
+                            value={row.Start}
+                            onChange={(e) => {
+                              const updatedRows = [...tableRows]
+                              updatedRows[index].Start = e.target.value
+                              setTableRows(updatedRows)
+                              setErrors((prev) => ({
+                                ...prev,
+                                tabledataError: ""
+                              }))
+                            }}
+                            className="border p-1 rounded w-full"
+                          />
+                        </td>
+                        <td className="border p-1.5">
+                          <input
+                            type="number"
+                            value={row.End}
+                            onChange={(e) => {
+                              const updatedRows = [...tableRows]
+                              updatedRows[index].End = e.target.value
+                              setTableRows(updatedRows)
+                              setErrors((prev) => ({
+                                ...prev,
+                                tabledataError: ""
+                              }))
+                            }}
+                            className="border p-1 rounded w-full"
+                          />
+                        </td>
+                        <td className="border p-1.5">
+                          <input
+                            type="number"
+                            value={row.km}
+                            onChange={(e) => {
+                              const updatedRows = [...tableRows]
+                              updatedRows[index].km = e.target.value
+                              setTableRows(updatedRows)
+                              setErrors((prev) => ({
+                                ...prev,
+                                tabledataError: ""
+                              }))
+                            }}
+                            className="border p-1 rounded w-full"
+                          />
+                        </td>
+                        <td className="border p-1.5">
+                          <input
+                            type="number"
+                            value={row.kmExpense}
+                            onChange={(e) => {
+                              const updatedRows = [...tableRows]
+                              updatedRows[index].kmExpense = e.target.value
+                              setTableRows(updatedRows)
+                              setErrors((prev) => ({
+                                ...prev,
+                                tabledataError: ""
+                              }))
+                            }}
+                            className="border p-1 rounded w-full"
+                          />
+                        </td>
+                        <td className="border p-1.5">
+                          <input
+                            type="number"
+                            value={row.foodExpense}
+                            onChange={(e) => {
+                              const updatedRows = [...tableRows]
+                              updatedRows[index].foodExpense = e.target.value
+                              setTableRows(updatedRows)
+                              setErrors((prev) => ({
+                                ...prev,
+                                tabledataError: ""
+                              }))
+                            }}
+                            className="border p-1 rounded w-full"
+                          />
+                        </td>
+                        <td className="border p-1.5">
+                          <button
+                            onClick={() => {
+                              const updatedRows = [...tableRows]
+                              updatedRows.splice(index, 1)
+                              setTableRows(updatedRows)
+                            }}
+                            className="text-red-500"
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <button
+                onClick={addRow}
+                className="mt-2 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+              >
+                Add Row
+              </button>
+            </div>
+
+            {errors.tabledataError && (
+              <p className="text-red-500">{errors.tabledataError}</p>
+            )}
+
+            <div className="mb-4">
+              <label className="block mb-2">Description</label>
+              <textarea
+                name="description"
+                value={formData?.description}
+                onChange={handleDataChange}
+                rows="4"
+                className="border p-2 rounded w-full"
+              ></textarea>
+            </div>
+
+            {errors.description && (
+              <p className="text-red-500">{errors.description}</p>
+            )}
+
+            <div className="text-center text-red-700 ">
+              <p>{message?.bottom}</p>
+            </div>
+          </div>
+        )
+
+      case "New Leave":
+      case "Edit Leave":
+        return (
+          <div className="bg-white rounded-lg shadow-lg max-w-[380px] min-w-[300px] z-40 border border-gray-100 px-5">
+            <h2 className="text-xl font-semibold text-center">
+              Leave Application
+            </h2>
+            <p className="mt-2 text-center text-red-600">{message.top}</p>
+
+            <div className="mt-4">
+              <div className="flex gap-4">
+                <label>
+                  <input
+                    name="leaveType"
+                    type="radio"
+                    value="Full Day"
+                    checked={formData.leaveType === "Full Day"}
+                    onChange={handleDataChange}
+                  />
+                  Full Day
+                </label>
+                <label>
+                  <input
+                    name="leaveType"
+                    type="radio"
+                    value="Half Day"
+                    checked={formData.leaveType === "Half Day"}
+                    onChange={handleDataChange}
+                  />
+                  Half Day
+                </label>
+
+                {errors.leaveType && (
+                  <p className="text-red-500">{errors.leaveType}</p>
+                )}
+
+                {formData.leaveType === "Half Day" && (
+                  <>
+                    <select
+                      name="halfDayPeriod"
+                      className="border p-2 rounded w-auto"
+                      value={formData?.halfDayPeriod}
+                      onChange={handleDataChange}
+                    >
+                      <option value="">Select Period</option>
+                      <option value="Morning">Morning</option>
+                      <option value="Afternoon">Afternoon</option>
+                    </select>
+
+                    {errors.halfDayPeriod && (
+                      <p className="text-red-500">{errors.halfDayPeriod}</p>
+                    )}
+                  </>
+                )}
+              </div>
+
+              <div className="mt-1 flex flex-col">
+                <label className="text-sm font-semibold">Leave Date</label>
+                <input
+                  name="leaveDate"
+                  type="date"
+                  value={formData?.leaveDate}
+                  onChange={handleDataChange}
+                  className="border p-2 rounded"
+                />
+              </div>
+
+              {errors.leaveDate && (
+                <p className="text-red-500">{errors.leaveDate}</p>
+              )}
+
+              <div className="mt-1 w-full">
+                <label className="text-sm font-semibold">Leave Type</label>
+                <select
+                  name="leaveCategory"
+                  className="border p-2 rounded w-full min-w-full"
+                  value={formData?.leaveCategory || ""}
+                  onChange={handleDataChange}
+                >
+                  <option value="">Select Leave Type</option>
+
+                  {pastDate ? (
+                    <>
+                      <option value="other Leave">Other Leave</option>
+                      {formData.leaveCategory === "casual Leave" && (
+                        <option value="casual Leave">Casual Leave</option>
+                      )}
+                      {formData.leaveCategory === "privileage Leave" && (
+                        <option value="privileage Leave">
+                          Privileage Leave
+                        </option>
+                      )}
+                      {formData.leaveCategory === "compensatory Leave" && (
+                        <option value="compensatory Leave">
+                          Compensatory Leave
+                        </option>
+                      )}
+                      {formData.leaveCategory === "sick Leave" && (
+                        <option value="sick Leave">Sick Leave</option>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {((formData.leaveType === "Full Day" &&
+                        BalancedcasualleaveCount >= 1) ||
+                        (formData.leaveType === "Half Day" &&
+                          BalancedcasualleaveCount >= 0.5) ||
+                        formData.leaveCategory === "casual Leave") && (
+                        <option value="casual Leave">Casual Leave</option>
+                      )}
+
+                      {((formData.leaveType === "Full Day" &&
+                        BalanceprivilegeleaveCount >= 1) ||
+                        (formData.leaveType === "Half Day" &&
+                          BalanceprivilegeleaveCount >= 0.5) ||
+                        formData.leaveCategory === "privileage Leave") && (
+                        <option value="privileage Leave">
+                          Privilege Leave
+                        </option>
+                      )}
+
+                      {((formData.leaveType === "Full Day" &&
+                        BalancecompensatoryleaveCount >= 1) ||
+                        (formData.leaveType === "Half Day" &&
+                          BalancecompensatoryleaveCount >= 0.5) ||
+                        formData.leaveCategory === "compensatory Leave") && (
+                        <option value="compensatory Leave">
+                          Compensatory Leave
+                        </option>
+                      )}
+
+                      {((formData.leaveType === "Full Day" &&
+                        BalancesickleaveCount >= 1) ||
+                        (formData.leaveType === "Half Day" &&
+                          BalancesickleaveCount >= 0.5) ||
+                        formData.leaveCategory === "sick Leave") && (
+                        <option value="sick Leave">Sick Leave</option>
+                      )}
+
+                      <option value="other Leave">Other Leave</option>
+                    </>
+                  )}
+                </select>
+              </div>
+
+              {errors.leaveCategory && (
+                <p className="text-red-500">{errors.leaveCategory}</p>
+              )}
+
+              <div className="mt-1">
+                <label className="text-sm font-semibold">Reason</label>
+                <textarea
+                  name="reason"
+                  className="border p-2 rounded w-full"
+                  rows="3"
+                  placeholder="Enter reason"
+                  value={formData?.reason}
+                  onChange={handleDataChange}
+                ></textarea>
+              </div>
+
+              {errors.reason && <p className="text-red-500">{errors.reason}</p>}
+
+              <div className="text-center text-red-700 py-3">
+                <p>{message.bottom}</p>
+              </div>
+            </div>
+          </div>
+        )
+
+      default:
+        return <p>Select a tab to view the content.</p>
+    }
+  }
+
+  return (
+    // <div className="min-h-full bg-[#ADD8E6]">
+    //   <div className="flex min-h-full flex-col lg:flex-row">
+    //     <div className="flex flex-1 flex-col">
+    //       <div className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 bg-[#ADD8E6] px-4 py-3">
+    //         <h2 className="min-w-0 flex-1 truncate text-xl font-semibold">
+    //           {visibleMonth}
+    //         </h2>
+
+    //         <div className="flex shrink-0 items-center space-x-2">
+    //           <button
+    //             onClick={() => {
+    //               console.log("prevmonthclickedd")
+    //               prevMonth()
+    //             }}
+    //             className="rounded-full bg-gray-100 p-2 transition hover:bg-gray-200"
+    //           >
+    //             <HiChevronLeft className="h-5 w-5" />
+    //           </button>
+
+    //           <button
+    //             onClick={() => goToToday()}
+    //             className="rounded-lg bg-gray-100 px-4 py-2 transition hover:bg-gray-200"
+    //           >
+    //             Today
+    //           </button>
+
+    //           <button
+    //             onClick={() => {
+    //               console.log("nextmonthclicked")
+    //               nextMonth()
+    //             }}
+    //             className="rounded-full bg-gray-100 p-2 transition hover:bg-gray-200"
+    //           >
+    //             <HiChevronRight className="h-5 w-5" />
+    //           </button>
+    //         </div>
+    //       </div>
+    //       <div className="mx-4 rounded-2xl border border-slate-200 bg-slate-50/80 p-3 shadow-sm">
+    //         <div className="space-y-3">
+    //           {visibleDays.map((date, index) => {
+    //             const dayLeaves =
+    //               currentmonthleaveData?.filter(
+    //                 (leave) =>
+    //                   new Date(leave.leaveDate).toISOString().split("T")[0] ===
+    //                   date.fullDate
+    //               ) || []
+
+    //             return (
+    //               <div
+    //                 key={index}
+    //                 onClick={() => {
+    //                   setSelectedDate(date)
+    //                   setSelectedType("")
+    //                   setShowTypeSelector(true)
+    //                 }}
+    //                 className="group cursor-pointer rounded-2xl border border-slate-200 bg-white p-2 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+    //               >
+    //                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    //                   <div className="flex min-w-0 items-center gap-4">
+    //                     <div className="flex  shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-center text-sm font-bold text-white shadow-sm sm:h-8 sm:w-32 sm:text-base">
+    //                       {date.fullMonthDay}
+    //                     </div>
+
+    //                     <div className="min-w-0">
+    //                       <div className="text-base font-semibold text-slate-900 sm:text-lg">
+    //                         {new Date(date.fullDate).toLocaleString("default", {
+    //                           weekday: "long"
+    //                         })}
+    //                       </div>
+    //                     </div>
+    //                   </div>
+
+    //                   <div className="flex flex-col gap-2 md:min-w-[280px] md:items-end">
+    //                     {dayLeaves.length > 0 ? (
+    //                       dayLeaves.map((leave, i) => {
+    //                         const isApproved =
+    //                           leave.departmentstatus === "Dept Approved" ||
+    //                           leave.hrstatus === "HR/Onsite Approved"
+
+    //                         const isPending =
+    //                           leave.departmentstatus === "Not Approved" &&
+    //                           leave.hrstatus === "Not Approved"
+
+    //                         return (
+    //                           <div
+    //                             key={i}
+    //                             className="flex w-full flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+    //                           >
+    //                             <div className="min-w-0">
+    //                               <div className="text-sm font-medium text-slate-700">
+    //                                 {leave?.leaveType}
+    //                               </div>
+    //                               <div className="truncate text-sm font-semibold text-slate-900">
+    //                                 {leave?.leaveCategory}
+    //                               </div>
+    //                             </div>
+
+    //                             <span
+    //                               className={`inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${
+    //                                 isApproved
+    //                                   ? "bg-emerald-100 text-emerald-700"
+    //                                   : isPending
+    //                                     ? "bg-amber-100 text-amber-700"
+    //                                     : "bg-rose-100 text-rose-700"
+    //                               }`}
+    //                             >
+    //                               {isApproved
+    //                                 ? "Approved"
+    //                                 : isPending
+    //                                   ? "Pending"
+    //                                   : "Rejected"}
+    //                             </span>
+    //                           </div>
+    //                         )
+    //                       })
+    //                     ) : (
+    //                       <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-400 md:text-right">
+    //                         No leave applied
+    //                       </div>
+    //                     )}
+    //                   </div>
+    //                 </div>
+    //               </div>
+    //             )
+    //           })}
+    //         </div>
+    //       </div>
+    //     </div>
+
+    //     {showTypeSelector && (
+    //       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    //         <div className="w-80 rounded-lg bg-white p-6 shadow-lg">
+    //           <h3 className="mb-4 text-center text-lg font-semibold">
+    //             Select Request Type
+    //           </h3>
+
+    //           <div className="flex flex-col space-y-3">
+    //             {["leave", "onsite", "mispunch"].map((type) => (
+    //               <label
+    //                 key={type}
+    //                 className="flex cursor-pointer items-center space-x-2 rounded-md px-2 py-2 transition hover:bg-gray-50"
+    //               >
+    //                 <input
+    //                   type="radio"
+    //                   name="type"
+    //                   value={type}
+    //                   checked={selectedType === type}
+    //                   onChange={(e) =>
+    //                     handleTypeSelection(e.target.value, selectedDate)
+    //                   }
+    //                 />
+    //                 <span className="capitalize">{type}</span>
+    //               </label>
+    //             ))}
+    //           </div>
+
+    //           <div className="mt-5 flex justify-end">
+    //             <button
+    //               className="rounded bg-gray-400 px-4 py-1 text-white transition hover:bg-gray-500"
+    //               onClick={() => {
+    //                 setShowTypeSelector(false)
+    //                 setSelectedType("")
+    //               }}
+    //             >
+    //               Cancel
+    //             </button>
+    //           </div>
+    //         </div>
+    //       </div>
+    //     )}
+
+    //     {showModal && leaveBalance && (
+    //       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    //         <div
+    //           className={`mx-4 flex max-h-[90vh] flex-col overflow-y-auto rounded-lg bg-white shadow-lg ${
+    //             selectedTab === "New Onsite" ? "md:w-3/4" : "sm:w-auto"
+    //           }`}
+    //         >
+    //           {loader && (
+    //             <BarLoader
+    //               cssOverride={{ width: "100%", height: "6px" }}
+    //               color="#4A90E2"
+    //             />
+    //           )}
+
+    //           <div className="p-3">
+    //             <div className="flex justify-center space-x-4">
+    //               {tabs
+    //                 ?.filter((tab) => {
+    //                   if (selectedType === "leave") {
+    //                     return ["Leave", "New Leave", "Edit Leave"].includes(
+    //                       tab
+    //                     )
+    //                   }
+    //                   if (selectedType === "onsite") {
+    //                     return ["Onsite", "New Onsite", "Edit Onsite"].includes(
+    //                       tab
+    //                     )
+    //                   }
+    //                   if (selectedType === "mispunch") {
+    //                     return ["Mispunch", "New Mispunch"].includes(tab)
+    //                   }
+    //                   return false
+    //                 })
+    //                 .map((tab) => (
+    //                   <span
+    //                     key={tab}
+    //                     onClick={() => {
+    //                       setSelectedTab(tab)
+    //                       setMessage({ top: "", bottom: "" })
+    //                       selectedTabContent(tab)
+    //                       setIsOnsite(tab === "Onsite")
+    //                     }}
+    //                     className={`cursor-pointer ${
+    //                       selectedTab === tab
+    //                         ? "font-semibold text-blue-500 underline"
+    //                         : "text-black"
+    //                     }`}
+    //                   >
+    //                     {tab}
+    //                   </span>
+    //                 ))}
+    //             </div>
+
+    //             <div className="mt-4">{renderContent()}</div>
+
+    //             <div className="mt-4 flex justify-center gap-4">
+    //               {selectedTab === "Leave" && (
+    //                 <button
+    //                   className="rounded-lg bg-blue-800 px-4 py-2 text-white hover:bg-blue-700"
+    //                   onClick={() => {
+    //                     setSelectedTab("New Leave")
+    //                     setFormData((prev) => ({
+    //                       ...prev,
+    //                       leaveType: "Full Day",
+    //                       leaveCategory: "",
+    //                       halfDayPeriod: "",
+    //                       reason: ""
+    //                     }))
+    //                   }}
+    //                 >
+    //                   Apply New Leaves
+    //                 </button>
+    //               )}
+
+    //               {selectedTab === "Onsite" && (
+    //                 <button
+    //                   onClick={() => {
+    //                     setSelectedTab("New Onsite")
+    //                     setFormData((prev) => ({
+    //                       ...prev,
+    //                       onsiteType: "Full Day",
+    //                       halfDayPeriod: "",
+    //                       description: ""
+    //                     }))
+    //                     setTableRows([])
+    //                   }}
+    //                   className="rounded-lg bg-blue-800 px-4 py-2 text-white shadow-lg hover:bg-blue-900"
+    //                 >
+    //                   Apply New Onsite
+    //                 </button>
+    //               )}
+
+    //               {selectedTab === "Mispunch" && (
+    //                 <button
+    //                   onClick={() => {
+    //                     setSelectedTab("New Mispunch")
+    //                     setFormData((prev) => ({
+    //                       ...prev,
+    //                       misspunchDate: clickedDate || prev.misspunchDate,
+    //                       mispunchType: "",
+    //                       misspunchTime: "",
+    //                       remark: "",
+    //                       showMisspunchTime: false,
+    //                       isTimeEditable: false,
+    //                       editHour: "09",
+    //                       editMinute: "30",
+    //                       editPeriod: "AM"
+    //                     }))
+    //                   }}
+    //                   className="rounded-lg bg-blue-800 px-4 py-2 text-white shadow-lg hover:bg-blue-900"
+    //                 >
+    //                   Apply New Misspunch
+    //                 </button>
+    //               )}
+
+    //               {selectedTab === "New Mispunch" && (
+    //                 <button
+    //                   className="group relative rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-2.5 text-sm font-medium text-white shadow-lg shadow-blue-200 transition-all duration-200 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl hover:shadow-blue-300 disabled:cursor-not-allowed disabled:opacity-50"
+    //                   onClick={() => handleSubmitAndReset("New Mispunch")}
+    //                   disabled={!formData.mispunchType || !formData.remark}
+    //                 >
+    //                   <span className="flex items-center gap-1.5">
+    //                     Submit Request
+    //                     <svg
+    //                       className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1"
+    //                       fill="none"
+    //                       stroke="currentColor"
+    //                       viewBox="0 0 24 24"
+    //                     >
+    //                       <path
+    //                         strokeLinecap="round"
+    //                         strokeLinejoin="round"
+    //                         strokeWidth={2}
+    //                         d="M13 7l5 5m0 0l-5 5m5-5H6"
+    //                       />
+    //                     </svg>
+    //                   </span>
+    //                 </button>
+    //               )}
+
+    //               {(selectedTab === "Edit Onsite" ||
+    //                 selectedTab === "Edit Leave" ||
+    //                 selectedTab === "New Leave" ||
+    //                 selectedTab === "New Onsite") && (
+    //                 <>
+    //                   <button
+    //                     className="rounded bg-gradient-to-b from-blue-400 to-blue-500 px-4 py-2 text-white hover:from-blue-400 hover:to-blue-600"
+    //                     onClick={() => handleSubmitAndReset(selectedTab)}
+    //                   >
+    //                     {selectedTab === "Edit Onsite" ||
+    //                     selectedTab === "Edit Leave"
+    //                       ? "Update"
+    //                       : "Submit"}
+    //                   </button>
+
+    //                   {(selectedTab === "Edit Onsite" ||
+    //                     selectedTab === "Edit Leave") && (
+    //                     <button
+    //                       className="rounded-md bg-red-600 px-4 py-2 font-semibold text-white shadow-lg transition-all duration-200 hover:bg-red-700 active:translate-y-[2px] active:shadow-md"
+    //                       onClick={() => handledelete(formData)}
+    //                     >
+    //                       Delete
+    //                     </button>
+    //                   )}
+    //                 </>
+    //               )}
+
+    //               <button
+    //                 className="rounded bg-gray-500 px-4 py-2 text-white hover:bg-gray-600"
+    //                 onClick={resetApplicationFlow}
+    //               >
+    //                 Close
+    //               </button>
+    //             </div>
+    //           </div>
+    //         </div>
+    //       </div>
+    //     )}
+    //     <PerformanceModal
+    //       modalOpen={openModal}
+    //       splitType={targetData?.selectedMeasurementType}
+    //       selectedperiod={selectedPeriod}
+    //       allperiods={targetData?.periods}
+    //       onselectedPeriodChange={(val, val2) => {
+    //         setSelectedMonth(val2)
+    //         setselectedPeriod(val)
+    //       }}
+    //       onMonthChange={(val) => {
+    //         setacheivedProducts([])
+    //         setselectedDataPopup([])
+    //         setperiodMode(val)
+    //         setselecteduserName(null)
+    //       }}
+    //       onYearChange={(val) => {
+    //         setacheivedProducts([])
+    //         setselectedDataPopup([])
+    //         setSelectedYear(val)
+    //         setselecteduserName(null)
+    //       }}
+    //       productlist={productlist}
+    //       onClose={() => {
+    //         setselecteduserName(null)
+    //         setacheivedProducts([])
+    //         setOpenModal(false)
+    //         setActiveUserId(null)
+    //       }}
+    //       selectedMonth={periodMode}
+    //       selectedYear={selectedYear}
+    //       summary={{
+    //         target: selectedDatapopup?.target,
+    //         achieved: selectedDatapopup?.achieved,
+    //         balance:
+    //           selectedDatapopup?.achieved > selectedDatapopup?.target
+    //             ? 0
+    //             : selectedDatapopup?.balance
+    //       }}
+    //       products={achievedproducts}
+    //       targetData={targetData?.userWiseResults}
+    //       loggedUser={user}
+    //       selectedUser={selectedUserName}
+    //       category={selectedCategory}
+    //       handleSelectedUser={handleSelectedUser}
+    //       activeUserId={activeUserId}
+    //     />
+    //   </div>
+    // </div>
+    <div className="min-h-full bg-[#ADD8E6]">
+      <div className="flex min-h-full flex-col lg:flex-row">
+        <div className="flex flex-1 flex-col">
+          <div className="sticky top-0 z-30 flex items-center justify-between gap-2 bg-[#ADD8E6] px-3 py-2 sm:gap-3 sm:px-4 sm:py-3">
+            <h2 className="min-w-0 flex-1 truncate text-base font-semibold sm:text-xl">
+              {visibleMonth}
+            </h2>
+
+            <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  console.log("prevmonthclickedd")
+                  prevMonth()
+                }}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 transition hover:bg-gray-200 active:bg-gray-300 sm:h-9 sm:w-9"
+                aria-label="Previous month"
+              >
+                <HiChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => goToToday()}
+                className="rounded-lg bg-gray-100 px-2.5 py-1.5 text-xs font-medium transition hover:bg-gray-200 active:bg-gray-300 sm:px-4 sm:py-2 sm:text-sm"
+              >
+                Today
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  console.log("nextmonthclicked")
+                  nextMonth()
+                }}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 transition hover:bg-gray-200 active:bg-gray-300 sm:h-9 sm:w-9"
+                aria-label="Next month"
+              >
+                <HiChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
+              </button>
+            </div>
+          </div>
+
+          <div className="mx-2 rounded-2xl border border-slate-200 bg-slate-50/80 p-2 shadow-sm sm:mx-4 sm:p-3">
+            <div className="space-y-1.5">
+              {visibleDays.map((date, index) => {
+                const dayLeaves =
+                  currentmonthleaveData?.filter(
+                    (leave) =>
+                      new Date(leave.leaveDate).toISOString().split("T")[0] ===
+                      date.fullDate
+                  ) || []
+
+                // Derive a fixed-format compact badge locally instead of trusting
+                // date.fullMonthDay's length (that's what was causing 2-line wrap).
+                const d = new Date(date.fullDate)
+                const dayNum = d.getDate().toString().padStart(2, "0")
+                const monthAbbr = d.toLocaleString("default", {
+                  month: "short"
+                }) // "Aug"
+                const weekday = d.toLocaleString("default", { weekday: "long" })
+
+                return (
+                  <div
+                    key={index}
+                    onClick={() => {
+                      setSelectedDate(date)
+                      setSelectedType("")
+                      setShowTypeSelector(true)
+                    }}
+                    className="group flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 shadow-sm transition-all duration-150 hover:border-slate-300 hover:shadow-md active:scale-[0.99] sm:gap-3 sm:px-3 sm:py-2"
+                  >
+                    {/* Compact fixed-size badge — never wraps, never grows the row */}
+                    <div className="flex h-9 w-11 shrink-0 flex-col items-center justify-center rounded-lg bg-slate-900 leading-none text-white sm:h-10 sm:w-12">
+                      <span className="text-[12px] font-bold sm:text-sm">
+                        {dayNum}
+                      </span>
+                      <span className="text-[8px] font-medium uppercase tracking-wide text-slate-300 sm:text-[9px]">
+                        {monthAbbr}
+                      </span>
+                    </div>
+
+                    <div className="min-w-0 flex-1 text-sm font-semibold text-slate-900 sm:text-base">
+                      {weekday}
+                    </div>
+
+                    {/* Status area: single line when no leaves, stacks only if there's data to show */}
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      {dayLeaves.length > 0 ? (
+                        dayLeaves.map((leave, i) => {
+                          const isApproved =
+                            leave.departmentstatus === "Dept Approved" ||
+                            leave.hrstatus === "HR/Onsite Approved"
+
+                          const isPending =
+                            leave.departmentstatus === "Not Approved" &&
+                            leave.hrstatus === "Not Approved"
+
+                          return (
+                            <span
+                              key={i}
+                              title={`${leave?.leaveType} - ${leave?.leaveCategory}`}
+                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold sm:text-xs ${
+                                isApproved
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : isPending
+                                    ? "bg-amber-100 text-amber-700"
+                                    : "bg-rose-100 text-rose-700"
+                              }`}
+                            >
+                              {isApproved
+                                ? "Approved"
+                                : isPending
+                                  ? "Pending"
+                                  : "Rejected"}
+                            </span>
+                          )
+                        })
+                      ) : (
+                        <span className="text-[10px] text-slate-400 sm:text-xs">
+                          No leave
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* modals unchanged — see previous message for full versions */}
+        {showTypeSelector && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="w-full max-w-xs rounded-lg bg-white p-6 shadow-lg">
+              <h3 className="mb-4 text-center text-lg font-semibold">
+                Select Request Type
+              </h3>
+
+              <div className="flex flex-col space-y-3">
+                {["leave", "onsite", "mispunch"].map((type) => (
+                  <label
+                    key={type}
+                    className="flex cursor-pointer items-center space-x-2 rounded-md px-2 py-2 transition hover:bg-gray-50"
+                  >
+                    <input
+                      type="radio"
+                      name="type"
+                      value={type}
+                      checked={selectedType === type}
+                      onChange={(e) =>
+                        handleTypeSelection(e.target.value, selectedDate)
+                      }
+                    />
+                    <span className="capitalize">{type}</span>
+                  </label>
+                ))}
+              </div>
+
+              <div className="mt-5 flex justify-end">
+                <button
+                  type="button"
+                  className="rounded bg-gray-400 px-4 py-1 text-white transition hover:bg-gray-500"
+                  onClick={() => {
+                    setShowTypeSelector(false)
+                    setSelectedType("")
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showModal && leaveBalance && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div
+              className={`flex max-h-[90vh] w-full flex-col overflow-y-auto rounded-lg bg-white shadow-lg ${
+                selectedTab === "New Onsite" ? "md:w-3/4" : "sm:w-auto"
+              }`}
+            >
+              {loader && (
+                <BarLoader
+                  cssOverride={{ width: "100%", height: "6px" }}
+                  color="#4A90E2"
+                />
+              )}
+
+              <div className="p-3">
+                <div className="flex flex-wrap justify-center gap-x-4 gap-y-1">
+                  {tabs
+                    ?.filter((tab) => {
+                      if (selectedType === "leave") {
+                        return ["Leave", "New Leave", "Edit Leave"].includes(
+                          tab
+                        )
+                      }
+                      if (selectedType === "onsite") {
+                        return ["Onsite", "New Onsite", "Edit Onsite"].includes(
+                          tab
+                        )
+                      }
+                      if (selectedType === "mispunch") {
+                        return ["Mispunch", "New Mispunch"].includes(tab)
+                      }
+                      return false
+                    })
+                    .map((tab) => (
+                      <span
+                        key={tab}
+                        onClick={() => {
+                          setSelectedTab(tab)
+                          setMessage({ top: "", bottom: "" })
+                          selectedTabContent(tab)
+                          setIsOnsite(tab === "Onsite")
+                        }}
+                        className={`cursor-pointer text-sm sm:text-base ${
+                          selectedTab === tab
+                            ? "font-semibold text-blue-500 underline"
+                            : "text-black"
+                        }`}
+                      >
+                        {tab}
+                      </span>
+                    ))}
+                </div>
+
+                <div className="mt-4">{renderContent()}</div>
+
+                <div className="mt-4 flex flex-wrap justify-center gap-3 sm:gap-4">
+                  {selectedTab === "Leave" && (
+                    <button
+                      type="button"
+                      className="rounded-lg bg-blue-800 px-4 py-2 text-sm text-white hover:bg-blue-700 sm:text-base"
+                      onClick={() => {
+                        setSelectedTab("New Leave")
+                        setFormData((prev) => ({
+                          ...prev,
+                          leaveType: "Full Day",
+                          leaveCategory: "",
+                          halfDayPeriod: "",
+                          reason: ""
+                        }))
+                      }}
+                    >
+                      Apply New Leaves
+                    </button>
+                  )}
+
+                  {selectedTab === "Onsite" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedTab("New Onsite")
+                        setFormData((prev) => ({
+                          ...prev,
+                          onsiteType: "Full Day",
+                          halfDayPeriod: "",
+                          description: ""
+                        }))
+                        setTableRows([])
+                      }}
+                      className="rounded-lg bg-blue-800 px-4 py-2 text-sm text-white shadow-lg hover:bg-blue-900 sm:text-base"
+                    >
+                      Apply New Onsite
+                    </button>
+                  )}
+
+                  {selectedTab === "Mispunch" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedTab("New Mispunch")
+                        setFormData((prev) => ({
+                          ...prev,
+                          misspunchDate: clickedDate || prev.misspunchDate,
+                          mispunchType: "",
+                          misspunchTime: "",
+                          remark: "",
+                          showMisspunchTime: false,
+                          isTimeEditable: false,
+                          editHour: "09",
+                          editMinute: "30",
+                          editPeriod: "AM"
+                        }))
+                      }}
+                      className="rounded-lg bg-blue-800 px-4 py-2 text-sm text-white shadow-lg hover:bg-blue-900 sm:text-base"
+                    >
+                      Apply New Misspunch
+                    </button>
+                  )}
+
+                  {selectedTab === "New Mispunch" && (
+                    <button
+                      type="button"
+                      className="group relative rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-2.5 text-sm font-medium text-white shadow-lg shadow-blue-200 transition-all duration-200 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl hover:shadow-blue-300 disabled:cursor-not-allowed disabled:opacity-50"
+                      onClick={() => handleSubmitAndReset("New Mispunch")}
+                      disabled={!formData.mispunchType || !formData.remark}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        Submit Request
+                        <svg
+                          className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 7l5 5m0 0l-5 5m5-5H6"
+                          />
+                        </svg>
+                      </span>
+                    </button>
+                  )}
+
+                  {(selectedTab === "Edit Onsite" ||
+                    selectedTab === "Edit Leave" ||
+                    selectedTab === "New Leave" ||
+                    selectedTab === "New Onsite") && (
+                    <>
+                      <button
+                        type="button"
+                        className="rounded bg-gradient-to-b from-blue-400 to-blue-500 px-4 py-2 text-sm text-white hover:from-blue-400 hover:to-blue-600 sm:text-base"
+                        onClick={() => handleSubmitAndReset(selectedTab)}
+                      >
+                        {selectedTab === "Edit Onsite" ||
+                        selectedTab === "Edit Leave"
+                          ? "Update"
+                          : "Submit"}
+                      </button>
+
+                      {(selectedTab === "Edit Onsite" ||
+                        selectedTab === "Edit Leave") && (
+                        <button
+                          type="button"
+                          className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:bg-red-700 active:translate-y-[2px] active:shadow-md sm:text-base"
+                          onClick={() => handledelete(formData)}
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </>
+                  )}
+
+                  <button
+                    type="button"
+                    className="rounded bg-gray-500 px-4 py-2 text-sm text-white hover:bg-gray-600 sm:text-base"
+                    onClick={resetApplicationFlow}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+<PopUp
+  isOpen={popupOpen}
+  message={popupMessage}
+  onClose={() => {
+    setPopupOpen(false);
+    resolveSubmit?.(false); // Cancel
+  }}
+  onConfirm={() => {
+    setPopupOpen(false);
+    resolveSubmit?.(true); // Continue
+  }}
+/>
+    </div>
+  )
+}
+
+export default LeaveApplication

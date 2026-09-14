@@ -26,6 +26,38 @@ const emptyRow = () => ({
   _isEditRow: false
 })
 
+// Payment-entry balances from older records can be out of date. The lead-level
+// balance is maintained by the server from the total amount received, so use it
+// to keep the rows and the amount that can be collected in sync.
+const reconcileRowBalances = (rows, leadBalance) => {
+  let adjustment =
+    safeNumber(leadBalance) -
+    rows.reduce((sum, row) => sum + safeNumber(row._baseBalance), 0)
+
+  return rows.map((row) => {
+    if (adjustment === 0) return row
+
+    const currentBalance = safeNumber(row._baseBalance)
+    const change =
+      adjustment < 0
+        ? -Math.min(currentBalance, Math.abs(adjustment))
+        : Math.min(
+            safeNumber(row._netAmt) - currentBalance,
+            adjustment
+          )
+
+    adjustment -= change
+    const balance = currentBalance + change
+
+    return {
+      ...row,
+      _balance: balance,
+      _baseBalance: balance,
+      _paidSoFar: safeNumber(row._netAmt) - balance
+    }
+  })
+}
+
 /* ══════════════════════════════════════════════════════
    TOOLTIP COMPONENT
 ══════════════════════════════════════════════════════ */
@@ -394,10 +426,10 @@ export function CollectionupdateModal({
       ? data.paymentHistory
       : []
 
-    console.log(data?.originalpaymentHistory)
-    const lastPayment = data?.originalpaymentHistory.length
-      ? data?.originalpaymentHistory[data?.originalpaymentHistory.length - 1]
-      : null
+    const originalHistory = Array.isArray(data.originalpaymentHistory)
+      ? data.originalpaymentHistory
+      : history
+    const lastPayment = originalHistory.at(-1) ?? null
     console.log(history)
     const hasPaymentEntries =
       lastPayment &&
@@ -434,8 +466,7 @@ export function CollectionupdateModal({
       )
     } else if (hasPaymentEntries) {
       console.log("hhh")
-      setPaymentRows(
-        lastPayment.paymentEntries.map((p) => {
+      const rows = lastPayment.paymentEntries.map((p) => {
           const net = safeNumber(p.netAmount)
           const currentBalance = safeNumber(p.balanceAmount)
           const paid = net - currentBalance
@@ -455,6 +486,12 @@ export function CollectionupdateModal({
             _isEditRow: false
           }
         })
+
+      const leadBalance = Number(data.balanceAmount)
+      setPaymentRows(
+        Number.isFinite(leadBalance)
+          ? reconcileRowBalances(rows, leadBalance)
+          : rows
       )
     } else if (Array.isArray(data.leadFor) && data.leadFor.length > 0) {
       console.log(data.leadFor)
@@ -498,7 +535,7 @@ export function CollectionupdateModal({
           productorServicemodel: null,
           netAmount: String(net),
           receivedAmount: "",
-          productorservicetype: p?.productorservicetype,
+          productorservicetype: undefined,
           _balance: balance,
           _baseBalance: balance,
           _netAmt: net,

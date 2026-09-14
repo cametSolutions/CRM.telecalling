@@ -35,6 +35,13 @@ import { PerformanceModal } from "../../../components/primaryUser/PerformanceMod
 import { PropagateLoader } from "react-spinners"
 import { toast } from "react-toastify"
 
+const formatDateForInput = (date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
 export default function ClosedLeads() {
   console.log("hh")
   const [showFullName, setShowFullName] = useState(false)
@@ -58,6 +65,19 @@ export default function ClosedLeads() {
   const [collectionupdateModal, setcollectionUpdateModal] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [selectedData, setselectedData] = useState(null)
+  const [closedDateRange, setClosedDateRange] = useState(() => {
+    const today = new Date()
+    const firstDayOfCurrentMonth = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      1
+    )
+
+    return {
+      startDate: formatDateForInput(firstDayOfCurrentMonth),
+      endDate: formatDateForInput(today)
+    }
+  })
 
   console.log(selectedData)
   const [selectedLeadId, setselectedLeadId] = useState(null)
@@ -101,16 +121,28 @@ export default function ClosedLeads() {
       loggedUser &&
       `/lead/collectionLeads?selectedBranch=${selectedreduxbranch}&verified=${verifiedLead}&isAccountant=${isdepartmentisAccountant}&loggeduserby=${loggedUser._id}`
   )
-  const { data: closedleads } = UseFetch(
-    selectedreduxbranch &&
-      `/lead/closedleads?selectedBranch=${selectedreduxbranch}`
-  )
+  const closedLeadsUrl = useMemo(() => {
+    if (
+      !selectedreduxbranch ||
+      !closedDateRange.startDate ||
+      !closedDateRange.endDate
+    ) {
+      return null
+    }
+
+    const params = new URLSearchParams({
+      selectedBranch: selectedreduxbranch,
+      startDate: closedDateRange.startDate,
+      endDate: closedDateRange.endDate
+    })
+
+    return `/lead/closedleads?${params.toString()}`
+  }, [selectedreduxbranch, closedDateRange.startDate, closedDateRange.endDate])
+  const { data: closedleads, loading: closedLeadsLoading } =
+    UseFetch(closedLeadsUrl)
+  const pageLoading = loading || closedLeadsLoading
   console.log(closedleads)
-  console.log(selectedreduxbranch)
-  console.log(verifiedLead)
-  console.log(isdepartmentisAccountant)
-  console.log(selectedreduxbranch)
-  console.log(collectionlead)
+
   const a = collectionlead?.filter((item) => item.null)
   console.log(a)
   const { data: branchProduct } = UseFetch(
@@ -242,52 +274,15 @@ export default function ClosedLeads() {
   }, [loggedUserBranches])
   console.log("Hh")
   useEffect(() => {
-    if (
-      collectionlead &&
-      collectionlead.length > 0 &&
-      partners &&
-      partners.length > 0 &&
-      loggedUser
-    ) {
-      console.log(loggedUser?.department)
-      if (
-        loggedUser?.department?._id === "670c863652847bbebbd35743" ||
-        loggedUser?.department?.department === "Accounts"
-      ) {
-        const filteredforcefullyleads = collectionlead.filter(
-          (item) => item.forcefullyClosedTarget
-        )
-        if (filteredforcefullyleads.length) {
-          setforcefullyClosedLeads(normalizeTableData(filteredforcefullyleads))
-          console.log("Hhh")
-        }
-        const filteredCollectionleads = collectionlead.filter(
-          (item) =>
-            item.paymentHistory?.length > 0 && !item.forcefullyClosedTarget
-        )
-        console.log(collectionlead)
-        const sortedLeads = filteredCollectionleads.sort((a, b) => {
-          const getOldest = (lead) =>
-            lead.paymentHistory?.length
-              ? Math.min(
-                  ...lead.paymentHistory.map((p) => new Date(p.paymentDate))
-                )
-              : Date.now()
-
-          return getOldest(a) - getOldest(b)
-        })
-        console.log(sortedLeads)
-
-        setTableData(normalizeTableData(sortedLeads))
-      } else {
-        console.log(collectionlead)
-        // setTableData(normalizeTableData(collectionlead))
-        setTableData(normalizeTableData(closedleads?.closedLeads))
-      }
+    console.log(closedleads)
+    if (closedleads?.closedLeads && closedleads?.closedLeads?.length > 0) {
+      setTableData(normalizeTableData(closedleads?.closedLeads))
 
       setPartner(partners)
+    } else {
+      setTableData([])
     }
-  }, [collectionlead, partners, loggedUser, closedleads])
+  }, [closedleads])
   const normalizeTableData = (data) => {
     if (Array.isArray(data)) {
       return [{ staffName: null, leads: data }]
@@ -343,6 +338,7 @@ export default function ClosedLeads() {
     setselectedLeadId(null)
   }
   const handleHistory = (Item) => {
+    console.log(Item)
     console.log("hh")
     setselectedData(Item.activityLog)
     setHistoryList(Item.activityLog)
@@ -586,7 +582,7 @@ export default function ClosedLeads() {
                 </span>
 
                 {shouldShowTooltipCustomer && (
-                  <div className="pointer-events-none absolute left-0 top-full z-50 mt-2 w-max max-w-xs rounded-xl bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-xl ring-1 ring-white/10 transition-all duration-200 translate-y-1 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                  <div className="pointer-events-none absolute left-0 top-full z-50 mt-2 w-max  rounded-xl bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-xl ring-1 ring-white/10 transition-all duration-200 translate-y-1 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
                     {customerName}
                     <div className="absolute -top-1 left-4 h-2 w-2 rotate-45 bg-gray-900"></div>
                   </div>
@@ -617,30 +613,7 @@ export default function ClosedLeads() {
                 <BellRing className="w-3.5 h-3.5" />
               </button>
             </td>
-            <td
-              className="px-2 py-2 border border-gray-300"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                type="button"
-                onClick={() => {
-                  setpaymentHistoryList(item.paymentHistory)
-                  setselectedLeadId(item.leadId)
-                  checkIsForcefullyClosed(
-                    item.leadDate,
-                    item.balanceAmount,
-                    item.paymentVerified
-                  )
-                  setBalanceAmount(item.balanceAmount)
-                  setpaymentHistoryModal(true)
-                  setleadId(item.leadId)
-                  setleadDocId(item._id)
-                }}
-                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors w-full justify-center"
-              >
-                <CreditCard className="w-3.5 h-3.5" />
-              </button>
-            </td>
+
             <td className="px-2 py-2 border border-gray-300">
               <button
                 type="button"
@@ -737,12 +710,6 @@ export default function ClosedLeads() {
                     <span>Email</span>
                   </div>
                 </td>
-                <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
-                  <div className="flex items-center gap-1">
-                    {/* <Phone className="w-3.5 h-3.5" /> */}
-                    {/* <span>ProductName</span> */}
-                  </div>
-                </td>
               </tr>
 
               {/* Sub-data row */}
@@ -752,11 +719,9 @@ export default function ClosedLeads() {
                   {item?.leadBy?.name || "-"}
                 </td>
                 <td className="px-3 py-1.5 border border-gray-300 text-gray-700 ">
-                  {/* {item?.allocatedTo?.name || "-"} */}
                   {item?.taskallocatedTo?.name || "-"}
                 </td>
                 <td className="px-3 py-1.5 border border-gray-300 text-gray-700">
-                  {/* {item?.allocatedBy?.name || "-"} */}
                   {item?.taskallocatedBy?.name || "-"}
                 </td>
                 <td className="px-3 py-1.5 border border-gray-300 text-gray-700">
@@ -786,24 +751,6 @@ export default function ClosedLeads() {
                     )}
                   </div>
                 </td>
-                <td className="px-3 py-1.5 border border-gray-300 text-blue-500 font-medium max-w-[120px]">
-               
- {/* <div
-    className="whitespace-normal break-words"
-    title={
-      item?.leadFor[0]?.prodproductorServiceId?.shortName ||
-      item?.leadFor[0]?.productorServiceId?.productName ||
-      "-"
-    }
-  >
-    {item?.leadFor[0]?.prodproductorServiceId?.shortName ||
-      item?.leadFor[0]?.productorServiceId?.productName ||
-      "-"}
-  </div> */}
-                </td>
-                {/* <td className="px-3 py-1.5 border border-gray-300 text-gray-700">
-                  {item?.phone || "-"}
-                </td> */}
               </tr>
             </>
           )}
@@ -837,9 +784,7 @@ export default function ClosedLeads() {
             <th className="border border-gray-300 px-3 py-1 text-center">
               Event Log
             </th>
-            <th className="border border-gray-300 px-3 py-1 text-center">
-              Payment History
-            </th>
+
             <th className="border border-gray-300 px-3 py-1 text-center">
               View/Modify
             </th>
@@ -860,7 +805,7 @@ export default function ClosedLeads() {
           ) : (
             <tr>
               <td colSpan={9} className="text-center text-gray-500 py-6">
-                {loading ? (
+                {pageLoading ? (
                   <div className="flex justify-center">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
                   </div>
@@ -924,7 +869,7 @@ export default function ClosedLeads() {
             className="
       mt-2 grid grid-cols-1 gap-1.5
       sm:grid-cols-[minmax(0,1fr)_auto]
-      lg:grid-cols-[minmax(220px,1fr)_auto_auto]
+      lg:grid-cols-[minmax(220px,1fr)_auto_auto_auto]
     "
           >
             <div className="min-w-0">
@@ -935,102 +880,39 @@ export default function ClosedLeads() {
               />
             </div>
 
-            {isdepartmentisAccountant && !verifiedLead && (
-              <label
-                className={`
-          flex h-8 cursor-pointer items-center justify-between gap-2
-          rounded-lg border px-2.5 transition
-          ${
-            isforcefullyclosed
-              ? "border-orange-200 bg-orange-50"
-              : "border-slate-200 bg-white hover:bg-slate-50"
-          }
-        `}
-              >
-                <input
-                  type="checkbox"
-                  checked={isforcefullyclosed}
-                  onChange={() =>
-                    setisforcefullyclosed((previous) => !previous)
-                  }
-                  className="sr-only"
-                />
+            <div className="flex h-8 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2">
+              <Calendar className="h-3.5 w-3.5 shrink-0 text-slate-500 " />
+              <input
+                type="date"
+                aria-label="Closed from date"
+                value={closedDateRange.startDate}
+                max={closedDateRange.endDate || undefined}
+                onChange={(event) =>
+                  setClosedDateRange((previous) => ({
+                    ...previous,
+                    startDate: event.target.value
+                  }))
+                }
+                className="min-w-0 bg-transparent text-[11px] text-slate-700 outline-none "
+              />
+              <span className="text-[10px] text-slate-400">to</span>
+              <input
+                type="date"
+                aria-label="Closed to date"
+                value={closedDateRange.endDate}
+                min={closedDateRange.startDate || undefined}
+                onChange={(event) =>
+                  setClosedDateRange((previous) => ({
+                    ...previous,
+                    endDate: event.target.value
+                  }))
+                }
+                className="min-w-0 bg-transparent text-[11px] text-slate-700 outline-none"
+              />
+             
+            </div>
 
-                <span
-                  className={`
-            text-[11px] font-semibold
-            ${isforcefullyclosed ? "text-orange-700" : "text-slate-600"}
-          `}
-                >
-                  Force Closed
-                </span>
-
-                <span
-                  className={`
-            relative inline-flex h-4 w-8 items-center rounded-full
-            transition-colors duration-200
-            ${isforcefullyclosed ? "bg-orange-500" : "bg-slate-300"}
-          `}
-                >
-                  <span
-                    className={`
-              h-3 w-3 rounded-full bg-white shadow-sm
-              transition-transform duration-200
-              ${isforcefullyclosed ? "translate-x-4" : "translate-x-0.5"}
-            `}
-                  />
-                </span>
-              </label>
-            )}
-
-            {isdepartmentisAccountant && (
-              <label
-                className={`
-          flex h-8 cursor-pointer items-center justify-between gap-2
-          rounded-lg border px-2.5 transition
-          ${
-            verifiedLead
-              ? "border-emerald-200 bg-emerald-50"
-              : "border-slate-200 bg-white hover:bg-slate-50"
-          }
-        `}
-              >
-                <input
-                  type="checkbox"
-                  checked={verifiedLead}
-                  onChange={() => {
-                    setTableData([])
-                    setverifiedLead((previous) => !previous)
-                  }}
-                  className="sr-only"
-                />
-
-                <span
-                  className={`
-            text-[11px] font-semibold
-            ${verifiedLead ? "text-emerald-700" : "text-slate-600"}
-          `}
-                >
-                  {verifiedLead ? "Verified" : "Pending"}
-                </span>
-
-                <span
-                  className={`
-            relative inline-flex h-4 w-8 items-center rounded-full
-            transition-colors duration-200
-            ${verifiedLead ? "bg-emerald-500" : "bg-slate-300"}
-          `}
-                >
-                  <span
-                    className={`
-              h-3 w-3 rounded-full bg-white shadow-sm
-              transition-transform duration-200
-              ${verifiedLead ? "translate-x-4" : "translate-x-0.5"}
-            `}
-                  />
-                </span>
-              </label>
-            )}
+            
           </div>
         </section>
         <section className="flex min-h-0 flex-1 flex-col p-2 md:p-3">
@@ -1081,7 +963,7 @@ export default function ClosedLeads() {
                     (group) => group?.leads?.length > 0
                   )
 
-                  if (loading) {
+                  if (pageLoading) {
                     return <SkeletonTable />
                   }
 
