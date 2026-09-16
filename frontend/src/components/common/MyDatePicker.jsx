@@ -62,7 +62,7 @@ console.log(view)
       startDate: date?.[0] || null,
       endDate: date?.[1] || null
     })
-    onChange()
+    onChange?.()
   }
 
   const CustomInput = forwardRef(({ value, onClick }, ref) => (

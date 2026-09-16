@@ -98,6 +98,7 @@ export const EditProduct = async (req, res) => {
 export const GetbranchProduct = async (req, res) => {
   try {
     const { branch } = req.query
+console.log("dddddddddddddddddddddddddddddddddddddddddddddddddddddddddd")
     if (!mongoose.isValidObjectId(branch)) {
       return res.status(400).json({
         success: false,

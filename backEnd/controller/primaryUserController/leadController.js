@@ -17,7 +17,6 @@ import LeadId from "../../model/primaryUser/leadIdSchema.js";
 import Service from "../../model/primaryUser/servicesSchema.js";
 import getLeadMetricsForSingleDay from "../../helper/leadandtaskcount.js";
 import { getCallMetricsForSingleDay } from "../../helper/callcount.js";
-import { formatDate } from "../../../frontend/src/utils/dateUtils.js";
 import License from "../../model/secondaryUser/licenseSchema.js";
 import { mapLeadItemsForUpdate } from "../../helper/leadUpdatePayload.js";
 
@@ -1899,6 +1898,182 @@ export const LeadRegister = async (req, res) => {
           }
           : error.message, // or omit this entirely
     });
+  }
+}
+
+// Creates one lead per customer for the Additional Service selected in the
+// Expiry Register.  The client sends IDs only; customer/product values are
+// always read from the database so tagged licences and due dates cannot affect
+// the created lead.
+export const BulkCreateAdditionalServiceLeads = async (req, res) => {
+  const { customerIds, productId } = req.body
+
+  if (!isValidObjectId(productId) || !Array.isArray(customerIds)) {
+    return res.status(400).json({ message: "Customer IDs and product ID are required" })
+  }
+
+  const uniqueCustomerIds = [
+    ...new Set(customerIds.map(String).filter((id) => isValidObjectId(id)))
+  ]
+
+  if (!uniqueCustomerIds.length) {
+    return res.status(400).json({ message: "Select at least one customer" })
+  }
+
+  try {
+    const leadBy = req.owner?.userId
+console.log("owner",req.owner?.userId)
+    const [staffUser, adminUser, product, leadTask] = await Promise.all([
+      isValidObjectId(leadBy) ? Staff.findById(leadBy).lean() : null,
+      isValidObjectId(leadBy) ? Admin.findById(leadBy).lean() : null,
+      Product.findById(productId).lean(),
+      Task.findOne({ taskName: "Lead" }).lean()
+    ])
+
+    const leadByModel = staffUser ? "Staff" : adminUser ? "Admin" : null
+    if (!leadByModel) {
+      return res.status(403).json({ message: "Unable to identify the logged-in user" })
+    }
+
+    if (
+      !product ||
+      String(product.productorservicetype || "").toLowerCase() !==
+        "additionalservice"
+    ) {
+      return res.status(400).json({ message: "The selected product is not an Additional Service" })
+    }
+
+    const [customers, existingLeads] = await Promise.all([
+      Customer.find({ _id: { $in: uniqueCustomerIds } }).lean(),
+      LeadMaster.find({
+        customerName: { $in: uniqueCustomerIds },
+        "leadFor.productorServiceId": product._id
+      })
+        .select("customerName")
+        .lean()
+    ])
+    const customerById = new Map(customers.map((customer) => [String(customer._id), customer]))
+    const customerIdsWithExistingLead = new Set(
+      existingLeads.map((lead) => String(lead.customerName))
+    )
+    const eligible = []
+    const skipped = []
+
+    for (const customerId of uniqueCustomerIds) {
+      const customer = customerById.get(customerId)
+      const selectedItem = customer?.selected?.find(
+        (item) => String(item?.product_id) === String(product._id)
+      )
+
+      if (!customer || !selectedItem) {
+        skipped.push({ customerId, reason: "Additional Service is not assigned to this customer" })
+        continue
+      }
+
+      if (customerIdsWithExistingLead.has(customerId)) {
+        skipped.push({ customerId, reason: "A lead already exists for this Additional Service" })
+        continue
+      }
+
+      const productBranch = product.selected?.find(
+        (item) => String(item?.branch_id) === String(selectedItem.branch_id)
+      ) || product.selected?.[0]
+      const companyId = selectedItem.company_id || productBranch?.company_id
+      const branchId = selectedItem.branch_id || productBranch?.branch_id
+
+      if (!companyId || !branchId) {
+        skipped.push({ customerId, reason: "Company or branch is missing for this Additional Service" })
+        continue
+      }
+
+      eligible.push({ customer, selectedItem, companyId, branchId })
+    }
+
+    if (!eligible.length) {
+      return res.status(409).json({
+        message: "No new leads could be created",
+        created: 0,
+        skipped
+      })
+    }
+
+    const session = await mongoose.startSession()
+    try {
+      await session.withTransaction(async () => {
+        const lastLead = await LeadId.findOne().sort({ leadId: -1 }).session(session)
+        let nextLeadNumber = lastLead ? Number.parseInt(lastLead.leadId, 10) + 1 : 1
+        const productAmount = Number(product.productPrice || 0)
+        const productName = product.shortName || product.productName || ""
+
+        for (const { customer, companyId, branchId } of eligible) {
+          const leadId = String(nextLeadNumber++).padStart(5, "0")
+          const activityLog = [
+            {
+              submissionDate: new Date(),
+              submittedUser: leadBy,
+              submissiondoneByModel: leadByModel,
+              remarks: "Created from Expiry Register",
+              taskBy: leadTask?._id
+            }
+          ]
+
+          await LeadMaster.create([
+            {
+              leadId,
+              leadDate: new Date(),
+              customerName: customer._id,
+              mobile: customer.mobile || "",
+              phone: customer.landline || "",
+              email: customer.email || "",
+              location: customer.city || customer.address1 || "",
+              pincode: customer.pincode || "",
+              partner: customer.partner || null,
+              leadBranch: branchId,
+              source: "Expiry Register",
+              leadBy,
+              leadByModel,
+              taxableAmount: productAmount,
+              taxAmount: 0,
+              netAmount: productAmount,
+              balanceAmount: productAmount,
+              activityLog,
+              leadFor: [
+                {
+                  productorServiceId: product._id,
+                  productorServicemodel: "Product",
+                  productorServiceName: productName,
+                  productorservicetype: product.productorservicetype,
+                  company_id: companyId,
+                  branch_id: branchId,
+                  productPrice: productAmount,
+                  netAmount: productAmount,
+                  actualproductPrice: productAmount,
+                  actualNetAmount: productAmount,
+                  licenseNumber: null,
+                  licenseNumbers: []
+                }
+              ]
+            }
+          ], { session })
+
+          await LeadId.create([
+            { leadId, leadBy, assignedtoleadByModel: leadByModel }
+          ], { session })
+        }
+      })
+    } finally {
+      await session.endSession()
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `${eligible.length} lead${eligible.length === 1 ? "" : "s"} created successfully`,
+      created: eligible.length,
+      skipped
+    })
+  } catch (error) {
+    console.error("Bulk additional-service lead creation failed:", error)
+    return res.status(500).json({ message: "Unable to create Additional Service leads" })
   }
 }
 export const Checkexistinglead = async (req, res) => {
