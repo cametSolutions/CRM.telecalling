@@ -28,6 +28,7 @@ import jwt from "jsonwebtoken"
 
 const generateToken = (res, user) => {
   const isSecureEnvironment = process.env.NODE_ENV !== "development"
+console.log("userrrrrrrrrrrrrrrrrrrrrr",user?._id)
   const token = jwt.sign(
     {
       userId: user._id,

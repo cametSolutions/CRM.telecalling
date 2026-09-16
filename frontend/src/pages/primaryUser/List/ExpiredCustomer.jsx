@@ -6,7 +6,7 @@ import BarLoader from "react-spinners/BarLoader"
 import api from "../../../api/api"
 import ExpiryRegisterTable from "../../../components/primaryUser/ExpiryRegisterTable"
 import BranchDropdown from "../../../components/primaryUser/BranchDropdown"
-import { useNavigate } from "react-router-dom"
+import { toast } from "react-toastify"
 import { formatDate } from "../../../utils/dateUtils"
 import NoDataAvailable from "../../../components/NodataAvailable"
 import Tiles from "../../../components/common/Tiles"
@@ -78,9 +78,12 @@ const ExpiredCustomer = () => {
   const [activeUserId, setActiveUserId] = useState(null)
   const [achievedproducts, setacheivedProducts] = useState([])
   const [selectedPeriod, setselectedPeriod] = useState("")
+  const [selectedProductExpiryId, setSelectedProductExpiryId] = useState("")
+  const [selectedLeadRows, setSelectedLeadRows] = useState([])
+  const [isCreatingLeads, setIsCreatingLeads] = useState(false)
   const filterRef = useRef(null)
+  const expiryRequestIdRef = useRef(0)
   // const { data: branches } = UseFetch("/branch/getBranch")
-  const navigate = useNavigate()
   const { data: branchProduct } = UseFetch(
     selectedCompanyBranch &&
       `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
@@ -293,6 +296,7 @@ const ExpiredCustomer = () => {
     console.log(hasMounted)
     if (!hasMounted) return
     console.log("hhhh")
+    const requestId = ++expiryRequestIdRef.current
     const fetchExpiryRegisterList = async () => {
       try {
         let endpoint = ""
@@ -313,15 +317,20 @@ const ExpiredCustomer = () => {
           method = "post" // Change method to POST
         } else {
           console.log("dd")
+          const activeFilterType = selectedProductExpiryId
+            ? "product"
+            : expiryFilterType
           endpoint = isToggled
-            ? `/customer/getallExpiryregisterCustomer?nextmonthReport=${isToggled}&filterType=${expiryFilterType}`
-            : `/customer/getallExpiryregisterCustomer?startDate=${dates.startDate}&endDate=${dates.endDate}&filterType=${expiryFilterType}`
+            ? `/customer/getallExpiryregisterCustomer?nextmonthReport=${isToggled}&filterType=${activeFilterType}${selectedProductExpiryId ? `&productId=${encodeURIComponent(selectedProductExpiryId)}` : ""}`
+            : `/customer/getallExpiryregisterCustomer?startDate=${dates.startDate}&endDate=${dates.endDate}&filterType=${activeFilterType}${selectedProductExpiryId ? `&productId=${encodeURIComponent(selectedProductExpiryId)}` : ""}`
           // When calls are not toggled, use GET request without a payload
           // endpoint = "/customer/getallExpiryregisterCustomer"
         }
-
+console.log(endpoint)
         // Make the API request using either GET or POST
         const response = await api[method](endpoint, payload)
+
+        if (requestId !== expiryRequestIdRef.current) return
 
         const data = response.data
         if (data) {
@@ -340,17 +349,37 @@ const ExpiredCustomer = () => {
               setcachedcallsummary(data.calls)
             }
           } else {
-            setcachedcustomerSummary(data.data)
+            const expiryCustomers =
+              selectedProductExpiryId
+                ? (data.data || [])
+                    .map((customer) => ({
+                      ...customer,
+                      selected: (customer.selected || []).filter((item) => {
+                        const hasAdditionalServiceExpiry =
+                          Boolean(item?.nextDue) ||
+                          item.taggeddata?.some((tag) => tag?.nextDue)
+                        const matchesProduct =
+                          !selectedProductExpiryId ||
+                          String(item.product_id?._id || item.product_id) ===
+                            selectedProductExpiryId
+
+                        return hasAdditionalServiceExpiry && matchesProduct
+                      })
+                    }))
+                    .filter((customer) => customer.selected.length > 0)
+                : data.data
+
+            setcachedcustomerSummary(expiryCustomers)
             if (selectedBranch === "All") {
               console.log("hh")
-              console.log(data.data)
-              const fil = data.data.filter(
+              console.log(expiryCustomers)
+              const fil = expiryCustomers.filter(
                 (itm) => itm.customerName === "JAWA POLYMERS"
               )
               console.log(fil)
-              setexpiryRegisterList(data.data)
+              setexpiryRegisterList(expiryCustomers)
             } else {
-              const filtered = data.data.filter((customer) =>
+              const filtered = expiryCustomers.filter((customer) =>
                 customer.selected.some((selection) =>
                   selectedBranch.includes(selection.branch_id)
                 )
@@ -358,12 +387,16 @@ const ExpiredCustomer = () => {
               setexpiryRegisterList(filtered)
             }
 
-            const expiredCustomerIds = data.data.map((customer) => customer._id)
+            const expiredCustomerIds = expiryCustomers.map(
+              (customer) => customer._id
+            )
             setExpiredCustomerId(expiredCustomerIds)
           }
           setLoading(false)
         }
       } catch (error) {
+        if (requestId !== expiryRequestIdRef.current) return
+
         setLoading(false)
         console.error("Error fetching user list:", error)
       }
@@ -375,7 +408,14 @@ const ExpiredCustomer = () => {
       setCallList([])
       setexpiryRegisterList([])
     }
-  }, [isCallsToggled, isToggled, dates, userBranchId, expiryFilterType])
+  }, [
+    isCallsToggled,
+    isToggled,
+    dates,
+    userBranchId,
+    expiryFilterType,
+    selectedProductExpiryId
+  ])
   useEffect(() => {
     if (isModalOpen && selectedCustomer) {
       const selectedCustomerData = expiredCustomerList.find(
@@ -445,6 +485,9 @@ const ExpiredCustomer = () => {
     setSelectedBranch(id)
 
     setselectedBranchName(name)
+    if (id !== "All") {
+      setselectedCompanyBranch(id)
+    }
     if (id === "All") {
       setexpiryRegisterList(cachedcustomerSummary)
     } else {
@@ -662,6 +705,104 @@ const ExpiredCustomer = () => {
 
     return result.trim()
   }
+  const getExpiryProductName = (item) => {
+    const hasTaggedDataExpiry = item?.taggeddata?.some((tag) => tag?.nextDue)
+
+    return hasTaggedDataExpiry
+      ? item?.product_id?.shortName || item?.product_id?.productName || "N/A"
+      : item?.productName || "N/A"
+  }
+  const getDisplayLicenseNumbers = (item) => {
+    const taggedLicenseNumbers = (item?.taggeddata || [])
+      .map((tag) => tag?.licensenumber)
+      .filter((licenseNumber) => licenseNumber !== null && licenseNumber !== undefined && licenseNumber !== "")
+
+    return taggedLicenseNumbers.length > 0
+      ? taggedLicenseNumbers
+      : item?.licensenumber !== null && item?.licensenumber !== undefined
+        ? [item.licensenumber]
+        : []
+  }
+  const getDisplayStatus = (customer, item) =>
+    item?.isActive ?? customer?.isActive
+  const additionalServiceOptions = (branchProduct || [])
+    .filter(
+      (product) =>
+        String(product?.productorservicetype || "").toLowerCase() ===
+        "additionalservice"
+    )
+    .map((product) => ({
+      id: String(product._id),
+      name: product.shortName || product.productName || "N/A"
+    }))
+  const isAdditionalServiceFilterActive = Boolean(selectedProductExpiryId)
+  useEffect(() => {
+    // A selection only belongs to the currently active additional-service chip.
+    // Do not carry selected customers into another expiry/product result set.
+    setSelectedLeadRows([])
+  }, [selectedProductExpiryId, expiryFilterType, selectedBranch])
+
+  const getLeadRowKey = (customerId, productId) =>
+    `${String(customerId)}-${String(productId)}`
+  const toggleLeadRow = (customer, item) => {
+    const productId = item?.product_id?._id || item?.product_id
+    const key = getLeadRowKey(customer._id, productId)
+    const leadRow = {
+      key,
+      customerId: String(customer._id),
+      customerName: customer.customerName,
+      productId: String(productId),
+      productName: item?.product_id?.shortName || item?.product_id?.productName || item?.productName || "N/A"
+    }
+
+    setSelectedLeadRows((current) =>
+      current.some((row) => row.key === key)
+        ? current.filter((row) => row.key !== key)
+        : [...current, leadRow]
+    )
+  }
+  const toggleAllLeadRows = () => {
+    const visibleLeadRows = expiredCustomerList.flatMap((customer) =>
+      (customer.selected || []).map((item) => {
+        const productId = item?.product_id?._id || item?.product_id
+        if (!productId) return null
+        return {
+          key: getLeadRowKey(customer._id, productId),
+          customerId: String(customer._id),
+          customerName: customer.customerName,
+          productId: String(productId),
+          productName: item?.product_id?.shortName || item?.product_id?.productName || item?.productName || "N/A"
+        }
+      })
+    ).filter(Boolean)
+    const allSelected =
+      visibleLeadRows.length > 0 &&
+      visibleLeadRows.every((row) => selectedLeadRows.some((selected) => selected.key === row.key))
+    setSelectedLeadRows(allSelected ? [] : visibleLeadRows)
+  }
+  const createAdditionalServiceLeads = async () => {
+    if (!selectedLeadRows.length || !selectedProductExpiryId) return
+
+    try {
+      setIsCreatingLeads(true)
+      const response = await api.post("/lead/bulkAdditionalServiceLeads", {
+        customerIds: selectedLeadRows.map((row) => row.customerId),
+        productId: selectedProductExpiryId
+      })
+
+      toast.success(response.data?.message || "Leads created successfully")
+      if (response.data?.skipped?.length) {
+        toast.info(`${response.data.skipped.length} customer(s) were skipped because a lead already exists or their service setup is incomplete.`)
+      }
+      setSelectedLeadRows([])
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Unable to create Additional Service leads"
+      )
+    } finally {
+      setIsCreatingLeads(false)
+    }
+  }
   const handleShowMore = (customerId) => {
     setShowFullAddress((prevState) => ({
       ...prevState,
@@ -763,13 +904,25 @@ const ExpiredCustomer = () => {
                       : "Expired Customer's"}
                 </h1>
 
-                <div className="mx-3">
+                 <div className="mx-3">
                   <span className="text-blue-500">
                     Count:{" "}
                     {isCallsToggled
                       ? expiredCustomerCalls.length
                       : expiredCustomerList.length}
                   </span>
+                  {isAdditionalServiceFilterActive && (
+                    <button
+                      type="button"
+                      onClick={createAdditionalServiceLeads}
+                      disabled={!selectedLeadRows.length || isCreatingLeads}
+                      className="ml-3 rounded-md bg-teal-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                    >
+                      {isCreatingLeads
+                        ? "Creating Leads..."
+                        : `Create Leads (${selectedLeadRows.length})`}
+                    </button>
+                  )}
                 </div>
 
                 {/* Filters Row */}
@@ -1078,7 +1231,7 @@ const ExpiredCustomer = () => {
 
                     {/* Dropdown Panel */}
                     {isFilterOpen && (
-                      <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-2.5 z-50 animate-in slide-in-from-top-2 duration-200">
+                      <div className="absolute top-full right-0 mt-2 w-[min(22rem,calc(100vw-1.5rem))] max-h-[calc(100vh-7rem)] overflow-y-auto bg-white rounded-xl shadow-xl border border-gray-200 py-2.5 z-50 animate-in slide-in-from-top-2 duration-200">
                         {/* Header */}
                         <div className="flex items-center justify-between px-4 pb-2 mb-1 border-b border-gray-100">
                           <h3 className="text-xs font-semibold text-gray-900">
@@ -1155,7 +1308,7 @@ const ExpiredCustomer = () => {
                           </p>
                           <div
                             role="radiogroup"
-                            className="flex flex-wrap gap-1.5"
+                            className="flex max-h-40 flex-wrap gap-1.5 overflow-y-auto pr-1"
                           >
                             {EXPIRY_FILTER_OPTIONS.map((opt) => {
                               const selected = expiryFilterType === opt.value
@@ -1173,22 +1326,43 @@ const ExpiredCustomer = () => {
                                     name="expiryFilterType"
                                     value={opt.value}
                                     checked={selected}
-                                    onChange={() =>
+                                    onChange={() => {
                                       setExpiryFilterType(opt.value)
-                                    }
+                                      setSelectedProductExpiryId("")
+                                    }}
                                     className="sr-only"
                                   />
                                   {opt.label}
                                 </label>
                               )
                             })}
+                            {additionalServiceOptions.map((product) => (
+                              <button
+                                key={product.id}
+                                type="button"
+                                onClick={() => {
+                                  setExpiryFilterType("product")
+                                  setSelectedProductExpiryId(product.id)
+                                }}
+                                className={`rounded-full px-2.5 py-1 text-xs font-medium border transition-colors ${
+                                  selectedProductExpiryId === product.id
+                                    ? "bg-teal-600 border-teal-600 text-white"
+                                    : "bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
+                                }`}
+                              >
+                                {product.name}
+                              </button>
+                            ))}
                           </div>
                         </div>
 
                         {/* Footer actions */}
-                        <div className="flex items-center justify-between gap-2 px-4 pt-2 mt-2 border-t border-gray-100">
+                        <div className="sticky bottom-0 flex items-center justify-between gap-2 px-4 pt-2 mt-2 border-t border-gray-100 bg-white">
                           <button
-                            onClick={() => setExpiryFilterType("all")}
+                            onClick={() => {
+                              setExpiryFilterType("all")
+                              setSelectedProductExpiryId("")
+                            }}
                             className="text-[11px] font-medium text-gray-500 hover:text-gray-700 transition-colors"
                           >
                             Reset
@@ -1405,7 +1579,7 @@ const ExpiredCustomer = () => {
                                   {customer.mobile || "N/A"}
                                 </td>
                                 <td className="px-4 py-2 border-b text-center">
-                                  {item.productName || "N/A"}
+                                  {getExpiryProductName(item)}
                                 </td>
                                 <td className="px-4 py-2 border-b text-center">
                                   {item.licensenumber || "N/A"}
@@ -1485,9 +1659,9 @@ const ExpiredCustomer = () => {
 {!hasData?(
 <NoDataAvailable/>):(
 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      <div className="overflow-x-auto lg:max-h-[440px] md:max-h-[390px] overflow-y-auto">
-        <table className="min-w-full text-sm text-left border-collapse">
-          <thead className="sticky top-0 z-10">
+      <div className="max-h-[calc(100vh-18rem)] min-h-[18rem] overflow-auto">
+        <table className="min-w-[1080px] w-full text-sm text-left border-collapse">
+          <thead className="sticky top-0 z-10 bg-slate-50">
             {isCallsToggled&& expiredCustomerCalls?.length > 0  ? (
               <tr className="bg-slate-50/95 backdrop-blur supports-[backdrop-filter]:bg-slate-50/80">
                 <th className="px-5 py-3.5 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wide">
@@ -1518,10 +1692,32 @@ const ExpiredCustomer = () => {
             ) : (
 
               <tr className="bg-slate-50/95 backdrop-blur supports-[backdrop-filter]:bg-slate-50/80 whitespace-nowrap">
-                <th className="px-5 py-3.5 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wide">
+                {isAdditionalServiceFilterActive && (
+                  <th className="w-12 px-4 py-3.5 border-b border-slate-200 text-center">
+                    <input
+                      type="checkbox"
+                      aria-label="Select all customers"
+                      checked={
+                        expiredCustomerList.length > 0 &&
+                        expiredCustomerList.every((customer) =>
+                          (customer.selected || []).every((item) => {
+                            const productId = item?.product_id?._id || item?.product_id
+                            if (!productId) return false
+                            return selectedLeadRows.some(
+                              (row) => row.key === getLeadRowKey(customer._id, productId)
+                            )
+                          })
+                        )
+                      }
+                      onChange={toggleAllLeadRows}
+                      className="h-4 w-4 cursor-pointer rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                    />
+                  </th>
+                )}
+                <th className="min-w-[220px] px-5 py-3.5 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wide">
                   Customer Name
                 </th>
-                <th className="px-5 py-3.5 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wide text-center">
+                <th className="min-w-[140px] px-5 py-3.5 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wide text-center">
                   Mobile/Phn
                 </th>
                 <th className="px-5 py-3.5 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wide text-center ">
@@ -1543,7 +1739,6 @@ const ExpiredCustomer = () => {
         {(expiryFilterType==="all"||expiryFilterType==="license")&&(<th className="px-5 py-3.5 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wide text-center">
                   License Expiry
                 </th>)}       
-                
                 <th className="px-5 py-3.5 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wide text-center">
                   Status
                 </th>
@@ -1663,6 +1858,21 @@ const ExpiredCustomer = () => {
                       key={`${customer._id}-${index}`}
                       className="bg-white hover:bg-slate-50 transition-colors duration-150"
                     >
+                      {isAdditionalServiceFilterActive && (
+                        <td className="px-4 py-3 text-center">
+                          <input
+                            type="checkbox"
+                            aria-label={`Select ${customer.customerName}`}
+                            disabled={!(item?.product_id?._id || item?.product_id)}
+                            checked={selectedLeadRows.some((row) => {
+                              const productId = item?.product_id?._id || item?.product_id
+                              return row.key === getLeadRowKey(customer._id, productId)
+                            })}
+                            onChange={() => toggleLeadRow(customer, item)}
+                            className="h-4 w-4 cursor-pointer rounded border-slate-300 text-teal-600 focus:ring-teal-500 disabled:cursor-not-allowed disabled:opacity-40"
+                          />
+                        </td>
+                      )}
                       <td className="px-5 py-3 text-slate-800 font-medium">
                         {customer.customerName || "N/A"}
                       </td>
@@ -1670,10 +1880,22 @@ const ExpiredCustomer = () => {
                         {customer.mobile || "N/A"}
                       </td>
                       <td className="px-5 py-3 text-center text-slate-600">
-                        {item.productName || "N/A"}
+                        {getExpiryProductName(item)}
                       </td>
                       <td className="px-5 py-3 text-center text-slate-600">
-                        {item.licensenumber || "N/A"}
+                        {getDisplayLicenseNumbers(item).length > 0 ? (
+                          <div className="flex flex-col gap-0.5">
+                            {getDisplayLicenseNumbers(item).map(
+                              (licenseNumber, licenseIndex) => (
+                                <span key={`${licenseNumber}-${licenseIndex}`}>
+                                  {licenseNumber}
+                                </span>
+                              )
+                            )}
+                          </div>
+                        ) : (
+                          "N/A"
+                        )}
                       </td>
 {(expiryFilterType==="all"||expiryFilterType==="amc")&&(
  <td className="px-5 py-3 text-center min-w-40 text-slate-600 tabular-nums">
@@ -1690,35 +1912,34 @@ const ExpiredCustomer = () => {
                           : "N/A"}
                       </td>
 )}
-                     {(expiryFilterType==="all"||expiryFilterType==="license")&&(
+{(expiryFilterType==="all"||expiryFilterType==="license")&&(
 <td className="px-5 py-3 text-center min-w-48 text-slate-600 tabular-nums">
                         {item.licenseExpiryDate
                           ? new Date(item.licenseExpiryDate).toLocaleDateString("en-GB")
                           : "N/A"}
                       </td>
 )}
-                      
                       <td className="px-5 py-3 text-center">
-                        {customer.isActive ? (
+                        {getDisplayStatus(customer, item) ? (
                           <span
                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                              customer.isActive === "Active" ||
-                              customer.isActive === true
+                              getDisplayStatus(customer, item) === "Active" ||
+                              getDisplayStatus(customer, item) === true
                                 ? "bg-emerald-50 text-emerald-700"
                                 : "bg-rose-50 text-rose-700"
                             }`}
                           >
                             <span
                               className={`w-1.5 h-1.5 rounded-full ${
-                                customer.isActive === "Active" ||
-                                customer.isActive === true
+                                getDisplayStatus(customer, item) === "Active" ||
+                                getDisplayStatus(customer, item) === true
                                   ? "bg-emerald-500"
                                   : "bg-rose-500"
                               }`}
                             />
-                            {customer.isActive === true
+                            {getDisplayStatus(customer, item) === true
                               ? "Active"
-                              : customer.isActive}
+                              : getDisplayStatus(customer, item)}
                           </span>
                         ) : (
                           <span className="text-slate-400">N/A</span>

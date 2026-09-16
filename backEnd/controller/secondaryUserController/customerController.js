@@ -3096,7 +3096,7 @@ export const GetLicense = async (req, res) => {
 export const ChecklicenseForlead = async (req, res) => {
   try {
     const { licenseNumber, leadDocId } = req.query;
-console.log("abhi abhi abhia")
+    console.log("abhi abhi abhia")
     if (!licenseNumber) {
       return res.status(400).json({
         message: "License number is required",
@@ -3127,7 +3127,7 @@ console.log("abhi abhi abhia")
         licensenumber: licenseNo,
       }).select("_id"),
     ]);
-console.log("checkingggggggggggggggggggggggggggg")
+    console.log("checkingggggggggggggggggggggggggggg")
     return res.json({
       exists: Boolean(leadExists || licenseExists),
       source: leadExists ? "Lead" : licenseExists ? "License" : null,
@@ -4447,8 +4447,12 @@ export const GetCallRegister = async (req, res) => {
   }
 }
 export const GetAllExpiryRegister = async (req, res) => {
-  const { nextmonthReport, startDate, endDate, filterType = "all" } = req.query
+  const { nextmonthReport, startDate, endDate, filterType = "all", productId } = req.query
 
+  console.log("filtertype", filterType)
+  console.log("startdate", startDate)
+  console.log("enddate", endDate)
+  console.log("productId", productId)
   try {
     let startOfNextMonth
     let endOfNextMonth
@@ -4476,6 +4480,11 @@ export const GetAllExpiryRegister = async (req, res) => {
       ? { $gte: startOfNextMonth, $lte: endOfNextMonth }
       : { $gte: new Date(startDate), $lte: new Date(endDate) }
 
+    const selectedProductId =
+      productId && mongoose.Types.ObjectId.isValid(productId)
+        ? new mongoose.Types.ObjectId(productId)
+        : null
+
     let elemMatch = {}
 
     switch (filterType) {
@@ -4497,12 +4506,25 @@ export const GetAllExpiryRegister = async (req, res) => {
         }
         break
 
+      case "latest":
+      case "product":
+        elemMatch = {
+          ...(selectedProductId ? { product_id: selectedProductId } : {}),
+          $or: [
+            { nextDue: dateFilter },
+            { taggeddata: { $elemMatch: { nextDue: dateFilter } } }
+          ]
+        }
+        break
+
       default:
         elemMatch = {
           $or: [
             { licenseExpiryDate: dateFilter },
             { tvuexpiryDate: dateFilter },
-            { amcendDate: dateFilter }
+            { amcendDate: dateFilter },
+            { nextDue: dateFilter },
+            { "taggeddata.nextDue": dateFilter }
           ]
         }
     }
@@ -4511,6 +4533,9 @@ export const GetAllExpiryRegister = async (req, res) => {
       selected: {
         $elemMatch: elemMatch
       }
+    }).populate({
+      path: "selected.product_id",
+      select: "shortName productName productorservicetype"
     })
 
     const expiredCustomers = customers.map((customer) => {
@@ -4538,6 +4563,23 @@ export const GetAllExpiryRegister = async (req, res) => {
                 item.licenseExpiryDate <= dateFilter.$lte
               )
 
+            case "latest":
+            case "product":
+              return (
+                (item.nextDue &&
+                  item.nextDue >= dateFilter.$gte &&
+                  item.nextDue <= dateFilter.$lte) ||
+                item.taggeddata?.some(
+                  (tag) =>
+                    tag.nextDue &&
+                    tag.nextDue >= dateFilter.$gte &&
+                    tag.nextDue <= dateFilter.$lte
+                )
+              ) &&
+                (!selectedProductId ||
+                  String(item.product_id?._id || item.product_id) ===
+                  String(selectedProductId))
+
             default:
               return (
                 (item.licenseExpiryDate &&
@@ -4548,7 +4590,16 @@ export const GetAllExpiryRegister = async (req, res) => {
                   item.tvuexpiryDate <= dateFilter.$lte) ||
                 (item.amcendDate &&
                   item.amcendDate >= dateFilter.$gte &&
-                  item.amcendDate <= dateFilter.$lte)
+                  item.amcendDate <= dateFilter.$lte) ||
+                (item.nextDue &&
+                  item.nextDue >= dateFilter.$gte &&
+                  item.nextDue <= dateFilter.$lte) ||
+                item.taggeddata?.some(
+                  (tag) =>
+                    tag.nextDue &&
+                    tag.nextDue >= dateFilter.$gte &&
+                    tag.nextDue <= dateFilter.$lte
+                )
               )
           }
         })
@@ -4564,6 +4615,23 @@ export const GetAllExpiryRegister = async (req, res) => {
           } else if (filterType === "license") {
             delete obj.tvuexpiryDate
             delete obj.amcendDate
+          } else if (filterType === "latest" || filterType === "product") {
+            delete obj.licenseExpiryDate
+            delete obj.tvuexpiryDate
+            delete obj.amcendDate
+          }
+
+          if (
+            filterType === "latest" ||
+            filterType === "product" ||
+            filterType === "all"
+          ) {
+            obj.taggeddata = (obj.taggeddata || []).filter(
+              (tag) =>
+                tag.nextDue &&
+                tag.nextDue >= dateFilter.$gte &&
+                tag.nextDue <= dateFilter.$lte
+            )
           }
 
           return obj
@@ -4614,7 +4682,10 @@ export const getallExpiredCustomerCalls = async (req, res) => {
             }, // TVU expiry in the past
             {
               amcendDate: { $gte: startDate, $lte: endDate }
-            } // AMC end in the past
+            }, // AMC end in the past
+            {
+              "taggeddata.nextDue": { $gte: startDate, $lte: endDate }
+            } // Latest expiry in the past
           ]
         }
       }
