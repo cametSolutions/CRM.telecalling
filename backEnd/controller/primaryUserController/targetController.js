@@ -2282,13 +2282,21 @@ export const gettargetResult = async (req, res) => {
     const startMonth = Math.min(...activeMonths);
     const endMonth = Math.max(...activeMonths);
 
+    const activePeriodRange = getMonthRange(
+      yearNumber,
+      startMonth,
+      endMonth
+    );
+
+    // Targets are now credited by payment date. Keep the lead-date branch of
+    // this query for the existing incentive flow, and include payments made in
+    // the selected target period so an older lead can be credited correctly.
     const leads = await LeadMaster.find({
       leadBranch: selectedBranch,
-      leadDate: getMonthRange(
-        yearNumber,
-        startMonth,
-        endMonth
-      ),
+      $or: [
+        { leadDate: activePeriodRange },
+        { "paymentHistory.paymentDate": activePeriodRange },
+      ],
     })
       .select(`
         leadId leadDate customerName mobile phone leadClosed paymentVerified
@@ -2543,6 +2551,55 @@ export const gettargetResult = async (req, res) => {
       return total;
     };
 
+    const getPaymentDate = (payment) => {
+      const date = new Date(payment?.paymentDate);
+      return Number.isNaN(date.getTime()) ? null : date;
+    };
+
+    const isDateInTargetMonth = (date, targetMonth) =>
+      date &&
+      date.getUTCFullYear() === yearNumber &&
+      date.getUTCMonth() + 1 === targetMonth;
+
+    const getVerifiedAmountForCategoryInMonth = (
+      lead,
+      configCategoryId,
+      targetMonth
+    ) => {
+      let total = 0;
+
+      for (const payment of objects(lead.paymentHistory)) {
+        const paymentDate = getPaymentDate(payment);
+        if (
+          payment.paymentVerified !== true ||
+          !isDateInTargetMonth(paymentDate, targetMonth)
+        ) {
+          continue;
+        }
+
+        for (const entry of objects(payment.paymentEntries)) {
+          const meta = getItemMeta(entry);
+          if (
+            meta?.categoryId &&
+            String(meta.categoryId) === String(configCategoryId)
+          ) {
+            total += num(entry.receivedAmount);
+          }
+        }
+      }
+
+      return total;
+    };
+
+    const getLastPaymentDate = (lead) => {
+      const paymentDates = objects(lead.paymentHistory)
+        .map(getPaymentDate)
+        .filter(Boolean);
+
+      if (!paymentDates.length) return null;
+      return new Date(Math.max(...paymentDates.map((date) => date.getTime())));
+    };
+
     const isLeadFullyVerified = (lead) => {
       const payments = objects(lead.paymentHistory);
 
@@ -2758,7 +2815,9 @@ export const gettargetResult = async (req, res) => {
 
           That staff/admin does not need a target configured.
         */
-        for (const lead of currentMonthLeads) {
+        // Target achievement is determined by payment month, not lead date.
+        // `leads` also includes older leads that received a payment this month.
+        for (const lead of leads) {
           const categoryItems = getLeadCategoryItems(
             lead,
             configCategoryId
@@ -2780,24 +2839,30 @@ export const gettargetResult = async (req, res) => {
           let leadAchievement = 0;
 
           if (config.measurementType === "amount") {
-            leadAchievement =
-              lead.forcefullyClosedTarget === true
-                ? num(lead.netAmount)
-                : getVerifiedAmountForCategory(
-                    lead,
-                    configCategoryId
-                  );
+            leadAchievement = getVerifiedAmountForCategoryInMonth(
+              lead,
+              configCategoryId,
+              targetMonth
+            );
           } else {
-            /*
-              Quantity target:
-              Count one when the lead is closed and a follow-up
-              is marked closed by a staff/admin.
+            const payments = objects(lead.paymentHistory);
+            const isFullyVerified =
+              payments.length > 0 &&
+              payments.every((payment) => payment.paymentVerified === true);
+            const isFullyPaid =
+              lead.balanceAmount !== null &&
+              lead.balanceAmount !== undefined &&
+              lead.balanceAmount !== "" &&
+              num(lead.balanceAmount) === 0 &&
+              num(lead.totalPaidAmount) >= num(lead.netAmount);
+            const lastPaymentDate = getLastPaymentDate(lead);
 
-              This does NOT require balanceAmount === 0.
-              If you need fully-paid-only quantity targets, replace
-              this with your full-payment validation condition.
-            */
+            // Quantity is credited once, in the month of the final payment,
+            // only after the lead is fully paid and every payment is verified.
             leadAchievement =
+              isFullyVerified &&
+              isFullyPaid &&
+              isDateInTargetMonth(lastPaymentDate, targetMonth) &&
               lead.leadClosed === true &&
               closingActivity.followupClosed === true
                 ? 1
