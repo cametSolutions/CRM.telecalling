@@ -258,74 +258,6 @@
 //   }
 // }
 
-// export const UpdateUserandAdmin = async (req, res) => {
-//   const { userId, userData, tabledata, imageData } = req.body
-//   const { profileUrl = "", documentUrl = "" } = imageData
-//   const { role } = userData
-
-//   const { assignedto, ...filteredUserData } = userData
-
-//   const { password } = filteredUserData
-//   const assignedtoId = assignedto // Assuming assignedto is coming from userDat
-//   let assignedtoModel
-//   // Check if assignedto corresponds to a Staff
-//   const isStaff = await Staff.exists({ _id: assignedtoId })
-
-//   // Check if assignedto corresponds to an Admin
-//   const isAdmin = await Admin.exists({ _id: assignedtoId })
-//   if (isStaff) {
-//     assignedtoModel = "Staff"
-//   } else if (isAdmin) {
-//     assignedtoModel = "Admin"
-//   }
-//   try {
-
-//     const updateQuery = {
-//       $set: {
-//         assignedtoModel,
-//         assignedto,
-//         ...filteredUserData, // Other fields to update
-//       }
-//     }
-
-//     // Check if tableData is empty or not, and update the selected field accordingly
-//     if (tabledata.length === 0) {
-//       updateQuery.$set.selected = [] // Explicitly set selected to an empty array
-//     } else {
-//       updateQuery.$set.selected = tabledata // Add items to selected field if not empty
-//     }
-
-//     if (updateQuery.$set.password) {
-//       const salt = await bcrypt.genSalt(10)
-//       const hashedPassword = await bcrypt.hash(password, salt)
-//       updateQuery.$set.password = hashedPassword
-//     } else {
-//       delete updateQuery.$set.password
-//     }
-//     if (profileUrl.length > 0) {
-//       updateQuery.$set.profileUrl = profileUrl
-//     }
-//     if (documentUrl.length > 0) {
-//       updateQuery.$set.documentUrl = documentUrl
-//     }
-//     // Perform the update with findByIdAndUpdate//if the its role admin its saved in the staff collection
-//     const updateStaff = await Staff.findByIdAndUpdate(
-//       userId,
-//       updateQuery,
-//       { new: true } // Return the updated document
-//     )
-
-//     if (!updateStaff) {
-//       return res.status(404).json({ message: "  Not found" })
-//     }
-
-//     return res.status(200).json({ message: "updated succesfully" })
-
-//   } catch (error) {
-//     console.log("error:", error.message)
-//     res.status(500).json({ message: "Internal servor error" })
-//   }
-// }
 
 
 // export const Logout = (req, res) => {
@@ -7361,13 +7293,17 @@ export const StaffRegister = async (req, res) => {
 
 
 export const UpdateUserandAdmin = async (req, res) => {
-  const { userId, userData, tabledata = [], imageData = {} } = req.body
+  const { userId, userData, tabledata, imageData = {} } = req.body
 
-  const { profileUrl, documentUrl } = imageData
-  const { role } = userData
+  if (!userId || !userData || typeof userData !== "object") {
+    return res.status(400).json({ message: "User ID and user data are required" })
+  }
 
-  console.log("pffff", profileUrl)
-  console.log(typeof profileUrl === "string")
+  if (tabledata !== undefined && !Array.isArray(tabledata)) {
+    return res.status(400).json({ message: "Selected branches must be an array" })
+  }
+
+  const { profileUrl, documentUrl } = imageData || {}
 
   const {
     assignedto,
@@ -7376,8 +7312,19 @@ export const UpdateUserandAdmin = async (req, res) => {
     ...filteredUserData
   } = userData
 
-  const { password } = filteredUserData
+  // Never include password in a bulk assignment. It is handled separately so
+  // that an empty edit-form value cannot replace the existing credential.
+  const { password, ...editableUserData } = filteredUserData
   const assignedtoId = assignedto
+
+  const hasNewPassword =
+    typeof password === "string" && password.trim().length > 0
+
+  // The edit form sends an empty string when the password is left unchanged.
+  // Preserve that established behaviour, but reject malformed non-string input.
+  if (password !== undefined && password !== null && typeof password !== "string") {
+    return res.status(400).json({ message: "Password must be a string" })
+  }
 
   try {
     let assignedtoModel
@@ -7399,7 +7346,7 @@ export const UpdateUserandAdmin = async (req, res) => {
 
     const updateQuery = {
       $set: {
-        ...filteredUserData
+        ...editableUserData
       }
     }
 
@@ -7416,26 +7363,21 @@ export const UpdateUserandAdmin = async (req, res) => {
       Explicitly set the selected companies/branches.
       [] clears all selections.
     */
-    updateQuery.$set.selected = tabledata
+    // A missing tabledata field means "leave selections unchanged". An
+    // explicit [] still clears them, preserving the existing UI behaviour.
+    if (tabledata !== undefined) {
+      updateQuery.$set.selected = tabledata
+    }
 
     /*
       Update password + password expiry only when a usable new password exists.
       Do not update passwordExpiryAt when editing unrelated user fields.
     */
-    if (typeof password === "string" && password.trim().length > 0) {
-    
-
+    if (hasNewPassword) {
       const expiryDate = new Date()
       expiryDate.setMonth(expiryDate.getMonth() + 2)
 
-      updateQuery.$set.password = password
       updateQuery.$set.passwordExpiryAt = expiryDate
-    } else {
-      /*
-        Important: Prevent password: "" / undefined from overwriting
-        the existing stored password.
-      */
-      delete updateQuery.$set.password
     }
 
     /*
@@ -7460,12 +7402,13 @@ export const UpdateUserandAdmin = async (req, res) => {
       updateQuery.$set.documentUrl = documentUrl
     }
 
-    // Do not use findByIdAndUpdate here. Query updates bypass the schema's
-    // pre("save") hook, which would store an edited password as plain text.
-    // Saving the document lets the existing hook hash a changed password.
-    let updatedUser = await Staff.findById(userId)
+    // Save regular profile fields through the model so schema validation and
+    // normal middleware continue to run.
+    let UserModel = Staff
+    let updatedUser = await UserModel.findById(userId)
     if (!updatedUser) {
-      updatedUser = await Admin.findById(userId)
+      UserModel = Admin
+      updatedUser = await UserModel.findById(userId)
     }
 
     if (!updatedUser) {
@@ -7473,14 +7416,42 @@ export const UpdateUserandAdmin = async (req, res) => {
     }
 
     Object.assign(updatedUser, updateQuery.$set)
+
+    // Do not assign an already-hashed password to this document: its
+    // pre("save") hook would hash it a second time. Passwords are instead
+    // written explicitly below with updateOne(), which bypasses that hook.
+    const isBcryptHash = /^\$2[aby]\$\d{2}\$/.test(updatedUser.password || "")
+    const passwordToHash = hasNewPassword
+      ? password.trim()
+      : !isBcryptHash
+        ? updatedUser.password
+        : null
+
     await updatedUser.save()
+
+    if (passwordToHash) {
+      const hashedPassword = await bcrypt.hash(passwordToHash, 10)
+      const passwordUpdate = await UserModel.updateOne(
+        { _id: updatedUser._id },
+        { $set: { password: hashedPassword } }
+      )
+
+      if (passwordUpdate.matchedCount !== 1) {
+        throw new Error("Password update did not match a user")
+      }
+    }
 
     return res.status(200).json({
       message: "Updated successfully",
-      passwordExpiryAt: updatedUser.passwordExpiryAt
+      passwordExpiryAt: updatedUser.passwordExpiryAt,
+      passwordUpdated: Boolean(passwordToHash)
     })
   } catch (error) {
     console.error("UpdateUserandAdmin error:", error)
+
+    if (error.name === "ValidationError" || error.name === "CastError") {
+      return res.status(400).json({ message: error.message })
+    }
 
     return res.status(500).json({
       message: "Internal server error"
