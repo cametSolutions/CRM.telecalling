@@ -7357,145 +7357,9 @@ export const StaffRegister = async (req, res) => {
   }
 }
 
-// export const UpdateUserandAdmin = async (req, res) => {
-//   const { userId, userData, tabledata, imageData } = req.body
-//   const { profileUrl = "", documentUrl = "" } = imageData
-//   const { role } = userData
 
-//   const { assignedto, ...filteredUserData } = userData
 
-//   const { password } = filteredUserData
-//   const assignedtoId = assignedto // Assuming assignedto is coming from userDat
-//   let assignedtoModel
-//   // Check if assignedto corresponds to a Staff
-//   const isStaff = await Staff.exists({ _id: assignedtoId })
 
-//   // Check if assignedto corresponds to an Admin
-//   const isAdmin = await Admin.exists({ _id: assignedtoId })
-//   if (isStaff) {
-//     assignedtoModel = "Staff"
-//   } else if (isAdmin) {
-//     assignedtoModel = "Admin"
-//   }
-//   try {
-
-//     const updateQuery = {
-//       $set: {
-//         assignedtoModel,
-//         assignedto,
-//         ...filteredUserData, // Other fields to update
-//       }
-//     }
-
-//     // Check if tableData is empty or not, and update the selected field accordingly
-//     if (tabledata.length === 0) {
-//       updateQuery.$set.selected = [] // Explicitly set selected to an empty array
-//     } else {
-//       updateQuery.$set.selected = tabledata // Add items to selected field if not empty
-//     }
-
-//     if (updateQuery.$set.password) {
-//       const salt = await bcrypt.genSalt(10)
-//       const hashedPassword = await bcrypt.hash(password, salt)
-//       updateQuery.$set.password = hashedPassword
-//     } else {
-//       delete updateQuery.$set.password
-//     }
-//     if (profileUrl.length > 0) {
-//       updateQuery.$set.profileUrl = profileUrl
-//     }
-//     if (documentUrl.length > 0) {
-//       updateQuery.$set.documentUrl = documentUrl
-//     }
-//     // Perform the update with findByIdAndUpdate//if the its role admin its saved in the staff collection
-//     const updateStaff = await Staff.findByIdAndUpdate(
-//       userId,
-//       updateQuery,
-//       { new: true } // Return the updated document
-//     )
-
-//     if (!updateStaff) {
-//       return res.status(404).json({ message: "  Not found" })
-//     }
-
-//     return res.status(200).json({ message: "updated succesfully" })
-
-//   } catch (error) {
-//     console.log("error:", error.message)
-//     res.status(500).json({ message: "Internal servor error" })
-//   }
-// }
-
-// export const UpdateUserandAdmin = async (req, res) => {
-//   const { userId, userData, tabledata, imageData = {} } = req.body   // ✅ default imageData too, avoids a crash if it's ever missing entirely
-//   const { profileUrl, documentUrl } = imageData                       // ✅ no default here — undefined vs "" vs real value are now distinguishable
-//   const { role } = userData
-//   console.log("pffff", profileUrl)
-//   console.log(typeof profileUrl === "string")
-
-//   const { assignedto, profileUrl: _ignoredProfileUrl, documentUrl: _ignoredDocumentUrl, ...filteredUserData } = userData
-
-//   const { password } = filteredUserData
-//   const assignedtoId = assignedto
-
-//   let assignedtoModel
-//   const isStaff = await Staff.exists({ _id: assignedtoId })
-//   const isAdmin = await Admin.exists({ _id: assignedtoId })
-//   if (isStaff) {
-//     assignedtoModel = "Staff"
-//   } else if (isAdmin) {
-//     assignedtoModel = "Admin"
-//   }
-
-//   try {
-//     const updateQuery = {
-//       $set: {
-//         assignedtoModel,
-//         assignedto,
-//         ...filteredUserData
-//       }
-//     }
-
-//     if (tabledata.length === 0) {
-//       updateQuery.$set.selected = []
-//     } else {
-//       updateQuery.$set.selected = tabledata
-//     }
-
-//     if (updateQuery.$set.password) {
-//       const salt = await bcrypt.genSalt(10)
-//       const hashedPassword = await bcrypt.hash(password, salt)
-//       updateQuery.$set.password = hashedPassword
-//     } else {
-//       delete updateQuery.$set.password
-//     }
-
-//     // Only write these fields when a real, non-empty new value came through.
-//     // typeof check + truthy check together handle: key missing entirely,
-//     // key present but "", and key present with a real URL — all correctly.
-//     if (typeof profileUrl === "string") {
-//       updateQuery.$set.profileUrl = profileUrl
-//     }
-//     if (typeof documentUrl === "string" && documentUrl.length > 0) {
-//       updateQuery.$set.documentUrl = documentUrl
-//     }
-
-//     const updateStaff = await Staff.findByIdAndUpdate(
-//       userId,
-//       updateQuery,
-//       { new: true }
-//     )
-
-//     if (!updateStaff) {
-//       return res.status(404).json({ message: "Not found" })
-//     }
-
-//     return res.status(200).json({ message: "updated succesfully" })
-//   } catch (error) {
-//     console.log("error:", error.message)
-//     res.status(500).json({ message: "Internal servor error" })
-//   }
-// }
 export const UpdateUserandAdmin = async (req, res) => {
   const { userId, userData, tabledata = [], imageData = {} } = req.body
 
@@ -7596,22 +7460,24 @@ export const UpdateUserandAdmin = async (req, res) => {
       updateQuery.$set.documentUrl = documentUrl
     }
 
-    const updateStaff = await Staff.findByIdAndUpdate(
-      userId,
-      updateQuery,
-      {
-        new: true,
-        runValidators: true
-      }
-    )
+    // Do not use findByIdAndUpdate here. Query updates bypass the schema's
+    // pre("save") hook, which would store an edited password as plain text.
+    // Saving the document lets the existing hook hash a changed password.
+    let updatedUser = await Staff.findById(userId)
+    if (!updatedUser) {
+      updatedUser = await Admin.findById(userId)
+    }
 
-    if (!updateStaff) {
+    if (!updatedUser) {
       return res.status(404).json({ message: "Not found" })
     }
 
+    Object.assign(updatedUser, updateQuery.$set)
+    await updatedUser.save()
+
     return res.status(200).json({
       message: "Updated successfully",
-      passwordExpiryAt: updateStaff.passwordExpiryAt
+      passwordExpiryAt: updatedUser.passwordExpiryAt
     })
   } catch (error) {
     console.error("UpdateUserandAdmin error:", error)
