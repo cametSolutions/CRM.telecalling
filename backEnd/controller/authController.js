@@ -7596,22 +7596,24 @@ export const UpdateUserandAdmin = async (req, res) => {
       updateQuery.$set.documentUrl = documentUrl
     }
 
-    const updateStaff = await Staff.findByIdAndUpdate(
-      userId,
-      updateQuery,
-      {
-        new: true,
-        runValidators: true
-      }
-    )
+    // Do not use findByIdAndUpdate here. Query updates bypass the schema's
+    // pre("save") hook, which would store an edited password as plain text.
+    // Saving the document lets the existing hook hash a changed password.
+    let updatedUser = await Staff.findById(userId)
+    if (!updatedUser) {
+      updatedUser = await Admin.findById(userId)
+    }
 
-    if (!updateStaff) {
+    if (!updatedUser) {
       return res.status(404).json({ message: "Not found" })
     }
 
+    Object.assign(updatedUser, updateQuery.$set)
+    await updatedUser.save()
+
     return res.status(200).json({
       message: "Updated successfully",
-      passwordExpiryAt: updateStaff.passwordExpiryAt
+      passwordExpiryAt: updatedUser.passwordExpiryAt
     })
   } catch (error) {
     console.error("UpdateUserandAdmin error:", error)

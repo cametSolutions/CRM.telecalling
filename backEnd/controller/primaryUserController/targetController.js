@@ -2266,7 +2266,7 @@ export const gettargetResult = async (req, res) => {
       });
     }
 
-    const activeMonths = [
+    const configuredMonths = [
       ...new Set(
         targetConfigs.flatMap((config) =>
           objects(config.monthlyTargets)
@@ -2278,6 +2278,32 @@ export const gettargetResult = async (req, res) => {
         )
       ),
     ].filter(Boolean);
+
+    // Preserve the period selector behavior: "All" evaluates every month in
+    // the selected target period, while a specific month evaluates only that
+    // month. This range is used for both target values and payment credits.
+    const activeMonths =
+      mode === "all"
+        ? configuredMonths
+        : configuredMonths.filter(
+            (configuredMonth) => configuredMonth === selectedMonth
+          );
+
+    if (!activeMonths.length) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          userWiseResults: [],
+          summary: { target: 0, achieved: 0, balance: 0, incentive: 0 },
+          periods: allPeriods,
+          measurementTypes: [],
+          selectedMeasurementType: "",
+          selectedPeriodName: "",
+          selectedMonth,
+          selectedYear: yearNumber,
+        },
+      });
+    }
 
     const startMonth = Math.min(...activeMonths);
     const endMonth = Math.max(...activeMonths);
@@ -3163,6 +3189,103 @@ export const gettargetResult = async (req, res) => {
       ),
     ];
 
+const categoryId = new mongoose.Types.ObjectId("66f2868a9a1fccd827f23af3");
+const leadBranchId = new mongoose.Types.ObjectId("66f7b26c1e7129afd9aee189"); // from params
+
+const valuecheck = await LeadMaster.aggregate([
+  // 1. Ensure paymentHistory exists and is non-empty
+  {
+    $match: {
+      paymentHistory: { $exists: true, $type: "array", $ne: [] }
+    }
+  },
+
+  // 2. Unwind leadFor
+  {
+    $unwind: "$leadFor"
+  },
+
+  // 3. Join with product collection
+  {
+    $lookup: {
+      from: "products",
+      localField: "leadFor.productorServiceId",
+      foreignField: "_id",
+      as: "productInfo"
+    }
+  },
+  {
+    $unwind: "$productInfo"
+  },
+
+  // 4. Unwind selected array
+  {
+    $unwind: "$productInfo.selected"
+  },
+
+  // 5. Filter by category_id
+  {
+    $match: {
+      "productInfo.selected.category_id": categoryId
+    }
+  },
+
+  // 6. Group back to one doc per lead
+  {
+    $group: {
+      _id: "$_id",
+      doc: { $first: "$$ROOT" },
+      matchedProductIds: { $addToSet: "$productInfo._id" }
+    }
+  },
+
+  // 7. Restore original document
+  {
+    $replaceWith: "$doc"
+  },
+
+  // 8. Filter by leadBranch
+  {
+    $match: {
+      leadBranch: leadBranchId
+    }
+  },
+
+  // 9. Payment filter: Jul–Sep & paymentVerified = true
+  {
+    $addFields: {
+      hasQualifiedPayment: {
+        $anyElementTrue: {
+          $map: {
+            input: "$paymentHistory",
+            as: "p",
+            in: {
+              $and: [
+                { $eq: ["$$p.paymentVerified", true] },
+                {
+                  $and: [
+                    { $gte: ["$$p.paymentDate", new Date("2026-07-01T00:00:00Z")] },
+                    { $lte: ["$$p.paymentDate", new Date("2026-09-30T23:59:59.999Z")] }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    $match: {
+      hasQualifiedPayment: true
+    }
+  },
+  {
+    $project: {
+      hasQualifiedPayment: 0
+    }
+  }
+]);
     return res.status(200).json({
       success: true,
       data: {
@@ -3175,6 +3298,7 @@ export const gettargetResult = async (req, res) => {
           targetConfigs[0]?.measurementType || "",
         selectedMonth,
         selectedYear: yearNumber,
+valuecheck
       },
     });
   } catch (error) {

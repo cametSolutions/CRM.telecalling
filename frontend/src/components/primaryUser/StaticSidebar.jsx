@@ -90,6 +90,8 @@ export const StaticSidebar = ({
       periodMode &&
       `/target/gettargetresult?month=${selectedMonth}&year=${selectedYear}&periodMode=${periodMode}&selectedBranch=${selectedBranch}`
   )
+  console.log(periodMode)
+  console.log(selectedMonth)
   const { data: branchProduct = [] } = useCachedFetch(
     selectedBranch
       ? `/product/getallbranchProduct?branch=${selectedBranch}`
@@ -97,6 +99,10 @@ export const StaticSidebar = ({
   )
   console.log(selectedMonth)
   console.log(data)
+  console.log(data?.valuecheck)
+  console.log(data?.valuecheck?.length)
+  const filteredproductcat = data?.valuecheck?.map((item) => item?.leadId)
+  console.log(filteredproductcat)
   console.log(selectedBranch)
   console.log(selectedYear)
   console.log(periodMode)
@@ -282,8 +288,8 @@ export const StaticSidebar = ({
       const aa = data.userWiseResults.filter(
         (item) => item.userName === "Riyas"
       )
-const names=data.userWiseResults.map((it)=>it.userName)
-console.log(names)
+      const names = data.userWiseResults.map((it) => it.userName)
+      console.log(names)
       console.log(aa)
       setloggeduserTarget(selectedUser || null)
       console.log(selectedUser)
@@ -295,7 +301,7 @@ console.log(names)
             data.userWiseResults
               ?.flatMap((userItem) => userItem.categories || [])
               .filter((c) => c.categoryId === cat.categoryId) || []
-        
+
           console.log(matchedCategories)
           const totalTarget = matchedCategories.reduce(
             (sum, c) => sum + (c.target || 0),
