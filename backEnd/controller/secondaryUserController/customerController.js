@@ -4,7 +4,6 @@ import { generateUniqueNumericToken } from "../../helper/callTokenGeneration.js"
 import { sendWhatapp } from "../../helper/whatapp.js"
 import moment from "moment" // You can use moment.js to handle date manipulation easily
 import { escapeRegExp } from "../../helper/escapeRegExp.js"
-import Lead from "../../model/primaryUser/leadmasterSchema.js"
 import License from "../../model/secondaryUser/licenseSchema.js"
 import CallRegistration from "../../model/secondaryUser/CallRegistrationSchema.js"
 import Partner from "../../model/secondaryUser/partnerSchema.js"
@@ -3102,42 +3101,22 @@ export const GetLicense = async (req, res) => {
 // }
 export const ChecklicenseForlead = async (req, res) => {
   try {
-    const { licenseNumber, leadDocId } = req.query;
-    console.log("abhi abhi abhia")
+    const { licenseNumber } = req.query;
     if (!licenseNumber) {
       return res.status(400).json({
         message: "License number is required",
       });
     }
 
-    if (leadDocId && !mongoose.Types.ObjectId.isValid(leadDocId)) {
-      return res.status(400).json({
-        message: "Invalid lead document id",
-      });
-    }
-
     const licenseNo = Number(licenseNumber);
 
-    const leadQuery = {
-      "leadFor.licenseNumber": licenseNo,
-    };
+    const licenseExists = await License.findOne({
+      licensenumber: licenseNo,
+    }).select("_id");
 
-    // In edit mode: search other lead documents only.
-    if (leadDocId) {
-      leadQuery._id = { $ne: new mongoose.Types.ObjectId(leadDocId) };
-    }
-
-    const [leadExists, licenseExists] = await Promise.all([
-      Lead.findOne(leadQuery).select("_id"),
-
-      License.findOne({
-        licensenumber: licenseNo,
-      }).select("_id"),
-    ]);
-    console.log("checkingggggggggggggggggggggggggggg")
     return res.json({
-      exists: Boolean(leadExists || licenseExists),
-      source: leadExists ? "Lead" : licenseExists ? "License" : null,
+      exists: Boolean(licenseExists),
+      source: licenseExists ? "License" : null,
     });
   } catch (error) {
     console.error("ChecklicenseForlead error:", error.message);
