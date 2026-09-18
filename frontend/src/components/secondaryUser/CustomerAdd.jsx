@@ -76,6 +76,7 @@ const CustomerAdd = ({
       nextDue: "",
       noofusers: "",
       productAmount: "",
+      customerIsActive: "Running",
       isActive: "Running",
       taggedLicenses: [],
       taggedLicenseDueDates: {}
@@ -356,6 +357,7 @@ const [dummyTableData,setDummyTableData]=useState([])
         nextDue: "",
         noofusers: "",
         productAmount: "",
+        customerIsActive: customer?.isActive || "Running",
         isActive: "Running",
         taggedLicenses: [],
         taggedLicenseDueDates: {}
@@ -1405,8 +1407,16 @@ setTableData((prev) => {
 
     setsubmissionloader(true)
     try {
+      // Keep the customer-level status separate from the product-popup status
+      // field, then send it to the API using the persisted `isActive` name.
+      const { customerIsActive, ...customerFormData } = data
+      const customerPayload = {
+        ...customerFormData,
+        isActive: customerIsActive || "Running"
+      }
+
       if (process === "Registration") {
-        await handleCustomerData(data, tableData)
+        await handleCustomerData(customerPayload, tableData)
         reset()
         setTableData([])
         setIsSaved(true)
@@ -1416,7 +1426,7 @@ setTableData((prev) => {
         console.log(data)
         console.log(tableData)
         console.log(customer?.index)
-        await handleEditedData(data, tableData, customer?.index)
+        await handleEditedData(customerPayload, tableData, customer?.index)
 
         reset({
           customerName: "",
@@ -1443,6 +1453,7 @@ setTableData((prev) => {
           nextDue: "",
           noofusers: "",
           productAmount: "",
+          customerIsActive: "Running",
           isActive: "Running",
           taggedLicenses: [],
           taggedLicenseDueDates: {}
@@ -2012,6 +2023,18 @@ setTableData((prev) => {
                   <option value="">Select RegistrationType</option>
                   <option value="unregistered">Unregistered/Consumer</option>
                   <option value="regular">Regular</option>
+                </select>
+              </InfoInputCard>
+
+              <InfoInputCard
+                icon={<FaHashtag size={12} />}
+                iconBg="bg-[#eefbf2]"
+                iconColor="text-[#4cbf73]"
+                label="Status"
+              >
+                <select {...register("customerIsActive")} className={tileInputClass}>
+                  <option value="Running">Running</option>
+                  <option value="Deactive">Deactive</option>
                 </select>
               </InfoInputCard>
 

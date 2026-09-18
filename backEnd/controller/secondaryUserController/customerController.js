@@ -1413,7 +1413,8 @@ export const CustomerRegister = async (req, res) => {
     mobile,
     landline,
     registrationType,
-    gstNo
+    gstNo,
+    isActive = "Running"
   } = customerData
   if (tabledata && tabledata?.length > 0) {
     // const licenseNumbers = tabledata.map((item) => item.licensenumber)
@@ -1457,6 +1458,7 @@ export const CustomerRegister = async (req, res) => {
       landline,
       registrationType,
       gstNo,
+      isActive: isActive || "Running",
       partner: normalizedPartner,
       contactPerson,
       selected: tabledata
@@ -1840,9 +1842,14 @@ export const CustomerEdit = async (req, res) => {
       Update only normal customer fields.
       Prevent request values from accidentally changing selected directly.
     */
-    const { selected, ...safeCustomerData } = customerData
+    const { selected, isActive, ...safeCustomerData } = customerData
 
     Object.assign(existingCustomer, safeCustomerData)
+
+    // Keep the stored status when an older client does not send this field.
+    if (isActive !== undefined) {
+      existingCustomer.isActive = isActive
+    }
 
     const oldSelected = Array.isArray(existingCustomer.selected)
       ? existingCustomer.selected.map((item) => item.toObject?.() || item)
