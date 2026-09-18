@@ -472,6 +472,13 @@ const CustomerSchema = new mongoose.Schema(
       default: "",
     },
 
+    isActive: {
+      type: String,
+      trim: true,
+      enum: ["Running", "Deactive"],
+      default: "Running",
+    },
+
     selected: {
       type: [SelectedItemSchema],
       default: [],

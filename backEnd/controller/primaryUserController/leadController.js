@@ -3878,6 +3878,9 @@ export const Checkduplicatecustomer = async (req, res) => {
     const query = {
       mobile: cleanedMobile,
       customerName: { $regex: `^${cleanedName}$`, $options: "i" },
+      // A deactivated customer may be registered again with the same details.
+      // Missing/other statuses remain duplicate matches as before.
+      isActive: { $ne: "Deactive" },
     };
 
     if (customerId) {
