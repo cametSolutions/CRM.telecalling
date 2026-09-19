@@ -27,6 +27,8 @@
 import jwt from "jsonwebtoken"
 
 const generateToken = (res, user) => {
+  const isSecureEnvironment = process.env.NODE_ENV !== "development"
+console.log("userrrrrrrrrrrrrrrrrrrrrr",user?._id)
   const token = jwt.sign(
     {
       userId: user._id,
@@ -39,8 +41,11 @@ const generateToken = (res, user) => {
 
   res.cookie("jwt_primary", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV !== "development",
-    sameSite: "strict",
+    secure: isSecureEnvironment,
+    // The hosted frontend and API can be different origins. `none` permits
+    // credentialed cross-origin requests; HTTPS is required in that case.
+    sameSite: isSecureEnvironment ? "none" : "lax",
+    path: "/"
   })
 
   return token

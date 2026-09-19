@@ -2266,7 +2266,7 @@ export const gettargetResult = async (req, res) => {
       });
     }
 
-    const activeMonths = [
+    const configuredMonths = [
       ...new Set(
         targetConfigs.flatMap((config) =>
           objects(config.monthlyTargets)
@@ -2279,16 +2279,50 @@ export const gettargetResult = async (req, res) => {
       ),
     ].filter(Boolean);
 
+    // Preserve the period selector behavior: "All" evaluates every month in
+    // the selected target period, while a specific month evaluates only that
+    // month. This range is used for both target values and payment credits.
+    const activeMonths =
+      mode === "all"
+        ? configuredMonths
+        : configuredMonths.filter(
+            (configuredMonth) => configuredMonth === selectedMonth
+          );
+
+    if (!activeMonths.length) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          userWiseResults: [],
+          summary: { target: 0, achieved: 0, balance: 0, incentive: 0 },
+          periods: allPeriods,
+          measurementTypes: [],
+          selectedMeasurementType: "",
+          selectedPeriodName: "",
+          selectedMonth,
+          selectedYear: yearNumber,
+        },
+      });
+    }
+
     const startMonth = Math.min(...activeMonths);
     const endMonth = Math.max(...activeMonths);
 
+    const activePeriodRange = getMonthRange(
+      yearNumber,
+      startMonth,
+      endMonth
+    );
+
+    // Targets are now credited by payment date. Keep the lead-date branch of
+    // this query for the existing incentive flow, and include payments made in
+    // the selected target period so an older lead can be credited correctly.
     const leads = await LeadMaster.find({
       leadBranch: selectedBranch,
-      leadDate: getMonthRange(
-        yearNumber,
-        startMonth,
-        endMonth
-      ),
+      $or: [
+        { leadDate: activePeriodRange },
+        { "paymentHistory.paymentDate": activePeriodRange },
+      ],
     })
       .select(`
         leadId leadDate customerName mobile phone leadClosed paymentVerified
@@ -2543,6 +2577,55 @@ export const gettargetResult = async (req, res) => {
       return total;
     };
 
+    const getPaymentDate = (payment) => {
+      const date = new Date(payment?.paymentDate);
+      return Number.isNaN(date.getTime()) ? null : date;
+    };
+
+    const isDateInTargetMonth = (date, targetMonth) =>
+      date &&
+      date.getUTCFullYear() === yearNumber &&
+      date.getUTCMonth() + 1 === targetMonth;
+
+    const getVerifiedAmountForCategoryInMonth = (
+      lead,
+      configCategoryId,
+      targetMonth
+    ) => {
+      let total = 0;
+
+      for (const payment of objects(lead.paymentHistory)) {
+        const paymentDate = getPaymentDate(payment);
+        if (
+          payment.paymentVerified !== true ||
+          !isDateInTargetMonth(paymentDate, targetMonth)
+        ) {
+          continue;
+        }
+
+        for (const entry of objects(payment.paymentEntries)) {
+          const meta = getItemMeta(entry);
+          if (
+            meta?.categoryId &&
+            String(meta.categoryId) === String(configCategoryId)
+          ) {
+            total += num(entry.receivedAmount);
+          }
+        }
+      }
+
+      return total;
+    };
+
+    const getLastPaymentDate = (lead) => {
+      const paymentDates = objects(lead.paymentHistory)
+        .map(getPaymentDate)
+        .filter(Boolean);
+
+      if (!paymentDates.length) return null;
+      return new Date(Math.max(...paymentDates.map((date) => date.getTime())));
+    };
+
     const isLeadFullyVerified = (lead) => {
       const payments = objects(lead.paymentHistory);
 
@@ -2758,7 +2841,9 @@ export const gettargetResult = async (req, res) => {
 
           That staff/admin does not need a target configured.
         */
-        for (const lead of currentMonthLeads) {
+        // Target achievement is determined by payment month, not lead date.
+        // `leads` also includes older leads that received a payment this month.
+        for (const lead of leads) {
           const categoryItems = getLeadCategoryItems(
             lead,
             configCategoryId
@@ -2780,24 +2865,30 @@ export const gettargetResult = async (req, res) => {
           let leadAchievement = 0;
 
           if (config.measurementType === "amount") {
-            leadAchievement =
-              lead.forcefullyClosedTarget === true
-                ? num(lead.netAmount)
-                : getVerifiedAmountForCategory(
-                    lead,
-                    configCategoryId
-                  );
+            leadAchievement = getVerifiedAmountForCategoryInMonth(
+              lead,
+              configCategoryId,
+              targetMonth
+            );
           } else {
-            /*
-              Quantity target:
-              Count one when the lead is closed and a follow-up
-              is marked closed by a staff/admin.
+            const payments = objects(lead.paymentHistory);
+            const isFullyVerified =
+              payments.length > 0 &&
+              payments.every((payment) => payment.paymentVerified === true);
+            const isFullyPaid =
+              lead.balanceAmount !== null &&
+              lead.balanceAmount !== undefined &&
+              lead.balanceAmount !== "" &&
+              num(lead.balanceAmount) === 0 &&
+              num(lead.totalPaidAmount) >= num(lead.netAmount);
+            const lastPaymentDate = getLastPaymentDate(lead);
 
-              This does NOT require balanceAmount === 0.
-              If you need fully-paid-only quantity targets, replace
-              this with your full-payment validation condition.
-            */
+            // Quantity is credited once, in the month of the final payment,
+            // only after the lead is fully paid and every payment is verified.
             leadAchievement =
+              isFullyVerified &&
+              isFullyPaid &&
+              isDateInTargetMonth(lastPaymentDate, targetMonth) &&
               lead.leadClosed === true &&
               closingActivity.followupClosed === true
                 ? 1
@@ -3098,6 +3189,103 @@ export const gettargetResult = async (req, res) => {
       ),
     ];
 
+const categoryId = new mongoose.Types.ObjectId("66f2868a9a1fccd827f23af3");
+const leadBranchId = new mongoose.Types.ObjectId("66f7b26c1e7129afd9aee189"); // from params
+
+const valuecheck = await LeadMaster.aggregate([
+  // 1. Ensure paymentHistory exists and is non-empty
+  {
+    $match: {
+      paymentHistory: { $exists: true, $type: "array", $ne: [] }
+    }
+  },
+
+  // 2. Unwind leadFor
+  {
+    $unwind: "$leadFor"
+  },
+
+  // 3. Join with product collection
+  {
+    $lookup: {
+      from: "products",
+      localField: "leadFor.productorServiceId",
+      foreignField: "_id",
+      as: "productInfo"
+    }
+  },
+  {
+    $unwind: "$productInfo"
+  },
+
+  // 4. Unwind selected array
+  {
+    $unwind: "$productInfo.selected"
+  },
+
+  // 5. Filter by category_id
+  {
+    $match: {
+      "productInfo.selected.category_id": categoryId
+    }
+  },
+
+  // 6. Group back to one doc per lead
+  {
+    $group: {
+      _id: "$_id",
+      doc: { $first: "$$ROOT" },
+      matchedProductIds: { $addToSet: "$productInfo._id" }
+    }
+  },
+
+  // 7. Restore original document
+  {
+    $replaceWith: "$doc"
+  },
+
+  // 8. Filter by leadBranch
+  {
+    $match: {
+      leadBranch: leadBranchId
+    }
+  },
+
+  // 9. Payment filter: Jul–Sep & paymentVerified = true
+  {
+    $addFields: {
+      hasQualifiedPayment: {
+        $anyElementTrue: {
+          $map: {
+            input: "$paymentHistory",
+            as: "p",
+            in: {
+              $and: [
+                { $eq: ["$$p.paymentVerified", true] },
+                {
+                  $and: [
+                    { $gte: ["$$p.paymentDate", new Date("2026-07-01T00:00:00Z")] },
+                    { $lte: ["$$p.paymentDate", new Date("2026-09-30T23:59:59.999Z")] }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    $match: {
+      hasQualifiedPayment: true
+    }
+  },
+  {
+    $project: {
+      hasQualifiedPayment: 0
+    }
+  }
+]);
     return res.status(200).json({
       success: true,
       data: {
@@ -3110,6 +3298,7 @@ export const gettargetResult = async (req, res) => {
           targetConfigs[0]?.measurementType || "",
         selectedMonth,
         selectedYear: yearNumber,
+valuecheck
       },
     });
   } catch (error) {
