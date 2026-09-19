@@ -53,7 +53,8 @@ const MyDatePicker = ({
   onChange,
   onClear,
   loader,
-  view = false
+  view = false,
+  fullWidth = false
 }) => {
 console.log(view)
   const handleDateRange = (date) => {
@@ -69,7 +70,8 @@ console.log(view)
     <div
       ref={ref}
       className={
-        "flex items-center border border-gray-300 px-2 py-0.5 rounded-md w-[220px] md:w-[250px] gap-2 " +
+        "flex items-center border border-gray-300 px-2 py-1.5 rounded-lg gap-2 " +
+        (fullWidth ? "w-full " : "w-[220px] md:w-[250px] ") +
         (view ? "bg-white cursor-not-allowed " : "bg-white cursor-pointer")
       }
       onClick={view ? undefined : onClick} // disable opening popup in view mode
@@ -82,7 +84,7 @@ console.log(view)
   ))
 
   return (
-    <div className="z-40 relative">
+    <div className={`z-40 relative ${fullWidth ? "w-full" : ""}`}>
       <DatePicker
         onChange={handleDateRange}
         startDate={dates.startDate}
@@ -90,6 +92,7 @@ console.log(view)
         selectsRange
         dateFormat="dd/MM/yyyy"
         customInput={<CustomInput />}
+        wrapperClassName={fullWidth ? "w-full" : undefined}
         disabled={view} // extra safety
       />
     </div>

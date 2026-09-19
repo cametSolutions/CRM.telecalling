@@ -1901,15 +1901,26 @@ export const LeadRegister = async (req, res) => {
   }
 }
 
-// Creates one lead per customer for the Additional Service selected in the
-// Expiry Register.  The client sends IDs only; customer/product values are
-// always read from the database so tagged licences and due dates cannot affect
-// the created lead.
+// Creates one lead per customer for a branch-valid target product selected in
+// the Expiry Register. Customer and product values are read from the database.
 export const BulkCreateAdditionalServiceLeads = async (req, res) => {
-  const { customerIds, productId } = req.body
+  const {
+    customerIds,
+    productId,
+    targetProductId,
+    expiryType,
+    branchId,
+    selfAllocation = false,
+    followupDueDate = null
+  } = req.body
+  const selectedProductId = targetProductId || productId
 
-  if (!isValidObjectId(productId) || !Array.isArray(customerIds)) {
-    return res.status(400).json({ message: "Customer IDs and product ID are required" })
+  if (
+    !isValidObjectId(selectedProductId) ||
+    !isValidObjectId(branchId) ||
+    !Array.isArray(customerIds)
+  ) {
+    return res.status(400).json({ message: "Customer IDs, target product, and branch are required" })
   }
 
   const uniqueCustomerIds = [
@@ -1920,14 +1931,24 @@ export const BulkCreateAdditionalServiceLeads = async (req, res) => {
     return res.status(400).json({ message: "Select at least one customer" })
   }
 
+  if (selfAllocation && !followupDueDate) {
+    return res.status(400).json({ message: "A follow-up date is required for self allocation" })
+  }
+
   try {
     const leadBy = req.owner?.userId
 console.log("owner",req.owner?.userId)
-    const [staffUser, adminUser, product, leadTask] = await Promise.all([
-      isValidObjectId(leadBy) ? Staff.findById(leadBy).lean() : null,
-      isValidObjectId(leadBy) ? Admin.findById(leadBy).lean() : null,
-      Product.findById(productId).lean(),
-      Task.findOne({ taskName: "Lead" }).lean()
+    const [staffUser, adminUser, product, leadTask, allocationTask, followupTask] = await Promise.all([
+      isValidObjectId(leadBy)
+        ? Staff.findById(leadBy).populate("department", "department code").lean()
+        : null,
+      isValidObjectId(leadBy)
+        ? Admin.findById(leadBy).populate("department", "department code").lean()
+        : null,
+      Product.findById(selectedProductId).lean(),
+      Task.findOne({ taskName: "Lead" }).lean(),
+      Task.findOne({ taskName: "Allocation" }).lean(),
+      Task.findOne({ taskName: { $regex: /^followup$/i } }).lean()
     ])
 
     const leadByModel = staffUser ? "Staff" : adminUser ? "Admin" : null
@@ -1935,12 +1956,30 @@ console.log("owner",req.owner?.userId)
       return res.status(403).json({ message: "Unable to identify the logged-in user" })
     }
 
-    if (
-      !product ||
-      String(product.productorservicetype || "").toLowerCase() !==
-        "additionalservice"
-    ) {
-      return res.status(400).json({ message: "The selected product is not an Additional Service" })
+    const leadByUser = staffUser || adminUser
+    const department = leadByUser?.department || {}
+    const isMarketingUser =
+      department?.code === "DEPARTMENT3" ||
+      String(department?.department || "").toLowerCase().includes("marketing")
+    if (selfAllocation && !isMarketingUser) {
+      return res.status(403).json({ message: "Self allocation is available only to Marketing users" })
+    }
+    if (selfAllocation && (!allocationTask || !followupTask)) {
+      return res.status(500).json({ message: "Allocation or Followup task is not configured" })
+    }
+
+    const productType = String(product?.productorservicetype || "").toLowerCase()
+    if (!product || !["primaryproduct", "additionalservice"].includes(productType)) {
+      return res.status(400).json({ message: "Select a valid product or additional service" })
+    }
+
+    const productBranch = product.selected?.find(
+      (item) => String(item?.branch_id) === String(branchId)
+    )
+    if (!productBranch) {
+      return res.status(400).json({
+        message: "The selected product or additional service is not available for this branch"
+      })
     }
 
     const [customers, existingLeads] = await Promise.all([
@@ -1961,32 +2000,28 @@ console.log("owner",req.owner?.userId)
 
     for (const customerId of uniqueCustomerIds) {
       const customer = customerById.get(customerId)
-      const selectedItem = customer?.selected?.find(
-        (item) => String(item?.product_id) === String(product._id)
+      const customerBranchSelection = customer?.selected?.find(
+        (item) => String(item?.branch_id) === String(branchId)
       )
 
-      if (!customer || !selectedItem) {
-        skipped.push({ customerId, reason: "Additional Service is not assigned to this customer" })
+      if (!customer || !customerBranchSelection) {
+        skipped.push({ customerId, reason: "Customer is not assigned to the selected branch" })
         continue
       }
 
       if (customerIdsWithExistingLead.has(customerId)) {
-        skipped.push({ customerId, reason: "A lead already exists for this Additional Service" })
+        skipped.push({ customerId, reason: "A lead already exists for this product or additional service" })
         continue
       }
 
-      const productBranch = product.selected?.find(
-        (item) => String(item?.branch_id) === String(selectedItem.branch_id)
-      ) || product.selected?.[0]
-      const companyId = selectedItem.company_id || productBranch?.company_id
-      const branchId = selectedItem.branch_id || productBranch?.branch_id
+      const companyId = productBranch.company_id
 
       if (!companyId || !branchId) {
-        skipped.push({ customerId, reason: "Company or branch is missing for this Additional Service" })
+        skipped.push({ customerId, reason: "Company or branch is missing for the selected product" })
         continue
       }
 
-      eligible.push({ customer, selectedItem, companyId, branchId })
+      eligible.push({ customer, companyId, branchId })
     }
 
     if (!eligible.length) {
@@ -2012,10 +2047,30 @@ console.log("owner",req.owner?.userId)
               submissionDate: new Date(),
               submittedUser: leadBy,
               submissiondoneByModel: leadByModel,
-              remarks: "Created from Expiry Register",
+              remarks: `Created from ${expiryType || "product"} expiry register`,
               taskBy: leadTask?._id
             }
           ]
+
+          if (selfAllocation) {
+            activityLog.push({
+              submissionDate: new Date(),
+              submittedUser: leadBy,
+              submissiondoneByModel: leadByModel,
+              taskallocatedBy: leadBy,
+              taskallocatedByModel: leadByModel,
+              taskallocatedTo: leadBy,
+              taskallocatedToModel: leadByModel,
+              remarks: "Self allocated from Expiry Register",
+              taskBy: allocationTask._id,
+              taskTo: "followup",
+              taskId: followupTask._id,
+              allocationChanged: false,
+              followupClosed: false,
+              taskfromFollowup: false,
+              allocationDate: new Date(followupDueDate)
+            })
+          }
 
           await LeadMaster.create([
             {
@@ -2036,6 +2091,14 @@ console.log("owner",req.owner?.userId)
               taxAmount: 0,
               netAmount: productAmount,
               balanceAmount: productAmount,
+              selfAllocation: Boolean(selfAllocation),
+              ...(selfAllocation && {
+                allocationType: followupTask._id,
+                selfAllocationType: followupTask._id,
+                selfAllocationDueDate: new Date(followupDueDate),
+                dueDate: new Date(followupDueDate),
+                taskfromFollowup: false
+              }),
               activityLog,
               leadFor: [
                 {
@@ -2072,8 +2135,8 @@ console.log("owner",req.owner?.userId)
       skipped
     })
   } catch (error) {
-    console.error("Bulk additional-service lead creation failed:", error)
-    return res.status(500).json({ message: "Unable to create Additional Service leads" })
+    console.error("Bulk expiry lead creation failed:", error)
+    return res.status(500).json({ message: "Unable to create expiry leads" })
   }
 }
 export const Checkexistinglead = async (req, res) => {
