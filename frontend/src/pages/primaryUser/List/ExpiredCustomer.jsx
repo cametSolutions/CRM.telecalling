@@ -2592,7 +2592,7 @@ const ExpiredCustomer = () => {
   const [user, setUser] = useState(null)
   const [Calls, setCalls] = useState([])
   const [callList, setCallList] = useState([])
-  const [expiryFilterType, setExpiryFilterType] = useState("amc")
+  const [expiryFilterType, setExpiryFilterType] = useState("all")
   console.log(expiryFilterType)
   const [cachedcallsummary, setcachedcallsummary] = useState([])
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -2990,6 +2990,7 @@ const ExpiredCustomer = () => {
 
   const handleChange = (id, name) => {
     setSelectedBranch(id)
+    setSelectedLeadTargetProductId("")
 
     setselectedBranchName(name)
     if (id === "All") {
@@ -3319,23 +3320,69 @@ const ExpiredCustomer = () => {
                   </span>
                 </div>
 
-                {/* Filters Row */}
-                <div className="w-full flex flex-col gap-3 lg:flex-row lg:items-center sm:justify-between px-3">
-                  {/* Left: Dropdown + Search + Date */}
-                  <div className="flex flex-col sm:flex-row gap-3 flex-1">
-                    {/* Branch Dropdown */}
-                    <div className="sm:w-48">
+                {/* The grid prevents the controls from being squeezed by the persistent sidebar. */}
+                <div className="grid w-full grid-cols-1 gap-2 px-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[minmax(10rem,0.85fr)_minmax(12rem,1fr)_minmax(10rem,0.85fr)_minmax(13rem,1.25fr)_16rem_6rem]">
+                  <div className="contents">
+                    <div className="min-w-0">
                       <BranchDropdown
                         branches={userBranch}
                         branchSelected={selectedBranch}
                         onBranchChange={handleChange}
+                        label="Branch"
+                        labletrue={true}
                       />
                     </div>
 
-                    {/* Search */}
-                    <div className="relative flex-1 min-w-40">
+                    {requiresLeadTargetProduct && (
+                      <label className="flex min-w-0 flex-col gap-1 text-[11px] font-medium uppercase tracking-wide text-slate-600">
+                        Lead service
+                        <select
+                          value={selectedLeadTargetProductId}
+                          onChange={(event) => setSelectedLeadTargetProductId(event.target.value)}
+                          required
+                          className="w-full min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm normal-case tracking-normal text-gray-700 shadow-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100"
+                        >
+                          <option value="">Select additional service</option>
+                          {leadTargetProductOptions.map((product) => (
+                            <option key={product.id} value={product.id}>
+                              {product.name} ({product.type})
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
+
+                    {isMarketingUser && requiresLeadTargetProduct && (
+                      <label className="flex min-w-0 flex-col gap-1 text-[11px] font-medium uppercase tracking-wide text-slate-600">
+                        Allocation
+                        <select
+                          value={expiryLeadAllocationMode}
+                          onChange={(event) => setExpiryLeadAllocationMode(event.target.value)}
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm normal-case tracking-normal text-gray-700 shadow-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100"
+                        >
+                          <option value="other">Allocate to other</option>
+                          <option value="self">Self allocation</option>
+                        </select>
+                      </label>
+                    )}
+
+                    {isSelfAllocation && (
+                      <label className="flex min-w-0 flex-col gap-1 text-[11px] font-medium uppercase tracking-wide text-slate-600">
+                        Follow-up date
+                        <input
+                          type="date"
+                          value={selfAllocationFollowupDate}
+                          min={new Date().toISOString().split("T")[0]}
+                          onChange={(event) => setSelfAllocationFollowupDate(event.target.value)}
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm normal-case tracking-normal text-gray-700 shadow-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100"
+                        />
+                      </label>
+                    )}
+
+                    <label className="relative flex min-w-0 flex-col gap-1 text-[11px] font-medium uppercase tracking-wide text-slate-600">
+                      Search
                       <svg
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
+                        className="absolute bottom-2.5 left-3 h-4 w-4 text-gray-400"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -3351,19 +3398,23 @@ const ExpiredCustomer = () => {
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         placeholder="Search customers..."
-                        className="w-full pl-10 pr-4 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none"
+                        className="w-full rounded-lg border border-gray-300 py-1.5 pl-10 pr-4 text-sm normal-case tracking-normal focus:outline-none focus:ring-2 focus:ring-teal-100"
                       />
-                    </div>
+                    </label>
 
-                    {/* Date Picker */}
-                    <div className="w-auto">
+                    <div className="flex min-w-0 flex-col gap-1 text-[11px] font-medium uppercase tracking-wide text-slate-600">
+                      Date range
                       {dates && dates.startDate && (
-                        <MyDatePicker setDates={setDates} dates={dates} />
+                        <MyDatePicker
+                          setDates={setDates}
+                          dates={dates}
+                          fullWidth={true}
+                        />
                       )}
                     </div>
                   </div>
 
-                  {/* Right: Toggles */}
+                  {/* Filters */}
                   {/* <div className="relative" ref={filterRef}>
                   
                     <button
@@ -3552,7 +3603,11 @@ const ExpiredCustomer = () => {
                   name="expiryFilterType"
                   value={opt.value}
                   checked={selected}
-                  onChange={() => setExpiryFilterType(opt.value)}
+                  onChange={() => {
+                    setExpiryFilterType(opt.value)
+                    setSelectedProductExpiryId("")
+                    setSelectedLeadTargetProductId("")
+                  }}
                   className="sr-only"
                 />
                 <span
@@ -3581,7 +3636,11 @@ const ExpiredCustomer = () => {
   
       <div className="flex items-center justify-between gap-2 px-6 pt-3 mt-2 border-t border-gray-100">
         <button
-          onClick={() => setExpiryFilterType("all")}
+          onClick={() => {
+            setExpiryFilterType("all")
+            setSelectedProductExpiryId("")
+            setSelectedLeadTargetProductId("")
+          }}
           className="text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
         >
           Reset
@@ -3596,11 +3655,12 @@ const ExpiredCustomer = () => {
     </div>
   )}
 </div> */}
-                  <div className="relative" ref={filterRef}>
+                  <div className="relative flex min-w-0 flex-col gap-1 text-[11px] font-medium uppercase tracking-wide text-slate-600" ref={filterRef}>
                     {/* Filter Icon Button */}
+                    <span>Filters</span>
                     <button
                       onClick={toggleFilter}
-                      className="p-1.5 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 shadow-sm flex items-center gap-1 text-gray-700 hover:text-gray-900 transition-colors"
+                      className="h-[34px] w-full rounded-lg border border-gray-300 bg-white px-2 shadow-sm flex items-center justify-center gap-1 text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors"
                     >
                       <svg
                         className="w-5 h-5"
@@ -3751,7 +3811,7 @@ const ExpiredCustomer = () => {
                     )}
                   </div>
                 </div>
-              </div>
+                </div>
               {/* <ExpiryRegisterTable/> */}
               {/* <div className="w-full shadow-lg mt-6 rounded-lg overflow-hidden px-3">
                 <div className="overflow-x-auto lg:max-h-[440px] md:max-h-[390px] overflow-y-auto rounded-xl">
