@@ -2084,7 +2084,7 @@ console.log("owner",req.owner?.userId)
               pincode: customer.pincode || "",
               partner: customer.partner || null,
               leadBranch: branchId,
-              source: "Expiry Register",
+              source: "Direct",
               leadBy,
               leadByModel,
               taxableAmount: productAmount,

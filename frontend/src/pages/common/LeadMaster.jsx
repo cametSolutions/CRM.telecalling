@@ -4277,13 +4277,7 @@ console.log(e)
   console.log(submitLoading)
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#ADD8E6]">
-      <h1>abhida</h1>
-      <button
-        type="button"
-        className="m-3 w-fit rounded bg-[#1B2A4A] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#243660]"
-      >
-        press
-      </button>
+   
       {(modalloader ||
         loadingState ||
         editloadingState ||
