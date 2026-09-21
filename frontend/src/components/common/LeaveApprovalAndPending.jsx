@@ -1979,8 +1979,8 @@ console.log(error)
             </div>
           </div>
 
-          <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="h-9 flex items-center justify-between rounded-lg border border-gray-300 bg-gray-50 px-3">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-[minmax(10rem,1fr)_minmax(10rem,1fr)_minmax(10rem,1fr)_minmax(22rem,1.35fr)]">
+            <div className="h-10 self-end flex items-center justify-between rounded-lg border border-gray-300 bg-gray-50 px-3">
               <span className="text-sm font-medium text-gray-700">
                 Mispunch
               </span>
@@ -2000,7 +2000,7 @@ console.log(error)
             </div>
 
             <div
-              className={`h-9 flex items-center justify-between rounded-lg border px-3 transition-all ${
+              className={`h-10 self-end flex items-center justify-between rounded-lg border px-3 transition-all ${
                 mispunchMode
                   ? "border-gray-200 bg-gray-100 opacity-50 pointer-events-none blur-[1px]"
                   : "border-gray-300 bg-gray-50"
@@ -2031,11 +2031,11 @@ console.log(error)
               </button>
             </div>
 
-            <div className="relative transition-all">
+            <div className="relative self-end transition-all">
               <select
                 onChange={(e) => handleDropdownSelect(e.target.value)}
                 value={ispending ? "pending" : "approved"}
-                className="w-full h-9 pl-3 pr-8 text-sm border border-gray-300 rounded-lg appearance-none bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all cursor-pointer"
+                className="h-10 w-full appearance-none rounded-lg border border-gray-300 bg-white pl-3 pr-8 text-sm outline-none transition-all cursor-pointer focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
               >
                 <option value="pending">Pending</option>
                 <option value="approved">Approved</option>
@@ -2057,12 +2057,14 @@ console.log(error)
             </div>
 
             {dates.startDate && (
-              <MyDatePicker
-                setDates={setDates}
-                dates={dates}
-                compact
-                onChange={handleDate}
-              />
+              <div className="min-w-0 sm:col-span-2 xl:col-span-1">
+                <MyDatePicker
+                  setDates={setDates}
+                  dates={dates}
+                  fullWidth={true}
+                  onChange={handleDate}
+                />
+              </div>
             )}
           </div>
         </div>

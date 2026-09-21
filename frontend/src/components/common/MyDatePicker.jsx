@@ -54,47 +54,84 @@ const MyDatePicker = ({
   onClear,
   loader,
   view = false,
-  fullWidth = false
+  fullWidth = false,
+  compact = false
 }) => {
-console.log(view)
-  const handleDateRange = (date) => {
+  const toPickerDate = (value) => {
+    if (!value) return null
+    if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value
+
+    const dateParts = String(value).match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/)
+    if (dateParts) {
+      const [, day, month, year] = dateParts
+      return new Date(Number(year), Number(month) - 1, Number(day))
+    }
+
+    const parsedDate = new Date(value)
+    return Number.isNaN(parsedDate.getTime()) ? null : parsedDate
+  }
+
+  const handleDateChange = (field, date) => {
     if (view) return // block changes in view mode
-    setDates({
-      startDate: date?.[0] || null,
-      endDate: date?.[1] || null
-    })
+    setDates((currentDates) => ({ ...currentDates, [field]: date || null }))
     onChange?.()
   }
 
-  const CustomInput = forwardRef(({ value, onClick }, ref) => (
-    <div
+  const CustomInput = forwardRef(({ value, onClick, placeholder }, ref) => (
+    <button
       ref={ref}
-      className={
-        "flex items-center border border-gray-300 px-2 py-1.5 rounded-lg gap-2 " +
-        (fullWidth ? "w-full " : "w-[220px] md:w-[250px] ") +
-        (view ? "bg-white cursor-not-allowed " : "bg-white cursor-pointer")
-      }
-      onClick={view ? undefined : onClick} // disable opening popup in view mode
+      type="button"
+      onClick={view ? undefined : onClick}
+      disabled={view}
+      className={`flex h-10 w-full items-center gap-2 rounded-lg border px-3 text-left text-sm shadow-sm transition ${
+        view
+          ? "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-500"
+          : "border-slate-300 bg-white text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-100"
+      }`}
     >
-      <FaCalendarAlt className="text-gray-600 md:mr-2" />
-      <span className={`text-md ${value ? "text-gray-900" : "text-gray-500"}`}>
-        {value || "Select a date range"}
+      <FaCalendarAlt className="shrink-0 text-slate-500" />
+      <span className={value ? "text-slate-800" : "text-slate-400"}>
+        {value || placeholder}
       </span>
-    </div>
+    </button>
   ))
 
+  const pickerWidth = fullWidth ? "w-full" : compact ? "w-full sm:w-[13rem]" : "w-full sm:w-[14rem]"
+
   return (
-    <div className={`z-40 relative ${fullWidth ? "w-full" : ""}`}>
-      <DatePicker
-        onChange={handleDateRange}
-        startDate={dates.startDate}
-        endDate={dates.endDate}
-        selectsRange
-        dateFormat="dd/MM/yyyy"
-        customInput={<CustomInput />}
-        wrapperClassName={fullWidth ? "w-full" : undefined}
-        disabled={view} // extra safety
-      />
+    <div className={`z-40 flex flex-col gap-2 sm:flex-row sm:items-end ${fullWidth ? "w-full" : ""}`}>
+      <label className={`${pickerWidth} flex flex-col gap-1`}>
+        <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+          Start date
+        </span>
+        <DatePicker
+          selected={toPickerDate(dates?.startDate)}
+          onChange={(date) => handleDateChange("startDate", date)}
+          dateFormat="dd/MM/yyyy"
+          placeholderText="Start date"
+          customInput={<CustomInput />}
+          wrapperClassName="w-full"
+          popperClassName="!z-[9999]"
+          popperProps={{ strategy: "fixed" }}
+          disabled={view}
+        />
+      </label>
+      <label className={`${pickerWidth} flex flex-col gap-1`}>
+        <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+          End date
+        </span>
+        <DatePicker
+          selected={toPickerDate(dates?.endDate)}
+          onChange={(date) => handleDateChange("endDate", date)}
+          dateFormat="dd/MM/yyyy"
+          placeholderText="End date"
+          customInput={<CustomInput />}
+          wrapperClassName="w-full"
+          popperClassName="!z-[9999]"
+          popperProps={{ strategy: "fixed" }}
+          disabled={view}
+        />
+      </label>
     </div>
   )
 }

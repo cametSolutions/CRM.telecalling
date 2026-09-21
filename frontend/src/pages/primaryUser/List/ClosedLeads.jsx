@@ -880,36 +880,49 @@ export default function ClosedLeads() {
               />
             </div>
 
-            <div className="flex h-8 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2">
-              <Calendar className="h-3.5 w-3.5 shrink-0 text-slate-500" />
-              <input
-                type="date"
-                aria-label="Closed from date"
-                value={closedDateRange.startDate}
-                max={closedDateRange.endDate || undefined}
-                onChange={(event) =>
-                  setClosedDateRange((previous) => ({
-                    ...previous,
-                    startDate: event.target.value
-                  }))
-                }
-                className="min-w-0 bg-transparent text-[11px] text-slate-700 outline-none"
-              />
-              <span className="text-[10px] text-slate-400">to</span>
-              <input
-                type="date"
-                aria-label="Closed to date"
-                value={closedDateRange.endDate}
-                min={closedDateRange.startDate || undefined}
-                onChange={(event) =>
-                  setClosedDateRange((previous) => ({
-                    ...previous,
-                    endDate: event.target.value
-                  }))
-                }
-                className="min-w-0 bg-transparent text-[11px] text-slate-700 outline-none"
-              />
-             
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <label className="flex min-w-[10rem] flex-col gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 shadow-sm">
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                  Start date
+                </span>
+                <span className="flex items-center gap-2">
+                  <Calendar className="h-3.5 w-3.5 shrink-0 text-slate-500" />
+                  <input
+                    type="date"
+                    aria-label="Closed from date"
+                    value={closedDateRange.startDate}
+                    max={closedDateRange.endDate || undefined}
+                    onChange={(event) =>
+                      setClosedDateRange((previous) => ({
+                        ...previous,
+                        startDate: event.target.value
+                      }))
+                    }
+                    className="min-w-0 flex-1 bg-transparent text-xs text-slate-700 outline-none"
+                  />
+                </span>
+              </label>
+              <label className="flex min-w-[10rem] flex-col gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 shadow-sm">
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                  End date
+                </span>
+                <span className="flex items-center gap-2">
+                  <Calendar className="h-3.5 w-3.5 shrink-0 text-slate-500" />
+                  <input
+                    type="date"
+                    aria-label="Closed to date"
+                    value={closedDateRange.endDate}
+                    min={closedDateRange.startDate || undefined}
+                    onChange={(event) =>
+                      setClosedDateRange((previous) => ({
+                        ...previous,
+                        endDate: event.target.value
+                      }))
+                    }
+                    className="min-w-0 flex-1 bg-transparent text-xs text-slate-700 outline-none"
+                  />
+                </span>
+              </label>
             </div>
 
             

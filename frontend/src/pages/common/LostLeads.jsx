@@ -202,7 +202,7 @@ console.log(location?.state?.endDate)
         console.log(filteredLeads)
       }
 console.log(filteredLeads)
-console.log(location.state.viewMode)
+
 //       const groupedLeads = {}
 //       let grandTotal = 0
 //       location?.state?.viewMode
