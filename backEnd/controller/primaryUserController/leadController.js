@@ -13547,7 +13547,7 @@ export const GetcollectionLeads = async (req, res) => {
 
 export const GetlostLeads = async (req, res) => {
   try {
-    const { selectedBranch, startDate = null, endDate = nul, } = req.query
+    const { selectedBranch, startDate = null, endDate = null, } = req.query
 
     if (!selectedBranch || !mongoose.Types.ObjectId.isValid(selectedBranch)) {
       return res.status(400).json({ message: "Invalid selectedBranch" })
