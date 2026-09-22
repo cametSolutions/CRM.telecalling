@@ -223,7 +223,11 @@ export default function CollectionUpdate() {
       console.log(updatedhistorylist)
       console.log(updatedhistorylist[0]?.paymentHistory)
       setselectedCollection(updatedhistorylist[0])
-      setpaymentHistoryList(updatedhistorylist[0]?.paymentHistory)
+      setpaymentHistoryList(
+        updatedhistorylist[0]?.allPaymentHistory ||
+          updatedhistorylist[0]?.paymentHistory ||
+          []
+      )
       console.log(updatedhistorylist[0])
       setBalanceAmount(updatedhistorylist[0].balanceAmount)
     }
@@ -612,7 +616,9 @@ export default function CollectionUpdate() {
               <button
                 type="button"
                 onClick={() => {
-                  setpaymentHistoryList(item.paymentHistory)
+                  setpaymentHistoryList(
+                    item.allPaymentHistory || item.paymentHistory || []
+                  )
                   setselectedLeadId(item.leadId)
                   checkIsForcefullyClosed(
                     item.leadDate,
@@ -647,6 +653,12 @@ export default function CollectionUpdate() {
               <span className="inline-flex items-center gap-0.5 justify-end">
                 <IndianRupee className="w-3.5 h-3.5" />
                 {getDisplayAmount(item.paymentHistory)}
+              </span>
+            </td>
+            <td className="px-3 py-2 text-sm font-semibold text-amber-700 border border-gray-300 whitespace-nowrap text-right">
+              <span className="inline-flex items-center gap-0.5 justify-end">
+                <IndianRupee className="w-3.5 h-3.5" />
+                {Number(item?.balanceAmount || 0).toLocaleString("en-IN")}
               </span>
             </td>
           </tr>
@@ -802,6 +814,12 @@ export default function CollectionUpdate() {
                 <span>Coll. Amount</span>
               </div>
             </th>
+            <th className="border border-gray-300 px-3 py-1 text-right">
+              <div className="flex items-center gap-1.5 justify-end">
+                <IndianRupee className="w-3 h-3" />
+                <span>Balance Amount</span>
+              </div>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -811,7 +829,10 @@ export default function CollectionUpdate() {
             ))
           ) : (
             <tr>
-              <td colSpan={9} className="text-center text-gray-500 py-6">
+              <td
+                colSpan={verifiedLead ? 9 : 10}
+                className="text-center text-gray-500 py-6"
+              >
                 {loading ? (
                   <div className="flex justify-center">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />

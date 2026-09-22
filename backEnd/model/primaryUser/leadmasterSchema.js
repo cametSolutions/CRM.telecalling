@@ -978,6 +978,8 @@ const rejectUnsafeActivityLogUpdate = function (next) {
 
 leadSchema.index({ leadBranch: 1, leadLost: 1, createdAt: -1 });
 leadSchema.index({ leadBranch: 1, leadConvertedDate: 1 });
+leadSchema.index({ leadBranch: 1, leadBy: 1, leadDate: -1 });
+leadSchema.index({ leadBranch: 1, leadDate: -1 });
 leadSchema.index({ leadBranch: 1, "activityLog.taskTo": 1, "activityLog.followupClosed": 1 });
 leadSchema.index({ leadBranch: 1, "paymentHistory.paymentVerified": 1 });
 leadSchema.index({ leadBy: 1, leadByModel: 1 });

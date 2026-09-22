@@ -30,8 +30,12 @@ import StaffHeader from "../../header/StaffHeader"
 import { StaticSidebar } from "../../components/primaryUser/StaticSidebar"
 import { getLocalStorageItem } from "../../helper/localstorage"
 import { useQuery } from "@tanstack/react-query"
+import { useSelector } from "react-redux"
 export default function OwnLeadList() {
   const location = useLocation()
+  const reduxSelectedBranch = useSelector(
+    (state) => state.companyBranch.selectedBranch
+  )
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedUserName, setselecteduserName] = useState(null)
   const [tableData, setTableData] = useState([])
@@ -56,11 +60,7 @@ export default function OwnLeadList() {
   console.log(!!location?.state?.ownLead)
   console.log(ownLead)
   const [achievedproducts, setacheivedProducts] = useState([])
-  const [companyBranches, setcompanyBranches] = useState(null)
-  const [selectedCompanyBranch, setselectedCompanyBranch] = useState(null)
-  const [selecteduserBranch, setselecteduserBranch] = useState(
-    location?.state ? location?.state?.selecteduserBranch : null
-  )
+  const selecteduserBranch = reduxSelectedBranch
   console.log(location?.state?.selecteduserBranch)
   console.log(selecteduserBranch)
   const [showhistoryModal, sethistoryModal] = useState(false)
@@ -137,29 +137,9 @@ export default function OwnLeadList() {
     location,
     ownLead
   })
-  const useCompanyBranches = () => {
-    console.log("hhhh")
-    return useQuery({
-      queryKey: ["companybranches"],
-      queryFn: async () => {
-        console.log("hhh")
-        const res = await api.get("/branch/getBranch")
-        console.log(res.data.data)
-        return res.data.data
-      }
-      // staleTime: 1000 * 60 * 10
-    })
-  }
-  const { data: companybranches } = useCompanyBranches()
-  console.log(selecteduserBranch)
-  console.log(companybranches)
-  console.log(loading)
-  console.log(ownedlead)
-  console.log(selecteduserBranch)
-  console.log(selectedCompanyBranch)
-  console.log(ownedlead)
-  const { data: branchProduct } = UseFetch(
-    `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
+  const { data: branchProduct = [] } = UseFetch(
+    selecteduserBranch &&
+      `/product/getallbranchProduct?branch=${selecteduserBranch}`
   )
   useEffect(() => {
     const now = new Date()
@@ -237,31 +217,9 @@ export default function OwnLeadList() {
   console.log(dates)
   console.log(selecteduserBranch)
   useEffect(() => {
-    if (companybranches && companybranches.length > 0) {
-      const userData = getLocalStorageItem("user")
-      const branch = userData?.selected?.map((b) => ({
-        value: b.branch_id,
-        label: b.branchName
-      }))
-      console.log(branch)
-      setcompanyBranches(branch)
-      if (!location?.state) {
-        console.log("hhh")
-        setselecteduserBranch(branch[0].value)
-      }
-
-      setselectedCompanyBranch(branch[0].value)
-      setLoggedUser(userData)
-      console.log(location?.state)
-      // if (location?.state?.role) {
-      //   console.log("hhh")
-      //   setownLead(location?.state?.role ? false : true)
-      // }
-      if (!location?.state) {
-        setownLead(true)
-      }
-    }
-  }, [companybranches])
+    setLoggedUser(getLocalStorageItem("user"))
+    if (!location?.state) setownLead(true)
+  }, [location?.state])
 
   useEffect(() => {
     if (ownedlead && ownedlead.length > 0) {
@@ -681,15 +639,13 @@ console.log(item?.mobile)
     tableData.some(
       (group) => Array.isArray(group.leads) && group.leads.length > 0
     )
-  console.log(selectedCompanyBranch)
   return (
     <div className="h-full overflow-hidden bg-[#ADD8E6]">
       <div className="flex h-full overflow-hidden lg:flex-row">
-        {/* {selectedCompanyBranch && (
+        {/* {selecteduserBranch && (
           <StaticSidebar
             handleMoreClick={handleMoreClick}
-            selectedCompanyBranch={selectedCompanyBranch}
-            setselectedCompanyBranch={setselectedCompanyBranch}
+            selectedCompanyBranch={selecteduserBranch}
             parenttargetData={settargetData}
             parentperiodmode={periodMode}
             parentyear={selectedYear}
@@ -766,23 +722,6 @@ console.log(item?.mobile)
                 </div>
 
                 <div className="flex flex-wrap items-center justify-start gap-3 xl:justify-end">
-                  <div className="flex md:justify-end items-end">
-                    <select
-                      value={selecteduserBranch}
-                      onChange={(e) => {
-                        console.log("hhh")
-                        console.log("Hhh")
-                        setselecteduserBranch(e.target.value)
-                      }}
-                      className="border border-gray-300 rounded px-3 py-[6px] text-sm bg-white hover:bg-slate-50 text-black outline-none min-w-[140px] cursor-pointer"
-                    >
-                      {companybranches?.map((b, i) => (
-                        <option key={i} value={b._id}>
-                          {b.branchName}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
                   {dates.startDate && (
                     <div className="min-w-[240px]">
                       <MyDatePicker setDates={setDates} dates={dates} />
