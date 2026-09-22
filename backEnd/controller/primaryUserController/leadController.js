@@ -5793,6 +5793,64 @@ export const UpdateLeadRegister = async (req, res) => {
     );
   };
 
+  // Older closed leads can have empty leadFor.taggeddata even though the
+  // corresponding additional service on Customer.selected still owns the
+  // tagged license. Hydrate only those missing values before an edit so a
+  // normal save cannot write empty arrays back to LeadMaster.
+  const hydrateAdditionalServiceDataFromCustomer = async ({
+    customerId,
+    leadItems,
+    dbSession,
+  }) => {
+    if (!isValidValue(customerId) || !mongoose.Types.ObjectId.isValid(customerId)) {
+      return leadItems;
+    }
+
+    const customerDoc = await Customer.findById(customerId).session(dbSession).lean();
+    const selected = Array.isArray(customerDoc?.selected) ? customerDoc.selected : [];
+
+    return leadItems.map((item) => {
+      if (safeString(item?.productorservicetype).toLowerCase() !== "additionalservice") {
+        return item;
+      }
+
+      const customerService = selected.find(
+        (selectedItem) =>
+          String(selectedItem?.product_id || "") ===
+            String(item?.productorServiceId || "")
+      );
+      const incomingTaggedData = Array.isArray(item?.taggeddata) ? item.taggeddata : [];
+      const customerTaggedData = Array.isArray(customerService?.taggeddata)
+        ? customerService.taggeddata
+        : [];
+      const taggeddata = incomingTaggedData.length > 0
+        ? incomingTaggedData
+        : customerTaggedData;
+      const incomingLicenseNumbers = Array.isArray(item?.licenseNumbers)
+        ? item.licenseNumbers
+        : [];
+      const customerLicenseNumbers = Array.isArray(customerService?.licenseNumbers)
+        ? customerService.licenseNumbers
+        : [];
+      const derivedLicenseNumbers = taggeddata.map((tag, sourceIndex) => ({
+        licenseNumber: tag?.licensenumber,
+        productorServiceId: item?.productorServiceId || null,
+        productorServiceName: item?.productorServiceName || "",
+        sourceIndex,
+      }));
+
+      return {
+        ...item,
+        taggeddata,
+        licenseNumbers: incomingLicenseNumbers.length > 0
+          ? incomingLicenseNumbers
+          : customerLicenseNumbers.length > 0
+            ? customerLicenseNumbers
+            : derivedLicenseNumbers,
+      };
+    });
+  };
+
   try {
     const transactionResult = await session.withTransaction(async () => {
       const {
@@ -5837,6 +5895,7 @@ export const UpdateLeadRegister = async (req, res) => {
 
       const isCustomerChangedFlag =
         isCustomerChanged === true || isCustomerChanged === "true";
+      let leadItemsForUpdate = leadData;
 
       if (from === "closedlead") {
         if (isCustomerChangedFlag) {
@@ -5856,28 +5915,77 @@ export const UpdateLeadRegister = async (req, res) => {
           console.log("[reverse-gate] SKIPPED reverse - isCustomerChanged is not true");
         }
 
+        const hydratedLeadData = await hydrateAdditionalServiceDataFromCustomer({
+          customerId: data?.customerName,
+          leadItems: leadData,
+          dbSession: session,
+        });
+        leadItemsForUpdate = hydratedLeadData;
+
         // Whether or not the customer changed, the CURRENT customer's
         // selected products/services must reflect the latest leadData for
         // this closed-lead edit: primary products added if missing,
         // additional services merged with previousTaggedData preserved.
         await syncCurrentCustomerProducts({
           customerId: data?.customerName,
-          leadItems: leadData,
+          leadItems: hydratedLeadData,
           dbSession: session,
         });
+
       } else {
         console.log("[reverse-gate] SKIPPED - from !== 'closedlead'");
       }
 
-      const mappedLeadData = leadData.map((item) => {
+      const mappedLeadData = leadItemsForUpdate.map((item) => {
         const productPrice = toNumber(item?.productPrice);
         const netAmount = toNumber(item?.netAmount);
         const hsn = toNumber(item?.hsn);
         const actualHsn = toNumber(item?.actualHsn);
         const taxAmount = netAmount - productPrice;
+        const itemType = safeString(item?.productorservicetype).toLowerCase();
+        const isAdditionalService = itemType === "additionalservice";
+        const existingAdditionalService = isAdditionalService
+          ? existingLeadFor.find(
+              (existingItem) =>
+                safeString(existingItem?.productorservicetype).toLowerCase() ===
+                  "additionalservice" &&
+                String(existingItem?.productorServiceId || "") ===
+                  String(item?.productorServiceId || "")
+            )
+          : null;
+        const incomingTaggedData = Array.isArray(item?.taggeddata)
+          ? item.taggeddata
+          : [];
+        const existingTaggedData = Array.isArray(existingAdditionalService?.taggeddata)
+          ? existingAdditionalService.taggeddata
+          : [];
+        const taggeddata = isAdditionalService
+          ? incomingTaggedData.length > 0
+            ? mergeTaggedData(existingTaggedData, incomingTaggedData).taggeddata
+            : existingTaggedData
+          : incomingTaggedData;
+        const incomingLicenseNumbers = Array.isArray(item?.licenseNumbers)
+          ? item.licenseNumbers
+          : [];
+        const derivedLicenseNumbers = taggeddata.map((tag, sourceIndex) => ({
+          licenseNumber: tag?.licensenumber,
+          productorServiceId: item?.productorServiceId || null,
+          productorServiceName: item?.productorServiceName || "",
+          sourceIndex,
+        }));
+        const licenseNumbers = isAdditionalService
+          ? mergeLicenseNumbers(
+              existingAdditionalService?.licenseNumbers,
+              incomingLicenseNumbers.length > 0
+                ? incomingLicenseNumbers
+                : derivedLicenseNumbers
+            )
+          : incomingLicenseNumbers;
 
         return {
           licenseNumber: item?.licenseNumber ?? null,
+          licenseNumbers,
+          taggeddata,
           productorServiceName: safeString(item?.productorServiceName),
           productorServiceId: toObjectIdOrNull(item?.productorServiceId),
           productorServicemodel: safeString(item?.itemType || item?.productorServicemodel),
