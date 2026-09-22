@@ -1264,35 +1264,102 @@ const LeadMaster = ({
       setValueMain("remark", Data[0].remark)
       setSelectedCustomer(Data[0]?.customerName)
       console.log(Data[0].leadFor)
-      const leadData = Data[0]?.leadFor.map((item) => ({
-        licenseNumber: item?.licenseNumber,
-        productorServiceName:
-          item?.productorServiceId?.productName ||
-          item?.productorServiceId?.serviceName,
-        softwareTrade: item?.softwareTrade,
-        applicationDate: item?.applicationDate,
-        status: item?.status || item?.isActive,
-        productorServiceId: item?.productorServiceId?._id,
-        itemType: item?.productorServicemodel,
-        productPrice: item?.productPrice,
-        hsn: item?.hsn,
-        actualHsn: item?.actualHsn,
-        netAmount: item?.netAmount,
-        price: item?.price,
-        company_id: item?.company_id,
-        branch_id: item?.branch_id,
-        productorservicetype: item?.productorservicetype
-      }))
+      const leadData = Data[0]?.leadFor.map((item) => {
+        const isAdditionalService =
+          String(item?.productorservicetype || "").toLowerCase() ===
+          "additionalservice"
+        const customerService = isAdditionalService
+          ? Data[0]?.customerName?.selected?.find(
+              (selectedItem) =>
+                String(
+                  selectedItem?.product_id?._id || selectedItem?.product_id || ""
+                ) === String(item?.productorServiceId?._id || "")
+            )
+          : null
+        const leadTaggedData = Array.isArray(item?.taggeddata)
+          ? item.taggeddata
+          : []
+        const taggeddata =
+          leadTaggedData.length > 0
+            ? leadTaggedData
+            : Array.isArray(customerService?.taggeddata)
+              ? customerService.taggeddata
+              : []
+        const leadLicenseNumbers = Array.isArray(item?.licenseNumbers)
+          ? item.licenseNumbers
+          : []
+        const existingLicenseNumbers =
+          leadLicenseNumbers.length > 0
+            ? leadLicenseNumbers
+            : Array.isArray(customerService?.licenseNumbers)
+              ? customerService.licenseNumbers
+              : []
+        const derivedLicenseNumbers = taggeddata
+          .filter((tag) => tag?.licensenumber !== undefined && tag?.licensenumber !== null && String(tag.licensenumber).trim() !== "")
+          .map((tag, sourceIndex) => ({
+            licenseNumber: tag.licensenumber,
+            productorServiceId: item?.productorServiceId?._id,
+            productorServiceName:
+              item?.productorServiceId?.productName ||
+              item?.productorServiceId?.serviceName ||
+              "",
+            sourceIndex
+          }))
+
+        return {
+          licenseNumber: item?.licenseNumber,
+          licenseNumbers: [
+            ...existingLicenseNumbers,
+            ...derivedLicenseNumbers
+          ].filter(
+            (license, licenseIndex, licenses) =>
+              licenseIndex ===
+              licenses.findIndex(
+                (candidate) =>
+                  String(candidate?.licenseNumber ?? "") ===
+                  String(license?.licenseNumber ?? "")
+              )
+          ),
+          taggeddata,
+          productorServiceName:
+            item?.productorServiceId?.productName ||
+            item?.productorServiceId?.serviceName,
+          softwareTrade: item?.softwareTrade,
+          applicationDate: item?.applicationDate,
+          status: item?.status || item?.isActive,
+          nextDue: item?.nextDue,
+          noofusers: item?.noofusers,
+          serialNumber: item?.serialNumber,
+          productorServiceId: item?.productorServiceId?._id,
+          itemType: item?.productorServicemodel,
+          productPrice: item?.productPrice,
+          actualproductPrice: item?.actualproductPrice,
+          hsn: item?.hsn,
+          actualHsn: item?.actualHsn,
+          netAmount: item?.netAmount,
+          actualNetAmount: item?.actualNetAmount,
+          price: item?.price,
+          company_id: item?.company_id,
+          branch_id: item?.branch_id,
+          productorservicetype: item?.productorservicetype
+        }
+      })
       console.log(leadData)
-      const fetchedLicenses = leadData
-        .filter((item) => item?.licenseNumber)
-        .map((item, index) => ({
-          licenseNumber: item.licenseNumber,
+      const fetchedLicenses = leadData.flatMap((item, index) => {
+        const licenses = item?.licenseNumbers?.length
+          ? item.licenseNumbers
+          : item?.licenseNumber
+            ? [{ licenseNumber: item.licenseNumber }]
+            : []
+
+        return licenses.map((license, licenseIndex) => ({
+          licenseNumber: license?.licenseNumber,
           productName: item.productorServiceName,
           productorServiceName: item.productorServiceName,
           productorServiceId: item.productorServiceId,
-          sourceIndex: index
+          sourceIndex: license?.sourceIndex ?? `${index}-${licenseIndex}`
         }))
+      })
 
       setOriginalCustomerTableData(fetchedLicenses)
       console.log(leadData)
@@ -2344,6 +2411,38 @@ const LeadMaster = ({
     setSelectedLicense(customerLicense || "")
   }
 
+  const syncAdditionalOnlyTaggedData = (
+    row,
+    rows,
+    productPrice,
+    taxRate,
+    netAmount
+  ) => {
+    const isAdditionalOnly =
+      String(row?.productorservicetype || "").toLowerCase() ===
+        "additionalservice" &&
+      !rows.some(
+        (lead) =>
+          String(lead?.productorservicetype || "").toLowerCase() ===
+          "primaryproduct"
+      )
+
+    if (!isAdditionalOnly || !Array.isArray(row?.taggeddata)) {
+      return row?.taggeddata
+    }
+
+    return row.taggeddata.map((tag) => ({
+      ...tag,
+      taxexclusiveAmount: productPrice,
+      taxinclusiveamount: netAmount,
+      productAmount: netAmount,
+      leadAmount: productPrice,
+      totalleadAmount: netAmount,
+      leadTax: taxRate,
+      originalHsn: taxRate
+    }))
+  }
+
   const handlePriceChange = (index, newPrice) => {
     setSelectedLeadList((prevList) =>
       prevList.map((product, i) => {
@@ -2357,7 +2456,14 @@ const LeadMaster = ({
         return {
           ...product,
           productPrice: newPrice,
-          netAmount
+          netAmount,
+          taggeddata: syncAdditionalOnlyTaggedData(
+            product,
+            prevList,
+            price,
+            igst,
+            netAmount
+          )
         }
       })
     )
@@ -2376,7 +2482,14 @@ const LeadMaster = ({
         return {
           ...product,
           hsn: newHsn,
-          netAmount
+          netAmount,
+          taggeddata: syncAdditionalOnlyTaggedData(
+            product,
+            prevList,
+            price,
+            igst,
+            netAmount
+          )
         }
       })
     )
@@ -3074,6 +3187,14 @@ const LeadMaster = ({
 
         if (itemType === "additionalservice") {
           const hasTaggedLicenses = cleanedTaggedData.length > 0
+          const isAdditionalOnly = !prev.some(
+            (lead) =>
+              String(lead?.productorservicetype || "").toLowerCase() ===
+              "primaryproduct"
+          )
+          const savedLeadTax = Number(
+            cleanedTaggedData[0]?.leadTax ?? row?.hsn ?? 0
+          ) || 0
 
           return {
             ...row,
@@ -3081,6 +3202,8 @@ const LeadMaster = ({
             productPrice: haveprimaryProduct
               ? row?.productPrice
               : totaltaxexclusiveAmount,
+            hsn:
+              isAdditionalOnly && hasTaggedLicenses ? savedLeadTax : row?.hsn,
             netAmount: haveprimaryProduct ? row?.netAmount : updatedNetAmount,
             noofusers: detailsForm.noofusers,
 
@@ -3242,7 +3365,8 @@ const LeadMaster = ({
       return Number.isInteger(number) && number > 0
     })
   }
-  const handleDetails = (item, index) => {
+  const handleDetails = (row, index) => {
+    const item = selectedleadlist[index] || row
     console.log("k")
     console.log(selectedCustomer)
     console.log(item)
@@ -3327,21 +3451,17 @@ const LeadMaster = ({
               item?.netAmount ??
               0
             console.log(productAmount)
-            console.log(existing?.nextDueTax)
-            console.log(existingTag?.nextDueTax)
-            console.log(item?.hsn)
-            console.log(item?.actualHsn)
-            const r =
-              getPositiveInteger(
-                existing?.nextDueTax,
-                existingTag?.nextDueTax,
-                item?.hsn,
-                item?.actualHsn
-              ) ?? 0
-            console.log(r)
+            const nextDue =
+              existing?.nextDue ||
+              existingTag?.nextDue ||
+              item?.nextDue ||
+              ""
+            const nextDueTax = Number(
+              existing?.nextDueTax ?? existingTag?.nextDueTax ?? 0
+            ) || 0
             return {
               licensenumber: lic?.licenseNumber || "",
-              nextDue: existing?.nextDue ?? "",
+              nextDue: String(nextDue).slice(0, 10),
               noofusers:
                 existing?.noofusers ??
                 existingTag?.noofusers ??
@@ -3366,8 +3486,6 @@ const LeadMaster = ({
                 item?.netAmount ??
                 0,
               hsn:
-               
-
                 getPositiveInteger(
                   existing?.hsn,
                   existingTag?.hsn,
@@ -3388,18 +3506,12 @@ const LeadMaster = ({
                 existingTag?.totalnextDueAmount ??
                 item?.actualNetAmount ??
                 item?.netAmount,
-              leadTax: existing?.hsn ?? existingTag?.hsn ?? item?.hsn,
-              nextDueTax:
-                // existing?.nextDueTax ??
-                // existingTag?.nextDueTax ??
-                // item?.hsn ??
-                // item?.actualHsn,
-                getPositiveInteger(
-                  existing?.nextDueTax,
-                  existingTag?.nextDueTax,
-                  item?.hsn,
-                  item?.actualHsn
-                ) ?? 0,
+              leadTax:
+                existing?.leadTax ??
+                existingTag?.leadTax ??
+                item?.hsn ??
+                0,
+              nextDueTax,
               discountAmount:
                 existing?.discountAmount ?? item?.discountAmount ?? 0,
               noofusers:
@@ -3426,6 +3538,34 @@ const LeadMaster = ({
           : []
     console.log(item)
     console.log(normalizedTaggedData)
+    if (isAdditionalService && normalizedTaggedData.length > 0) {
+      setSelectedLeadList((prev) =>
+        prev.map((lead, leadIndex) => {
+          if (leadIndex !== index) return lead
+
+          const existingLicenseNumbers = Array.isArray(lead?.licenseNumbers)
+            ? lead.licenseNumbers
+            : []
+          const derivedLicenseNumbers = normalizedTaggedData.map(
+            (tag, sourceIndex) => ({
+              licenseNumber: tag?.licensenumber,
+              productorServiceId: lead?.productorServiceId || "",
+              productorServiceName: lead?.productorServiceName || "",
+              sourceIndex
+            })
+          )
+
+          return {
+            ...lead,
+            taggeddata: normalizedTaggedData,
+            licenseNumbers:
+              existingLicenseNumbers.length > 0
+                ? existingLicenseNumbers
+                : derivedLicenseNumbers
+          }
+        })
+      )
+    }
     setDetailsItem(item)
     setDetailsIndex(index)
     console.log("hhh")
@@ -4113,42 +4253,41 @@ convertexcel
                                 </button>
                               </div>
                             </td>
-                            {(process === "closing" ||
-                              from === "closedlead") &&
+                            {(process === "closing" || from === "closedlead") &&
                               !isEnhancedService && (
-                              <td className="border border-gray-300 px-1 py-1 text-center">
-                                <div className="relative inline-block group">
-                                  <button
-                                    type="button"
-                                    disabled={isReadOnly}
-                                    onClick={() => handleDetails(item, index)}
-                                    className={`ml-2 font-bold text-blue-500 ${
-                                      isReadOnly
-                                        ? "cursor-not-allowed"
-                                        : "cursor-pointer"
-                                    }`}
-                                  >
-                                    Add
-                                  </button>
-                                  {/* {warningErrors?.taggedlicenseError && (
+                                <td className="border border-gray-300 px-1 py-1 text-center">
+                                  <div className="relative inline-block group">
+                                    <button
+                                      type="button"
+                                      disabled={isReadOnly}
+                                      onClick={() => handleDetails(item, index)}
+                                      className={`ml-2 font-bold text-blue-500 ${
+                                        isReadOnly
+                                          ? "cursor-not-allowed"
+                                          : "cursor-pointer"
+                                      }`}
+                                    >
+                                      Add
+                                    </button>
+                                    {/* {warningErrors?.taggedlicenseError && (
                                     <div className="pointer-events-none absolute bottom-full right-0 z-50 mb-2 hidden whitespace-nowrap rounded bg-red-500 px-2 py-1 text-[11px] text-white shadow-lg group-hover:block">
                                       {warningErrors.taggedlicenseError}
                                     </div>
                                   )} */}
-                                  {unselectedtaggedlicense[
-                                    item.productorServiceId
-                                  ] && (
-                                    <div className="pointer-events-none absolute bottom-full right-0 z-50 mb-2 hidden whitespace-nowrap rounded bg-red-500 px-2 py-1 text-[11px] text-white shadow-lg group-hover:block">
-                                      {
-                                        unselectedtaggedlicense[
-                                          item.productorServiceId
-                                        ]
-                                      }
-                                    </div>
-                                  )}
-                                </div>
-                              </td>
-                            )}
+                                    {unselectedtaggedlicense[
+                                      item.productorServiceId
+                                    ] && (
+                                      <div className="pointer-events-none absolute bottom-full right-0 z-50 mb-2 hidden whitespace-nowrap rounded bg-red-500 px-2 py-1 text-[11px] text-white shadow-lg group-hover:block">
+                                        {
+                                          unselectedtaggedlicense[
+                                            item.productorServiceId
+                                          ]
+                                        }
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                              )}
                           </tr>
                         )
                       })}
