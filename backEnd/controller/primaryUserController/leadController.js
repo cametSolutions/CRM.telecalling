@@ -13320,21 +13320,35 @@ export const GetcollectionLeads = async (req, res) => {
 
         if (!latestFollowup?.followupClosed) return null;
 
-        const filteredPaymentHistory = paymentHistory
-          .map((history, originalIndex) => ({
+        const paymentHistoryWithIndex = paymentHistory.map(
+          (history, originalIndex) => ({
             ...history,
             originalIndex
-          }))
+          })
+        );
+
+        const filteredPaymentHistory = paymentHistoryWithIndex
           .filter((history) => {
             if (accountantMode) {
               return history.paymentVerified === verifiedBool;
             }
-            // return history.paymentVerified === verifiedBool;
-            return history
-            // return loggeduserby
-            //   ? String(history.receivedBy) === String(loggeduserby)
-            //   : true;
+            // Collection users work only with payment entries that still
+            // require an update/verification. Fully verified payments must
+            // not keep a lead visible in their collection list.
+            return history.paymentVerified === false;
           });
+
+        // Collection users need leads that either have a payment awaiting
+        // verification or still have an outstanding balance for a new
+        // collection entry. Fully paid, fully verified leads are excluded.
+        const hasOutstandingBalance = Number(lead?.balanceAmount || 0) > 0;
+        if (
+          !accountantMode &&
+          filteredPaymentHistory.length === 0 &&
+          !hasOutstandingBalance
+        ) {
+          return null;
+        }
 
         const hydratedActivityLog = activityLogs.map((activity) => ({
           ...activity,
@@ -13366,21 +13380,27 @@ export const GetcollectionLeads = async (req, res) => {
           )
         }));
 
-        const hydratedPayments = filteredPaymentHistory.map((history) => ({
-          ...history,
-          receivedBy: getUser(history.receivedBy, history.receivedModel),
-          paymentVerifiedBy: getUser(
-            history.paymentVerifiedBy,
-            history.paymentverifiedModel
-          ),
-          paymentEntries: validObjects(history.paymentEntries).map((entry) => ({
-            ...entry,
-            productorServiceId: getServiceProduct(
-              entry.productorServiceId,
-              entry.productorServicemodel
-            )
-          }))
-        }));
+        const hydratePaymentHistory = (histories) =>
+          histories.map((history) => ({
+            ...history,
+            receivedBy: getUser(history.receivedBy, history.receivedModel),
+            paymentVerifiedBy: getUser(
+              history.paymentVerifiedBy,
+              history.paymentverifiedModel
+            ),
+            paymentEntries: validObjects(history.paymentEntries).map((entry) => ({
+              ...entry,
+              productorServiceId: getServiceProduct(
+                entry.productorServiceId,
+                entry.productorServicemodel
+              )
+            }))
+          }));
+
+        // Keep the list's filtered entries for collection actions, but expose
+        // the complete, populated history for the payment-history dialog.
+        const hydratedPayments = hydratePaymentHistory(filteredPaymentHistory);
+        const allPaymentHistory = hydratePaymentHistory(paymentHistoryWithIndex);
 
         const lastActivity = hydratedActivityLog.at(-1);
 
@@ -13398,6 +13418,7 @@ export const GetcollectionLeads = async (req, res) => {
           leadBy: getUser(lead.leadBy, lead.leadByModel),
           leadFor: hydratedLeadFor,
           paymentHistory: hydratedPayments,
+          allPaymentHistory,
           originalpaymentHistory: lead?.paymentHistory,
           activityLog: hydratedActivityLog,
           taskallocatedTo: lastAllocatedActivity?.taskallocatedTo || null,
@@ -14222,22 +14243,23 @@ export const GetallproductwiseReport = async (req, res) => {
 export const GetownLeadList = async (req, res) => {
   try {
     const { userId, selectedBranch, role, ownlead, startDate, endDate } = req.query;
+    if (
+      !mongoose.Types.ObjectId.isValid(userId) ||
+      !mongoose.Types.ObjectId.isValid(selectedBranch)
+    ) {
+      return res.status(400).json({ message: "Invalid user or branch id" });
+    }
 
     const objectId = new mongoose.Types.ObjectId(userId);
+    const branchId = new mongoose.Types.ObjectId(selectedBranch);
+    const query = { leadBranch: branchId };
 
-    let query
     if (ownlead === "true") {
-      query = {
-
-        leadBranch: new mongoose.Types.ObjectId(selectedBranch),
-        leadBy: objectId,
-      };
-    } else if (ownlead === "false" && role !== "Staff") {
-      query = {
-
-        leadBranch: new mongoose.Types.ObjectId(selectedBranch)
-      };
+      query.leadBy = objectId;
+    } else if (ownlead === "false" && role === "Staff") {
+      return res.status(200).json({ message: "lead not found", data: [] });
     }
+
     const parsedStart = startDate ? new Date(startDate) : null
     const parsedEnd = endDate ? new Date(endDate) : null
 
@@ -14252,99 +14274,124 @@ export const GetownLeadList = async (req, res) => {
       }
     }
     const matchedLead = await LeadMaster.find(query)
+      .select(
+        "leadId leadDate customerName leadBy leadByModel leadFor activityLog netAmount leadConfirmed leadLost reallocatedTo"
+      )
       .populate({ path: "customerName", select: "customerName mobile email" })
       .lean();
 
-    const populatedOwnLeads = await Promise.all(
-      matchedLead.map(async (lead) => {
-        if (!lead.leadByModel || !mongoose.models[lead.leadByModel]) {
-          console.error(`Model ${lead.leadByModel} is not registered`);
-          return lead;
+    const userIdsByModel = new Map();
+    const taskIds = new Set();
+    const productIds = new Set();
+    const serviceIds = new Set();
+    const addUserId = (model, id) => {
+      if (!model || !id || !mongoose.models[model]) return;
+      if (!userIdsByModel.has(model)) userIdsByModel.set(model, new Set());
+      userIdsByModel.get(model).add(String(id));
+    };
+
+    matchedLead.forEach((lead) => {
+      addUserId(lead.leadByModel, lead.leadBy);
+      (lead.activityLog || []).forEach((activity) => {
+        addUserId(activity.submissiondoneByModel, activity.submittedUser);
+        addUserId(activity.taskallocatedToModel, activity.taskallocatedTo);
+        addUserId(activity.taskallocatedByModel, activity.taskallocatedBy);
+        if (isValidObjectId(activity.taskBy)) taskIds.add(String(activity.taskBy));
+        if (isValidObjectId(activity.taskId)) taskIds.add(String(activity.taskId));
+      });
+      (lead.leadFor || []).forEach((item) => {
+        if (!item.productorServiceId) return;
+        if (item.productorServicemodel === "Product") {
+          productIds.add(String(item.productorServiceId));
+        } else if (item.productorServicemodel === "Service") {
+          serviceIds.add(String(item.productorServiceId));
         }
+      });
+    });
 
-        // Fetch leadBy name
-        const assignedModel = mongoose.model(lead.leadByModel);
-        const populatedLeadBy = await assignedModel
-          .findById(lead.leadBy)
-          .select("name")
-          .lean();
-        let taskallocatedTo;
-        let taskallocatedBy;
-        // ✅ Populate activityLog fields
-        const populatedActivityLog = await Promise.all(
-          (lead.activityLog || []).map(async (activity) => {
-            const populatedActivity = { ...activity };
-
-            // Populate taskallocatedTo
-            if (activity.submissiondoneByModel && activity.submittedUser && activity?.taskallocatedTo && activity?.allocationChanged === false) {
-              const model = mongoose.model(activity.taskallocatedToModel);
-              taskallocatedTo = populatedActivity.taskallocatedTo = await model
-                .findById(activity.taskallocatedTo)
-                .select("name")
-                .lean();
-            }
-
-            // // Populate taskallocatedBy
-            if (activity.taskallocatedByModel && activity.taskallocatedBy && activity?.allocationChanged === false) {
-              const model = mongoose.model(activity.taskallocatedByModel);
-              taskallocatedBy = populatedActivity.taskallocatedBy = await model
-                .findById(activity.taskallocatedBy)
-                .select("name")
-                .lean();
-            }
-            if (activity.submittedUser) {
-              const model = mongoose.model(activity.submissiondoneByModel);
-              populatedActivity.submittedUser = await model.findById(activity.submittedUser).select("name").lean()
-            }
-            if (activity.taskId && isValidObjectId(activity.taskId)) {
-              populatedActivity.taskId = await Task.findById(activity.taskId)
-                .select("taskName")
-                .lean();
-            }
-
-            // ✅ Populate submissionDoneBy
-            if (activity.taskallocatedToModel && activity.taskallocatedTo) {
-              const model = mongoose.model(activity.taskallocatedToModel);
-              populatedActivity.taskallocatedTo = await model
-                .findById(activity.taskallocatedTo)
-                .select("name")
-                .lean();
-            }
-            if (activity.taskBy && isValidObjectId(activity.taskBy)) {
-              populatedActivity.taskBy = await Task.findById(activity.taskBy).select("taskName").lean()
-            }
-            if (activity.taskId && isValidObjectId(activity.taskId)) {
-              populatedActivity.taskId = await Task.findById(activity.taskId).select("taskName").lean()
-            }
-
-            return populatedActivity;
-          })
-        );
-        let populatedProduct
-        const populateleadFor = await Promise.all(
-          (lead.leadFor || []).map(async (item) => {
-            const populatedItem = { ...item }
-            if (item?.productorServiceId) {
-              const model = mongoose.model(item.productorServicemodel)
-              populatedProduct = populatedItem.productorServiceId = await model.findById(item.productorServiceId).select("productName shortName").lean()
-            }
-            return populatedItem
-          }))
-
-        // ✅ Get last activity
-        const lastActivity =
-          populatedActivityLog[populatedActivityLog.length - 1];
-
-        return {
-          ...lead,
-          leadBy: populatedLeadBy,
-          leadFor: populateleadFor,
-          activityLog: populatedActivityLog, // include fully populated activity logs
-          taskallocatedTo: taskallocatedTo || null,
-          taskallocatedBy: taskallocatedBy || null,
-        };
-      })
+    const userMapEntries = await Promise.all(
+      [...userIdsByModel.entries()].map(async ([model, ids]) => [
+        model,
+        await batchFetchByModel(model, [...ids], "name")
+      ])
     );
+    const userMaps = new Map(userMapEntries);
+    const [tasks, products, services] = await Promise.all([
+      Task.find({ _id: { $in: [...taskIds] } }).select("taskName").lean(),
+      Product.find({ _id: { $in: [...productIds] } })
+        .select("productName shortName")
+        .lean(),
+      Service.find({ _id: { $in: [...serviceIds] } })
+        .select("productName shortName")
+        .lean()
+    ]);
+    const toMap = (items) =>
+      new Map(items.map((item) => [String(item._id), item]));
+    const taskMap = toMap(tasks);
+    const productMap = toMap(products);
+    const serviceMap = toMap(services);
+    const getUser = (id, model) => userMaps.get(model)?.get(String(id)) || null;
+    const getProductOrService = (id, model) => {
+      if (model === "Product") return productMap.get(String(id)) || null;
+      if (model === "Service") return serviceMap.get(String(id)) || null;
+      return null;
+    };
+
+    const populatedOwnLeads = matchedLead.map((lead) => {
+      let taskallocatedTo = null;
+      let taskallocatedBy = null;
+      const populatedActivityLog = (lead.activityLog || []).map((activity) => {
+        const populatedActivity = { ...activity };
+        const allocatedTo = getUser(
+          activity.taskallocatedTo,
+          activity.taskallocatedToModel
+        );
+        const allocatedBy = getUser(
+          activity.taskallocatedBy,
+          activity.taskallocatedByModel
+        );
+        if (allocatedTo) populatedActivity.taskallocatedTo = allocatedTo;
+        if (allocatedBy) populatedActivity.taskallocatedBy = allocatedBy;
+        const submittedUser = getUser(
+          activity.submittedUser,
+          activity.submissiondoneByModel
+        );
+        if (submittedUser) populatedActivity.submittedUser = submittedUser;
+        if (isValidObjectId(activity.taskId)) {
+          populatedActivity.taskId = taskMap.get(String(activity.taskId)) || null;
+        }
+        if (isValidObjectId(activity.taskBy)) {
+          populatedActivity.taskBy = taskMap.get(String(activity.taskBy)) || null;
+        }
+        if (activity.allocationChanged === false) {
+          if (
+            activity.submissiondoneByModel &&
+            activity.submittedUser &&
+            allocatedTo
+          ) {
+            taskallocatedTo = allocatedTo;
+          }
+          if (allocatedBy) taskallocatedBy = allocatedBy;
+        }
+        return populatedActivity;
+      });
+
+      return {
+        ...lead,
+        leadBy: getUser(lead.leadBy, lead.leadByModel),
+        leadFor: (lead.leadFor || []).map((item) => ({
+          ...item,
+          productorServiceId:
+            getProductOrService(
+              item.productorServiceId,
+              item.productorServicemodel
+            )
+        })),
+        activityLog: populatedActivityLog,
+        taskallocatedTo,
+        taskallocatedBy
+      };
+    });
     if (populatedOwnLeads && populatedOwnLeads.length > 0) {
       return res
         .status(201)

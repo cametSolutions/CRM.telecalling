@@ -917,20 +917,30 @@ export const PaymentHistoryModal = ({
                                 )
                               ) : (
                                 <>
-                                  {!isdepartmentisAccountant && (
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        handleEdit(row, rowOriginalIndex, index)
-                                      }
-                                      disabled={submitLoading}
-                                      className="inline-flex h-8 items-center gap-1 rounded-lg bg-blue-600 px-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                                      title="Edit payment"
-                                    >
-                                      <Edit2 className="h-3.5 w-3.5" />
-                                      Edit
-                                    </button>
-                                  )}
+                                  {!isdepartmentisAccountant &&
+                                    (row.paymentVerified ? (
+                                      <span className="inline-flex h-8 items-center gap-1 rounded-lg bg-emerald-50 px-2.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                                        <CheckCircle2 className="h-3.5 w-3.5" />
+                                        Verified
+                                      </span>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          handleEdit(
+                                            row,
+                                            rowOriginalIndex,
+                                            index
+                                          )
+                                        }
+                                        disabled={submitLoading}
+                                        className="inline-flex h-8 items-center gap-1 rounded-lg bg-blue-600 px-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                        title="Edit payment"
+                                      >
+                                        <Edit2 className="h-3.5 w-3.5" />
+                                        Edit
+                                      </button>
+                                    ))}
 
                                   {isdepartmentisAccountant && (
                                     <button
