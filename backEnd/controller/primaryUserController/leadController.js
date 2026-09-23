@@ -9414,6 +9414,15 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
       });
     }
 
+    const isFollowupAndLeadClosed =
+      formData.followupType === "followup_closed_and_lead_closed";
+
+    if (isFollowupAndLeadClosed && !String(formData.Remarks || "").trim()) {
+      return res.status(400).json({
+        message: "Remarks are required when closing a lead"
+      });
+    }
+
     // 1) Resolve followedByModel
     let followedByModel = null;
 
@@ -9436,7 +9445,10 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
     }
 
     // 2) Close previous open followup if lead closed
-    if (formData.followupType === "closed") {
+    if (
+      formData.followupType === "closed" ||
+      isFollowupAndLeadClosed
+    ) {
       await LeadMaster.updateOne(
         { _id: selectedleaddocId },
         {
@@ -9460,7 +9472,10 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
     }
     // 3) Build activity entry
     let allocationTask = null
-    if (formData.followupType === "closed") {
+    if (
+      formData.followupType === "closed" ||
+      isFollowupAndLeadClosed
+    ) {
       allocationTask = await Task.findOne({
         taskName: "Follow-Up Closing"
       }).lean();
@@ -9481,17 +9496,26 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
       submittedUser: loggeduserid,
       submissiondoneByModel: followedByModel,
       taskBy: allocationTask?._id || null,
-      nextFollowUpDate: formData?.nextfollowUpDate,
+      nextFollowUpDate: isFollowupAndLeadClosed
+        ? null
+        : formData?.nextfollowUpDate,
       remarks: formData.Remarks,
       taskfromFollowup: false
     };
 
-    if (formData.followupType === "closed") {
+    if (
+      formData.followupType === "closed" ||
+      isFollowupAndLeadClosed
+    ) {
       activityEntry.taskClosed = true;
       activityEntry.followupClosed = true;
       activityEntry.reallocatedTo = true;
     } else if (formData.followupType === "lost") {
       activityEntry.taskClosed = true;
+    }
+
+    if (isFollowupAndLeadClosed) {
+      activityEntry.taskDescription = "Follow-up Closed - Lead Closing";
     }
 
     // 4) Payment handling
@@ -9572,7 +9596,8 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
       $set: {
         totalPaidAmount: updatedTotalPaid,
         balanceAmount: updatedBalance,
-        followupClosed: formData?.followupType === "closed" ? true : false
+        followupClosed:
+          formData?.followupType === "closed" || isFollowupAndLeadClosed
       }
     };
 
@@ -9620,7 +9645,13 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
       );
 
     return res.status(200).json({
-      message: formData.followupType === "lost" ? "Lead losted" : formData.followupType === "closed" ? "Followup Closed" : "Next follow up updated",
+      message: formData.followupType === "lost"
+        ? "Lead losted"
+        : isFollowupAndLeadClosed
+          ? "Follow-up closed. Continue to close the lead."
+          : formData.followupType === "closed"
+            ? "Followup Closed"
+            : "Next follow up updated",
       data: updatedLead
     });
   } catch (error) {

@@ -3395,16 +3395,21 @@ const LeadMaster = ({
     console.log(item)
     console.log(selectedCustomer)
     console.log(item?.productorServiceId)
+    const itemProductId = String(
+      item?.productorServiceId?._id ?? item?.productorServiceId ?? ""
+    )
     const filteredproduct =
       selectedCustomer?.selected?.filter(
-        (it) => it?.product_id?._id === item?.productorServiceId
+        (it) =>
+          String(it?.product_id?._id ?? it?.product_id ?? "") ===
+          itemProductId
       ) || []
     console.log(filteredproduct)
     console.log(item?.productorServiceId)
     const a = leadList.map((item) => item.productName)
     console.log(a)
     const newproduct = leadList.filter(
-      (it) => it?._id === item?.productorServiceId
+      (it) => String(it?._id ?? "") === itemProductId
     )
     console.log(newproduct)
 
@@ -3437,6 +3442,35 @@ const LeadMaster = ({
                       String(tag?.licensenumber) === String(lic?.licenseNumber)
                   )
                 : null
+            const customerProduct = filteredproduct[0] || null
+            const masterProduct = newproduct[0] || null
+            const priceSources = [
+              existing,
+              existingTag,
+              customerProduct,
+              masterProduct,
+              item
+            ]
+            const getFirstValue = (...fields) => {
+              for (const source of priceSources) {
+                for (const field of fields) {
+                  const value = source?.[field]
+                  if (value !== undefined && value !== null && value !== "") {
+                    return value
+                  }
+                }
+              }
+              return undefined
+            }
+            const getFirstPositiveValue = (...fields) => {
+              for (const source of priceSources) {
+                for (const field of fields) {
+                  const value = Number(source?.[field])
+                  if (Number.isFinite(value) && value > 0) return value
+                }
+              }
+              return 0
+            }
             console.log(existing?.productAmount)
             console.log(existingTag?.productAmount)
             console.log(item?.actualNetAmount)
@@ -3445,83 +3479,84 @@ const LeadMaster = ({
             console.log(existingTag)
             // 3. Decide productAmount
             const productAmount =
-              existing?.productAmount ??
-              existingTag?.productAmount ??
-              item?.actualNetAmount ??
-              item?.netAmount ??
-              0
+              getFirstValue(
+                "productAmount",
+                "actualNetAmount",
+                "netAmount",
+                "amount"
+              ) ?? 0
             console.log(productAmount)
-            const nextDue =
-              existing?.nextDue ||
-              existingTag?.nextDue ||
-              item?.nextDue ||
-              ""
-            const nextDueTax = Number(
-              existing?.nextDueTax ?? existingTag?.nextDueTax ?? 0
-            ) || 0
+            const nextDue = getFirstValue("nextDue") || ""
+            const nextDueAmount = Number(
+              getFirstValue(
+                "nextDueAmount",
+                "actualproductPrice",
+                "productPrice",
+                "amount"
+              ) ?? 0
+            )
+            const totalNextDueAmount = Number(
+              getFirstValue("totalnextDueAmount", "actualNetAmount", "netAmount") ??
+                0
+            )
+            const configuredTax = getFirstPositiveValue(
+              "nextDueTax",
+              "actualHsn",
+              "hsn"
+            )
+            const inferredTax =
+              nextDueAmount > 0 && totalNextDueAmount > nextDueAmount
+                ? Number(
+                    (
+                      ((totalNextDueAmount - nextDueAmount) / nextDueAmount) *
+                      100
+                    ).toFixed(2)
+                  )
+                : 0
+            const nextDueTax = configuredTax || inferredTax
+            const calculatedTotalNextDueAmount = Number(
+              (nextDueAmount * (1 + nextDueTax / 100)).toFixed(2)
+            )
             return {
               licensenumber: lic?.licenseNumber || "",
               nextDue: String(nextDue).slice(0, 10),
-              noofusers:
-                existing?.noofusers ??
-                existingTag?.noofusers ??
-                item?.noofusers ??
-                0,
-              nextDueAmount:
-                existing?.nextDueAmount ??
-                existingTag?.nextDueAmount ??
-                item?.actualproductPrice ??
-                item?.productPrice,
+              noofusers: getFirstValue("noofusers") ?? 0,
+              nextDueAmount,
               sourceIndex: lic?.sourceIndex,
               productAmount,
               taxexclusiveAmount:
-                existing?.taxexclusiveAmount ??
-                existingTag?.taxexclusiveAmount ??
-                item?.actualproductPrice ??
-                item?.productPrice,
+                getFirstValue(
+                  "taxexclusiveAmount",
+                  "actualproductPrice",
+                  "productPrice",
+                  "amount"
+                ) ?? 0,
               taxinclusiveamount:
-                existing?.taxinclusiveamount ??
-                existingTag?.taxinclusiveamount ??
-                item?.actualNetAmount ??
-                item?.netAmount ??
+                getFirstValue("taxinclusiveamount", "actualNetAmount", "netAmount") ??
                 0,
               hsn:
-                getPositiveInteger(
-                  existing?.hsn,
-                  existingTag?.hsn,
-                  item?.actualHsn,
-                  item?.hsn
-                ) ?? 0,
-              originalHsn: item?.actualHsn ?? item?.hsn,
+                getFirstPositiveValue("hsn", "actualHsn"),
+              originalHsn: getFirstPositiveValue(
+                "originalHsn",
+                "actualHsn",
+                "hsn"
+              ),
               leadAmount:
-                existing?.leadAmount ??
-                existingTag?.leadAmount ??
-                item?.productPrice,
-              totalleadAmount:
-                existing?.totalleadAmount ??
-                existingTag?.totalleadAmount ??
-                item?.netAmount,
-              totalnextDueAmount:
-                existing?.totalnextDueAmount ??
-                existingTag?.totalnextDueAmount ??
-                item?.actualNetAmount ??
-                item?.netAmount,
-              leadTax:
-                existing?.leadTax ??
-                existingTag?.leadTax ??
-                item?.hsn ??
+                getFirstValue("leadAmount", "productPrice", "actualproductPrice") ??
                 0,
+              totalleadAmount:
+                getFirstValue("totalleadAmount", "netAmount", "actualNetAmount") ??
+                0,
+              totalnextDueAmount:
+                totalNextDueAmount > 0
+                  ? totalNextDueAmount
+                  : calculatedTotalNextDueAmount,
+              leadTax:
+                getFirstPositiveValue("leadTax", "actualHsn", "hsn"),
               nextDueTax,
               discountAmount:
-                existing?.discountAmount ?? item?.discountAmount ?? 0,
-              noofusers:
-                existing?.noofusers ??
-                existingTag?.noofusers ??
-                item?.noofusers,
-              serialNumber:
-                existing?.serialNumber ??
-                existingTag?.serialNumber ??
-                item?.serialNumber
+                getFirstValue("discountAmount") ?? 0,
+              serialNumber: getFirstValue("serialNumber")
             }
           })
         : Array.isArray(item?.taggeddata)

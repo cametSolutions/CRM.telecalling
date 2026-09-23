@@ -471,52 +471,69 @@ export default function IncentiveLeadsModal({
                 ))}
               </div>
 
-              <div className="hidden overflow-x-auto md:block">
-                <table className="min-w-full whitespace-nowrap">
-              <thead className="sticky top-0 bg-gray-50 border-b border-gray-100">
+              <div className="hidden overflow-hidden md:block">
+                <table className="w-full table-fixed">
+              <thead className="sticky top-0 border-b-2 border-slate-300 bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                  <th className="w-[9%] px-2 py-3 text-left text-[10px] font-semibold uppercase tracking-wide text-gray-500">
                     Lead ID
                   </th>
-                  <th className="px-6 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                  <th className="w-[20%] px-2 py-3 text-left text-[10px] font-semibold uppercase tracking-wide text-gray-500">
                     Party Name
                   </th>
-                  <th className="px-6 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                  <th className="w-[15%] px-2 py-3 text-left text-[10px] font-semibold uppercase tracking-wide text-gray-500">
                     Product Name
                   </th>
-                  <th className="px-6 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                  <th className="w-[11%] px-2 py-3 text-left text-[10px] font-semibold uppercase tracking-wide text-gray-500">
                     Date
                   </th>
                   {allocationColumns.map((column) => (
                     <th
                       key={column.key}
-                      className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-gray-500"
+                      className="px-1 py-3 text-center text-[10px] font-semibold uppercase leading-tight tracking-wide text-gray-500"
                     >
                       {column.label}
                     </th>
                   ))}
-                  <th className="px-6 py-3 text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                  <th className="w-[11%] px-2 py-3 text-right text-[10px] font-semibold uppercase tracking-wide text-gray-500">
                     Total
                   </th>
-                  <th className="sticky right-0 bg-gray-50 px-4 py-3 text-right text-xs text-gray-500">Actions</th>
+                  <th className="w-[72px] px-2 py-3 text-right text-[10px] font-semibold uppercase tracking-wide text-gray-500">
+                    Actions
+                  </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y-2 divide-slate-300">
                 {filtered.map((lead) => (
                   <tr
                     key={lead.leadMongoId || lead.leadId}
                     className="hover:bg-blue-50/40 transition-colors"
                   >
-                    <td className="px-6 py-3.5 text-sm font-semibold text-blue-700">
+                    <td className="px-2 py-3.5 text-xs font-semibold text-blue-700">
                       {lead.leadId}
                     </td>
-                    <td className="px-6 py-3.5 text-sm text-gray-800">
-                      {lead.partyName || "—"}
+                    <td className="px-2 py-3.5 text-xs text-gray-800">
+                      <div className="group relative min-w-0">
+                        <span
+                          tabIndex={0}
+                          className="block truncate font-medium outline-none"
+                        >
+                          {lead.partyName || "—"}
+                        </span>
+                        {String(lead.partyName || "").length > 24 && (
+                          <div className="pointer-events-none absolute left-0 top-full z-30 mt-2 w-max max-w-xs rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-xl ring-1 ring-black/10 transition-all duration-150 translate-y-1 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                            {lead.partyName}
+                            <span className="absolute -top-1 left-4 h-2 w-2 rotate-45 bg-slate-900" />
+                          </div>
+                        )}
+                      </div>
                     </td>
-                    <td className="px-6 py-3.5 text-sm text-gray-700">
-                      {lead.productName || "—"}
+                    <td className="px-2 py-3.5 text-xs text-gray-700">
+                      <span className="block truncate" title={lead.productName || ""}>
+                        {lead.productName || "—"}
+                      </span>
                     </td>
-                    <td className="px-6 py-3.5 text-sm text-gray-500">
+                    <td className="px-2 py-3.5 text-xs text-gray-500">
                       {lead.date
                         ? new Date(lead.date).toLocaleDateString("en-GB", {
                             day: "2-digit",
@@ -532,16 +549,16 @@ export default function IncentiveLeadsModal({
                       return (
                         <td
                           key={column.key}
-                          className="px-4 py-3.5 text-center text-sm font-semibold text-gray-700"
+                          className="px-1 py-3.5 text-center text-[11px] font-semibold text-gray-700 whitespace-nowrap"
                         >
                           {formatAmount(item?.amount)}
                         </td>
                       )
                     })}
-                    <td className="px-6 py-3.5 text-sm font-semibold text-gray-900 text-right">
+                    <td className="px-2 py-3.5 text-xs font-semibold text-gray-900 text-right whitespace-nowrap">
                       {formatAmount(lead.totalAmount)}
                     </td>
-                    <td className="sticky right-0 bg-white px-4 py-3 text-right">{editButton(lead)}</td>
+                    <td className="px-2 py-3 text-right">{editButton(lead)}</td>
                   </tr>
                 ))}
               </tbody>

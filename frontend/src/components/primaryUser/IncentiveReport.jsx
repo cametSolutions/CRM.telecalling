@@ -391,7 +391,7 @@ export default function IncentiveReport({ selectedYear, selectedPeriod }) {
 
                 <div className="hidden overflow-x-auto rounded-xl border border-gray-200 lg:block">
                   <table className="w-full min-w-[860px] table-fixed border-collapse text-sm">
-                    <thead className="bg-blue-100 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                    <thead className="border-b-2 border-slate-300 bg-blue-100 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
                       <tr>
                         <th className="w-56 px-4 py-3 text-left">Staff</th>
                         {columns.map((column) => (
@@ -422,7 +422,7 @@ export default function IncentiveReport({ selectedYear, selectedPeriod }) {
                                 handleOpenUserLeads(user);
                               }
                             }}
-                            className="cursor-pointer border-t border-gray-100 bg-white transition-colors hover:bg-blue-50/70 focus:bg-blue-50/70 focus:outline-none"
+                            className="cursor-pointer border-t-2 border-slate-300 bg-white transition-colors hover:bg-blue-50/70 focus:bg-blue-50/70 focus:outline-none"
                           >
                             <td className="px-4 py-3">
                               <div className="flex min-w-0 items-center gap-2.5">
