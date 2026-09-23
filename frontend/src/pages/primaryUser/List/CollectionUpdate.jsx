@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react"
+import React, { useEffect, useState, useMemo, useCallback, useRef } from "react"
 import UseFetch from "../../../hooks/useFetch"
 import { useNavigate } from "react-router-dom"
 import { PaymentHistoryModal } from "../../../components/primaryUser/PaymentHistoryModal"
@@ -25,7 +25,8 @@ import {
   CreditCard, // Payment History
   ClipboardCheck, // Collection Update,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Check
 } from "lucide-react"
 import { getLocalStorageItem } from "../../../helper/localstorage"
 import AdminHeader from "../../../header/AdminHeader"
@@ -35,12 +36,37 @@ import { PerformanceModal } from "../../../components/primaryUser/PerformanceMod
 import { PropagateLoader } from "react-spinners"
 import { toast } from "react-toastify"
 
+const getLeadProductNames = (lead) =>
+  (Array.isArray(lead?.leadFor) ? lead.leadFor : [])
+    .map((leadForItem) => {
+      const productOrService =
+        leadForItem?.prodproductorServiceId || leadForItem?.productorServiceId
+
+      if (typeof productOrService === "string") {
+        return leadForItem?.productorServiceName || ""
+      }
+
+      return (
+        productOrService?.shortName ||
+        leadForItem?.productorServiceId?.productName ||
+        productOrService?.productName ||
+        productOrService?.serviceName ||
+        productOrService?.name ||
+        leadForItem?.productorServiceName ||
+        ""
+      )
+    })
+    .filter(Boolean)
+
 export default function CollectionUpdate() {
   console.log("hh")
   const [showFullName, setShowFullName] = useState(false)
   const [tableData, setTableData] = useState([])
   const [filteredLeads, setFilteredLeads] = useState([])
   const [searchInitialized, setSearchInitialized] = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState("all")
+  const [isProductFilterOpen, setIsProductFilterOpen] = useState(false)
+  const productFilterRef = useRef(null)
   console.log(tableData)
   console.log(tableData)
   const [forcefullyclosedLeads, setforcefullyClosedLeads] = useState([])
@@ -506,9 +532,54 @@ export default function CollectionUpdate() {
     return isforcefullyclosed ? forcefullyclosedLeads : tableData
   }, [isforcefullyclosed, forcefullyclosedLeads, tableData])
 
-  const leadsForSearch = useMemo(() => {
-    return (sourceGroupedData || []).flatMap((group) => group?.leads || [])
+  const productOptions = useMemo(() => {
+    const products = new Map()
+
+    ;(sourceGroupedData || [])
+      .flatMap((group) => group?.leads || [])
+      .flatMap(getLeadProductNames)
+      .forEach((productName) => {
+        const key = productName.trim().toLowerCase()
+        if (key && !products.has(key)) products.set(key, productName.trim())
+      })
+
+    return [...products.entries()]
+      .sort(([, first], [, second]) => first.localeCompare(second))
+      .map(([value, label]) => ({ value, label }))
   }, [sourceGroupedData])
+
+  const selectedProductLabel = useMemo(
+    () =>
+      selectedProduct === "all"
+        ? "All Products"
+        : productOptions.find((product) => product.value === selectedProduct)
+            ?.label || "All Products",
+    [productOptions, selectedProduct]
+  )
+
+  useEffect(() => {
+    const closeProductFilter = (event) => {
+      if (!productFilterRef.current?.contains(event.target)) {
+        setIsProductFilterOpen(false)
+      }
+    }
+
+    document.addEventListener("mousedown", closeProductFilter)
+    return () => document.removeEventListener("mousedown", closeProductFilter)
+  }, [])
+
+  const leadsForSearch = useMemo(() => {
+    const leads = (sourceGroupedData || []).flatMap((group) => group?.leads || [])
+
+    if (selectedProduct === "all") return leads
+
+    return leads.filter((lead) =>
+      getLeadProductNames(lead).some(
+        (productName) =>
+          productName.trim().toLowerCase() === selectedProduct
+      )
+    )
+  }, [sourceGroupedData, selectedProduct])
 
   const handleFilteredLeads = useCallback((leads) => {
     setFilteredLeads(leads)
@@ -855,7 +926,7 @@ export default function CollectionUpdate() {
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <section
           className="
-    mx-2 shrink-0 rounded-xl border border-white/60
+    relative z-40 mx-2 shrink-0 overflow-visible rounded-xl border border-white/60
     bg-white/90 px-2.5 py-2 shadow-sm backdrop-blur
     sm:mx-3 sm:px-3
   "
@@ -912,6 +983,84 @@ export default function CollectionUpdate() {
                 onFilteredData={handleFilteredLeads}
                 placeholder="Search customer, mobile, license or product..."
               />
+            </div>
+
+            <div ref={productFilterRef} className="relative min-w-[175px]">
+              <button
+                type="button"
+                onClick={() => setIsProductFilterOpen((open) => !open)}
+                aria-expanded={isProductFilterOpen}
+                aria-haspopup="listbox"
+                className={`group flex h-9 w-full items-center gap-2 rounded-lg border bg-white px-2 text-left shadow-sm transition-all hover:border-slate-300 hover:shadow focus:outline-none focus:ring-4 focus:ring-blue-100 ${
+                  isProductFilterOpen
+                    ? "border-blue-500 ring-1 ring-blue-500"
+                    : "border-slate-200"
+                }`}
+              >
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-blue-50 text-[10px] font-bold text-blue-600">
+                  P
+                </span>
+
+                <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                  Product
+                </span>
+
+                <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-slate-700">
+                  {selectedProductLabel}
+                </span>
+
+                <ChevronDown
+                  className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform duration-200 ${
+                    isProductFilterOpen ? "rotate-180 text-blue-600" : ""
+                  }`}
+                  aria-hidden="true"
+                />
+              </button>
+
+              {isProductFilterOpen && (
+                <div
+                  role="listbox"
+                  aria-label="Filter leads by product"
+                  className="absolute right-0 z-50 mt-1.5 w-full min-w-[220px] overflow-hidden rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/15"
+                >
+                  <p className="px-2.5 pb-1 pt-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Select product
+                  </p>
+
+                  <div className="max-h-56 overflow-y-auto pr-0.5">
+                    {[{ value: "all", label: "All Products" }, ...productOptions].map(
+                      (product) => {
+                        const isSelected = selectedProduct === product.value
+
+                        return (
+                          <button
+                            key={product.value}
+                            type="button"
+                            role="option"
+                            aria-selected={isSelected}
+                            onClick={() => {
+                              setSelectedProduct(product.value)
+                              setIsProductFilterOpen(false)
+                            }}
+                            className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[11px] font-semibold transition-colors ${
+                              isSelected
+                                ? "bg-blue-50 text-blue-700"
+                                : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                            }`}
+                          >
+                            <span className="min-w-0 flex-1 truncate">
+                              {product.label}
+                            </span>
+                            {isSelected && (
+                              <Check className="h-3.5 w-3.5 shrink-0" />
+                            )}
+                          </button>
+                        )
+                      }
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {isdepartmentisAccountant && !verifiedLead && (
@@ -1012,7 +1161,7 @@ export default function CollectionUpdate() {
             )}
           </div>
         </section>
-        <section className="flex min-h-0 flex-1 flex-col p-2 md:p-3">
+        <section className="relative z-0 flex min-h-0 flex-1 flex-col p-2 md:p-3">
           <div
             className="
       flex min-h-0 flex-1 flex-col overflow-hidden

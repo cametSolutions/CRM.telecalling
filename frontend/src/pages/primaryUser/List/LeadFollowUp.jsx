@@ -2463,6 +2463,9 @@ console.log(selectedDocId)
     console.log(collectionupdatedata)
     console.log(followupDateLoader)
     if (followupDateLoader) return
+    const shouldOpenLeadClosing =
+      formData.followupType === "followup_closed_and_lead_closed"
+    const leadDocumentId = selectedDocId
     try {
       let newErrors = {}
       if (!formData.followUpDate)
@@ -2513,6 +2516,15 @@ console.log(selectedDocId)
         setTableData([])
         refreshHook()
         setfollowupDateLoader(false)
+
+        if (shouldOpenLeadClosing) {
+          navigate(
+            loggedUser?.role === "Admin"
+              ? "/admin/transaction/lead/leadClosed"
+              : "/staff/transaction/lead/leadClosed",
+            { state: { leadId: leadDocumentId } }
+          )
+        }
       } else {
         setfollowupDateLoader(false)
         toast.error("something went wrong")
@@ -3325,22 +3337,41 @@ console.log("hhh")
                         <select
                           disabled={isAllocated}
                           value={formData.followupType}
-                          onChange={(e) =>
+                          onChange={(e) => {
+                            const followupType = e.target.value
                             setFormData((prev) => ({
                               ...prev,
-                              followupType: e.target.value
+                              followupType,
+                              nextfollowUpDate:
+                                followupType === "followup_closed_and_lead_closed"
+                                  ? ""
+                                  : prev.nextfollowUpDate
                             }))
-                          }
+
+                            if (followupType !== "infollowup") {
+                              setIsAllocated(false)
+                            }
+                          }}
                           className="w-full appearance-none px-4 py-2.5 pr-10 border border-gray-200 rounded-xl bg-white text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100 disabled:cursor-not-allowed transition-all cursor-pointer"
                         >
                           <option value="infollowup">In Follow-up</option>
                           <option value="closed">Closed</option>
                           <option value="lost">Lost</option>
+                          <option value="followup_closed_and_lead_closed">
+                            Follow-up Closed &amp; Lead Closed
+                          </option>
                         </select>
                         <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                       </div>
                     </div>
                   </div>
+
+                  {formData.followupType ===
+                    "followup_closed_and_lead_closed" && (
+                    <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                      This will close the follow-up, then open Lead Closing to finish closing the lead.
+                    </div>
+                  )}
 
                   {/* Allocation Checkbox */}
                   {formData.followupType === "infollowup" && (
