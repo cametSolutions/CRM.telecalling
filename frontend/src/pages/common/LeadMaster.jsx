@@ -3517,6 +3517,30 @@ const LeadMaster = ({
             const calculatedTotalNextDueAmount = Number(
               (nextDueAmount * (1 + nextDueTax / 100)).toFixed(2)
             )
+            const taxexclusiveAmount = Number(
+              getFirstValue(
+                "taxexclusiveAmount",
+                "actualproductPrice",
+                "productPrice",
+                "amount"
+              ) ?? 0
+            )
+            const leadTax = getFirstPositiveValue(
+              "leadTax",
+              "actualHsn",
+              "hsn"
+            )
+            const existingTaxinclusiveAmount = Number(
+              getFirstValue(
+                "taxinclusiveamount",
+                "totalleadAmount",
+                "actualNetAmount",
+                "netAmount"
+              ) ?? 0
+            )
+            const calculatedTaxinclusiveAmount = Number(
+              (taxexclusiveAmount * (1 + leadTax / 100)).toFixed(2)
+            )
             return {
               licensenumber: lic?.licenseNumber || "",
               nextDue: String(nextDue).slice(0, 10),
@@ -3524,16 +3548,11 @@ const LeadMaster = ({
               nextDueAmount,
               sourceIndex: lic?.sourceIndex,
               productAmount,
-              taxexclusiveAmount:
-                getFirstValue(
-                  "taxexclusiveAmount",
-                  "actualproductPrice",
-                  "productPrice",
-                  "amount"
-                ) ?? 0,
+              taxexclusiveAmount,
               taxinclusiveamount:
-                getFirstValue("taxinclusiveamount", "actualNetAmount", "netAmount") ??
-                0,
+                existingTaxinclusiveAmount > 0
+                  ? existingTaxinclusiveAmount
+                  : calculatedTaxinclusiveAmount,
               hsn:
                 getFirstPositiveValue("hsn", "actualHsn"),
               originalHsn: getFirstPositiveValue(
@@ -3545,14 +3564,14 @@ const LeadMaster = ({
                 getFirstValue("leadAmount", "productPrice", "actualproductPrice") ??
                 0,
               totalleadAmount:
-                getFirstValue("totalleadAmount", "netAmount", "actualNetAmount") ??
-                0,
+                existingTaxinclusiveAmount > 0
+                  ? existingTaxinclusiveAmount
+                  : calculatedTaxinclusiveAmount,
               totalnextDueAmount:
                 totalNextDueAmount > 0
                   ? totalNextDueAmount
                   : calculatedTotalNextDueAmount,
-              leadTax:
-                getFirstPositiveValue("leadTax", "actualHsn", "hsn"),
+              leadTax,
               nextDueTax,
               discountAmount:
                 getFirstValue("discountAmount") ?? 0,
