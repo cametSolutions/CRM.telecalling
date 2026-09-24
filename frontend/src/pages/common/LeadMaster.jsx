@@ -3451,6 +3451,15 @@ const LeadMaster = ({
               masterProduct,
               item
             ]
+            // Lead Closing may recalculate the row price. Prefer that current
+            // row for lead amounts so this popup always matches the lead table.
+            const leadPriceSources = [
+              item,
+              existing,
+              existingTag,
+              customerProduct,
+              masterProduct
+            ]
             const getFirstValue = (...fields) => {
               for (const source of priceSources) {
                 for (const field of fields) {
@@ -3464,6 +3473,26 @@ const LeadMaster = ({
             }
             const getFirstPositiveValue = (...fields) => {
               for (const source of priceSources) {
+                for (const field of fields) {
+                  const value = Number(source?.[field])
+                  if (Number.isFinite(value) && value > 0) return value
+                }
+              }
+              return 0
+            }
+            const getFirstLeadValue = (...fields) => {
+              for (const source of leadPriceSources) {
+                for (const field of fields) {
+                  const value = source?.[field]
+                  if (value !== undefined && value !== null && value !== "") {
+                    return value
+                  }
+                }
+              }
+              return undefined
+            }
+            const getFirstPositiveLeadValue = (...fields) => {
+              for (const source of leadPriceSources) {
                 for (const field of fields) {
                   const value = Number(source?.[field])
                   if (Number.isFinite(value) && value > 0) return value
@@ -3518,24 +3547,24 @@ const LeadMaster = ({
               (nextDueAmount * (1 + nextDueTax / 100)).toFixed(2)
             )
             const taxexclusiveAmount = Number(
-              getFirstValue(
+              getFirstLeadValue(
                 "taxexclusiveAmount",
-                "actualproductPrice",
                 "productPrice",
+                "actualproductPrice",
                 "amount"
               ) ?? 0
             )
-            const leadTax = getFirstPositiveValue(
+            const leadTax = getFirstPositiveLeadValue(
               "leadTax",
-              "actualHsn",
-              "hsn"
+              "hsn",
+              "actualHsn"
             )
             const existingTaxinclusiveAmount = Number(
-              getFirstValue(
+              getFirstLeadValue(
                 "taxinclusiveamount",
                 "totalleadAmount",
-                "actualNetAmount",
-                "netAmount"
+                "netAmount",
+                "actualNetAmount"
               ) ?? 0
             )
             const calculatedTaxinclusiveAmount = Number(
@@ -3561,7 +3590,11 @@ const LeadMaster = ({
                 "hsn"
               ),
               leadAmount:
-                getFirstValue("leadAmount", "productPrice", "actualproductPrice") ??
+                getFirstLeadValue(
+                  "leadAmount",
+                  "productPrice",
+                  "actualproductPrice"
+                ) ??
                 0,
               totalleadAmount:
                 existingTaxinclusiveAmount > 0

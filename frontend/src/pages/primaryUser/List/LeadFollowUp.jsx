@@ -2344,7 +2344,7 @@ const LeadFollowUp = () => {
     setHistoryList(history)
     setSelectedLeadId(leadid)
   }
-console.log(selectedDocId)
+  console.log(selectedDocId)
   const handlefollowupdate = (Id, docId) => {
     console.log("hhhffff")
     setfollowupDateModal(true)
@@ -2564,15 +2564,10 @@ console.log(selectedDocId)
       console.log(ishaveAllocation)
       console.log(taskList)
       setdemoEditIndex(Item.activityLog.length - 1)
-console.log("hhhh")
-console.log(
-ishaveAllocation?.allocationDate
-          ?.toString()
-          ?.split("T")[0])
-console.log(ishaveAllocation?.allocationDate
-          .toString()
-          .split("T")[0])
-console.log("jjjj")
+      console.log("hhhh")
+      console.log(ishaveAllocation?.allocationDate?.toString()?.split("T")[0])
+      console.log(ishaveAllocation?.allocationDate.toString().split("T")[0])
+      console.log("jjjj")
       setDemodata({
         selectedType: ishaveAllocation?.taskId?._id,
         selectedTypeName: ishaveAllocation?.taskTo.toUpperCase(),
@@ -2583,13 +2578,13 @@ console.log("jjjj")
         demoassignedDate: formatDate(ishaveAllocation.submissionDate),
         demoDescription: ishaveAllocation?.remarks
       })
-console.log("hhh")
-console.log("hhh")
+      console.log("hhh")
+      console.log("hhh")
       setisdemofollowedNotClosed(true)
 
       setIsEditable(true)
       setIsAllocated(true)
-console.log("hhh")
+      console.log("hhh")
     }
     setfollowupClosed(!pending)
     console.log("hh")
@@ -3343,7 +3338,8 @@ console.log("hhh")
                               ...prev,
                               followupType,
                               nextfollowUpDate:
-                                followupType === "followup_closed_and_lead_closed"
+                                followupType ===
+                                "followup_closed_and_lead_closed"
                                   ? ""
                                   : prev.nextfollowUpDate
                             }))
@@ -3357,9 +3353,9 @@ console.log("hhh")
                           <option value="infollowup">In Follow-up</option>
                           <option value="closed">Closed</option>
                           <option value="lost">Lost</option>
-                          <option value="followup_closed_and_lead_closed">
+                          {/* <option value="followup_closed_and_lead_closed">
                             Follow-up Closed &amp; Lead Closed
-                          </option>
+                          </option> */}
                         </select>
                         <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                       </div>
@@ -3369,7 +3365,8 @@ console.log("hhh")
                   {formData.followupType ===
                     "followup_closed_and_lead_closed" && (
                     <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                      This will close the follow-up, then open Lead Closing to finish closing the lead.
+                      This will close the follow-up, then open Lead Closing to
+                      finish closing the lead.
                     </div>
                   )}
 
