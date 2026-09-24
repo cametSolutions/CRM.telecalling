@@ -3329,11 +3329,36 @@ const LeadFollowUp = () => {
                         Status
                       </label>
                       <div className="relative">
-                        <select
-                          disabled={isAllocated}
-                          value={formData.followupType}
-                          onChange={(e) => {
-                            const followupType = e.target.value
+                        {(() => {
+                          const statusOptions = [
+                            {
+                              value: "closed",
+                              title: "Follow-up Successful",
+                              description:
+                                "Transfer to the next stage"
+                            },
+                            {
+                              value: "lost",
+                              title: "Lead Lost",
+                              description: "Lead ends as Lost"
+                            },
+                            {
+                              value: "infollowup",
+                              title: "In Follow-up",
+                              description: "Keep the lead active for follow-up"
+                            },
+                            {
+                              value: "followup_closed_and_lead_closed",
+                              title: "Close Lead",
+                              description: "Lead ends as Fully Closed"
+                            }
+                          ]
+                          const selectedStatus =
+                            statusOptions.find(
+                              (option) => option.value === formData.followupType
+                            ) || statusOptions[0]
+
+                          const selectStatus = (followupType) => {
                             setFormData((prev) => ({
                               ...prev,
                               followupType,
@@ -3347,17 +3372,56 @@ const LeadFollowUp = () => {
                             if (followupType !== "infollowup") {
                               setIsAllocated(false)
                             }
-                          }}
-                          className="w-full appearance-none px-4 py-2.5 pr-10 border border-gray-200 rounded-xl bg-white text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100 disabled:cursor-not-allowed transition-all cursor-pointer"
-                        >
-                          <option value="infollowup">In Follow-up</option>
-                          <option value="closed">Closed</option>
-                          <option value="lost">Lost</option>
-                          {/* <option value="followup_closed_and_lead_closed">
-                            Follow-up Closed &amp; Lead Closed
-                          </option> */}
-                        </select>
-                        <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                            setIsdropdownOpen(false)
+                          }
+
+                          return (
+                            <>
+                              <button
+                                type="button"
+                                disabled={isAllocated}
+                                onClick={() =>
+                                  setIsdropdownOpen((isOpen) => !isOpen)
+                                }
+                                className="flex w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-left text-gray-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:cursor-not-allowed disabled:bg-gray-100"
+                                aria-haspopup="listbox"
+                                aria-expanded={isdropdownOpen}
+                              >
+                                <span className="text-sm font-medium">
+                                  {selectedStatus.title}
+                                </span>
+                                <ChevronDown className="h-4 w-4 text-gray-400" />
+                              </button>
+
+                              {isdropdownOpen && !isAllocated && (
+                                <div
+                                  role="listbox"
+                                  className="absolute z-30 mt-1.5 w-full overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-xl"
+                                >
+                                  {statusOptions.map((option) => (
+                                    <button
+                                      key={option.value}
+                                      type="button"
+                                      role="option"
+                                      aria-selected={
+                                        option.value === formData.followupType
+                                      }
+                                      onClick={() => selectStatus(option.value)}
+                                      className="w-full px-4 py-2.5 text-left hover:bg-blue-50 focus:bg-blue-50 focus:outline-none"
+                                    >
+                                      <span className="block text-sm font-semibold text-gray-800">
+                                        {option.title}
+                                      </span>
+                                      <span className="mt-0.5 block text-xs text-gray-500">
+                                        {option.description}
+                                      </span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          )
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -3365,8 +3429,8 @@ const LeadFollowUp = () => {
                   {formData.followupType ===
                     "followup_closed_and_lead_closed" && (
                     <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                      This will close the follow-up, then open Lead Closing to
-                      finish closing the lead.
+                      This will close the follow-up and lead, then open Lead
+                      Closed.
                     </div>
                   )}
 
