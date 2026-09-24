@@ -2479,9 +2479,13 @@ export const UpdatepaymentVerification = async (req, res) => {
       (p) => p.paymentVerified === true
     );
 
+    // An accountant unverify must also clear the lead-level flag.  The
+    // payment-history item is not the only source used by collection views.
     lead.paymentVerified =
-      allVerified &&
-      Number(lead.totalPaidAmount) === Number(lead.netAmount);
+      unVerify === true
+        ? false
+        : allVerified &&
+          Number(lead.totalPaidAmount) === Number(lead.netAmount);
 
     await lead.save();
 
