@@ -1,4 +1,5 @@
 import Product from "../../model/primaryUser/productSchema.js"
+import Task from "../../model/primaryUser/taskSchema.js"
 import Service from "../../model/primaryUser/servicesSchema.js"
 import Customer from "../../model/secondaryUser/customerSchema.js"
 import mongoose from "mongoose"
@@ -36,6 +37,7 @@ export const ProductRegistration = async (req, res) => {
       productName: productData.productName,
 
       productPrice: productData.productPrice,
+      firstStage: productData.firstStage || undefined,
       productorservicetype: productData.productorservicetype,
       description: productData.description,
       ...(Array.isArray(productData?.defaultservices) &&
@@ -79,6 +81,7 @@ export const EditProduct = async (req, res) => {
     existingProduct.shortName = productData.shortName || ""
     existingProduct.productPrice =
       productData.productPrice || existingProduct.productPrice
+    existingProduct.firstStage = productData.firstStage || undefined
 
     existingProduct.description =
       productData.description || existingProduct.description
@@ -118,6 +121,23 @@ console.log("dddddddddddddddddddddddddddddddddddddddddddddddddddddddddd")
   } catch (error) {
     console.log("error", error.message)
     return res.status(500).json({ message: "Internal server error" })
+  }
+}
+
+export const GetFirstStageTasks = async (req, res) => {
+  try {
+    const tasks = await Task.find({ listed: true })
+      .select("taskName code")
+      .sort({ taskName: 1 })
+      .lean()
+
+    return res.status(200).json({
+      message: "First-stage tasks found",
+      data: tasks
+    })
+  } catch (error) {
+    console.error("Error fetching first-stage tasks:", error)
+    return res.status(500).json({ message: "Unable to fetch first-stage tasks" })
   }
 }
 export const GetallProducts = async (req, res) => {

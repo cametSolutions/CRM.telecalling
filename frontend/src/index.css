@@ -118,6 +118,57 @@ button:focus-visible {
   color: #ffffff;
 }
 
+/* Product Master: keep the shared registration form visually consistent. */
+.product-master-form label {
+  color: #334155;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.product-master-form form > .grid > div:not(.product-section-heading) {
+  background: #f8fafc;
+  border: 1px solid #eef2f7;
+  border-radius: 0.625rem;
+  padding: 0.625rem 0.75rem;
+}
+
+.product-master-form .product-section-heading {
+  border-bottom: 1px solid #e2e8f0;
+  margin-top: 0.25rem;
+  padding: 0.125rem 0 0.4rem;
+}
+
+.product-master-form .product-section-heading:first-child {
+  margin-top: 0;
+}
+
+.product-master-form input:not([type="checkbox"]),
+.product-master-form select,
+.product-master-form textarea {
+  border-color: #e2e8f0;
+  border-radius: 0.625rem;
+  color: #0f172a;
+  min-height: 2.25rem;
+  padding: 0.45rem 0.625rem;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.product-master-form textarea {
+  min-height: 3.75rem;
+  resize: vertical;
+}
+
+.product-master-form input:not([type="checkbox"]):focus,
+.product-master-form select:focus,
+.product-master-form textarea:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.product-master-form table th {
+  color: #475569;
+}
+
 .sidebar-image-select--white .select-value {
   color: #111827;
   font-weight: 600;

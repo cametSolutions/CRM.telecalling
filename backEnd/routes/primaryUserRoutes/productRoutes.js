@@ -10,14 +10,16 @@ import {
   GetallServices,
   UpdateServices,
   DeleteService,
-  GetbranchProduct,
-GetallselectedBranchServices
+GetbranchProduct,
+GetallselectedBranchServices,
+GetFirstStageTasks
 } from "../../controller/primaryUserController/productController.js"
 
 const router = express.Router()
 router.post("/productRegistration", authMiddleware, ProductRegistration)
 router.get("/getallProducts", authMiddleware, GetallProducts)
 router.get("/getallbranchProduct", authMiddleware, GetbranchProduct)
+router.get("/getFirstStageTasks", authMiddleware, GetFirstStageTasks)
 router.get("/getProducts", authMiddleware, GetProducts)
 router.post("/productEdit", authMiddleware, EditProduct)
 router.post("/servicesRegistration", authMiddleware, ServicesRegistration)
