@@ -10,6 +10,7 @@ import DailyStaffActivity from "../../../pages/primaryUser/List/DailyStaffActivi
 import MarketingDashboard from "../../../components/primaryUser/MarketingDashboard";
 import IncentiveReport from "../../../components/primaryUser/IncentiveReport";
 import ClosedLeads from "../../../pages/primaryUser/List/ClosedLeads";
+import ResearchandDevelopement from "../../../pages/primaryUser/dashboard/ResearchandDevelopement";
 const reportsRoutes = [
   { path: "/admin/reports/summary", component: Summary },
   { path: "/admin/reports/closed-leads", component: ClosedLeads },
@@ -22,6 +23,7 @@ const reportsRoutes = [
 
   { path: "/admin/reports/leave-summary", component: LeaveSummary },
   { path: "/admin/reports/markettingdashboard", component: MarketingDashboard },
+{path:"/admin/reports/researchandDevelopment",component:ResearchandDevelopement},
   {
     path: "/admin/reports/product-wise-report",
     component: ProductWiseleadReport,

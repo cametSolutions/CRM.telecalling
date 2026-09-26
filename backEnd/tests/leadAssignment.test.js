@@ -90,7 +90,7 @@ beforeEach(async () => {
     _id: ids.lead, leadId: "LEAD-TEST", leadBranch: ids.branch, leadDate: new Date("2026-09-08"),
     paymentVerified: true, netAmount: 100, totalPaidAmount: 100, balanceAmount: 0,
     leadFor: [{ productorServiceId: ids.product, productorServicemodel: "Product" }],
-    paymentHistory: [{ paymentVerified: true, paymentEntries: [{ productorServiceId: ids.product, productorServicemodel: "Product", receivedAmount: 100 }] }],
+    paymentHistory: [{ paymentVerified: true, paymentDate: new Date("2026-09-08"), paymentEntries: [{ productorServiceId: ids.product, productorServicemodel: "Product", receivedAmount: 100 }] }],
     activityLog: [ids.first, ids.second].map((_id) => ({
       _id, taskBy: ids.task, taskallocatedTo: ids.old, taskallocatedToModel: "Staff",
       submittedUser: ids.old, submissiondoneByModel: "Staff", taskClosed: true,
@@ -279,4 +279,83 @@ test("the Lead allocation credits leadBy over a legacy first-activity submitter"
   assert.equal(user.totalAmount, 100);
   assert.equal(details.data.leads.length, 1);
   assert.equal(details.data.leads[0].leadId, "LEAD-TEST");
+});
+
+test("amount incentives use each verified payment's period and that period's slab", async () => {
+  await Product.collection.insertOne({
+    _id: ids.product,
+    selected: [{ category_id: ids.category }],
+  });
+  await Lead.updateOne(
+    { _id: ids.lead },
+    {
+      $set: {
+        leadBy: ids.old,
+        leadByModel: "Staff",
+        allocationType: ids.task,
+        leadDate: new Date("2026-09-05"),
+        netAmount: 30000,
+        totalPaidAmount: 30000,
+        balanceAmount: 0,
+        paymentVerified: true,
+        paymentHistory: [
+          {
+            paymentVerified: true,
+            paymentDate: new Date("2026-09-15"),
+            paymentEntries: [{ productorServiceId: ids.product, receivedAmount: 20000 }],
+          },
+          {
+            paymentVerified: true,
+            paymentDate: new Date("2026-10-15"),
+            paymentEntries: [{ productorServiceId: ids.product, receivedAmount: 10000 }],
+          },
+        ],
+        activityLog: [
+          {
+            _id: ids.first,
+            taskBy: ids.task,
+            submittedUser: ids.replacement,
+            submissiondoneByModel: "Staff",
+            taskClosed: true,
+            taskSubmissionDate: new Date("2026-09-05"),
+          },
+          {
+            _id: ids.second,
+            taskBy: ids.otherTask,
+            submittedUser: ids.replacement,
+            submissiondoneByModel: "Staff",
+            taskClosed: true,
+            taskSubmissionDate: new Date("2026-10-10"),
+          },
+        ],
+      },
+    }
+  );
+  await TargetConfiguration.collection.insertMany([
+    {
+      branch: ids.branch, year: 2026, periodName: "July-September",
+      categoryId: ids.category, measurementType: "amount",
+      startDate: new Date("2026-07-01"), endDate: new Date("2026-09-30T23:59:59.999Z"),
+      allocationValues: [
+        { allocationId: ids.task, value: 1, mode: "percentage" },
+        { allocationId: ids.otherTask, value: 2, mode: "percentage" },
+      ], monthlyTargets: [],
+    },
+    {
+      branch: ids.branch, year: 2026, periodName: "October-December",
+      categoryId: ids.category, measurementType: "amount",
+      startDate: new Date("2026-10-01"), endDate: new Date("2026-12-31T23:59:59.999Z"),
+      allocationValues: [
+        { allocationId: ids.task, value: 1, mode: "percentage" },
+        { allocationId: ids.otherTask, value: 3, mode: "percentage" },
+      ], monthlyTargets: [],
+    },
+  ]);
+
+  const september = await request(`/report?year=2026&period=July-September&selectedBranch=${ids.branch}`);
+  const october = await request(`/report?year=2026&period=October-December&selectedBranch=${ids.branch}`);
+  assert.equal(september.data.summary.totalAmount, 200);
+  assert.equal(october.data.summary.totalAmount, 300);
+  assert.equal(september.data.branches[0].users[0].userId, String(ids.old));
+  assert.equal(october.data.branches[0].users[0].userId, String(ids.replacement));
 });

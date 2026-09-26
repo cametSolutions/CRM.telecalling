@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import UseFetch from "../../hooks/useFetch"
 import { toast } from "react-toastify"
-import { Trash2, Building2, MapPin, Edit2 } from "lucide-react"
+import { Trash2, Building2, MapPin } from "lucide-react"
 
 const ProductAdd = ({
   process,
@@ -11,7 +11,8 @@ const ProductAdd = ({
   handleProductData,
   handleEditedData,
   index,
-  item
+  item,
+  showHeading = true
 }) => {
   console.log(product)
   const {
@@ -65,6 +66,9 @@ const ProductAdd = ({
     "/company/getCompany"
   )
   const { data: hsnData, error: hsnError } = UseFetch(`/inventory/hsnlist`)
+  const { data: firstStageTasks, error: firstStageTasksError } = UseFetch(
+    "/product/getFirstStageTasks"
+  )
   const { data: brandData, error: brandError } = UseFetch(
     `/inventory/getproductsubDetails?tab=brand`
   )
@@ -73,11 +77,7 @@ const ProductAdd = ({
       selectedcompanyBranch &&
       `/product/getselectedbranchallServices?cmp_id=${selectedCompany}&branch_id=${selectedcompanyBranch}`
   )
-  console.log(selectedCompany)
-  console.log(selectedcompanyBranch)
-  console.log(services)
-  console.log(selectedcompanyBranch)
-  console.log(selectedCompany)
+
   const { data: categoryData, error: categoryError } = UseFetch(
     `/inventory/getproductsubDetails?tab=category`
   )
@@ -186,6 +186,7 @@ const ProductAdd = ({
       // productError ||
       companyError ||
       hsnError ||
+      firstStageTasksError ||
       brandError ||
       categoryError
     ) {
@@ -193,12 +194,13 @@ const ProductAdd = ({
         // productError?.response?.data?.message ||
         companyError?.response?.data?.message ||
         hsnError?.response?.data?.message ||
+        firstStageTasksError?.response?.data?.message ||
         brandError?.response?.data?.message ||
         categoryError?.response?.data?.message ||
         "Something went wrong!"
       toast.error(message)
     }
-  }, [, companyError, hsnError, brandError, categoryError, tableObject])
+  }, [, companyError, hsnError, firstStageTasksError, brandError, categoryError, tableObject])
 
   const handleDelete = (id) => {
     const filtereddData = tableData.filter((product, index) => {
@@ -436,13 +438,16 @@ const ProductAdd = ({
   }
   console.log(errors)
   return (
-    <div className="justify-center items-center">
-      <div className="w-auto bg-white shadow-lg rounded p-3 md:p-8 mx-auto">
-        <h2 className="text-2xl font-semibold mb-6">Product Master</h2>
+    <div className="product-master-form">
+      <div className="mx-auto w-full rounded-xl border border-slate-100 bg-white p-3 shadow-sm sm:p-4">
+        {showHeading && <h2 className="mb-3 text-lg font-bold tracking-tight text-slate-900">Product Master</h2>}
 
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 md:gap-6 m-2 md:m-5">
-            {/* Other Input Fields */}
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-3">
+            <div className="product-section-heading sm:col-span-2 lg:col-span-3">
+              <p className="text-sm font-bold text-slate-800">Product details</p>
+              <p className="mt-0.5 text-xs text-slate-500">Set the name, shorthand, price, and product description.</p>
+            </div>
             <div>
               <label
                 htmlFor="productName"
@@ -497,8 +502,28 @@ const ProductAdd = ({
                 placeholder="Product Price"
               />
             </div>
+            <div>
+              <label htmlFor="firstStage" className="block text-sm font-medium text-gray-700">
+                First Stage
+              </label>
+              <select
+                id="firstStage"
+                {...register("firstStage")}
+                className="mt-1 block w-full cursor-pointer border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+              >
+                <option value="">Select first stage</option>
+                {(firstStageTasks || []).map((task) => (
+                  <option key={task._id} value={task._id}>
+                    {task.taskName}{task.code ? ` (${task.code})` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            {/* Brand Select Dropdown */}
+            <div className="product-section-heading sm:col-span-2 lg:col-span-3">
+              <p className="text-sm font-bold text-slate-800">Classification</p>
+              <p className="mt-0.5 text-xs text-slate-500">Organize the product using brand, category, and HSN details.</p>
+            </div>
             <div>
               <label
                 htmlFor="brandName"
@@ -586,6 +611,10 @@ const ProductAdd = ({
               ></textarea>
             </div>
 
+            <div className="product-section-heading sm:col-span-2 lg:col-span-3">
+              <p className="text-sm font-bold text-slate-800">Availability</p>
+              <p className="mt-0.5 text-xs text-slate-500">Choose where this product is available and how it should be offered.</p>
+            </div>
             <div>
               <label
                 htmlFor="companyName"
@@ -695,6 +724,10 @@ const ProductAdd = ({
 
 
 
+<div className="product-section-heading sm:col-span-2 lg:col-span-3">
+  <p className="text-sm font-bold text-slate-800">Publishing</p>
+  <p className="mt-0.5 text-xs text-slate-500">Set whether this product can be used right away.</p>
+</div>
 <div>
   
 <label
@@ -729,21 +762,23 @@ const ProductAdd = ({
 </div>
           </div>
           {selectedBranch && (
-            <div className="mt-6">
+            <div className="mt-4 border-t border-slate-100 pt-3">
               <button
                 type="button"
                 // onClick={handleTableData}
                 onClick={(event) => handleTableData(event)}
-                className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 mb-2 "
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
               >
                 Add To Table
               </button>
             </div>
           )}
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+          <div className="mt-5">
+            <div className="mb-3 flex items-center justify-between gap-3"><div><h3 className="text-sm font-bold text-slate-800">Linked company & branches</h3><p className="mt-0.5 text-xs text-slate-500">Review the locations where this product is available.</p></div><span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{tableData.length} linked</span></div>
+          <div className="overflow-x-auto rounded-xl border border-slate-100">
+            <table className="min-w-full divide-y divide-slate-100">
+              <thead className="bg-slate-50">
                 <tr>
                   <th className="px-6 py-4  text-xs font-semibold text-gray-700 uppercase tracking-wider text-nowrap">
                     <div className="flex items-center gap-2">
@@ -830,11 +865,12 @@ const ProductAdd = ({
               </tbody>
             </table>
           </div>
+          </div>
 
-          <div className="mt-6">
+          <div className="mt-4 flex justify-end border-t border-slate-100 pt-3">
             <button
               type="submit"
-              className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+              className="w-full rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 sm:w-auto"
             >
               {process === "Registration" ? "SUBMIT" : "SUBMIT"}
             </button>

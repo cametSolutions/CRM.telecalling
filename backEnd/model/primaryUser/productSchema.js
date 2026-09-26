@@ -4,6 +4,7 @@ const productSchema = new mongoose.Schema({
   productName: { type: String, required: true },
   shortName: { type: String },
   productPrice: { type: Number },
+  firstStage: { type: mongoose.Schema.Types.ObjectId, ref: "Task" },
   description: { type: String },
   productorservicetype: { type: String, required: true },
   defaultservices: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],

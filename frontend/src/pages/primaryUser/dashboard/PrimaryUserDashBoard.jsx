@@ -201,7 +201,11 @@ console.log(currentMonthHolidays)
     },
     {
       label: "research & development",
-      to: "",
+      to:   user?.role.trim() === "Admin"
+          ? "/admin/reports/researchandDevelopment"
+          : user?.department?._id === "670c866552847bbebbd35748"
+            ? "/staff/reports/markettingdashboard"
+            : "",
       icon: MdScience,
       show: false
     },
