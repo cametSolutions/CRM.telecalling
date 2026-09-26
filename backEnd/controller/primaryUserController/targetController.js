@@ -3366,7 +3366,7 @@ const buildIncentiveReportData = async ({
     periodName: period,
   })
     .select(
-      "branch categoryId allocationValues monthlyTargets startDate endDate"
+      "branch categoryId measurementType allocationValues monthlyTargets startDate endDate"
     )
     .lean();
 
@@ -3402,7 +3402,7 @@ const buildIncentiveReportData = async ({
 
   const leads = await LeadMaster.find({
     leadBranch: { $in: branchIds },
-    leadDate: { $gte: periodStart, $lte: periodEnd },
+    "paymentHistory.paymentDate": { $gte: periodStart, $lte: periodEnd },
   })
     .select(
       `leadId leadDate leadBranch customerName paymentVerified netAmount
@@ -3525,25 +3525,45 @@ const buildIncentiveReportData = async ({
   const details = [];
   const awarded = new Set();
 
-  const getVerifiedCategoryAmount = (lead, categoryId) => {
-    let total = 0;
-    for (const payment of objects(lead.paymentHistory)) {
-      if (payment.paymentVerified !== true) continue;
-      for (const entry of objects(payment.paymentEntries)) {
-        if (
-          categoryMap.get(String(entry.productorServiceId || "")) ===
-          String(categoryId)
-        ) {
-          total += num(entry.receivedAmount);
-        }
-      }
-    }
-    return total;
+  const validDate = (value) => {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
   };
+  const isWithinPeriod = (value, config) => {
+    const date = validDate(value);
+    return (
+      date &&
+      date >= new Date(config.startDate) &&
+      date <= new Date(config.endDate)
+    );
+  };
+  const getPaymentCategoryAmount = (payment, categoryId) =>
+    objects(payment.paymentEntries).reduce((total, entry) => {
+      return categoryMap.get(String(entry.productorServiceId || "")) ===
+        String(categoryId)
+        ? total + num(entry.receivedAmount)
+        : total;
+    }, 0);
+  const getLeadVerifiedCategoryAmount = (lead, categoryId) =>
+    objects(lead.paymentHistory)
+      .filter((payment) => payment.paymentVerified === true)
+      .reduce(
+        (total, payment) => total + getPaymentCategoryAmount(payment, categoryId),
+        0
+      );
+  const isCompleted = (activity) =>
+    activity.taskClosed === true ||
+    activity.followupClosed === true ||
+    activity.allocatedClosed === true;
+  const activityCompletedAt = (lead, activity, activityIndex) =>
+    activity.taskSubmissionDate ||
+    activity.submissionDate ||
+    activity.allocationDate ||
+    (activityIndex === 0 ? lead.leadDate : null);
 
   for (const lead of leads) {
     const payments = objects(lead.paymentHistory);
-    const eligible =
+    const fullyPaidEligible =
       num(lead.netAmount) > 0 &&
       lead.paymentVerified === true &&
       payments.length > 0 &&
@@ -3554,7 +3574,6 @@ const buildIncentiveReportData = async ({
       num(lead.balanceAmount) === 0 &&
       num(lead.totalPaidAmount) >= num(lead.netAmount);
 
-    if (!eligible) continue;
     const branchId = String(lead.leadBranch);
     const branchConfigs = targetConfigs.filter(
       (config) => String(config.branch) === branchId
@@ -3568,10 +3587,6 @@ const buildIncentiveReportData = async ({
       );
       if (!leadHasCategory) continue;
 
-      const percentageBaseAmount =
-        lead.forcefullyClosedTarget === true
-          ? num(lead.netAmount)
-          : getVerifiedCategoryAmount(lead, categoryId);
       const rules = new Map(
         objects(config.allocationValues).map((rule) => [
           String(rule.allocationId || ""),
@@ -3579,17 +3594,13 @@ const buildIncentiveReportData = async ({
         ])
       );
 
-      for (const [activityIndex, activity] of objects(lead.activityLog).entries()) {
+      const awardActivity = ({ activity, activityIndex, percentageBaseAmount, eventDate, paymentKey = "quantity" }) => {
         const owner = getIncentiveOwner(lead, activity, activityIndex);
-        if (!owner) continue;
+        if (!owner) return;
         const { userId, userModel } = owner;
         const taskById = String(activity.taskBy || "");
         const taskId = String(activity.taskId || "");
-        // Lead creation is stored in two historical shapes. Newer records use
-        // activity.taskBy; older records keep the configured Lead task on the
-        // parent document as allocationType. Match either representation.
-        const leadAllocationId =
-          activityIndex === 0 ? String(lead.allocationType || "") : "";
+        const leadAllocationId = activityIndex === 0 ? String(lead.allocationType || "") : "";
         const allocationId = rules.has(taskById)
           ? taskById
           : rules.has(taskId)
@@ -3597,51 +3608,34 @@ const buildIncentiveReportData = async ({
             : rules.has(leadAllocationId)
               ? leadAllocationId
               : "";
-        if (!allocationId) continue;
-
-        const completed =
-          activity.taskClosed === true ||
-          activity.followupClosed === true ||
-          activity.allocatedClosed === true;
-        if (activityIndex !== 0 && !completed) continue;
+        if (!allocationId || (activityIndex !== 0 && !isCompleted(activity))) return;
 
         const rule = rules.get(allocationId);
         const configuredValue = num(rule.value);
-        if (configuredValue <= 0) continue;
-        const incentiveMode = String(
-          rule.incentiveType || rule.mode || "amount"
-        )
-          .trim()
-          .toLowerCase();
+        if (configuredValue <= 0) return;
+        const incentiveMode = String(rule.incentiveType || rule.mode || "amount").trim().toLowerCase();
         const isPercentage = ["percentage", "percent"].includes(incentiveMode);
-        if (isPercentage && percentageBaseAmount <= 0) continue;
+        if (isPercentage && percentageBaseAmount <= 0) return;
         const incentiveAmount = isPercentage
           ? (configuredValue / 100) * percentageBaseAmount
           : configuredValue;
-        if (incentiveAmount <= 0) continue;
+        if (incentiveAmount <= 0) return;
 
         const rewardKey = [
           String(config._id),
           String(lead._id),
+          isPercentage ? paymentKey : "fixed",
           userId,
           allocationId,
         ].join("-");
-        if (awarded.has(rewardKey)) continue;
+        if (awarded.has(rewardKey)) return;
         awarded.add(rewardKey);
-        userModels.set(
-          userId,
-          userModel === "Admin" ? "Admin" : "Staff"
-        );
-
+        userModels.set(userId, userModel === "Admin" ? "Admin" : "Staff");
         if (!earnedByBranch.has(branchId)) earnedByBranch.set(branchId, new Map());
         const branchUsers = earnedByBranch.get(branchId);
         if (!branchUsers.has(userId)) branchUsers.set(userId, new Map());
         const allocationTotals = branchUsers.get(userId);
-        allocationTotals.set(
-          allocationId,
-          num(allocationTotals.get(allocationId)) + incentiveAmount
-        );
-
+        allocationTotals.set(allocationId, num(allocationTotals.get(allocationId)) + incentiveAmount);
         details.push({
           userId,
           branchId,
@@ -3649,16 +3643,49 @@ const buildIncentiveReportData = async ({
           leadMongoId: String(lead._id),
           partyName: customerMap.get(String(lead.customerName || "")) || "",
           productName: getLeadProductName(lead),
-          date: lead.leadDate,
+          date: eventDate,
           allocationId,
-          allocationLabel:
-            taskMap.get(allocationId) || rule.allocationName || "Allocation",
+          allocationLabel: taskMap.get(allocationId) || rule.allocationName || "Allocation",
           incentiveMode,
           configuredValue,
           percentageBaseAmount,
           incentiveAmount,
           amount: incentiveAmount,
         });
+      };
+
+      if (config.measurementType === "amount") {
+        for (const [paymentIndex, payment] of payments.entries()) {
+          if (payment.paymentVerified !== true || !isWithinPeriod(payment.paymentDate, config)) continue;
+          const paymentAmount = getPaymentCategoryAmount(payment, categoryId);
+          if (paymentAmount <= 0) continue;
+          for (const [activityIndex, activity] of objects(lead.activityLog).entries()) {
+            if (!isWithinPeriod(activityCompletedAt(lead, activity, activityIndex), config)) continue;
+            awardActivity({
+              activity,
+              activityIndex,
+              percentageBaseAmount: paymentAmount,
+              eventDate: payment.paymentDate,
+              paymentKey: String(payment._id || paymentIndex),
+            });
+          }
+        }
+      } else {
+        if (!fullyPaidEligible) continue;
+        const lastVerifiedPayment = payments
+          .filter((payment) => payment.paymentVerified === true && validDate(payment.paymentDate))
+          .sort((left, right) => validDate(right.paymentDate) - validDate(left.paymentDate))[0];
+        if (!lastVerifiedPayment || !isWithinPeriod(lastVerifiedPayment.paymentDate, config)) continue;
+        for (const [activityIndex, activity] of objects(lead.activityLog).entries()) {
+          awardActivity({
+            activity,
+            activityIndex,
+            percentageBaseAmount: lead.forcefullyClosedTarget === true
+              ? num(lead.netAmount)
+              : getLeadVerifiedCategoryAmount(lead, categoryId),
+            eventDate: lastVerifiedPayment.paymentDate,
+          });
+        }
       }
     }
   }
