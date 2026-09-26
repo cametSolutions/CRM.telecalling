@@ -270,6 +270,7 @@ console.log(finalOutput)
             mobile: entry?.mobile,
             email: entry?.email,
             activityLog: activitylog,
+            matchedlog: matchedLog,
             taskallocatedTo: entry?.taskallocatedTo,
             taskallocatedBy: entry?.taskallocatedBy,
             sameUser: loggedUser?._id === entry.taskallocatedTo?._id

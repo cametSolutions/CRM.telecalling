@@ -493,6 +493,16 @@ export default function LeadTaskComponent({
       const remark = item?.matchedlog?.remarks;
       const customerName =
         item?.customerName?.customerName || item?.customerName || "-";
+      const productNames = (item?.leadFor || [])
+        .map(
+          (product) =>
+            product?.productorServiceId?.shortName ||
+            product?.productorServiceId?.productName ||
+            product?.productorServiceId?.serviceName
+        )
+        .filter(Boolean)
+        .join(", ") || "-";
+      const submittedRemark = item?.matchedlog?.remarks || lastLog?.remarks || "-";
 
       const isAllocatedToeditable = activityLogs.some(
         (it) =>
@@ -571,22 +581,30 @@ export default function LeadTaskComponent({
               </>
             )}
 
+            {isLeadTaskClosed && (
+              <td className="max-w-0 border border-gray-200 px-3 py-2 text-xs">
+                <span title={productNames} className="block truncate font-medium text-blue-600">
+                  {productNames}
+                </span>
+              </td>
+            )}
+
             <td
-              className="px-2 py-2 border border-gray-200"
+              className="w-[110px] border border-gray-200 px-2 py-2 text-center"
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 type="button"
                 onClick={() => handleHistory(item)}
                 title="Event Log"
-                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-white bg-indigo-600 rounded hover:bg-indigo-700 w-full justify-center"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-indigo-600 p-0 text-xs font-semibold text-white hover:bg-indigo-700"
               >
                 <BellRing className="w-3.5 h-3.5" />
               </button>
             </td>
 
             <td
-              className="px-2 py-2 border border-gray-200"
+              className="w-[110px] border border-gray-200 px-2 py-2 text-center"
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -607,7 +625,7 @@ export default function LeadTaskComponent({
                       })
                 }
                 title="View Lead"
-                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-white bg-blue-600 rounded hover:bg-blue-700 w-full justify-center"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-blue-600 p-0 text-xs font-semibold text-white hover:bg-blue-700"
               >
                 <Eye className="w-3.5 h-3.5" />
               </button>
@@ -673,6 +691,12 @@ export default function LeadTaskComponent({
                   Lead Date
                 </td>
 
+                {isLeadTaskClosed && (
+                  <td className="px-3 py-1 border border-gray-200 text-gray-600">
+                    Submitted Remark
+                  </td>
+                )}
+
                 {!isLeadTaskClosed && (
                   <td className="px-3 py-1 border border-gray-200 text-gray-600">
                     Lead ID
@@ -704,7 +728,7 @@ export default function LeadTaskComponent({
                 </td>
 
                 {isLeadTaskClosed ? (
-                  <td className="px-3 py-1.5 border border-gray-200 font-bold text-blue-700">
+                  <td className="whitespace-nowrap px-3 py-1.5 border border-gray-200 font-bold text-blue-700">
                     {item?.leadId || "-"}
                   </td>
                 ) : (
@@ -722,9 +746,28 @@ export default function LeadTaskComponent({
                   </>
                 )}
 
-                <td className="px-3 py-1.5 border border-gray-200">
+                <td className="whitespace-nowrap px-3 py-1.5 border border-gray-200">
                   {item?.leadDate?.toString().split("T")[0] || "-"}
                 </td>
+
+                {isLeadTaskClosed && (
+                  <td className="max-w-0 border border-gray-200 px-3 py-1.5 text-red-600">
+                    <div className="group relative min-w-0" tabIndex={0}>
+                      <span title={submittedRemark} className="block truncate">
+                        {submittedRemark}
+                      </span>
+                      <div
+                        role="tooltip"
+                        className="pointer-events-none absolute left-0 top-full z-50 mt-2 hidden w-max max-w-[min(22rem,calc(100vw-2rem))] rounded-lg bg-slate-900 px-3 py-2 text-xs leading-5 text-white shadow-xl lg:group-hover:block lg:group-focus:block"
+                      >
+                        <span className="block whitespace-normal break-words">
+                          {submittedRemark}
+                        </span>
+                        <span className="absolute -top-1 left-4 h-2 w-2 rotate-45 bg-slate-900" />
+                      </div>
+                    </div>
+                  </td>
+                )}
 
                 {!isLeadTaskClosed && (
                   <td className="px-3 py-1.5 border border-gray-200 font-bold text-blue-700">
@@ -751,10 +794,10 @@ export default function LeadTaskComponent({
       );
     };
 
-    const colCount = isLeadTaskClosed ? 6 : pending ? (ownTask ? 10 : 9) : 6;
+    const colCount = isLeadTaskClosed ? 7 : pending ? (ownTask ? 10 : 9) : 6;
 
     return (
-      <table className="w-full min-w-[780px] table-fixed border-collapse border border-gray-200 text-sm">
+      <table className="w-full min-w-[980px] table-fixed border-collapse border border-gray-200 text-sm">
         <thead className="whitespace-nowrap bg-gradient-to-r from-blue-600 to-blue-700 text-white sticky top-0 z-30 text-xs">
           <tr>
             <th className="border border-blue-500 w-5" />
@@ -771,8 +814,12 @@ export default function LeadTaskComponent({
               </>
             )}
 
-            <th className="border border-blue-500 px-3 py-2 text-center">Event Log</th>
-            <th className="border border-blue-500 px-3 py-2 text-center">View</th>
+            {isLeadTaskClosed && (
+              <th className="border border-blue-500 px-3 py-2 text-left">Product Name</th>
+            )}
+
+            <th className="w-[110px] whitespace-nowrap border border-blue-500 px-2 py-2 text-center">Event Log</th>
+            <th className="w-[110px] whitespace-nowrap border border-blue-500 px-2 py-2 text-center">View</th>
 
             {pending && ownTask && (
               <th className="border border-blue-500 px-3 py-2 text-center">Update</th>
