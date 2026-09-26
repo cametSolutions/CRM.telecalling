@@ -97,7 +97,8 @@ console.log(reduxselectedBranch)
     status &&
       loggedUser &&
       selectedCompanyBranch &&
-      `/lead/getallLead?Status=${status}&selectedBranch=${reduxselectedBranch}&role=${loggedUser.role}`
+      `/lead/getallLead?Status=${status}&selectedBranch=${reduxselectedBranch}&role=${loggedUser.role}&optimized=true`,
+    { cacheTime: 30_000 }
   )
 console.log(leadPendinglist)
   const { data: branchProduct } = UseFetch(
@@ -251,67 +252,43 @@ groupedLeads
   useEffect(() => {
     if (leadPendinglist) {
       getgroupingData(leadPendinglist)
+
+      if (status === "Approved") {
+        const selectedAllocations = {}
+        const allocationTypes = {}
+
+        leadPendinglist.forEach((item) => {
+          allocationTypes[item._id] = item.allocationType
+
+          if (item.allocatedTo?._id) {
+            const allocatedUserId = String(item.allocatedTo._id)
+            selectedAllocations[item._id] =
+              allocationOptions.find(
+                (option) => String(option.value) === allocatedUserId
+              ) || {
+                value: allocatedUserId,
+                label: item.allocatedTo.name || "Unassigned"
+              }
+          }
+        })
+
+        setselectedAllocationType(allocationTypes)
+        setSelectedAllocates(selectedAllocations)
+      } else {
+        setSelectedAllocates({})
+      }
     }
-  }, [leadPendinglist])
+  }, [leadPendinglist, status, allocationOptions])
 
   console.log(selectedAllocationType)
   const toggleStatus = async () => {
     setTableData([])
     setShowFullEmail(false)
     setShowFullName(false)
-    if (approvedToggleStatus === false) {
-      //for getting approved allocation,
-      setToggleLoading(true)
-      const response = await api.get(
-        `/lead/getallLead?Status=Approved&selectedBranch=${reduxselectedBranch}&role=${loggedUser.role}`
-      )
-
-      if (response.status >= 200 && response.status < 300) {
-        const data = response.data.data //gets only allocated leads with reallocatedto field false which means reallocatedto true are in the reallocation page not need to display here
-        console.log(data)
-        getgroupingData(data)
-        console.log(data)
-        // setTableData(data)
-        data.forEach((item) => {
-          setselectedAllocationType((prev) => ({
-            ...prev,
-            [item._id]: item.allocationType
-          }))
-        })
-        setapprovedToggleStatus(!approvedToggleStatus)
-        setToggleLoading(false)
-        const initialSelected = {}
-        console.log(data)
-        const a = data.filter((item) => item.leadId === "00147")
-        console.log(a)
-        data.forEach((item) => {
-          if (item.allocatedTo?._id) {
-            const match = allocationOptions.find(
-              (opt) => opt.value === item.allocatedTo._id
-            )
-
-            if (match) {
-              initialSelected[item._id] = match
-            }
-          }
-        })
-        console.log(initialSelected)
-        setSelectedAllocates(initialSelected)
-      }
-    } else {
-      //for getting pending allocation
-      setToggleLoading(true)
-      const response = await api.get(
-        `/lead/getallLead?Status=Pending&selectedBranch=${reduxselectedBranch}&role=${loggedUser.role}`
-      )
-      if (response.status >= 200 && response.status < 300) {
-        setSelectedAllocates({})
-        getgroupingData(response.data.data)
-        // setTableData(response.data.data)
-        setapprovedToggleStatus(!approvedToggleStatus)
-        setToggleLoading(false)
-      }
-    }
+    const nextApprovedStatus = !approvedToggleStatus
+    setapprovedToggleStatus(nextApprovedStatus)
+    setStatus(nextApprovedStatus ? "Approved" : "Pending")
+    setSelectedAllocates({})
   }
   const onClose = () => {
     setpopupOpen(false)
