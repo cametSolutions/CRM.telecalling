@@ -154,8 +154,8 @@ const LeadTask = () => {
  const { data, error, loading, refreshHook } = UseFetch(
     loggedUser &&
       reduxselectedBranch &&
-      `/lead/getrespectedleadTask?userid=${loggedUser._id}&role=${loggedUser.role}&ownTask=${ownTask}&branchSelected=${reduxselectedBranch}`
-
+      `/lead/getrespectedleadTask?userid=${loggedUser._id}&role=${loggedUser.role}&ownTask=${ownTask}&branchSelected=${reduxselectedBranch}&taskStatus=${pending ? "pending" : "cleared"}`,
+    { cacheTime: 30_000 }
   )
 console.log(data)
   const { data: branchProduct } = UseFetch(
@@ -310,7 +310,7 @@ console.log(totalNetAmount)
 
       setFilteredData(Data)
     }
-  }, [data, pending, dates])
+  }, [data])
   const normalizeTableData = (data) => {
     if (Array.isArray(data)) {
       return [{ staffName: null, leads: data }]
@@ -443,64 +443,83 @@ console.log(totalNetAmount)
             />
           )}
 
-          <div className="flex flex-col md:flex-row  items-start md:items-center mx-3 md:mx-5 mt-3 mb-3 gap-4">
+          <div className="mx-3 my-3 grid gap-3 sm:mx-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
             {/* Title */}
-            <h2 className="text-lg font-bold">
-              {`Task ${pending ? "Pending" : "Cleared"}`}
-            </h2>
+            <div className="flex items-center justify-between gap-3 xl:contents">
+              <h2 className="shrink-0 text-lg font-bold xl:self-center">
+                {`Task ${pending ? "Pending" : "Cleared"}`}
+              </h2>
+              <button
+                onClick={() =>
+                  loggedUser.role === "Admin"
+                    ? navigate("/admin/transaction/lead")
+                    : navigate("/staff/transaction/lead")
+                }
+                className="max-w-[60%] truncate rounded-lg bg-black px-3 py-2 text-sm text-white shadow-lg transition-colors hover:bg-gray-600 xl:hidden"
+              >
+                New Lead
+              </button>
+            </div>
 
             {/* Right Section */}
-            <div className="flex flex-wrap gap-3 flex-grow justify-start md:justify-end md:gap-6 items-center w-full md:w-auto">
+            <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end xl:w-auto xl:flex-nowrap xl:justify-end">
               {dates.startDate && (
-                <MyDatePicker setDates={setDates} dates={dates} />
+                <MyDatePicker
+                  setDates={setDates}
+                  dates={dates}
+                  compact
+                  inlineOnMobile
+                />
               )}
               {/* Message Icon with Badge and Popup */}
-              <div className="flex flex-grow md:flex-grow-0 items-center justify-end gap-2">
-                <span className="text-sm whitespace-nowrap font-semibold">
-                  {pending ? "Pending" : "Cleared"}
-                </span>
-                <button
-                  onClick={() => setPending(!pending)}
-                  className={`${
-                    pending ? "bg-green-500" : "bg-gray-300"
-                  } w-11 h-6 flex items-center rounded-full transition-colors duration-300`}
-                >
-                  <div
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 sm:ml-auto xl:ml-0">
+                <div className="flex items-center gap-2">
+                  <span className="whitespace-nowrap text-sm font-semibold">
+                    {pending ? "Pending" : "Cleared"}
+                  </span>
+                  <button
+                    onClick={() => setPending(!pending)}
                     className={`${
-                      pending ? "translate-x-5" : "translate-x-0"
-                    } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-                  ></div>
-                </button>
+                      pending ? "bg-green-500" : "bg-gray-300"
+                    } flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-300`}
+                  >
+                    <div
+                      className={`${
+                        pending ? "translate-x-5" : "translate-x-0"
+                      } h-6 w-6 transform rounded-full bg-white shadow-md transition-transform duration-300`}
+                    ></div>
+                  </button>
+                </div>
                 {loggedUser?.role !== "Staff" && (
-                  <>
-                    <span className="text-sm whitespace-nowrap font-semibold">
+                  <div className="flex items-center gap-2">
+                    <span className="whitespace-nowrap text-sm font-semibold">
                       {ownTask ? "Own Task" : "All Task"}
                     </span>
                     <button
                       onClick={() => setownTask(!ownTask)}
                       className={`${
                         ownTask ? "bg-green-500" : "bg-gray-300"
-                      } w-11 h-6 flex items-center rounded-full transition-colors duration-300`}
+                      } flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-300`}
                     >
                       <div
                         className={`${
                           ownTask ? "translate-x-5" : "translate-x-0"
-                        } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+                        } h-6 w-6 transform rounded-full bg-white shadow-md transition-transform duration-300`}
                       ></div>
                     </button>
-                  </>
+                  </div>
                 )}
               </div>
 
               {/* New Lead Button */}
-              <div className="">
+              <div className="hidden xl:block">
                 <button
                   onClick={() =>
                     loggedUser.role === "Admin"
                       ? navigate("/admin/transaction/lead")
                       : navigate("/staff/transaction/lead")
                   }
-                  className="bg-black text-white py-1 px-3 rounded-lg shadow-lg hover:bg-gray-600 max-w-[100px] md:w-full"
+                  className="rounded-lg bg-black px-3 py-2 text-sm whitespace-nowrap text-white shadow-lg transition-colors hover:bg-gray-600"
                 >
                   New Lead
                 </button>
@@ -510,13 +529,13 @@ console.log(totalNetAmount)
           {/* <div className="flex justify-end mr-5">
             <span className="text-blue-700">{`Total Amount -   <IndianRupee className="w-3 h-3" /> ${netTotalAmount}`}</span>
           </div> */}
-<div className="flex justify-end mr-5 items-center">
-  <span className="text-blue-700 flex items-center gap-1 font-semibold">
-    Total Amount -
-    <IndianRupee className="w-3 h-3" />
-    {Number(netTotalAmount).toLocaleString("en-IN")}
-  </span>
-</div>
+          <div className="mx-3 mb-3 flex justify-end sm:mx-5">
+            <span className="flex items-center gap-1 whitespace-nowrap text-sm font-semibold text-blue-700">
+              Total Amount -
+              <IndianRupee className="h-3 w-3" />
+              {Number(netTotalAmount).toLocaleString("en-IN")}
+            </span>
+          </div>
 
           {loading ? (
             <div className="p-3 rounded-md">

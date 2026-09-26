@@ -754,7 +754,7 @@ export default function LeadTaskComponent({
     const colCount = isLeadTaskClosed ? 6 : pending ? (ownTask ? 10 : 9) : 6;
 
     return (
-      <table className="border-collapse border border-gray-200 w-full min-w-[780px] table-fixed text-sm lg:min-w-0">
+      <table className="w-full min-w-[780px] table-fixed border-collapse border border-gray-200 text-sm">
         <thead className="whitespace-nowrap bg-gradient-to-r from-blue-600 to-blue-700 text-white sticky top-0 z-30 text-xs">
           <tr>
             <th className="border border-blue-500 w-5" />
@@ -804,7 +804,7 @@ export default function LeadTaskComponent({
     Data.some((group) => Array.isArray(group?.leads) && group.leads.length > 0);
 
   return (
-    <div className="overflow-x-auto overflow-y-visible rounded-lg shadow-xl md:mx-5 mx-3 mb-3 bg-white lg:overflow-x-visible">
+    <div className="mx-3 mb-3 max-w-full touch-pan-x overflow-x-auto overflow-y-visible rounded-lg bg-white shadow-xl md:mx-5">
       {!hasLeads || Data?.length === 0 ? (
         <NoDataAvailable />
       ) : (

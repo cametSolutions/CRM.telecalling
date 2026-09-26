@@ -1,9 +1,10 @@
 import api from "./api"
 
-export const fetchDataFromApi = async (url, params) => {
+export const fetchDataFromApi = async (url, config = {}) => {
   try {
     const response = await api.get(url, {
-      withCredentials: true
+      withCredentials: true,
+      ...config
     })
 
     return response.data

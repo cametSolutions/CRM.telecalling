@@ -55,7 +55,8 @@ const MyDatePicker = ({
   loader,
   view = false,
   fullWidth = false,
-  compact = false
+  compact = false,
+  inlineOnMobile = false
 }) => {
   const toPickerDate = (value) => {
     if (!value) return null
@@ -96,10 +97,20 @@ const MyDatePicker = ({
     </button>
   ))
 
-  const pickerWidth = fullWidth ? "w-full" : compact ? "w-full sm:w-[13rem]" : "w-full sm:w-[14rem]"
+  const pickerWidth = inlineOnMobile
+    ? "min-w-0 flex-1"
+    : fullWidth
+      ? "w-full"
+      : compact
+        ? "w-full sm:w-[13rem]"
+        : "w-full sm:w-[14rem]"
 
   return (
-    <div className={`z-40 flex flex-col gap-2 sm:flex-row sm:items-end ${fullWidth ? "w-full" : ""}`}>
+    <div
+      className={`z-40 flex gap-2 ${
+        inlineOnMobile ? "flex-row items-end" : "flex-col sm:flex-row sm:items-end"
+      } ${fullWidth ? "w-full" : ""}`}
+    >
       <label className={`${pickerWidth} flex flex-col gap-1`}>
         <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
           Start date
