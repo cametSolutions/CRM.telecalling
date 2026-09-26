@@ -9177,6 +9177,53 @@ export const GetallleadOwned = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+const getOptimizedAllocationLeads = async ({ status, branchObjectId }) => {
+  const query =
+    status === "Pending"
+      ? { leadBranch: branchObjectId, activityLog: { $size: 1 } }
+      : {
+          leadBranch: branchObjectId,
+          reallocatedTo: false,
+          leadLost: { $ne: true },
+          leadClosed: { $ne: true },
+          "activityLog.1": { $exists: true },
+        };
+
+  const leads = await LeadMaster.find(query)
+    .select(
+      "leadId leadDate customerName mobile phone email netAmount leadFor leadBy leadByModel dueDate allocationType reallocatedTo activityLog"
+    )
+    .populate([
+      { path: "customerName", select: "customerName" },
+      { path: "leadBy", select: "name" },
+      { path: "activityLog.submittedUser", select: "name" },
+      { path: "activityLog.taskallocatedTo", select: "name" },
+      { path: "activityLog.taskallocatedBy", select: "name" },
+      { path: "activityLog.taskBy", select: "taskName" },
+      { path: "activityLog.taskId", select: "taskName" },
+    ])
+    .lean();
+
+  if (status === "Pending") return leads;
+
+  return leads.map((lead) => {
+    const latestAllocation = [...(lead.activityLog || [])]
+      .reverse()
+      .find(
+        (log) =>
+          log?.taskallocatedTo &&
+          log?.taskallocatedBy &&
+          !log?.taskfromFollowup
+      );
+
+    return {
+      ...lead,
+      allocatedTo: latestAllocation?.taskallocatedTo || null,
+      allocatedBy: latestAllocation?.taskallocatedBy || null,
+    };
+  });
+};
+
 export const GetallLead = async (req, res) => {
   try {
     const { Status, selectedBranch, role } = req.query
@@ -9186,6 +9233,22 @@ export const GetallLead = async (req, res) => {
       return res
         .status(400)
         .json({ message: "Status or role is missing " })
+    }
+
+    if (req.query.optimized === "true") {
+      if (Status !== "Pending" && Status !== "Approved") {
+        return res.status(400).json({ message: "Invalid Status" });
+      }
+
+      const data = await getOptimizedAllocationLeads({
+        status: Status,
+        branchObjectId,
+      });
+
+      return res.status(200).json({
+        message: `${Status} leads found`,
+        data,
+      });
     }
 
     if (Status === "Pending") {
@@ -10684,7 +10747,7 @@ const buildMap = (docs) =>
 
 export const GetrespectedleadTask = async (req, res) => {
   try {
-    const { userid, branchSelected, role, ownTask } = req.query;
+    const { userid, branchSelected, role, ownTask, taskStatus } = req.query;
 
     const userObjectId = toObjectId(userid);
     const branchObjectId = toObjectId(branchSelected);
@@ -10704,6 +10767,12 @@ export const GetrespectedleadTask = async (req, res) => {
     const isAdmin = role === "Admin";
     const isManager = role === "Manager";
     const isOwnTask = ownTask === "true";
+    const isPendingTask = taskStatus === "pending";
+    const isClearedTask = taskStatus === "cleared";
+
+    if (taskStatus && !isPendingTask && !isClearedTask) {
+      return res.status(400).json({ message: "Invalid taskStatus" });
+    }
 
     /*
       allowedUserIds rules:
@@ -10753,6 +10822,9 @@ export const GetrespectedleadTask = async (req, res) => {
     const elemMatch = {
       allocationChanged: false,
       taskTo: { $ne: "followup" },
+      taskallocatedTo: { $ne: null },
+      ...(isPendingTask ? { taskClosed: false } : {}),
+      ...(isClearedTask ? { taskClosed: true } : {}),
       ...(allowedUserIds
         ? {
           taskallocatedTo: {
@@ -10769,8 +10841,21 @@ export const GetrespectedleadTask = async (req, res) => {
       },
     };
 
-    const selectedfollowup = await LeadMaster.find(query)
-      .select({
+    const activityLogConditions = [
+      { $eq: ["$$log.allocationChanged", false] },
+      { $ne: ["$$log.taskTo", "followup"] },
+      { $ne: ["$$log.taskallocatedTo", null] },
+      ...(isPendingTask ? [{ $eq: ["$$log.taskClosed", false] }] : []),
+      ...(isClearedTask ? [{ $eq: ["$$log.taskClosed", true] }] : []),
+      ...(allowedUserIds
+        ? [{ $in: ["$$log.taskallocatedTo", allowedUserIds] }]
+        : []),
+    ];
+
+    const selectedfollowup = await LeadMaster.aggregate([
+      { $match: query },
+      {
+        $project: {
         leadId: 1,
         leadDate: 1,
         customerName: 1,
@@ -10778,26 +10863,25 @@ export const GetrespectedleadTask = async (req, res) => {
         mobile: 1,
         phone: 1,
         email: 1,
-        location: 1,
-        pincode: 1,
-        trade: 1,
-        partner: 1,
-        leadConfirmed: 1,
-        leadClosed: 1,
-        leadLost: 1,
         dueDate: 1,
         leadFor: 1,
         leadBy: 1,
         leadByModel: 1,
-        activityLog: 1,
-        createdAt: 1,
-        updatedAt: 1,
-      })
-      .populate({
-        path: "customerName",
-        select: "customerName",
-      })
-      .lean();
+          activityLog: {
+            $filter: {
+              input: "$activityLog",
+              as: "log",
+              cond: { $and: activityLogConditions },
+            },
+          },
+        },
+      },
+    ]);
+
+    await LeadMaster.populate(selectedfollowup, {
+      path: "customerName",
+      select: "customerName",
+    });
 
     if (!selectedfollowup.length) {
       return res.status(200).json({
@@ -10978,6 +11062,14 @@ export const GetrespectedleadTask = async (req, res) => {
       }
 
       if (log?.taskTo === "followup") {
+        return false;
+      }
+
+      if (isPendingTask && log?.taskClosed !== false) {
+        return false;
+      }
+
+      if (isClearedTask && log?.taskClosed !== true) {
         return false;
       }
 
