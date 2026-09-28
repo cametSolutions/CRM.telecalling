@@ -559,7 +559,9 @@ const LeadFollowUp = () => {
           Array.isArray(lead.activityLog) &&
           lead.activityLog.some(
             (entry) =>
-              entry.taskTo === "followup" && entry.followupClosed === true
+              entry.taskBy?.taskName?.trim() === "Follow-Up Closing" &&
+              entry.followupClosed === true &&
+              entry.submissionDate
           )
       )
       console.log(clearedLeads)
@@ -575,7 +577,7 @@ const LeadFollowUp = () => {
 
     if (!pending && !ownFollowUp) {
       const isFollowupActivity = (log) =>
-        log?.taskId?.taskName === "Followup" &&
+        log?.taskBy?.taskName?.trim() === "Follow-Up Closing" &&
         log?.followupClosed === true &&
         log?.submissionDate
 
@@ -1188,8 +1190,9 @@ const LeadFollowUp = () => {
                   Array.isArray(lead.activityLog) &&
                   lead.activityLog.some(
                     (entry) =>
-                      entry.taskTo === "followup" &&
-                      entry.followupClosed === true
+                      entry.taskBy?.taskName?.trim() === "Follow-Up Closing" &&
+                      entry.followupClosed === true &&
+                      entry.submissionDate
                   )
               )
               // console.log(clearedLeads)
@@ -1205,7 +1208,7 @@ const LeadFollowUp = () => {
               // console.log(productwisedata)
               // helpers
               const isFollowupActivity = (log) =>
-                log?.taskId?.taskName === "Followup" &&
+                log?.taskBy?.taskName?.trim() === "Follow-Up Closing" &&
                 log?.followupClosed === true &&
                 log?.submissionDate
 
@@ -2135,7 +2138,9 @@ const LeadFollowUp = () => {
                 Array.isArray(lead.activityLog) &&
                 lead.activityLog.some(
                   (entry) =>
-                    entry.taskTo === "followup" && entry.followupClosed === true
+                    entry.taskBy?.taskName?.trim() === "Follow-Up Closing" &&
+                    entry.followupClosed === true &&
+                    entry.submissionDate
                 )
             )
 
@@ -2206,7 +2211,7 @@ const LeadFollowUp = () => {
             } else {
               // helpers
               const isFollowupActivity = (log) =>
-                log?.taskBy?.taskName === "Followup" &&
+                log?.taskBy?.taskName?.trim() === "Follow-Up Closing" &&
                 log?.followupClosed === true &&
                 log?.submissionDate
               const getLatestSubmissionDate = (lead) => {
