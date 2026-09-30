@@ -14757,6 +14757,7 @@ export const GetResearchAndDevelopmentLeads = async (req, res) => {
           assignedDeveloper: {
             $ifNull: [{ $arrayElemAt: ["$assignedDeveloper.name", 0] }, ""]
           },
+          assignedDeveloperId: 1,
           allocatedBy: {
             $ifNull: [
               { $arrayElemAt: ["$allocatingStaff.name", 0] },
@@ -14833,6 +14834,10 @@ export const UpdateResearchAndDevelopmentTask = async (req, res) => {
 
     if (!allocationLog) {
       return res.status(404).json({ success: false, message: "Coding & QC allocation was not found" });
+    }
+
+    if (["start", "end"].includes(action) && String(allocationLog.taskallocatedTo) !== String(req.owner?.userId)) {
+      return res.status(403).json({ success: false, message: "Only the assigned developer can start or end this task" });
     }
 
     if (["Hold", "Completed"].includes(allocationLog.taskStatus) && ["start", "end"].includes(action)) {
