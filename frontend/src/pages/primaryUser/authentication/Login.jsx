@@ -114,6 +114,9 @@ const Login = () => {
               case "DEPARTMENT4":
                 navigate("/staff/support&department")
                 break
+              case "DEPARTMENT5":
+                navigate("/staff/reports/researchandDevelopment")
+                break
 
               default:
                 navigate("/staff/dashboard")

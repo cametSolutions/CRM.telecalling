@@ -30,6 +30,8 @@ import { useEffect, useState } from "react"
 import { useSelector } from "react-redux"
 import UseFetch from "../../hooks/useFetch"
 import AnnouncementBanner from "./AnnouncementBanner"
+import AnnouncementModal from "./AnnouncementModal"
+import BirthdayGreetingPopup from "../common/BirthdayGreetingPopup"
 import {
   getLocalStorageItem,
   setLocalStorageItem
@@ -151,7 +153,7 @@ const MarketingDashboard = () => {
   const { data: notificationData } = UseFetch(
     `/lead/getnotificationData?loggedUser=${user?._id}&branchSelected=${reduxselectedBranch}`
   )
-  const { data: announcementlist } = UseFetch(
+  const { data: announcementlist, refreshHook: refreshAnnouncements } = UseFetch(
     "/dashboard/getcurrentAnnouncement"
   )
   console.log(announcementlist)
@@ -776,6 +778,12 @@ const MarketingDashboard = () => {
   const announcement = announcementlist?.[0]?.announcement
     ? announcementlist[0]
     : DEFAULT_ANNOUNCEMENT
+  const handleAnnouncementSubmit = async (annoucementtext) => {
+    const response = await api.post("/dashboard/updateAnnouncement", { annoucementtext })
+    toast.success(response.data?.message || "Announcement updated")
+    refreshAnnouncements?.()
+    return response.data
+  }
   console.log(announcement)
   return (
     <div
@@ -913,6 +921,15 @@ const MarketingDashboard = () => {
               setopenannoucementpopup={setopenannoucementpopup}
             />
           </div>
+          {openannoucementpopup && <AnnouncementModal
+            open={openannoucementpopup}
+            isAdmin={user?.role === "Admin"}
+            announcements={announcement}
+            onClose={() => setopenannoucementpopup(false)}
+            onSubmit={handleAnnouncementSubmit}
+            onSuccess={() => setopenannoucementpopup(false)}
+          />}
+          <BirthdayGreetingPopup />
           <main className="min-h-0 flex-1 overflow-y-auto">
             <section className="p-3 sm:p-4 lg:p-4">
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">

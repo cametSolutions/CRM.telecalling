@@ -9,6 +9,7 @@ import {toast} from "react-toastify"
 import { PropagateLoader } from "react-spinners"
 import AnnouncementBanner from "../../../components/primaryUser/AnnouncementBanner"
 import AnnouncementModal from "../../../components/primaryUser/AnnouncementModal"
+import BirthdayGreetingPopup from "../../../components/common/BirthdayGreetingPopup"
 import UseFetch from "../../../hooks/useFetch"
 import { getLocalStorageItem } from "../../../helper/localstorage"
 import { StaticSidebar } from "../../../components/primaryUser/StaticSidebar"
@@ -683,7 +684,7 @@ const announcement =
         <AnnouncementModal
           open={openannoucementpopup}
 isAdmin={userRole==="Admin"}
-announcements={announcement?.announcement}
+announcements={announcement}
           onClose={() => setopenannoucementpopup(false)}
  onSubmit={handleAnnouncementSubmit}
           onSuccess={(saved) =>
@@ -691,6 +692,7 @@ announcements={announcement?.announcement}
           }
         />
       )}
+          <BirthdayGreetingPopup />
           {showNotification && (
             <NotificationPopup onClose={() => setShowNotification(false)} />
           )}

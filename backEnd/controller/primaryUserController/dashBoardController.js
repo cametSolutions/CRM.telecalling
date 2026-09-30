@@ -2,6 +2,8 @@ import mongoose from "mongoose"
 import QuarterlyAchiever from "../../model/primaryUser/quarterlyAchieversSchema.js"
 import YearlyAchiever from "../../model/primaryUser/yearylyAchieversSchema.js"
 import DashboardAnnouncement from "../../model/primaryUser/dashBoardAnnouncement.js"
+import models from "../../model/auth/authSchema.js"
+const { Staff, Admin } = models
 export const GetcurrentAchiever = async (req, res) => {
   try {
     const data = {}
@@ -25,10 +27,18 @@ export const UpdateAnnouncement = async (req, res) => {
   try {
     const { annoucementtext } = req.body
     console.log("an", annoucementtext)
+    const userId = req.owner?.userId
+    const [staff, admin] = mongoose.Types.ObjectId.isValid(userId)
+      ? await Promise.all([
+          Staff.findById(userId).select("name").lean(),
+          Admin.findById(userId).select("name").lean()
+        ])
+      : [null, null]
+    const postedBy = staff?.name || admin?.name || "CAMET CRM"
 
     const result = await DashboardAnnouncement.findOneAndUpdate(
       {}, // empty filter: only one doc exists
-      { announcement:annoucementtext }, // new announcement content
+      { announcement: annoucementtext, postedBy }, // new announcement content
       {
         new: true, // return the updated doc
         upsert: true ,// create a new doc if none exists

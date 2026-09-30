@@ -9511,6 +9511,18 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
       });
     }
 
+    const existingLead = await LeadMaster.findById(selectedleaddocId);
+    if (!existingLead) {
+      return res.status(404).json({ message: "Lead not found" });
+    }
+
+    const productIds = (existingLead.leadFor || [])
+      .filter((item) => item.productorServicemodel === "Product" && item.productorServiceId)
+      .map((item) => item.productorServiceId);
+    const hasProductFirstStage = productIds.length > 0 && Boolean(
+      await Product.exists({ _id: { $in: productIds }, firstStage: { $ne: null } })
+    );
+
     // 2) Close previous open followup if lead closed
     if (
       formData.followupType === "closed" ||
@@ -9520,7 +9532,7 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
         { _id: selectedleaddocId },
         {
           $set: {
-            "activityLog.$[elem].reallocatedTo": true,
+            "activityLog.$[elem].reallocatedTo": hasProductFirstStage,
             "activityLog.$[elem].taskClosed": true,
             "activityLog.$[elem].followupClosed": true
           }
@@ -9576,7 +9588,7 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
     ) {
       activityEntry.taskClosed = true;
       activityEntry.followupClosed = true;
-      activityEntry.reallocatedTo = true;
+      activityEntry.reallocatedTo = hasProductFirstStage;
     } else if (formData.followupType === "lost") {
       activityEntry.taskClosed = true;
     }
@@ -9629,18 +9641,7 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
       }
     }
 
-    // 5) Get existing lead
-    const existingLead = await LeadMaster.findById(
-      selectedleaddocId
-    );
-
-    if (!existingLead) {
-      return res.status(404).json({
-        message: "Lead not found"
-      });
-    }
-
-    // 6) Calculate updated amounts
+    // 5) Calculate updated amounts
     const currentPaid = Number(
       existingLead.totalPaidAmount || 0
     );
@@ -9670,7 +9671,7 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
 
     // lead closed
     if (formData.followupType === "closed") {
-      updateDoc.$set.reallocatedTo = true;
+      updateDoc.$set.reallocatedTo = hasProductFirstStage;
       updateDoc.$set.leadConvertedDate = new Date();
       updateDoc.$set.leadClosed = true;
       // updateDoc.$set.leadClosedDate = new Date();
@@ -14564,5 +14565,500 @@ export const fixLeadVerifiedField = async (req, res) => {
     );
   } catch (error) {
     console.error("❌ Error updating field:", error);
+  }
+};
+
+export const GetResearchAndDevelopmentLeads = async (req, res) => {
+  try {
+    const { branchId } = req.query;
+    const codingAndQcTaskId = new mongoose.Types.ObjectId(
+      "69671a6ce2872bca1b9e60df"
+    );
+
+    if (branchId && !isValidObjectId(branchId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid branchId"
+      });
+    }
+
+    const match = {
+      leadLost: { $ne: true },
+      activityLog: { $elemMatch: { followupClosed: true } }
+    };
+
+    if (branchId) {
+      match.leadBranch = new mongoose.Types.ObjectId(branchId);
+    }
+
+    const data = await LeadMaster.aggregate([
+      { $match: match },
+      {
+        $set: {
+          closedFollowupLogs: {
+            $filter: {
+              input: "$activityLog",
+              as: "log",
+              cond: { $eq: ["$$log.followupClosed", true] }
+            }
+          }
+        }
+      },
+      {
+        $set: {
+          latestActivityLog: { $arrayElemAt: ["$closedFollowupLogs", -1] }
+        }
+      },
+      {
+        $set: {
+          rndAllocationLogs: {
+            $filter: {
+              input: "$activityLog",
+              as: "log",
+              cond: {
+                $and: [
+                  { $ne: ["$$log.taskallocatedTo", null] },
+                  {
+                    $or: [
+                      { $eq: ["$$log.taskId", codingAndQcTaskId] },
+                      { $eq: ["$$log.taskBy", codingAndQcTaskId] }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      {
+        $set: {
+          latestRndAllocationLog: { $arrayElemAt: ["$rndAllocationLogs", -1] }
+        }
+      },
+      { $unwind: "$leadFor" },
+      { $match: { "leadFor.productorServicemodel": "Product" } },
+      {
+        $lookup: {
+          from: Product.collection.name,
+          let: { productId: "$leadFor.productorServiceId" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$_id", "$$productId"] },
+                    { $eq: ["$firstStage", codingAndQcTaskId] }
+                  ]
+                }
+              }
+            },
+            {
+              $project: {
+                productName: 1,
+                shortName: 1,
+                firstStage: 1
+              }
+            }
+          ],
+          as: "product"
+        }
+      },
+      { $unwind: "$product" },
+      {
+        $group: {
+          _id: "$_id",
+          leadId: { $first: "$leadId" },
+          customerId: { $first: "$customerName" },
+          mobile: { $first: "$mobile" },
+          leadDate: { $first: "$leadDate" },
+          netAmount: { $first: "$netAmount" },
+          assignedDeveloperId: {
+            $first: "$latestRndAllocationLog.taskallocatedTo"
+          },
+          allocatedById: {
+            $first: "$latestRndAllocationLog.taskallocatedBy"
+          },
+          rndTaskState: { $first: "$latestRndAllocationLog" },
+          latestActivityLog: { $first: "$latestActivityLog" },
+          products: {
+            $push: {
+              productId: "$product._id",
+              productName: "$product.productName",
+              shortName: "$product.shortName",
+              firstStage: "$product.firstStage"
+            }
+          }
+        }
+      },
+      {
+        $lookup: {
+          from: Customer.collection.name,
+          localField: "customerId",
+          foreignField: "_id",
+          pipeline: [{ $project: { customerName: 1 } }],
+          as: "customer"
+        }
+      },
+      {
+        $lookup: {
+          from: Task.collection.name,
+          let: { taskId: codingAndQcTaskId },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$_id", "$$taskId"] } } },
+            { $project: { taskName: 1 } }
+          ],
+          as: "assignedTask"
+        }
+      },
+      {
+        $lookup: {
+          from: Staff.collection.name,
+          localField: "assignedDeveloperId",
+          foreignField: "_id",
+          pipeline: [{ $project: { name: 1 } }],
+          as: "assignedDeveloper"
+        }
+      },
+      {
+        $lookup: {
+          from: Staff.collection.name,
+          localField: "allocatedById",
+          foreignField: "_id",
+          pipeline: [{ $project: { name: 1 } }],
+          as: "allocatingStaff"
+        }
+      },
+      {
+        $lookup: {
+          from: Admin.collection.name,
+          localField: "allocatedById",
+          foreignField: "_id",
+          pipeline: [{ $project: { name: 1 } }],
+          as: "allocatingAdmin"
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          leadDocId: "$_id",
+          leadId: 1,
+          customerName: {
+            $ifNull: [{ $arrayElemAt: ["$customer.customerName", 0] }, ""]
+          },
+          mobile: 1,
+          leadDate: 1,
+          netAmount: 1,
+          products: 1,
+          followupClosedDate: "$latestActivityLog.submissionDate",
+          assignedTask: {
+            taskId: codingAndQcTaskId,
+            taskName: { $arrayElemAt: ["$assignedTask.taskName", 0] }
+          },
+          assignedDeveloper: {
+            $ifNull: [{ $arrayElemAt: ["$assignedDeveloper.name", 0] }, ""]
+          },
+          allocatedBy: {
+            $ifNull: [
+              { $arrayElemAt: ["$allocatingStaff.name", 0] },
+              { $ifNull: [{ $arrayElemAt: ["$allocatingAdmin.name", 0] }, ""] }
+            ]
+          },
+          allocatedTo: {
+            $ifNull: [{ $arrayElemAt: ["$assignedDeveloper.name", 0] }, ""]
+          },
+          isSelfAllocated: { $eq: ["$allocatedById", "$assignedDeveloperId"] },
+          taskStatus: { $ifNull: ["$rndTaskState.taskStatus", "Pending"] },
+          taskRemark: "$rndTaskState.taskRemark",
+          nextAllocationTask: "$rndTaskState.nextAllocationTask",
+          taskStartedAt: "$rndTaskState.taskStartedAt",
+          taskEndedAt: "$rndTaskState.taskEndedAt",
+          taskCompletedAt: "$rndTaskState.taskCompletedAt",
+          taskSessions: "$rndTaskState.taskSessions",
+          allocationDate: "$rndTaskState.allocationDate",
+          allocationTime: "$rndTaskState.allocationTime",
+          expectedCompletionDate: "$rndTaskState.expectedCompletionDate",
+          taskTitle: "$rndTaskState.taskTitle",
+          allocationDescription: "$rndTaskState.allocationDescription",
+          taskTimeline: "$rndTaskState.taskTimeline",
+          latestActivityLog: 1
+        }
+      },
+      { $sort: { followupClosedDate: -1, leadDate: -1 } }
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      count: data.length,
+      data
+    });
+  } catch (error) {
+    console.error("GetResearchAndDevelopmentLeads error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Unable to fetch R&D leads"
+    });
+  }
+};
+
+export const UpdateResearchAndDevelopmentTask = async (req, res) => {
+  try {
+    const { leadDocId, action, status, remark, taskDescription, expectedCompletionDate, isNeedChangeDate } = req.body;
+    const codingAndQcTaskId = "69671a6ce2872bca1b9e60df";
+    const validStatuses = ["Pending", "In Progress", "Hold", "Completed"];
+
+    if (!isValidObjectId(leadDocId) || !["start", "end", "status"].includes(action)) {
+      return res.status(400).json({ success: false, message: "Invalid task update" });
+    }
+
+    if (action === "status" && !validStatuses.includes(status)) {
+      return res.status(400).json({ success: false, message: "Invalid task status" });
+    }
+
+    if (action === "end" && !taskDescription?.trim()) {
+      return res.status(400).json({ success: false, message: "Task description is required to end work" });
+    }
+
+    const lead = await LeadMaster.findById(leadDocId);
+    if (!lead) {
+      return res.status(404).json({ success: false, message: "Lead was not found" });
+    }
+
+    const allocationLog = [...lead.activityLog]
+      .reverse()
+      .find(
+        (log) =>
+          log.taskallocatedTo &&
+          (String(log.taskId) === codingAndQcTaskId || String(log.taskBy) === codingAndQcTaskId)
+      );
+
+    if (!allocationLog) {
+      return res.status(404).json({ success: false, message: "Coding & QC allocation was not found" });
+    }
+
+    if (["Hold", "Completed"].includes(allocationLog.taskStatus) && ["start", "end"].includes(action)) {
+      return res.status(400).json({ success: false, message: "Tasks on hold or completed cannot be started or ended" });
+    }
+
+    const now = new Date();
+    let timelineEvent;
+    let timelineDetail = "";
+    if (action === "start") {
+      allocationLog.taskStartedAt = now;
+      allocationLog.taskEndedAt = null;
+      allocationLog.taskStatus = "In Progress";
+      allocationLog.taskSessions = allocationLog.taskSessions || [];
+      allocationLog.taskSessions.push({ startedAt: now });
+      timelineEvent = "Development Started";
+    } else if (action === "end") {
+      allocationLog.taskEndedAt = now;
+      allocationLog.taskDescription = taskDescription.trim();
+      allocationLog.taskSessions = allocationLog.taskSessions || [];
+      const activeSession = [...allocationLog.taskSessions]
+        .reverse()
+        .find((session) => !session.endedAt);
+      if (activeSession) {
+        activeSession.endedAt = now;
+        activeSession.description = taskDescription.trim();
+      }
+      timelineEvent = "Development Ended";
+      timelineDetail = taskDescription.trim();
+    } else {
+      const canChangeExpectedCompletionDate = ["Pending", "In Progress"].includes(status);
+      if (isNeedChangeDate && !canChangeExpectedCompletionDate) {
+        return res.status(400).json({ success: false, message: "Expected completion date can only be changed for pending or in-progress tasks" });
+      }
+      if (isNeedChangeDate && !expectedCompletionDate) {
+        return res.status(400).json({ success: false, message: "Expected completion date is required when changing the date" });
+      }
+      if (isNeedChangeDate && expectedCompletionDate) {
+        allocationLog.expectedCompletionDate = new Date(expectedCompletionDate);
+        lead.dueDate = allocationLog.expectedCompletionDate;
+      }
+      allocationLog.taskStatus = status;
+      allocationLog.taskRemark = remark?.trim() || "";
+      if (status === "Completed") {
+        allocationLog.taskCompletedAt = now;
+        lead.reallocatedTo = true;
+      }
+      timelineEvent = status === "Completed" ? "Development Completed" : `Status changed to ${status}`;
+      timelineDetail = allocationLog.taskRemark;
+    }
+
+    allocationLog.taskTimeline = allocationLog.taskTimeline || [];
+    allocationLog.taskTimeline.push({ event: timelineEvent, at: now, detail: timelineDetail });
+
+    await lead.save();
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        taskStatus: allocationLog.taskStatus,
+        taskRemark: allocationLog.taskRemark,
+        taskStartedAt: allocationLog.taskStartedAt,
+        taskEndedAt: allocationLog.taskEndedAt,
+        taskCompletedAt: allocationLog.taskCompletedAt,
+        taskSessions: allocationLog.taskSessions,
+        expectedCompletionDate: allocationLog.expectedCompletionDate,
+        taskDescription: allocationLog.taskDescription,
+        nextAllocationTask: allocationLog.nextAllocationTask,
+        taskTimeline: allocationLog.taskTimeline
+      }
+    });
+  } catch (error) {
+    console.error("UpdateResearchAndDevelopmentTask error:", error);
+    return res.status(500).json({ success: false, message: "Unable to update Coding & QC task" });
+  }
+};
+
+export const AllocateResearchAndDevelopmentTask = async (req, res) => {
+  try {
+    const {
+      leadDocId,
+      allocatedTo,
+      allocationDate,
+      allocationTime,
+      expectedStartDate,
+      expectedCompletionDate,
+      taskTitle,
+      allocationDescription
+    } = req.body;
+    const codingAndQcTaskId = "69671a6ce2872bca1b9e60df";
+    const allocatedBy = req.owner?.userId;
+
+    if (
+      !isValidObjectId(leadDocId) ||
+      !isValidObjectId(allocatedTo) ||
+      !isValidObjectId(allocatedBy)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid lead and user IDs are required"
+      });
+    }
+
+    if (!taskTitle?.trim() || !allocationDescription?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Task title and description are required"
+      });
+    }
+
+    const [task, assigningStaff, assigningAdmin, assignedStaff] =
+      await Promise.all([
+        Task.findById(codingAndQcTaskId).select("taskName").lean(),
+        Staff.findById(allocatedBy).select("_id").lean(),
+        Admin.findById(allocatedBy).select("_id").lean(),
+        Staff.findById(allocatedTo)
+          .select("_id department")
+          .populate({ path: "department", select: "department" })
+          .lean()
+      ]);
+
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        message: "Coding & QC task was not found"
+      });
+    }
+
+    if (!assigningStaff && !assigningAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "Authenticated user is not authorized to allocate tasks"
+      });
+    }
+
+    if (!assignedStaff) {
+      return res.status(400).json({
+        success: false,
+        message: "Assigned developer must be a staff user"
+      });
+    }
+
+    if (
+      assignedStaff.department?.department?.trim().toLowerCase() !==
+      "research and development"
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Assigned developer must belong to Research and Development"
+      });
+    }
+
+    const activityLogEntry = {
+      submissionDate: new Date(),
+      submittedUser: allocatedBy,
+      submissiondoneByModel: assigningStaff ? "Staff" : "Admin",
+      taskallocatedBy: allocatedBy,
+      taskallocatedByModel: assigningStaff ? "Staff" : "Admin",
+      taskallocatedTo: allocatedTo,
+      taskallocatedToModel: "Staff",
+      allocationDate: allocationDate ? new Date(allocationDate) : new Date(),
+      allocationTime: String(allocationTime || "").trim(),
+      expectedCompletionDate: expectedCompletionDate ? new Date(expectedCompletionDate) : null,
+      taskTitle: String(taskTitle || "").trim(),
+      allocationDescription: String(allocationDescription || "").trim(),
+      taskBy: task._id,
+      taskTo: task.taskName,
+      taskId: task._id,
+      taskTimeline: [
+        {
+          event: "Work Allocated",
+          at: new Date(),
+          detail: "Coding & QC"
+        }
+      ],
+      taskClosed: false,
+      followupClosed: false,
+      allocatedClosed: false,
+      allocationChanged: false,
+      taskfromFollowup: false,
+      remarks: expectedStartDate
+        ? `Expected start: ${expectedStartDate}${
+            expectedCompletionDate
+              ? ` | Expected completion: ${expectedCompletionDate}`
+              : ""
+          }`
+        : ""
+    };
+
+    const updatedLead = await LeadMaster.findByIdAndUpdate(
+      leadDocId,
+      {
+        $push: { activityLog: activityLogEntry },
+        $set: {
+          allocationType: task._id,
+          allocatedTo,
+          allocatedBy,
+          allocatedToModel: "Staff",
+          allocatedByModel: assigningStaff ? "Staff" : "Admin",
+          dueDate: expectedCompletionDate || allocationDate || new Date()
+        }
+      },
+      { new: true, runValidators: true }
+    ).select("_id leadId activityLog");
+
+    if (!updatedLead) {
+      return res.status(404).json({
+        success: false,
+        message: "Lead was not found"
+      });
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: "Coding & QC task allocated",
+      data: {
+        leadDocId: updatedLead._id,
+        leadId: updatedLead.leadId,
+        activityLog: updatedLead.activityLog.at(-1)
+      }
+    });
+  } catch (error) {
+    console.error("AllocateResearchAndDevelopmentTask error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Unable to allocate Coding & QC task"
+    });
   }
 };

@@ -9,6 +9,7 @@ import FollowupSummaryDashboard from "../../pages/primaryUser/List/FollowupSumma
 import SalesFunnel from "../../pages/primaryUser/List/SalesFunnel"
 import DailyStaffActivity from "../../pages/primaryUser/List/DailyStaffActivity"
 import IncentiveReport from "../../components/primaryUser/IncentiveReport"
+import ResearchandDevelopement from "../../pages/primaryUser/dashboard/ResearchandDevelopement"
 const staffreportsRoutes = [
   { path: "/staff/reports/summary", component: Summary },
   { path: "/staff/reports/expiry-register", component: ExpiredCustomer },
@@ -26,6 +27,7 @@ const staffreportsRoutes = [
     path: "/staff/reports/follow-up-summary",
     component: FollowupSummaryDashboard,
   },
+{path:"/staff/reports/researchandDevelopment",component:ResearchandDevelopement},
   { path: "/staff/reports/sales-funel", component: SalesFunnel },
   { path: "/staff/reports/dailystaffactivity", component: DailyStaffActivity },
   { path: "/staff/reports/incentiveReport", component: IncentiveReport }

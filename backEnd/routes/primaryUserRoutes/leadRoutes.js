@@ -53,7 +53,10 @@ getTodayVerifiedCollection,
 getverifiedCollectionLeads,
 getNotificationData,
 RejectTask,
-GetclosedLeads
+  GetclosedLeads,
+  GetResearchAndDevelopmentLeads,
+  UpdateResearchAndDevelopmentTask,
+  AllocateResearchAndDevelopmentTask
 } from "../../controller/primaryUserController/leadController.js";
 const router = express.Router();
 // router.get("/export-branch-wise-product-usage",exportBranchWiseProductUsage)
@@ -84,6 +87,7 @@ router.get("/getSelectedLead", authMiddleware, GetselectedLeadData);
 router.get("/getalltasktoreport", authMiddleware, Getalltasktoreport)
 router.get("/getAlltasktoTarget", authMiddleware, getAlltasktoTarget)
 router.get("/getallTask", authMiddleware, GetallTask);
+router.get("/rnd-leads", authMiddleware, GetResearchAndDevelopmentLeads);
 router.get("/checkexistinglead", authMiddleware, Checkexistinglead);
 router.get("/verifiedcollectionLeads",authMiddleware,getverifiedCollectionLeads)
 router.get("/getTodayVerifiedCollection",authMiddleware,getTodayVerifiedCollection)
@@ -124,5 +128,7 @@ router.post(
   UpdateOrSubmittaskByfollower
 );
 router.post("/approveforcefullyclosetarget",authMiddleware,ApprovedforcefullyClosedTarget)
+router.post("/rnd-allocation", authMiddleware, AllocateResearchAndDevelopmentTask)
+router.post("/rnd-task-update", authMiddleware, UpdateResearchAndDevelopmentTask)
 
 export default router;
