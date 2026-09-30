@@ -8,8 +8,8 @@ import {
   MdBarChart
 } from "react-icons/md"
 import { useSelector } from "react-redux"
-import { FiChevronDown, FiX } from "react-icons/fi"
-import { FaSpinner, FaUserCircle } from "react-icons/fa"
+import { FiChevronDown } from "react-icons/fi"
+import { FaSpinner } from "react-icons/fa"
 import { toast } from "react-toastify"
 import { Link } from "react-router-dom"
 import UseFetch from "../../../hooks/useFetch"
@@ -17,6 +17,7 @@ import { getLocalStorageItem } from "../../../helper/localstorage"
 import api from "../../../api/api"
 import AnnouncementModal from "../../../components/primaryUser/AnnouncementModal"
 import AnnouncementBanner from "../../../components/primaryUser/AnnouncementBanner"
+import BirthdayGreetingPopup from "../../../components/common/BirthdayGreetingPopup"
 export default function PrimaryUserDashBoard() {
 const userRole=useSelector((user)=>user.auth.user.role)
 console.log(userRole)
@@ -24,7 +25,6 @@ console.log(userRole)
   const [announcement, setAnnouncementText] = useState("")
   const [achieverLoader, setachieverLoader] = useState(false)
   const [announcementLoader, setannouncementLoader] = useState(false)
-  const [birthdayAlreadyShown, setbirthdayshown] = useState(false)
   const [selectedQuarterlyStaffs, setSelectedQuarterlyStaffs] = useState({})
   const [quarterlyTitle, setQuarterlyTitle] = useState("")
   const [selectedYearlyStaffs, setSelectedYearlyStaffs] = useState({})
@@ -34,7 +34,6 @@ console.log(userRole)
   const [showQuarterly, setShowQuarterly] = useState(false)
   const [showYearly, setShowYearly] = useState(false)
   const [user, setUser] = useState(null)
-  const [showBirthdayPopup, setShowBirthdayPopup] = useState(false)
   const [birthdayPerson, setBirthdayPerson] = useState(null)
   const [currentyearholydays, setcurrentyearHoliday] = useState([])
   const headerRef = useRef(null)
@@ -81,14 +80,7 @@ console.log(currentMonthHolidays)
   }, [holydata])
 
   useEffect(() => {
-    const wishValue = JSON.parse(localStorage.getItem("wish"))
-    if (wishValue) {
-      setbirthdayshown(true)
-    }
-  })
-
-  useEffect(() => {
-    if (birthdays && birthdays.length > 0 && !birthdayAlreadyShown) {
+    if (birthdays && birthdays.length > 0) {
       const today = new Date()
       const todayMonthDay = `${String(today.getMonth() + 1).padStart(
         2,
@@ -102,10 +94,9 @@ console.log(currentMonthHolidays)
 
       if (birthdaysToday.length > 0) {
         setBirthdayPerson(birthdaysToday)
-        setShowBirthdayPopup(true)
       }
     }
-  }, [birthdays, birthdayAlreadyShown])
+  }, [birthdays])
 
   useEffect(() => {
     if (staffs) {
@@ -203,9 +194,7 @@ console.log(currentMonthHolidays)
       label: "research & development",
       to:   user?.role.trim() === "Admin"
           ? "/admin/reports/researchandDevelopment"
-          : user?.department?._id === "670c866552847bbebbd35748"
-            ? "/staff/reports/markettingdashboard"
-            : "",
+          : "/staff/reports/researchandDevelopment",
       icon: MdScience,
       show: false
     },
@@ -253,11 +242,6 @@ console.log(currentMonthHolidays)
     }
   }
 
-  const closeBirthdayPopup = () => {
-    setShowBirthdayPopup(false)
-    const wish = true
-    localStorage.setItem("wish", JSON.stringify(wish))
-  }
 const DEFAULT_ANNOUNCEMENT = {
   announcementTitle: "Announcements",
   announcement: "There are no announcements at the moment.",
@@ -837,94 +821,13 @@ console.log(announcements)
 //       </div>
 //     </div>
 <div className="min-h-full bg-[#ADD8E6] overflow-x-hidden">
-  {/* Birthday popup */}
-  {showBirthdayPopup && (
-    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/40 p-4">
-      <div
-        className="relative max-w-md w-full rounded-xl shadow-2xl p-6 overflow-hidden border border-pink-200"
-        style={{
-          background: "linear-gradient(135deg, #fdf2f8, #fce7f3, #fbcfe8)"
-        }}
-      >
-        <button
-          type="button"
-          onClick={closeBirthdayPopup}
-          className="absolute top-2 right-2 text-gray-600 hover:text-gray-900"
-        >
-          <FiX size={22} />
-        </button>
-
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pink-300 via-purple-300 to-pink-300" />
-          <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-pink-300 via-purple-300 to-pink-300" />
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-pink-300 via-purple-300 to-pink-300" />
-          <div className="absolute top-0 right-0 w-1 h-full bg-gradient-to-b from-pink-300 via-purple-300 to-pink-300" />
-        </div>
-
-        <div className="text-center pt-4 relative z-10">
-          <div className="flex justify-center mb-4">
-            <div className="w-32 h-32 rounded-full bg-pink-100 flex items-center justify-center border border-pink-200 shadow-md">
-              {(birthdayPerson || []).map((person, index) =>
-                person?.profileUrl?.length > 0 ? (
-                  <img
-                    key={index}
-                    src={person.profileUrl}
-                    alt=""
-                    className="w-28 h-28 rounded-full border-2 border-purple-300 object-cover"
-                  />
-                ) : (
-                  <div
-                    key={index}
-                    className="w-24 h-24 rounded-full border-2 flex items-center justify-center bg-pink-50"
-                  >
-                    <FaUserCircle className="text-6xl text-gray-500" />
-                  </div>
-                )
-              )}
-            </div>
-          </div>
-
-          <h2 className="text-2xl font-extrabold text-pink-700 mb-1 tracking-wide">
-            Happy Birthday!
-          </h2>
-          <h3 className="text-lg font-semibold text-pink-600 mb-3">
-            {(birthdayPerson || []).map((person, index) => (
-              <p key={index}>{person?.name}</p>
-            ))}
-          </h3>
-
-          <p className="text-gray-700 mb-5 text-sm leading-relaxed">
-            Wishing you a fantastic birthday filled with joy, laughter and
-            memorable moments. Have an amazing year ahead!
-          </p>
-
-          <div className="flex justify-center space-x-2 mb-3 text-2xl">
-            <span>🎉</span>
-            <span>🎈</span>
-            <span>🎁</span>
-            <span>🎊</span>
-          </div>
-
-          <button
-            type="button"
-            onClick={closeBirthdayPopup}
-            className="px-6 py-2 rounded-full font-semibold text-white shadow-md"
-            style={{
-              background: "linear-gradient(to right, #ec4899, #db2777)"
-            }}
-          >
-            Thanks!
-          </button>
-        </div>
-      </div>
-    </div>
-  )}
+  <BirthdayGreetingPopup />
 
   {openannoucementpopup && (
     <AnnouncementModal
       open={openannoucementpopup}
 isAdmin={userRole==="Admin"}
-announcements={announcements?.announcement}
+announcements={announcements}
       onClose={() => setopenannoucementpopup(false)}
       onSuccess={() => setopenannoucementpopup(false)}
     />

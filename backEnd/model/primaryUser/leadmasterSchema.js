@@ -783,6 +783,42 @@ const activityLogItemSchema = new mongoose.Schema(
       default: null,
     },
     taskDescription: { type: String, trim: true, default: "" },
+    taskTitle: { type: String, trim: true, default: "" },
+    allocationDescription: { type: String, trim: true, default: "" },
+    taskRemark: { type: String, trim: true, default: "" },
+    taskStatus: {
+      type: String,
+      enum: ["Pending", "In Progress", "Hold", "Completed"],
+      default: "Pending",
+    },
+    nextAllocationTask: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Task",
+      default: null,
+    },
+    taskStartedAt: { type: Date, default: null },
+    taskEndedAt: { type: Date, default: null },
+    taskCompletedAt: { type: Date, default: null },
+    taskSessions: {
+      type: [
+        {
+          startedAt: { type: Date, required: true },
+          endedAt: { type: Date, default: null },
+          description: { type: String, trim: true, default: "" },
+        },
+      ],
+      default: [],
+    },
+    taskTimeline: {
+      type: [
+        {
+          event: { type: String, trim: true, required: true },
+          at: { type: Date, required: true },
+          detail: { type: String, trim: true, default: "" },
+        },
+      ],
+      default: [],
+    },
     taskrejectDescription: { type: String, trim: true, default: "" },
     reallocatedTo: { type: Boolean, default: false },
     taskClosed: { type: Boolean, default: false },
@@ -792,6 +828,8 @@ const activityLogItemSchema = new mongoose.Schema(
     followUpDate: { type: Date, default: null },
     nextFollowUpDate: { type: Date, default: null },
     allocationDate: { type: Date, default: null },
+    allocationTime: { type: String, trim: true, default: "" },
+    expectedCompletionDate: { type: Date, default: null },
     taskSubmissionDate: { type: Date, default: null },
     taskfromFollowup: { type: Boolean, default: false },
     allocationChanged: { type: Boolean, default: false },

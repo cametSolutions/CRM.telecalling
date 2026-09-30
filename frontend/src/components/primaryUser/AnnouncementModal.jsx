@@ -505,10 +505,16 @@ export default function AnnouncementModal({
     return list
       .filter(Boolean)
       .reverse()
-      .map((item, index) => ({
-        _id: index,
-        cleanText: cleanAnnouncementText(item)
-      }))
+      .map((item, index) => {
+        const announcement = typeof item === "object" ? item : {}
+        return {
+          _id: announcement._id || index,
+          title: announcement.announcementTitle || announcement.title || "Announcement",
+          cleanText: cleanAnnouncementText(announcement.announcement || announcement.detail || item),
+          postedBy: announcement.postedBy || "CAMET CRM",
+          postedAt: announcement.updatedAt || announcement.createdAt || null
+        }
+      })
   }, [announcements])
 
   if (!open) return null
@@ -690,9 +696,11 @@ export default function AnnouncementModal({
                     <span className="mt-0.5 flex h-6 w-6 flex-none items-center justify-center rounded-full bg-slate-100">
                       <Sparkles className="h-3 w-3 text-slate-400" />
                     </span>
-                    <p className="whitespace-pre-line break-words text-sm leading-6 text-slate-700">
-                      {item.cleanText}
-                    </p>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-800">{item.title}</p>
+                      <p className="mt-1 whitespace-pre-line break-words text-sm leading-6 text-slate-700">{item.cleanText}</p>
+                      <p className="mt-2 text-xs text-slate-400">Posted by {item.postedBy}{item.postedAt ? ` · ${new Date(item.postedAt).toLocaleString()}` : ""}</p>
+                    </div>
                   </div>
                 </div>
               ))

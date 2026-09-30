@@ -2187,6 +2187,8 @@ export default function StaffHeader({
         return "/staff/reports/markettingdashboard"
       case "DEPARTMENT4":
         return "/staff/support&department"
+      case "DEPARTMENT5":
+        return "/staff/reports/researchandDevelopment"
       default:
         return "/staff/dashboard"
     }
@@ -2283,7 +2285,9 @@ export default function StaffHeader({
                 <button
                   key={child.to}
                   type="button"
-                  onClick={() => handleSafeNavigate(child.to, { state: child.state })}
+                  onClick={() =>
+                    handleSafeNavigate(child.to, { state: child.state })
+                  }
                   className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[13px] font-medium transition ${
                     isPathActive(child.to)
                       ? "bg-[#243145] text-white"
@@ -2650,7 +2654,9 @@ export default function StaffHeader({
                                         key={child.to}
                                         type="button"
                                         onClick={() =>
-                                          handleSafeNavigate(child.to, { state: child.state })
+                                          handleSafeNavigate(child.to, {
+                                            state: child.state
+                                          })
                                         }
                                         className={`flex w-full items-center gap-1.5 rounded-xl px-3 py-2 text-left text-[13px] font-medium ${
                                           isPathActive(child.to)
