@@ -18,6 +18,9 @@ import {
 } from "lucide-react"
 import api from "../../../api/api"
 import { toast } from "react-toastify"
+import UseFetch from "../../../hooks/useFetch"
+import AnnouncementBanner from "../../../components/primaryUser/AnnouncementBanner"
+import AnnouncementModal from "../../../components/primaryUser/AnnouncementModal"
 
 const workStatuses = [
   { label: "New", count: 8, icon: ClipboardList, accent: "blue" },
@@ -180,6 +183,8 @@ export default function ResearchandDevelopement() {
   const [descriptionWork, setDescriptionWork] = useState(null)
   const [activeStatusFilter, setActiveStatusFilter] = useState("New")
   const [completedFilterMenu, setCompletedFilterMenu] = useState(null)
+  const [openAnnouncementPopup, setOpenAnnouncementPopup] = useState(false)
+  const { data: announcementList, refreshHook: refreshAnnouncements } = UseFetch("/dashboard/getcurrentAnnouncement")
 
   useEffect(() => {
     let active = true
@@ -277,6 +282,16 @@ export default function ResearchandDevelopement() {
     const completedDate = new Date(completedAt)
     return completedDate.getFullYear() === Number(year) && months[completedDate.getMonth()] === month
   })
+  const announcement = announcementList?.[0]?.announcement
+    ? announcementList[0]
+    : { announcementTitle: "Announcements", announcement: "There are no announcements at the moment.", postedBy: "CAMET CRM" }
+
+  const saveAnnouncement = async (annoucementtext) => {
+    const response = await api.post("/dashboard/updateAnnouncement", { annoucementtext })
+    toast.success(response.data?.message || "Announcement updated")
+    refreshAnnouncements?.()
+    return response.data
+  }
 
   const openAllocation = (item) => {
     setSelectedWork(item)
@@ -387,8 +402,10 @@ export default function ResearchandDevelopement() {
   }
 
   return (
-    <main className="h-full min-h-0 overflow-hidden bg-slate-50 p-3 sm:p-5 lg:p-6">
+    <main className="h-full min-h-0 overflow-hidden bg-[#ADD8E6] p-3 sm:p-5 lg:p-6">
       <div className="mx-auto flex h-full min-h-0 max-w-7xl flex-col">
+        <AnnouncementBanner announcementlist={announcement} setopenannoucementpopup={setOpenAnnouncementPopup} />
+
         <header className="mb-3 shrink-0 border-l-2 border-blue-500 pl-3">
           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-blue-600 sm:text-xs">Research & Development</p>
           <div className="mt-0.5 flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-2.5">
@@ -450,6 +467,7 @@ export default function ResearchandDevelopement() {
       {modal === "end-task" && <EndTaskModal work={endTaskWork} value={taskDescription} onChange={setTaskDescription} onClose={() => setModal(null)} onSubmit={saveEndTask} />}
       {modal === "timeline" && <TaskTimelineModal work={timelineWork} onClose={() => setModal(null)} />}
       {modal === "description" && <WorkDescriptionModal work={descriptionWork} onClose={() => setModal(null)} />}
+      {openAnnouncementPopup && <AnnouncementModal open={openAnnouncementPopup} isAdmin={loggedUser?.role === "Admin"} announcements={announcement} onSubmit={saveAnnouncement} onClose={() => setOpenAnnouncementPopup(false)} onSuccess={() => setOpenAnnouncementPopup(false)} />}
     </main>
   )
 }
