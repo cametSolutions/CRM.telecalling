@@ -34,10 +34,18 @@ function LeadClosed() {
   const [fetcheddata, setfetchedData] = useState([])
   console.log(fetcheddata)
   const [closedloader, setclosedLoader] = useState(false)
+  const [closingFailure, setClosingFailure] = useState(null)
   const navigate = useNavigate()
 
   const location = useLocation()
-  const { leadId, isReadOnly, refreshKey } = location.state || {}
+  const {
+    leadId,
+    isReadOnly,
+    refreshKey,
+    closingOrigin,
+    followupActivityLogId,
+    closingActivityLogId
+  } = location.state || {}
   console.log(isReadOnly)
   console.log(location?.state)
   const nav = [
@@ -50,6 +58,47 @@ function LeadClosed() {
   const Breadcrumblist = location?.state ? location?.state?.breadcrumb : nav
   console.log(Breadcrumblist)
   const userData = getLocalStorageItem("user")
+
+  const handleClosingFailure = async (reason) => {
+    setclosedLoader(false)
+
+    let message = reason || "The lead was not closed"
+    let shouldReturnToFollowup = false
+
+    if (closingOrigin === "followup") {
+      try {
+        const response = await api.put(
+          `/lead/reopenFollowupAfterClosingFailure?leadId=${leadId}`,
+          { followupActivityLogId, closingActivityLogId }
+        )
+        message = `${message}. ${response.data?.message || "The follow-up has been reopened"}`
+        shouldReturnToFollowup = true
+      } catch (recoveryError) {
+        const recoveryMessage =
+          recoveryError?.response?.data?.message ||
+          recoveryError?.message ||
+          "Unable to reopen the follow-up"
+        message = `${message}. Follow-up recovery failed: ${recoveryMessage}`
+      }
+    }
+
+    setClosingFailure({ message, shouldReturnToFollowup })
+  }
+
+  const handleClosingFailureOk = () => {
+    const shouldReturnToFollowup = closingFailure?.shouldReturnToFollowup
+    setClosingFailure(null)
+
+    if (shouldReturnToFollowup) {
+      navigate(
+        userData?.role === "Admin"
+          ? "/admin/transaction/lead/leadFollowUp"
+          : "/staff/transaction/lead/leadFollowUp",
+        { state: { refreshKey: Date.now() } }
+      )
+    }
+  }
+
   const [selectedUserName, setselecteduserName] = useState(null)
   const [selectedcompanyBranch, setselectedcompanyBranch] = useState(
     userData?.selected[0]?.branch_id
@@ -259,14 +308,21 @@ console.log(response.data.data[0].leadBranch)
         userId,
         role
       })
-      if (response.status === 200) {
+      if (response.status === 200 && response.data?.lead?.leadClosed === true) {
         toast.success(response.data.message)
         setclosedLoader(false)
+        navigate(-1)
+        return
       }
-      navigate(-1)
+
+      await handleClosingFailure(
+        response.data?.message || "The lead was not closed"
+      )
     } catch (error) {
       setclosedLoader(false)
-      toast.error("Something went wrong")
+      await handleClosingFailure(
+        error?.response?.data?.message || error?.message || "Something went wrong while closing the lead"
+      )
       console.error("error:", error)
       console.log(error.message)
     }
@@ -274,6 +330,25 @@ console.log(response.data.data[0].leadBranch)
   console.log("hhhh")
   return (
     <div className="h-full bg-[#ADD8E6 overflow-hidden">
+      {closingFailure && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
+            <h2 className="text-lg font-semibold text-slate-800">
+              Lead closing failed
+            </h2>
+            <p className="mt-3 text-sm text-slate-600">{closingFailure.message}</p>
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={handleClosingFailureOk}
+                className="rounded-md bg-[#1B2A4A] px-5 py-2 text-sm font-semibold text-white"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="flex h-full flex-row overflow-hidden">
        
         <div className="flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden justify-center">
@@ -291,6 +366,7 @@ console.log(response.data.data[0].leadBranch)
               isReadOnly={false}
               Breadcrumblist={Breadcrumblist}
               selectedcompanyBranch={selectedleadbranch}
+              onClosingValidationFailure={handleClosingFailure}
             />
           </div>
         </div>

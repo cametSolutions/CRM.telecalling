@@ -69,46 +69,46 @@ export const GetallfollowupList = async (req, res) => {
       header,
       from = null,
     } = req.query;
-// await Customer.updateMany(
-//   {
-//     "selected.product_id": ObjectId("66fbcf92461da9401f1cb821")
-//   },
-//   {
-//     $set: {
-//       "selected.$[product].product_id": ObjectId(67777960368e039b61196ef2)
-//     }
-//   },
-//   {
-//     arrayFilters: [
-//       {
-//         "product.product_id": ObjectId("66fbcf92461da9401f1cb821")
-//       }
-//     ]
-//   }
-// )
-await Customer.updateMany(
-  {
-    "selected.product_id": new mongoose.Types.ObjectId(
-      "66fbcfb7461da9401f1cb836"
-    ),
-  },
-  {
-    $set: {
-      "selected.$[product].product_id": new mongoose.Types.ObjectId(
-        "67777960368e039b61196ef2"
-      ),
-    },
-  },
-  {
-    arrayFilters: [
+    // await Customer.updateMany(
+    //   {
+    //     "selected.product_id": ObjectId("66fbcf92461da9401f1cb821")
+    //   },
+    //   {
+    //     $set: {
+    //       "selected.$[product].product_id": ObjectId(67777960368e039b61196ef2)
+    //     }
+    //   },
+    //   {
+    //     arrayFilters: [
+    //       {
+    //         "product.product_id": ObjectId("66fbcf92461da9401f1cb821")
+    //       }
+    //     ]
+    //   }
+    // )
+    await Customer.updateMany(
       {
-        "product.product_id": new mongoose.Types.ObjectId(
+        "selected.product_id": new mongoose.Types.ObjectId(
           "66fbcfb7461da9401f1cb836"
         ),
       },
-    ],
-  }
-);
+      {
+        $set: {
+          "selected.$[product].product_id": new mongoose.Types.ObjectId(
+            "67777960368e039b61196ef2"
+          ),
+        },
+      },
+      {
+        arrayFilters: [
+          {
+            "product.product_id": new mongoose.Types.ObjectId(
+              "66fbcfb7461da9401f1cb836"
+            ),
+          },
+        ],
+      }
+    );
 
     if (!isValidObjectId(loggeduserid) || !isValidObjectId(branchSelected)) {
       return res.status(400).json({
@@ -1936,7 +1936,7 @@ export const BulkCreateAdditionalServiceLeads = async (req, res) => {
 
   try {
     const leadBy = req.owner?.userId
-console.log("owner",req.owner?.userId)
+    console.log("owner", req.owner?.userId)
     const [staffUser, adminUser, product, leadTask, allocationTask, followupTask] = await Promise.all([
       isValidObjectId(leadBy)
         ? Staff.findById(leadBy).populate("department", "department code").lean()
@@ -2485,7 +2485,7 @@ export const UpdatepaymentVerification = async (req, res) => {
       unVerify === true
         ? false
         : allVerified &&
-          Number(lead.totalPaidAmount) === Number(lead.netAmount);
+        Number(lead.totalPaidAmount) === Number(lead.netAmount);
 
     await lead.save();
 
@@ -5021,6 +5021,8 @@ export const Leadclosing = async (req, res) => {
         leadClosedDate: isNonEmpty(data?.leadClosedDate)
           ? data.leadClosedDate
           : new Date(),
+        leadClosed: true,
+        leadConvertedDate: new Date(),
         discountAmount,
         leadConfirmed: true,
         taxableAmount: newTaxableAmount,
@@ -5821,7 +5823,7 @@ export const UpdateLeadRegister = async (req, res) => {
       const customerService = selected.find(
         (selectedItem) =>
           String(selectedItem?.product_id || "") ===
-            String(item?.productorServiceId || "")
+          String(item?.productorServiceId || "")
       );
       const incomingTaggedData = Array.isArray(item?.taggeddata) ? item.taggeddata : [];
       const customerTaggedData = Array.isArray(customerService?.taggeddata)
@@ -5950,12 +5952,12 @@ export const UpdateLeadRegister = async (req, res) => {
         const isAdditionalService = itemType === "additionalservice";
         const existingAdditionalService = isAdditionalService
           ? existingLeadFor.find(
-              (existingItem) =>
-                safeString(existingItem?.productorservicetype).toLowerCase() ===
-                  "additionalservice" &&
-                String(existingItem?.productorServiceId || "") ===
-                  String(item?.productorServiceId || "")
-            )
+            (existingItem) =>
+              safeString(existingItem?.productorservicetype).toLowerCase() ===
+              "additionalservice" &&
+              String(existingItem?.productorServiceId || "") ===
+              String(item?.productorServiceId || "")
+          )
           : null;
         const incomingTaggedData = Array.isArray(item?.taggeddata)
           ? item.taggeddata
@@ -5979,11 +5981,11 @@ export const UpdateLeadRegister = async (req, res) => {
         }));
         const licenseNumbers = isAdditionalService
           ? mergeLicenseNumbers(
-              existingAdditionalService?.licenseNumbers,
-              incomingLicenseNumbers.length > 0
-                ? incomingLicenseNumbers
-                : derivedLicenseNumbers
-            )
+            existingAdditionalService?.licenseNumbers,
+            incomingLicenseNumbers.length > 0
+              ? incomingLicenseNumbers
+              : derivedLicenseNumbers
+          )
           : incomingLicenseNumbers;
 
         return {
@@ -9182,12 +9184,12 @@ const getOptimizedAllocationLeads = async ({ status, branchObjectId }) => {
     status === "Pending"
       ? { leadBranch: branchObjectId, activityLog: { $size: 1 } }
       : {
-          leadBranch: branchObjectId,
-          reallocatedTo: false,
-          leadLost: { $ne: true },
-          leadClosed: { $ne: true },
-          "activityLog.1": { $exists: true },
-        };
+        leadBranch: branchObjectId,
+        reallocatedTo: false,
+        leadLost: { $ne: true },
+        leadClosed: { $ne: true },
+        "activityLog.1": { $exists: true },
+      };
 
   const leads = await LeadMaster.find(query)
     .select(
@@ -9532,7 +9534,7 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
         { _id: selectedleaddocId },
         {
           $set: {
-            "activityLog.$[elem].reallocatedTo": hasProductFirstStage,
+            "activityLog.$[elem].reallocatedTo": isFollowupAndLeadClosed ? false : !hasProductFirstStage,
             "activityLog.$[elem].taskClosed": true,
             "activityLog.$[elem].followupClosed": true
           }
@@ -9552,13 +9554,15 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
     // 3) Build activity entry
     let allocationTask = null
     if (
-      formData.followupType === "closed" ||
-      isFollowupAndLeadClosed
+      formData.followupType === "closed"
     ) {
       allocationTask = await Task.findOne({
         taskName: "Follow-Up Closing"
       }).lean();
-    } else if (formData.followupType === "lost") {
+    } else if (isFollowupAndLeadClosed) {
+      allocationTask = await Task.findOne({ taskName: "Follow-Up Closing and Lead Closing" }).lean()
+    }
+    else if (formData.followupType === "lost") {
       allocationTask = await Task.findOne({
         taskName: "Lost"
       })
@@ -9588,7 +9592,7 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
     ) {
       activityEntry.taskClosed = true;
       activityEntry.followupClosed = true;
-      activityEntry.reallocatedTo = hasProductFirstStage;
+      activityEntry.reallocatedTo = isFollowupAndLeadClosed ? false : !hasProductFirstStage;
     } else if (formData.followupType === "lost") {
       activityEntry.taskClosed = true;
     }
@@ -9670,8 +9674,8 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
     };
 
     // lead closed
-    if (formData.followupType === "closed") {
-      updateDoc.$set.reallocatedTo = hasProductFirstStage;
+    if (formData.followupType === "closed" || isFollowupAndLeadClosed) {
+      updateDoc.$set.reallocatedTo = isFollowupAndLeadClosed ? false : !hasProductFirstStage
       updateDoc.$set.leadConvertedDate = new Date();
       updateDoc.$set.leadClosed = true;
       // updateDoc.$set.leadClosedDate = new Date();
@@ -9733,6 +9737,76 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
     });
   }
 };
+
+export const ReopenFollowupAfterClosingFailure = async (req, res) => {
+  try {
+    const { leadId } = req.query;
+    const { followupActivityLogId, closingActivityLogId } = req.body;
+
+    if (!isValidObjectId(leadId)) {
+      return res.status(400).json({ message: "A valid lead id is required" });
+    }
+
+    if (!followupActivityLogId || !closingActivityLogId) {
+      return res.status(400).json({
+        message: "Follow-up recovery references are required"
+      });
+    }
+
+    const lead = await LeadMaster.findById(leadId);
+    if (!lead) {
+      return res.status(404).json({ message: "Lead not found" });
+    }
+
+    if (lead.leadConfirmed === true) {
+      return res.status(409).json({
+        message: "Lead is already closed and cannot be reopened as a follow-up"
+      });
+    }
+
+    const followupLog = lead.activityLog.id(followupActivityLogId);
+    if (!followupLog || followupLog.taskTo !== "followup") {
+      return res.status(400).json({
+        message: "The original follow-up activity could not be found"
+      });
+    }
+
+    const closingLogIndex = lead.activityLog.findIndex(
+      (log) => String(log?._id) === String(closingActivityLogId)
+    );
+    const closingLog = lead.activityLog.id(closingActivityLogId);
+    if (
+      closingLogIndex === -1 ||
+      closingLog?.taskDescription !== "Follow-up Closed - Lead Closing"
+    ) {
+      return res.status(400).json({
+        message: "The temporary lead-closing activity could not be found"
+      });
+    }
+
+    followupLog.taskClosed = false;
+    followupLog.followupClosed = false;
+    followupLog.reallocatedTo = false;
+    lead.activityLog.splice(closingLogIndex, 1);
+    lead.leadClosed = false;
+    lead.leadConvertedDate = null;
+    lead.leadClosedDate = null;
+    lead.followupClosed = false;
+    lead.reallocatedTo = false;
+
+    await lead.save();
+
+    return res.status(200).json({
+      message: "Lead closing was cancelled and the follow-up has been reopened"
+    });
+  } catch (error) {
+    console.error("ReopenFollowupAfterClosingFailure error:", error);
+    return res.status(500).json({
+      message: error?.message || "Unable to reopen the follow-up"
+    });
+  }
+};
+
 export const LeadClosingAmount = async (req, res) => {
   try {
     const { leadId, allocationType, allocatedBy } = req.query;
@@ -10857,17 +10931,17 @@ export const GetrespectedleadTask = async (req, res) => {
       { $match: query },
       {
         $project: {
-        leadId: 1,
-        leadDate: 1,
-        customerName: 1,
-        netAmount: 1,
-        mobile: 1,
-        phone: 1,
-        email: 1,
-        dueDate: 1,
-        leadFor: 1,
-        leadBy: 1,
-        leadByModel: 1,
+          leadId: 1,
+          leadDate: 1,
+          customerName: 1,
+          netAmount: 1,
+          mobile: 1,
+          phone: 1,
+          email: 1,
+          dueDate: 1,
+          leadFor: 1,
+          leadBy: 1,
+          leadByModel: 1,
           activityLog: {
             $filter: {
               input: "$activityLog",
@@ -15019,11 +15093,10 @@ export const AllocateResearchAndDevelopmentTask = async (req, res) => {
       allocationChanged: false,
       taskfromFollowup: false,
       remarks: expectedStartDate
-        ? `Expected start: ${expectedStartDate}${
-            expectedCompletionDate
-              ? ` | Expected completion: ${expectedCompletionDate}`
-              : ""
-          }`
+        ? `Expected start: ${expectedStartDate}${expectedCompletionDate
+          ? ` | Expected completion: ${expectedCompletionDate}`
+          : ""
+        }`
         : ""
     };
 

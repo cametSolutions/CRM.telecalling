@@ -5,6 +5,7 @@ import LeadFollowUp from "../../pages/primaryUser/List/LeadFollowUp"
 // import ComingSoon from "../../pages/common/ComingSoon"
 import LeadEdit from "../../pages/primaryUser/edit/LeadEdit"
 import LeadRegister from "../../pages/primaryUser/register/LeadRegister"
+// import MultipleLeadCreation from "../../pages/common/MultipleLeadCreation"
 import OwnLeadList from "../../pages/common/OwnLeadList"
 import Reallocation from "../../pages/primaryUser/List/Reallocation"
 import ReallocationTable from "../../pages/primaryUser/List/ReallocationTable"
@@ -16,10 +17,12 @@ import CollectionUpdate from "../../pages/primaryUser/List/CollectionUpdate"
 import LeadClosed from "../../pages/primaryUser/edit/LeadClosed"
 import LostLeads from "../../pages/common/LostLeads"
 import ClosedLeads from "../../pages/primaryUser/List/ClosedLeads"
+import MultipleLeadCreation from "../../pages/common/MultipleLeadCreation"
 import VerifiedCollections from "../../pages/primaryUser/List/VerifiedCollections"
 import { components } from "react-select"
 const stafftransactionsRoutes = [
   { path: "/staff/transaction/lead", component: LeadRegister },
+  { path: "/staff/transaction/multiple-leads", component: MultipleLeadCreation },
 {path:"/staff/transaction/lead/leadClosed",component:LeadClosed},
   { path: "/staff/transaction/call-registration", component: CallRegistration },
   { path: "/staff/transaction/leave-application", component: LeaveApplication },

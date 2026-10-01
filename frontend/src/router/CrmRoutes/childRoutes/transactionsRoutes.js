@@ -2,6 +2,7 @@ import LeaveApplication from "../../../components/primaryUser/LeaveApplication"
 // import ComingSoon from "../../../pages/common/ComingSoon"
 import CallRegistration from "../../../pages/primaryUser/register/CallRegistration"
 import LeadRegister from "../../../pages/primaryUser/register/LeadRegister"
+import MultipleLeadCreation from "../../../pages/common/MultipleLeadCreation"
 import LeadAllocationTable from "../../../pages/primaryUser/List/LeadAllocationTable"
 import LeadEdit from "../../../pages/primaryUser/edit/LeadEdit"
 import LeadFollowUp from "../../../pages/primaryUser/List/LeadFollowUp"
@@ -12,11 +13,13 @@ import TaskAnalysis from "../../../pages/primaryUser/List/TaskAnalysis"
 import TaskAnalysisTable from "../../../pages/primaryUser/List/TaskAnalysisTable"
 import ReallocationTable from "../../../pages/primaryUser/List/ReallocationTable"
 import LostLeads from "../../../pages/common/LostLeads"
+// import MultipleLeadCreation from "../../../pages/common/MultipleLeadCreation"
 
 import CollectionUpdate from "../../../pages/primaryUser/List/CollectionUpdate"
 import LeadClosed from "../../../pages/primaryUser/edit/LeadClosed"
 const transactionsRoutes = [
   { path: "/admin/transaction/lead", component: LeadRegister },
+  { path: "/admin/transaction/multiple-leads", component: MultipleLeadCreation },
   {path:"/admin/transaction/lead/leadClosed",component:LeadClosed},
   { path: "/admin/transaction/lead/leadEdit", component: LeadEdit },
 

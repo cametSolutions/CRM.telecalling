@@ -8,6 +8,7 @@ import {
   UpadateOrLeadAllocationRegister,
   GetselectedLeadData,
   UpdateLeadfollowUpDate,
+  ReopenFollowupAfterClosingFailure,
   UpdateLeadRegister,
   GetownLeadList,
   GetallfollowupList,
@@ -96,6 +97,7 @@ router.get("/getfollowupsummaryReport", authMiddleware, GetfollowupsummaryReport
 
 
 router.put("/followupDateUpdate", authMiddleware, UpdateLeadfollowUpDate);
+router.put("/reopenFollowupAfterClosingFailure", authMiddleware, ReopenFollowupAfterClosingFailure);
 router.put("/leadRegisterUpdate", authMiddleware, UpdateLeadRegister);
 router.put("/taskEdit", authMiddleware, TaskEdit);
 router.put("/closingleads",authMiddleware,Leadclosing)
