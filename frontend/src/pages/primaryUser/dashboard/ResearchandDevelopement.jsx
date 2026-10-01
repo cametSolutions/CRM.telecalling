@@ -434,7 +434,7 @@ export default function ResearchandDevelopement() {
         <section aria-label="Work status" className="grid shrink-0 grid-cols-2 gap-6 md:grid-cols-6">
           {statusCounts.map(({ label, count, icon: Icon, accent }) => {
             const isActive = activeStatusFilter === label
-            return <button type="button" key={label} onClick={() => { setActiveStatusFilter(label); setCompletedFilterMenu(null) }} aria-pressed={isActive} className={`group flex min-w-0 items-center gap-2 rounded-xl border px-2.5 py-2 text-left shadow-sm transition focus:outline-none focus:ring-2 focus:ring-blue-300 ${isActive ? "border-blue-400 bg-blue-50 shadow-md ring-1 ring-blue-200" : "border-slate-100 bg-white hover:-translate-y-0.5 hover:shadow-md"}`}>
+            return <button type="button" key={label} onClick={() => { setActiveStatusFilter(label); if (label === "New") setLeadScope("All"); setCompletedFilterMenu(null) }} aria-pressed={isActive} className={`group flex min-w-0 items-center gap-2 rounded-xl border px-2.5 py-2 text-left shadow-sm transition focus:outline-none focus:ring-2 focus:ring-blue-300 ${isActive ? "border-blue-400 bg-blue-50 shadow-md ring-1 ring-blue-200" : "border-slate-100 bg-white hover:-translate-y-0.5 hover:shadow-md"}`}>
               <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg ring-1 ${accentStyles[accent]}`}><Icon size={15} strokeWidth={2.2} /></span>
               <p className="min-w-0 flex-1 truncate text-xs font-medium text-slate-600">{label}</p>
               <span className="text-lg font-bold leading-none tracking-tight text-slate-900">{String(count).padStart(2, "0")}</span>
@@ -492,7 +492,7 @@ export default function ResearchandDevelopement() {
 }
 
 function WorkRow({ item, canOperate, isActive, onAllocate, onUpdate, onStart, onEnd, onDescription, onTimeline }) {
-  const isAllocated = Boolean(item.assignedDeveloper)
+  const isAllocated = Boolean(item.assignedDeveloper) && item.status !== "New"
   const isStartEndBlocked = ["Hold", "Completed"].includes(item.status)
   const disabledClass = "cursor-not-allowed bg-slate-100 text-slate-300"
   const workedDuration = getWorkedDuration(item.taskSessions, item.taskStartedAt)
@@ -505,7 +505,7 @@ function WorkRow({ item, canOperate, isActive, onAllocate, onUpdate, onStart, on
 }
 
 function WorkCard({ item, canOperate, isActive, onAllocate, onUpdate, onStart, onEnd, onDescription, onTimeline }) {
-  const isAllocated = Boolean(item.assignedDeveloper)
+  const isAllocated = Boolean(item.assignedDeveloper) && item.status !== "New"
   const isStartEndBlocked = ["Hold", "Completed"].includes(item.status)
   return <article className="p-4"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="text-xs font-semibold text-blue-600">{item.id}</p><button type="button" onClick={() => onDescription(item)} className="mt-1 text-left text-sm font-semibold text-blue-600 hover:underline">{item.taskTitle || item.work}</button><p className="mt-1 text-xs text-slate-500">{item.customer}</p></div><Badge className={priorityStyles[item.priority]}>{item.priority}</Badge></div><div className="mt-3 flex items-center justify-between gap-3 text-xs"><span className="text-slate-500">Due: <strong className="font-medium text-slate-700">{item.due}</strong></span><Badge className={statusStyles[item.status]}>{item.status}</Badge></div><div className="mt-3 flex flex-wrap gap-2"><button type="button" disabled={!isAllocated || !canOperate || isActive || isStartEndBlocked} onClick={() => onStart(item)} className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-600 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-300"><Play size={13} />Start</button><button type="button" disabled={!isAllocated || !canOperate || !isActive || isStartEndBlocked} onClick={() => onEnd(item)} className="inline-flex items-center gap-1.5 rounded-md bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-600 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-300"><Square size={12} />End</button>{isAllocated && <button type="button" onClick={() => onTimeline(item)} className="inline-flex items-center gap-1.5 rounded-md bg-violet-50 px-2.5 py-1.5 text-xs font-semibold text-violet-600"><Clock3 size={13} />Timeline</button>}<button type="button" onClick={() => isAllocated ? onUpdate(item) : onAllocate(item)} className="inline-flex items-center gap-1.5 rounded-md bg-blue-50 px-2.5 py-1.5 text-xs font-semibold text-blue-600 transition hover:bg-blue-100">{isAllocated ? <Pencil size={13} /> : <UserRoundCheck size={13} />}{isAllocated ? "Task acceptance" : "Allocate work"}</button></div></article>
 }

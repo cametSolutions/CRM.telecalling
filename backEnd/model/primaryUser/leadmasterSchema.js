@@ -801,8 +801,8 @@ const activityLogItemSchema = new mongoose.Schema(
     taskRemark: { type: String, trim: true, default: "" },
     taskStatus: {
       type: String,
-      enum: ["Pending", "In Progress", "Hold", "Completed"],
-      default: "Pending",
+      enum: ["New","Pending", "In Progress", "Hold", "Completed"],
+      default: "New",
     },
     nextAllocationTask: {
       type: mongoose.Schema.Types.ObjectId,

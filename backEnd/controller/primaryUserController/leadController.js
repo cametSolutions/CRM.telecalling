@@ -14646,7 +14646,7 @@ export const GetResearchAndDevelopmentLeads = async (req, res) => {
   try {
     const { branchId } = req.query;
     const codingAndQcTaskId = new mongoose.Types.ObjectId(
-      "69671a6ce2872bca1b9e60df"
+      "689c23493e94902039b97743"
     );
 
     if (branchId && !isValidObjectId(branchId)) {
@@ -14658,6 +14658,7 @@ export const GetResearchAndDevelopmentLeads = async (req, res) => {
 
     const match = {
       leadLost: { $ne: true },
+      allocationType: codingAndQcTaskId,
       activityLog: { $elemMatch: { followupClosed: true } }
     };
 
