@@ -2523,11 +2523,24 @@ const LeadFollowUp = () => {
         setfollowupDateLoader(false)
 
         if (shouldOpenLeadClosing) {
+          const activityLog = response?.data?.data?.activityLog || []
+          const followupActivityLogId = [...activityLog]
+            .reverse()
+            .find((log) => log?.taskTo === "followup")?._id
+          const closingActivityLogId = activityLog[activityLog.length - 1]?._id
+
           navigate(
             loggedUser?.role === "Admin"
               ? "/admin/transaction/lead/leadClosed"
               : "/staff/transaction/lead/leadClosed",
-            { state: { leadId: leadDocumentId } }
+            {
+              state: {
+                leadId: leadDocumentId,
+                closingOrigin: "followup",
+                followupActivityLogId,
+                closingActivityLogId
+              }
+            }
           )
         }
       } else {

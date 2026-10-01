@@ -209,11 +209,13 @@ function AmtInput({ value, onChange, highlight }) {
         }}
       />
       <input
-        type="text"
+        type="number"
         inputMode="decimal"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="0"
+        onWheel={(e) => e.currentTarget.blur()}
+        className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0"
         style={{
           width: "100%",
           paddingLeft: 16,
@@ -443,7 +445,8 @@ export function CollectionupdateModal({
           return {
             id: crypto.randomUUID(),
             label: p.productorServiceId?.productName ?? "Product",
-            productorServiceId: p.productorServiceId?._id||p?.productorServiceId,
+            productorServiceId:
+              p.productorServiceId?._id || p?.productorServiceId,
             productorServicemodel: p.productorServicemodel ?? "Product",
             netAmount: String(net),
             receivedAmount: "",

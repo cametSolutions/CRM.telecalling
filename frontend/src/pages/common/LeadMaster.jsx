@@ -685,6 +685,7 @@ const LeadMaster = ({
   handleleadData,
   handleEditData,
   handleclosingData,
+  onClosingValidationFailure,
   loadingState,
   setLoadingState,
   editloadingState,
@@ -1265,35 +1266,18 @@ const LeadMaster = ({
       setSelectedCustomer(Data[0]?.customerName)
       console.log(Data[0].leadFor)
       const leadData = Data[0]?.leadFor.map((item) => {
-        const isAdditionalService =
-          String(item?.productorservicetype || "").toLowerCase() ===
-          "additionalservice"
-        const customerService = isAdditionalService
-          ? Data[0]?.customerName?.selected?.find(
-              (selectedItem) =>
-                String(
-                  selectedItem?.product_id?._id || selectedItem?.product_id || ""
-                ) === String(item?.productorServiceId?._id || "")
-            )
-          : null
         const leadTaggedData = Array.isArray(item?.taggeddata)
           ? item.taggeddata
           : []
-        const taggeddata =
-          leadTaggedData.length > 0
-            ? leadTaggedData
-            : Array.isArray(customerService?.taggeddata)
-              ? customerService.taggeddata
-              : []
+        const taggeddata = leadTaggedData
         const leadLicenseNumbers = Array.isArray(item?.licenseNumbers)
           ? item.licenseNumbers
           : []
-        const existingLicenseNumbers =
-          leadLicenseNumbers.length > 0
-            ? leadLicenseNumbers
-            : Array.isArray(customerService?.licenseNumbers)
-              ? customerService.licenseNumbers
-              : []
+        const existingLicenseNumbers = leadLicenseNumbers.length
+          ? leadLicenseNumbers
+          : item?.licenseNumber
+            ? [{ licenseNumber: item.licenseNumber }]
+            : []
         const derivedLicenseNumbers = taggeddata
           .filter((tag) => tag?.licensenumber !== undefined && tag?.licensenumber !== null && String(tag.licensenumber).trim() !== "")
           .map((tag, sourceIndex) => ({
@@ -3061,7 +3045,11 @@ const LeadMaster = ({
         const validationMessage = validateSelectedLeadList(selectedleadlist)
         console.log(validationMessage)
         if (validationMessage) {
-          toast.warning(validationMessage)
+          if (onClosingValidationFailure) {
+            await onClosingValidationFailure(validationMessage)
+          } else {
+            toast.warning(validationMessage)
+          }
           return
         }
 

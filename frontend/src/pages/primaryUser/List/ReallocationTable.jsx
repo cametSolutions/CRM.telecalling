@@ -835,13 +835,21 @@ const ReallocationTable = () => {
                                   ? navigate(
                                       "/admin/transaction/lead/leadClosed",
                                       {
-                                        state: { leadId: item._id, breadcrumb }
+                                        state: {
+                                          leadId: item._id,
+                                          breadcrumb,
+                                          closingOrigin: "reallocation"
+                                        }
                                       }
                                     )
                                   : navigate(
                                       "/staff/transaction/lead/leadClosed",
                                       {
-                                        state: { leadId: item._id, breadcrumb }
+                                        state: {
+                                          leadId: item._id,
+                                          breadcrumb,
+                                          closingOrigin: "reallocation"
+                                        }
                                       }
                                     )
                               }}
