@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useLocation } from "react-router-dom"
 import React from "react"
 import { toast } from "react-toastify"
@@ -34,6 +34,9 @@ import {
 import AdminHeader from "../../../header/AdminHeader"
 import StaffHeader from "../../../header/StaffHeader"
 import { getLocalStorageItem } from "../../../helper/localstorage"
+
+const CODING_AND_QC_TASK_ID = "689c23493e94902039b97743"
+
 const ReallocationTable = () => {
   const reduxselectedBranch = useSelector(
     (branch) => branch.companyBranch.selectedBranch
@@ -67,6 +70,7 @@ const ReallocationTable = () => {
   const [approvedToggleStatus, setapprovedToggleStatus] = useState(false)
   const [submitLoading, setsubmitLoading] = useState(false)
   const [allocationOptions, setAllocationOptions] = useState([])
+  const [rndAllocationOptions, setRndAllocationOptions] = useState([])
   const [selectedAllocates, setSelectedAllocates] = useState({})
   const [loggedUser, setLoggedUser] = useState(null)
   const [selectedItem, setSelectedItem] = useState(null)
@@ -212,6 +216,17 @@ const ReallocationTable = () => {
           label: item.name
         }))
       )
+
+      setRndAllocationOptions(
+        allusers
+          .filter(
+            (staff) =>
+              staff.isVerified === true &&
+              staff.department?.department?.trim().toLowerCase() ===
+                "research and development"
+          )
+          .map((staff) => ({ value: staff._id, label: staff.name }))
+      )
     }
   }, [data, selectedCompanyBranch])
   useEffect(() => {
@@ -251,26 +266,72 @@ const ReallocationTable = () => {
 
   const handleSubmit = async () => {
     try {
-      if (!selectedAllocates.hasOwnProperty(selectedItem._id)) {
+      const selectedTaskId = selectedAllocationType[selectedItem._id]
+      const isCodingAndQc = selectedTaskId === CODING_AND_QC_TASK_ID
+
+      if (
+        !isCodingAndQc &&
+        !Object.prototype.hasOwnProperty.call(selectedAllocates, selectedItem._id)
+      ) {
         setValidateError((prev) => ({
           ...prev,
           [selectedItem._id]: "Allocate to Someone"
         }))
         return
       }
-      if (!selectedAllocationType.hasOwnProperty(selectedItem._id)) {
+      if (
+        !Object.prototype.hasOwnProperty.call(
+          selectedAllocationType,
+          selectedItem._id
+        )
+      ) {
         setValidatetypeError((prev) => ({
           ...prev,
           [selectedItem._id]: "Select Type"
         }))
         return
       }
-      const selected = selectedAllocationType[selectedItem._id]
+      const selected = selectedTaskId
       console.log(selectedType)
       console.log(selected)
       console.log(selectedItem?.allocatedTo)
       console.log(formData)
       setsubmitLoading(true)
+
+      if (isCodingAndQc) {
+        if (
+          !formData.allocatedTo ||
+          !formData.allocationDate ||
+          !formData.allocationTime ||
+          !formData.taskTitle?.trim() ||
+          !formData.allocationDescription?.trim()
+        ) {
+          setsubmitError({
+            submissionerror:
+              "Assigned developer, allocation date/time, task title, and task description are required"
+          })
+          setsubmitLoading(false)
+          return
+        }
+
+        const response = await api.post("/lead/rnd-allocation", {
+          leadDocId: selectedItem._id,
+          allocatedTo: formData.allocatedTo,
+          allocationDate: formData.allocationDate,
+          allocationTime: formData.allocationTime,
+          expectedCompletionDate: formData.expectedCompletionDate || undefined,
+          taskTitle: formData.taskTitle,
+          allocationDescription: formData.allocationDescription
+        })
+
+        toast.success(response.data.message)
+        setsubmitLoading(false)
+        setShowmodal(false)
+        setFormData({ allocationDate: "", allocationDescription: "" })
+        refreshHook()
+        setTableData([])
+        return
+      }
 
       const response = await api.post(
         `/lead/leadReallocation?allocationTypeId=${encodeURIComponent(
@@ -288,7 +349,10 @@ const ReallocationTable = () => {
       refreshHook()
       setTableData([])
     } catch (error) {
-      setsubmitError({ submissionerror: "something went wrong" })
+      setsubmitError({
+        submissionerror:
+          error.response?.data?.message || "Unable to reallocate this lead"
+      })
       setsubmitLoading(false)
       console.log(error.message)
     }
@@ -436,6 +500,9 @@ const ReallocationTable = () => {
       setacheivedProducts([])
     }
   }
+  const isCodingAndQcModal =
+    selectedAllocationType[selectedItem?._id] === CODING_AND_QC_TASK_ID
+
   return (
     <div className="h-full  bg-[#ADD8E6] overflow-hidden">
       <div className="flex h-full flex-row">
@@ -644,7 +711,7 @@ const ReallocationTable = () => {
                           </td> */}
                           <td className=" border border-t-0 border-b-0 border-gray-400 px-1 bg-white ">
                             <select
-                              value={selectedAllocationType?.item_id?.value}
+                              value={selectedAllocationType[item._id] || ""}
                               onChange={(e) => {
                                 const selectedtask = tasks.find(
                                   (item) => item._id === e.target.value
@@ -684,7 +751,16 @@ const ReallocationTable = () => {
                           <td
                             className=" border border-t-0 border-b-0 border-gray-400 px-4  text-red-500 hover:cursor-pointer bg-white"
                             onClick={() => {
-                              if (!selectedAllocates.hasOwnProperty(item._id)) {
+                              const isCodingAndQc =
+                                selectedAllocationType[item._id] ===
+                                CODING_AND_QC_TASK_ID
+                              if (
+                                !isCodingAndQc &&
+                                !Object.prototype.hasOwnProperty.call(
+                                  selectedAllocates,
+                                  item._id
+                                )
+                              ) {
                                 setValidateError((prev) => ({
                                   ...prev,
                                   [item._id]: "Allocate to Someone"
@@ -692,7 +768,10 @@ const ReallocationTable = () => {
                                 return
                               }
                               if (
-                                !selectedAllocationType.hasOwnProperty(item._id)
+                                !Object.prototype.hasOwnProperty.call(
+                                  selectedAllocationType,
+                                  item._id
+                                )
                               ) {
                                 setValidatetypeError((prev) => ({
                                   ...prev,
@@ -703,10 +782,16 @@ const ReallocationTable = () => {
                               setselectedLeadId(item.leadId)
                               setShowmodal(true)
                               setSelectedItem(item)
-                              setFormData((prev) => ({
-                                ...prev,
-                                allocationDate: new Date()
-                              }))
+                              setsubmitError({ submissionerror: "" })
+                              setFormData({
+                                allocationDate: new Date().toISOString().slice(0, 10),
+                                allocationTime: new Date().toTimeString().slice(0, 5),
+                                allocatedTo: "",
+                                priority: "Medium",
+                                expectedCompletionDate: "",
+                                taskTitle: "",
+                                allocationDescription: ""
+                              })
                             }}
                           >
                             Allocate
@@ -945,72 +1030,53 @@ const ReallocationTable = () => {
                 </tbody>
               </table>
               {showModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-40 ">
-                  <div className="bg-white md:w-1/4 grid grid-cols-1 rounded-lg shadow-xl ">
-                    {submitLoading && (
-                      <BarLoader
-                        cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
-                        color="#4A90E2" // Change color as needed
-                      />
-                    )}
-                    <div className="md:px-6 md:py-4 py-2 px-3">
-                      <h1 className="font-semibold text-xl">{`Lead Reallocation for ${selectedType}-LeadId:${selectedLeadId}`}</h1>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/45 p-3 backdrop-blur-sm sm:p-4">
+                  <div className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:max-h-[calc(100dvh-2rem)]">
+                    {submitLoading && <BarLoader cssOverride={{ width: "100%", height: "4px" }} color="#2563eb" />}
+                    <div className="flex items-start justify-between border-b border-slate-100 px-5 py-4">
                       <div>
-                        <label className="block text-left">
-                          Completion Date
-                        </label>
-                        <input
-                          value={formData.allocationDate || ""}
-                          type="date"
-                          onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              allocationDate: e.target.value
-                            }))
-                          }
-                          className="py-1 border border-gray-400 mt-1  w-full rounded-md px-2 focus:outline-none"
-                        />
+                        <h1 className="text-lg font-bold text-slate-900">
+                          {isCodingAndQcModal ? "Allocate development work" : `Lead Reallocation · ${selectedType || "Task"}`}
+                        </h1>
+                        <p className="mt-0.5 text-xs text-slate-500">{selectedLeadId} · {selectedItem?.customerName?.customerName || "Lead reallocation"}</p>
                       </div>
+                      <button type="button" onClick={() => { setShowmodal(false); setsubmitError({ submissionerror: "" }) }} className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700"><X size={18} /></button>
+                    </div>
 
-                      <div>
-                        <label className="block text-left">Description</label>
-                        <textarea
-                          value={formData.allocationDescription || ""}
-                          onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              allocationDescription: e.target.value
-                            }))
-                          }
-                          className="py-1 px-2 border border-gray-400 mt-1 w-full focus:outline-none rounded-md"
-                          placeholder="Type Here..."
-                        ></textarea>
+                    <div className="min-h-0 flex-1 overflow-y-auto">
+                    {isCodingAndQcModal ? (
+                      <div className="space-y-5 p-5">
+                        <div className="grid gap-3 rounded-xl bg-slate-50 p-4 text-xs text-slate-600 sm:grid-cols-3">
+                          <span><strong className="block text-slate-800">{selectedItem?.customerName?.customerName || "-"}</strong>Customer</span>
+                          <span><strong className="block text-slate-800">{selectedLeadId || "-"}</strong>Lead ID</span>
+                          <span><strong className="block text-slate-800">R&amp;D</strong>Department</span>
+                          <span><strong className="block text-slate-800">{formData.allocationDate || "-"}</strong>Allocation date</span>
+                          <span><strong className="block text-slate-800">{formData.allocationTime || "-"}</strong>Allocation time</span>
+                          <span><strong className="block text-slate-800">Pending</strong>Initial status</span>
+                        </div>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <label className="!text-left block text-xs font-semibold text-slate-700">Assigned by<input readOnly value={loggedUser?.name || "-"} className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-normal text-slate-600" /></label>
+                          <label className="!text-left block text-xs font-semibold text-slate-700">Assigned developer<StyledSelect value={formData.allocatedTo || ""} onChange={(value) => setFormData((prev) => ({ ...prev, allocatedTo: value }))} placeholder="Select R&amp;D staff" options={rndAllocationOptions} /></label>
+                          <label className="!text-left block text-xs font-semibold text-slate-700">Allocation date<input required type="date" value={formData.allocationDate || ""} onChange={(e) => setFormData((prev) => ({ ...prev, allocationDate: e.target.value }))} className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 px-3 text-sm font-normal" /></label>
+                          <label className="!text-left block text-xs font-semibold text-slate-700">Allocation time<input required type="time" value={formData.allocationTime || ""} onChange={(e) => setFormData((prev) => ({ ...prev, allocationTime: e.target.value }))} className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 px-3 text-sm font-normal" /></label>
+                          <label className="!text-left block text-xs font-semibold text-slate-700">Priority<StyledSelect value={formData.priority || "Medium"} onChange={(value) => setFormData((prev) => ({ ...prev, priority: value }))} options={[{ value: "Medium", label: "Medium" }, { value: "High", label: "High" }, { value: "Low", label: "Low" }]} /></label>
+                          <label className="!text-left block text-xs font-semibold text-slate-700">Expected completion date<input type="date" min={formData.allocationDate || undefined} value={formData.expectedCompletionDate || ""} onChange={(e) => setFormData((prev) => ({ ...prev, expectedCompletionDate: e.target.value }))} className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 px-3 text-sm font-normal" /></label>
+                        </div>
+                        <label className="!text-left block text-xs font-semibold text-slate-700">Task title<input required value={formData.taskTitle || ""} onChange={(e) => setFormData((prev) => ({ ...prev, taskTitle: e.target.value }))} placeholder="Enter a clear task title" className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 px-3 text-sm font-normal" /></label>
+                        <label className="!text-left block text-xs font-semibold text-slate-700">Task description<textarea required rows="5" value={formData.allocationDescription || ""} onChange={(e) => setFormData((prev) => ({ ...prev, allocationDescription: e.target.value }))} placeholder="Describe the work to be completed..." className="mt-1.5 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-normal" /></label>
                       </div>
-                      <div className="flex justify-center">
-                        {" "}
-                        {submiterror.submissionerror && (
-                          <p className="text-red-500 text-sm">
-                            {submiterror.submissionerror}
-                          </p>
-                        )}
+                    ) : (
+                      <div className="space-y-4 p-5">
+                        <label className="!text-left block text-sm font-semibold text-slate-700">Completion date<input value={formData.allocationDate || ""} type="date" onChange={(e) => setFormData((prev) => ({ ...prev, allocationDate: e.target.value }))} className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 px-3 text-sm font-normal" /></label>
+                        <label className="!text-left block text-sm font-semibold text-slate-700">Description<textarea value={formData.allocationDescription || ""} onChange={(e) => setFormData((prev) => ({ ...prev, allocationDescription: e.target.value }))} placeholder="Type here..." className="mt-1.5 min-h-28 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-normal" /></label>
                       </div>
-                      <div className="flex justify-center gap-4 text-white mt-2">
-                        <button
-                          onClick={() => {
-                            setShowmodal(false)
-                            setsubmitError({ submissionerror: "" })
-                          }}
-                          className="bg-gray-600 py-1 px-3 rounded-md hover:bg-gray-700 cursor-pointer"
-                        >
-                          CLOSE
-                        </button>
-                        <button
-                          onClick={handleSubmit}
-                          className="bg-blue-500 py-1 px-3 rounded-md hover:bg-blue-600 cursor-pointer"
-                        >
-                          SUBMIT
-                        </button>
-                      </div>
+                    )}
+                    </div>
+
+                    {submiterror.submissionerror && <p className="px-5 text-sm text-rose-600">{submiterror.submissionerror}</p>}
+                    <div className="sticky bottom-0 z-10 flex shrink-0 justify-end gap-3 border-t border-slate-100 bg-white px-5 py-4">
+                      <button type="button" onClick={() => { setShowmodal(false); setsubmitError({ submissionerror: "" }) }} className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+                      <button type="button" disabled={submitLoading} onClick={handleSubmit} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">{isCodingAndQcModal ? "Allocate task" : "Submit"}</button>
                     </div>
                   </div>
                 </div>
@@ -1075,6 +1141,60 @@ const ReallocationTable = () => {
           activeUserId={activeUserId}
         />
       </div>
+    </div>
+  )
+}
+
+function StyledSelect({ value, onChange, options, placeholder = "Select an option" }) {
+  const [open, setOpen] = useState(false)
+  const dropdownRef = useRef(null)
+  const selected = options.find((option) => String(option.value) === String(value))
+
+  useEffect(() => {
+    if (!open) return undefined
+
+    const closeOnOutsideClick = (event) => {
+      if (!dropdownRef.current?.contains(event.target)) setOpen(false)
+    }
+
+    document.addEventListener("mousedown", closeOnOutsideClick)
+    return () => document.removeEventListener("mousedown", closeOnOutsideClick)
+  }, [open])
+
+  return (
+    <div ref={dropdownRef} className="relative mt-1.5">
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        className={`flex h-10 w-full items-center justify-between rounded-lg border bg-white px-3 text-left text-sm shadow-sm outline-none transition ${open ? "border-blue-500 ring-2 ring-blue-100" : "border-slate-200 hover:border-slate-300"}`}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span className={selected ? "text-slate-700" : "text-slate-400"}>
+          {selected?.label || placeholder}
+        </span>
+        <ChevronDown size={16} className={`text-slate-400 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="absolute left-0 right-0 top-[calc(100%+0.35rem)] z-[120] max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl ring-1 ring-slate-900/5" role="listbox">
+          {options.length ? options.map((option) => {
+            const isSelected = String(option.value) === String(value)
+            return (
+              <button
+                type="button"
+                key={option.value}
+                onClick={() => { onChange(option.value); setOpen(false) }}
+                className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm transition ${isSelected ? "bg-blue-50 font-semibold text-blue-700" : "text-slate-700 hover:bg-slate-50"}`}
+                role="option"
+                aria-selected={isSelected}
+              >
+                {option.label}
+                {isSelected && <span className="text-xs text-blue-600">Selected</span>}
+              </button>
+            )
+          }) : <p className="px-3 py-2.5 text-sm text-slate-400">No options available</p>}
+        </div>
+      )}
     </div>
   )
 }
