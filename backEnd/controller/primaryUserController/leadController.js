@@ -9986,6 +9986,9 @@ export const UpdateOrleadallocationTask = async (req, res) => {
 export const updateReallocation = async (req, res) => {
   try {
     const { allocatedBy, selectedbranch, allocationTypeId, allocationName } = req.query;
+    const codingAndQcTaskId = "689c23493e94902039b97743";
+    const isCodingAndQcReallocation =
+      String(allocationTypeId) === codingAndQcTaskId;
     const allocatedbyObjectid = new mongoose.Types.ObjectId(allocatedBy);
     // const branchObjectId = new mongoose.Types.ObjectId(selectedbranch)
     const { selectedItem, formData } = req.body;
@@ -9993,7 +9996,7 @@ export const updateReallocation = async (req, res) => {
     let allocatedByModel;
     const isStaffallocatedtomodel = await Staff.findOne({
       _id: selectedItem.allocatedTo,
-    });
+    }).populate({ path: "department", select: "department" });
     if (isStaffallocatedtomodel) {
       allocatedToModel = "Staff";
     } else {
@@ -10023,24 +10026,88 @@ export const updateReallocation = async (req, res) => {
         .json({ message: "Invalid allocated/allocatedby reference" });
     }
 
-    const matchedTask = await Task.findOne({ taskName: "Reallocation" })
-    const activityLogEntry = {
-      submissionDate: new Date(),
-      submittedUser: allocatedBy,
-      submissiondoneByModel: allocatedByModel,
-      taskallocatedBy: allocatedBy,
-      taskallocatedByModel: allocatedByModel,
-      taskallocatedTo: selectedItem.allocatedTo,
-      taskallocatedToModel: allocatedToModel,
-      allocationDate: formData?.allocationDate,
-      remarks: formData.allocationDescription,
-      taskBy: matchedTask?._id,
-      taskTo: allocationName.toLowerCase(),
-      taskId: allocationTypeId,
-      allocationChanged: false,
-      taskfromFollowup: false,
-    };
-    if (allocationName.toLowerCase() === "followup") {
+    if (
+      isCodingAndQcReallocation &&
+      (!formData?.allocationDate ||
+        !formData?.allocationTime?.trim() ||
+        !formData?.taskTitle?.trim() ||
+        !formData?.allocationDescription?.trim())
+    ) {
+      return res.status(400).json({
+        message: "Coding & QC allocation date, time, title, and description are required"
+      });
+    }
+
+    if (
+      isCodingAndQcReallocation &&
+      (allocatedToModel !== "Staff" ||
+        isStaffallocatedtomodel?.department?.department
+          ?.trim()
+          .toLowerCase() !== "research and development")
+    ) {
+      return res.status(400).json({
+        message: "Assigned developer must belong to Research and Development"
+      });
+    }
+
+    const matchedTask = isCodingAndQcReallocation
+      ? await Task.findById(codingAndQcTaskId).select("_id taskName")
+      : await Task.findOne({ taskName: "Reallocation" });
+
+    if (isCodingAndQcReallocation && !matchedTask) {
+      return res.status(404).json({ message: "Coding & QC task was not found" });
+    }
+
+    const activityLogEntry = isCodingAndQcReallocation
+      ? {
+          // Use the same R&D task shape as /lead/rnd-allocation. This lets the
+          // dashboard recognise a reallocated Coding & QC lead as assigned work.
+          submissionDate: new Date(),
+          submittedUser: allocatedBy,
+          submissiondoneByModel: allocatedByModel,
+          taskallocatedBy: allocatedBy,
+          taskallocatedByModel: allocatedByModel,
+          taskallocatedTo: selectedItem.allocatedTo,
+          taskallocatedToModel: allocatedToModel,
+          allocationDate: new Date(formData.allocationDate),
+          allocationTime: String(formData.allocationTime).trim(),
+          expectedCompletionDate: formData.expectedCompletionDate
+            ? new Date(formData.expectedCompletionDate)
+            : null,
+          taskTitle: String(formData.taskTitle).trim(),
+          allocationDescription: String(formData.allocationDescription).trim(),
+          taskBy: matchedTask._id,
+          taskTo: matchedTask.taskName,
+          taskId: matchedTask._id,
+          taskStatus: "Pending",
+          taskTimeline: [
+            { event: "Work Allocated", at: new Date(), detail: "Coding & QC" }
+          ],
+          taskClosed: false,
+          followupClosed: false,
+          allocatedClosed: false,
+          allocationChanged: false,
+          taskfromFollowup: false,
+          remarks: ""
+        }
+      : {
+          submissionDate: new Date(),
+          submittedUser: allocatedBy,
+          submissiondoneByModel: allocatedByModel,
+          taskallocatedBy: allocatedBy,
+          taskallocatedByModel: allocatedByModel,
+          taskallocatedTo: selectedItem.allocatedTo,
+          taskallocatedToModel: allocatedToModel,
+          allocationDate: formData?.allocationDate,
+          remarks: formData.allocationDescription,
+          taskBy: matchedTask?._id,
+          taskTo: allocationName.toLowerCase(),
+          taskId: allocationTypeId,
+          allocationChanged: false,
+          taskfromFollowup: false
+        };
+
+    if (!isCodingAndQcReallocation && allocationName.toLowerCase() === "followup") {
       activityLogEntry.followupClosed = false;
     }
     // return
@@ -10057,6 +10124,14 @@ export const updateReallocation = async (req, res) => {
           allocationType: allocationTypeId, // Set outside the activityLog array
           reallocatedTo: false,
           dueDate: formData.allocationDate,
+          ...(isCodingAndQcReallocation
+            ? {
+                allocatedTo: selectedItem.allocatedTo,
+                allocatedBy,
+                allocatedToModel,
+                allocatedByModel
+              }
+            : {})
         },
       },
 
@@ -14658,7 +14733,6 @@ export const GetResearchAndDevelopmentLeads = async (req, res) => {
 
     const match = {
       leadLost: { $ne: true },
-      allocationType: codingAndQcTaskId,
       activityLog: { $elemMatch: { followupClosed: true } }
     };
 
@@ -14710,8 +14784,24 @@ export const GetResearchAndDevelopmentLeads = async (req, res) => {
           latestRndAllocationLog: { $arrayElemAt: ["$rndAllocationLogs", -1] }
         }
       },
-      { $unwind: "$leadFor" },
-      { $match: { "leadFor.productorServicemodel": "Product" } },
+      // A lead can enter Coding & QC in either of two ways:
+      // 1. the product is configured to start at Coding & QC (legacy flow), or
+      // 2. it was explicitly allocated to Coding & QC from Follow-up.
+      // Keep both paths so an explicit allocation is not discarded just because
+      // the product's firstStage is different or missing.
+      {
+        $set: {
+          isCodingAndQcAllocation: {
+            $eq: ["$allocationType", codingAndQcTaskId]
+          }
+        }
+      },
+      {
+        $unwind: {
+          path: "$leadFor",
+          preserveNullAndEmptyArrays: true
+        }
+      },
       {
         $lookup: {
           from: Product.collection.name,
@@ -14720,10 +14810,7 @@ export const GetResearchAndDevelopmentLeads = async (req, res) => {
             {
               $match: {
                 $expr: {
-                  $and: [
-                    { $eq: ["$_id", "$$productId"] },
-                    { $eq: ["$firstStage", codingAndQcTaskId] }
-                  ]
+                  $eq: ["$_id", "$$productId"]
                 }
               }
             },
@@ -14738,7 +14825,12 @@ export const GetResearchAndDevelopmentLeads = async (req, res) => {
           as: "product"
         }
       },
-      { $unwind: "$product" },
+      {
+        $unwind: {
+          path: "$product",
+          preserveNullAndEmptyArrays: true
+        }
+      },
       {
         $group: {
           _id: "$_id",
@@ -14755,6 +14847,16 @@ export const GetResearchAndDevelopmentLeads = async (req, res) => {
           },
           rndTaskState: { $first: "$latestRndAllocationLog" },
           latestActivityLog: { $first: "$latestActivityLog" },
+          isCodingAndQcAllocation: { $first: "$isCodingAndQcAllocation" },
+          hasCodingAndQcProductFirstStage: {
+            $max: {
+              $cond: [
+                { $eq: ["$product.firstStage", codingAndQcTaskId] },
+                1,
+                0
+              ]
+            }
+          },
           products: {
             $push: {
               productId: "$product._id",
@@ -14763,6 +14865,14 @@ export const GetResearchAndDevelopmentLeads = async (req, res) => {
               firstStage: "$product.firstStage"
             }
           }
+        }
+      },
+      {
+        $match: {
+          $or: [
+            { isCodingAndQcAllocation: true },
+            { hasCodingAndQcProductFirstStage: 1 }
+          ]
         }
       },
       {
@@ -14879,7 +14989,7 @@ export const GetResearchAndDevelopmentLeads = async (req, res) => {
 export const UpdateResearchAndDevelopmentTask = async (req, res) => {
   try {
     const { leadDocId, action, status, remark, taskDescription, expectedCompletionDate, isNeedChangeDate } = req.body;
-    const codingAndQcTaskId = "69671a6ce2872bca1b9e60df";
+    const codingAndQcTaskId = "689c23493e94902039b97743";
     const validStatuses = ["Pending", "In Progress", "Hold", "Completed"];
 
     if (!isValidObjectId(leadDocId) || !["start", "end", "status"].includes(action)) {
@@ -15002,7 +15112,7 @@ export const AllocateResearchAndDevelopmentTask = async (req, res) => {
       taskTitle,
       allocationDescription
     } = req.body;
-    const codingAndQcTaskId = "69671a6ce2872bca1b9e60df";
+    const codingAndQcTaskId = "689c23493e94902039b97743";
     const allocatedBy = req.owner?.userId;
 
     if (
@@ -15013,6 +15123,13 @@ export const AllocateResearchAndDevelopmentTask = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Valid lead and user IDs are required"
+      });
+    }
+
+    if (!allocationDate || !allocationTime?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Allocation date and time are required"
       });
     }
 
@@ -15081,6 +15198,7 @@ export const AllocateResearchAndDevelopmentTask = async (req, res) => {
       taskBy: task._id,
       taskTo: task.taskName,
       taskId: task._id,
+      taskStatus: "Pending",
       taskTimeline: [
         {
           event: "Work Allocated",
