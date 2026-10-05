@@ -80,6 +80,8 @@ const now=new Date()
   const { data: branchProduct } = UseFetch(
     `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
   )
+const aaa=data?.staffAttendanceStats?.filter((item)=>item?.name==="SISMI P C")
+console.log(aaa)
   useEffect(() => {
     if (selectedCategory) {
       console.log("jj")
