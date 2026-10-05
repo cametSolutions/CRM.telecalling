@@ -14,4 +14,6 @@ const LicenseSchema = new mongoose.Schema({
   licensenumber: { type: Number }
 })
 
+LicenseSchema.index({ licensenumber: 1 }, { unique: true, sparse: true })
+
 export default mongoose.model("License", LicenseSchema)

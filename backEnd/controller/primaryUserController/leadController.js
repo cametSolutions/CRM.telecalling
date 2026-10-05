@@ -4768,6 +4768,14 @@ export const Leadclosing = async (req, res) => {
       if (!matchedDoc) {
         throw new Error("Lead not found");
       }
+      // `leadClosed` is set during the Follow-Up handoff before the final
+      // Lead Closing form is submitted. `leadConfirmed` means final closing
+      // already succeeded and is therefore the replay guard.
+      if (matchedDoc.leadConfirmed === true) {
+        throw Object.assign(new Error("This lead is already closed"), {
+          statusCode: 409
+        });
+      }
 
       const hasPrimaryProduct = leadData.some(isPrimaryProduct);
       const onlyAdditionalServices =
@@ -5089,30 +5097,28 @@ export const Leadclosing = async (req, res) => {
       let updatedcustomer = null;
 
       if (licenseNumbers.length > 0) {
-        const existingLicenses = await License.find({
-          customerName: existingCustomer._id,
+        const existingLicense = await License.findOne({
           licensenumber: { $in: licenseNumbers },
         })
-          .select("licensenumber")
+          .select("licensenumber customerName")
           .session(session);
 
-        const existingLicenseSet = new Set(
-          existingLicenses.map((item) => String(item.licensenumber))
-        );
-
-        const newLicenses = uniqueLicenses.filter(
-          (item) => !existingLicenseSet.has(String(item.licensenumber))
-        );
-
-        if (newLicenses.length > 0) {
-          const licenseDocs = newLicenses.map((item) => ({
-            products: item.productid,
-            customerName: existingCustomer._id,
-            licensenumber: item.licensenumber,
-          }));
-
-          await License.insertMany(licenseDocs, { session });
+        if (existingLicense) {
+          throw Object.assign(
+            new Error(
+              `License number ${existingLicense.licensenumber} is already assigned and cannot be used again`
+            ),
+            { statusCode: 409 }
+          );
         }
+
+        const licenseDocs = uniqueLicenses.map((item) => ({
+          products: item.productid,
+          customerName: existingCustomer._id,
+          licensenumber: item.licensenumber,
+        }));
+
+        await License.insertMany(licenseDocs, { session });
       }
 
       if (customerMasterProductData.length > 0) {
@@ -5224,7 +5230,7 @@ export const Leadclosing = async (req, res) => {
     return res.status(200).json(responsePayload);
   } catch (error) {
     console.error("Leadclosing error:", error);
-    return res.status(500).json({
+    return res.status(error?.statusCode || 500).json({
       message: error?.message || "Something went wrong while closing lead",
       error: {
         name: error?.name || "Error",
@@ -9080,6 +9086,8 @@ export const GetallReallocatedLead = async (req, res) => {
         trade: 1,
         remark: 1,
         reallocatedTo: 1,
+        followupClosed: 1,
+        leadFor: 1,
         leadConfirmed: 1,
         leadBranch: 1,
         createdAt: 1
@@ -9121,7 +9129,16 @@ export const GetallReallocatedLead = async (req, res) => {
       }
     }
 
-    const [staffDocs, adminDocs, taskDocs] = await Promise.all([
+    const productIds = new Set()
+    for (const lead of reallocatedLeads) {
+      for (const item of lead.leadFor || []) {
+        if (item.productorServicemodel === "Product" && item.productorServiceId) {
+          productIds.add(String(item.productorServiceId))
+        }
+      }
+    }
+
+    const [staffDocs, adminDocs, taskDocs, productDocs, followupClosingTask] = await Promise.all([
       staffIds.size
         ? mongoose.model("Staff").find({ _id: { $in: [...staffIds] } }).select("name").lean()
         : [],
@@ -9130,12 +9147,21 @@ export const GetallReallocatedLead = async (req, res) => {
         : [],
       taskIds.size
         ? Task.find({ _id: { $in: [...taskIds] } }).select("taskName").lean()
-        : []
+        : [],
+      productIds.size
+        ? Product.find({ _id: { $in: [...productIds] }, firstStage: { $ne: null } })
+          .select("firstStage")
+          .lean()
+        : [],
+      Task.findOne({ taskName: "Follow-Up Closing" }).select("_id").lean()
     ])
 
     const staffMap = new Map(staffDocs.map((doc) => [String(doc._id), doc]))
     const adminMap = new Map(adminDocs.map((doc) => [String(doc._id), doc]))
     const taskMap = new Map(taskDocs.map((doc) => [String(doc._id), doc]))
+    const productFirstStageMap = new Map(
+      productDocs.map((product) => [String(product._id), product.firstStage])
+    )
 
     const getUserByModel = (id, model) => {
       if (!id || !model) return null
@@ -9147,6 +9173,16 @@ export const GetallReallocatedLead = async (req, res) => {
 
     const populatedreallocatedLeads = reallocatedLeads.map((lead) => {
       const lastActivity = lead?.activityLog?.[lead.activityLog.length - 1] || null
+      const firstStage = (lead.leadFor || [])
+        .filter((item) => item.productorServicemodel === "Product")
+        .map((item) => productFirstStageMap.get(String(item.productorServiceId)))
+        .find(Boolean)
+      const isFirstStageFollowupReallocation = Boolean(
+        firstStage &&
+        String(firstStage) !== "689c23493e94902039b97743" &&
+        lead.followupClosed === true &&
+        String(lastActivity?.taskBy || "") === String(followupClosingTask?._id || "")
+      )
 
       return {
         ...lead,
@@ -9157,7 +9193,10 @@ export const GetallReallocatedLead = async (req, res) => {
         submittedUser: getUserByModel(
           lastActivity?.submittedUser,
           lastActivity?.submissiondoneByModel
-        )
+        ),
+        firstStageFollowupReallocation: isFirstStageFollowupReallocation
+          ? String(firstStage)
+          : null
       }
     })
 
@@ -9518,12 +9557,30 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
       return res.status(404).json({ message: "Lead not found" });
     }
 
+    const codingAndQcTaskId = "689c23493e94902039b97743";
     const productIds = (existingLead.leadFor || [])
       .filter((item) => item.productorServicemodel === "Product" && item.productorServiceId)
       .map((item) => item.productorServiceId);
-    const hasProductFirstStage = productIds.length > 0 && Boolean(
-      await Product.exists({ _id: { $in: productIds }, firstStage: { $ne: null } })
+    const productFirstStages = productIds.length
+      ? await Product.find({ _id: { $in: productIds }, firstStage: { $ne: null } })
+        .select("_id firstStage")
+        .lean()
+      : [];
+    const productFirstStageMap = new Map(
+      productFirstStages.map((product) => [String(product._id), product.firstStage])
     );
+    // Keep the lead's product order: the first product with a configured stage
+    // is the stage that starts immediately after Follow-Up Closing.
+    const followupFirstStage = productIds
+      .map((productId) => productFirstStageMap.get(String(productId)))
+      .find(Boolean) || null;
+    const hasProductFirstStage = Boolean(followupFirstStage);
+    const isCodingAndQcFirstStage =
+      String(followupFirstStage || "") === codingAndQcTaskId;
+    const shouldReallocateToFirstStage =
+      formData.followupType === "closed" &&
+      hasProductFirstStage &&
+      !isCodingAndQcFirstStage;
 
     // 2) Close previous open followup if lead closed
     if (
@@ -9534,7 +9591,9 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
         { _id: selectedleaddocId },
         {
           $set: {
-            "activityLog.$[elem].reallocatedTo": isFollowupAndLeadClosed ? false : !hasProductFirstStage,
+            "activityLog.$[elem].reallocatedTo": isFollowupAndLeadClosed
+              ? false
+              : shouldReallocateToFirstStage,
             "activityLog.$[elem].taskClosed": true,
             "activityLog.$[elem].followupClosed": true
           }
@@ -9560,7 +9619,7 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
         taskName: "Follow-Up Closing"
       }).lean();
     } else if (isFollowupAndLeadClosed) {
-      allocationTask = await Task.findOne({ taskName: "Follow-Up Closing and Lead Closing" }).lean()
+      allocationTask = await Task.findOne({ taskName: "Follow-Up Closing" }).lean()
     }
     else if (formData.followupType === "lost") {
       allocationTask = await Task.findOne({
@@ -9592,7 +9651,9 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
     ) {
       activityEntry.taskClosed = true;
       activityEntry.followupClosed = true;
-      activityEntry.reallocatedTo = isFollowupAndLeadClosed ? false : !hasProductFirstStage;
+      activityEntry.reallocatedTo = isFollowupAndLeadClosed
+        ? false
+        : shouldReallocateToFirstStage;
     } else if (formData.followupType === "lost") {
       activityEntry.taskClosed = true;
     }
@@ -9675,7 +9736,12 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
 
     // lead closed
     if (formData.followupType === "closed" || isFollowupAndLeadClosed) {
-      updateDoc.$set.reallocatedTo = isFollowupAndLeadClosed ? false : !hasProductFirstStage
+      updateDoc.$set.reallocatedTo = isFollowupAndLeadClosed
+        ? false
+        : shouldReallocateToFirstStage
+      if (formData.followupType === "closed" && isCodingAndQcFirstStage) {
+        updateDoc.$set.allocationType = followupFirstStage
+      }
       updateDoc.$set.leadConvertedDate = new Date();
       updateDoc.$set.leadClosed = true;
       // updateDoc.$set.leadClosedDate = new Date();
@@ -9775,10 +9841,23 @@ export const ReopenFollowupAfterClosingFailure = async (req, res) => {
       (log) => String(log?._id) === String(closingActivityLogId)
     );
     const closingLog = lead.activityLog.id(closingActivityLogId);
-    if (
-      closingLogIndex === -1 ||
-      closingLog?.taskDescription !== "Follow-up Closed - Lead Closing"
-    ) {
+    const alreadyReopened =
+      closingLogIndex === -1 &&
+      followupLog.taskClosed === false &&
+      followupLog.followupClosed === false &&
+      followupLog.reallocatedTo === false &&
+      lead.leadClosed === false &&
+      lead.followupClosed === false &&
+      lead.reallocatedTo === false;
+
+    if (alreadyReopened) {
+      return res.status(200).json({
+        message: "The follow-up is already reopened"
+      });
+    }
+
+    if (closingLogIndex === -1 ||
+      closingLog?.taskDescription !== "Follow-up Closed - Lead Closing") {
       return res.status(400).json({
         message: "The temporary lead-closing activity could not be found"
       });
@@ -9985,13 +10064,61 @@ export const UpdateOrleadallocationTask = async (req, res) => {
 };
 export const updateReallocation = async (req, res) => {
   try {
-    const { allocatedBy, selectedbranch, allocationTypeId, allocationName } = req.query;
+    const { allocatedBy, selectedbranch, allocationTypeId, allocationType, allocationName } = req.query;
     const codingAndQcTaskId = "689c23493e94902039b97743";
-    const isCodingAndQcReallocation =
-      String(allocationTypeId) === codingAndQcTaskId;
     const allocatedbyObjectid = new mongoose.Types.ObjectId(allocatedBy);
     // const branchObjectId = new mongoose.Types.ObjectId(selectedbranch)
     const { selectedItem, formData } = req.body;
+    const currentLead = await LeadMaster.findById(selectedItem?._id)
+      .select("activityLog leadFor reallocatedTo followupClosed")
+      .lean();
+
+    if (!currentLead) {
+      return res.status(404).json({ message: "Lead was not found" });
+    }
+
+    const [followupClosingTask, firstStageProducts] = await Promise.all([
+      Task.findOne({ taskName: "Follow-Up Closing" }).select("_id").lean(),
+      Product.find({
+        _id: {
+          $in: (currentLead.leadFor || [])
+            .filter((item) => item.productorServicemodel === "Product")
+            .map((item) => item.productorServiceId)
+        },
+        firstStage: { $ne: null }
+      }).select("_id firstStage").lean()
+    ]);
+    const firstStageMap = new Map(
+      firstStageProducts.map((product) => [String(product._id), product.firstStage])
+    );
+    const requiredFirstStage = (currentLead.leadFor || [])
+      .filter((item) => item.productorServicemodel === "Product")
+      .map((item) => firstStageMap.get(String(item.productorServiceId)))
+      .find(Boolean);
+    const latestActivity = currentLead.activityLog?.at(-1);
+    const mustUseFirstStage = Boolean(
+      currentLead.reallocatedTo === true &&
+      currentLead.followupClosed === true &&
+      requiredFirstStage &&
+      String(requiredFirstStage) !== codingAndQcTaskId &&
+      String(latestActivity?.taskBy || "") === String(followupClosingTask?._id || "")
+    );
+    const effectiveAllocationTypeId = mustUseFirstStage
+      ? String(requiredFirstStage)
+      : allocationTypeId || allocationType;
+    const effectiveAllocationTask = await Task.findById(effectiveAllocationTypeId)
+      .select("_id taskName")
+      .lean();
+
+    if (!effectiveAllocationTask) {
+      return res.status(400).json({ message: "Invalid allocation type" });
+    }
+
+    const effectiveAllocationName = mustUseFirstStage
+      ? effectiveAllocationTask.taskName
+      : allocationName;
+    const isCodingAndQcReallocation =
+      String(effectiveAllocationTypeId) === codingAndQcTaskId;
     let allocatedToModel;
     let allocatedByModel;
     const isStaffallocatedtomodel = await Staff.findOne({
@@ -10051,7 +10178,7 @@ export const updateReallocation = async (req, res) => {
     }
 
     const matchedTask = isCodingAndQcReallocation
-      ? await Task.findById(codingAndQcTaskId).select("_id taskName")
+      ? effectiveAllocationTask
       : await Task.findOne({ taskName: "Reallocation" });
 
     if (isCodingAndQcReallocation && !matchedTask) {
@@ -10060,54 +10187,54 @@ export const updateReallocation = async (req, res) => {
 
     const activityLogEntry = isCodingAndQcReallocation
       ? {
-          // Use the same R&D task shape as /lead/rnd-allocation. This lets the
-          // dashboard recognise a reallocated Coding & QC lead as assigned work.
-          submissionDate: new Date(),
-          submittedUser: allocatedBy,
-          submissiondoneByModel: allocatedByModel,
-          taskallocatedBy: allocatedBy,
-          taskallocatedByModel: allocatedByModel,
-          taskallocatedTo: selectedItem.allocatedTo,
-          taskallocatedToModel: allocatedToModel,
-          allocationDate: new Date(formData.allocationDate),
-          allocationTime: String(formData.allocationTime).trim(),
-          expectedCompletionDate: formData.expectedCompletionDate
-            ? new Date(formData.expectedCompletionDate)
-            : null,
-          taskTitle: String(formData.taskTitle).trim(),
-          allocationDescription: String(formData.allocationDescription).trim(),
-          taskBy: matchedTask._id,
-          taskTo: matchedTask.taskName,
-          taskId: matchedTask._id,
-          taskStatus: "Pending",
-          taskTimeline: [
-            { event: "Work Allocated", at: new Date(), detail: "Coding & QC" }
-          ],
-          taskClosed: false,
-          followupClosed: false,
-          allocatedClosed: false,
-          allocationChanged: false,
-          taskfromFollowup: false,
-          remarks: ""
-        }
+        // Use the same R&D task shape as /lead/rnd-allocation. This lets the
+        // dashboard recognise a reallocated Coding & QC lead as assigned work.
+        submissionDate: new Date(),
+        submittedUser: allocatedBy,
+        submissiondoneByModel: allocatedByModel,
+        taskallocatedBy: allocatedBy,
+        taskallocatedByModel: allocatedByModel,
+        taskallocatedTo: selectedItem.allocatedTo,
+        taskallocatedToModel: allocatedToModel,
+        allocationDate: new Date(formData.allocationDate),
+        allocationTime: String(formData.allocationTime).trim(),
+        expectedCompletionDate: formData.expectedCompletionDate
+          ? new Date(formData.expectedCompletionDate)
+          : null,
+        taskTitle: String(formData.taskTitle).trim(),
+        allocationDescription: String(formData.allocationDescription).trim(),
+        taskBy: matchedTask._id,
+        taskTo: matchedTask.taskName,
+        taskId: matchedTask._id,
+        taskStatus: "Pending",
+        taskTimeline: [
+          { event: "Work Allocated", at: new Date(), detail: "Coding & QC" }
+        ],
+        taskClosed: false,
+        followupClosed: false,
+        allocatedClosed: false,
+        allocationChanged: false,
+        taskfromFollowup: false,
+        remarks: ""
+      }
       : {
-          submissionDate: new Date(),
-          submittedUser: allocatedBy,
-          submissiondoneByModel: allocatedByModel,
-          taskallocatedBy: allocatedBy,
-          taskallocatedByModel: allocatedByModel,
-          taskallocatedTo: selectedItem.allocatedTo,
-          taskallocatedToModel: allocatedToModel,
-          allocationDate: formData?.allocationDate,
-          remarks: formData.allocationDescription,
-          taskBy: matchedTask?._id,
-          taskTo: allocationName.toLowerCase(),
-          taskId: allocationTypeId,
-          allocationChanged: false,
-          taskfromFollowup: false
-        };
+        submissionDate: new Date(),
+        submittedUser: allocatedBy,
+        submissiondoneByModel: allocatedByModel,
+        taskallocatedBy: allocatedBy,
+        taskallocatedByModel: allocatedByModel,
+        taskallocatedTo: selectedItem.allocatedTo,
+        taskallocatedToModel: allocatedToModel,
+        allocationDate: formData?.allocationDate,
+        remarks: formData.allocationDescription,
+        taskBy: matchedTask?._id,
+        taskTo: effectiveAllocationName.toLowerCase(),
+        taskId: effectiveAllocationTypeId,
+        allocationChanged: false,
+        taskfromFollowup: false
+      };
 
-    if (!isCodingAndQcReallocation && allocationName.toLowerCase() === "followup") {
+    if (!isCodingAndQcReallocation && effectiveAllocationName.toLowerCase() === "followup") {
       activityLogEntry.followupClosed = false;
     }
     // return
@@ -10121,16 +10248,16 @@ export const updateReallocation = async (req, res) => {
           activityLog: activityLogEntry,
         },
         $set: {
-          allocationType: allocationTypeId, // Set outside the activityLog array
+          allocationType: effectiveAllocationTypeId, // Set outside the activityLog array
           reallocatedTo: false,
           dueDate: formData.allocationDate,
           ...(isCodingAndQcReallocation
             ? {
-                allocatedTo: selectedItem.allocatedTo,
-                allocatedBy,
-                allocatedToModel,
-                allocatedByModel
-              }
+              allocatedTo: selectedItem.allocatedTo,
+              allocatedBy,
+              allocatedToModel,
+              allocatedByModel
+            }
             : {})
         },
       },
