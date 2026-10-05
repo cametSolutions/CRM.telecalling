@@ -6454,7 +6454,8 @@ const recomputeDayFromCoverage = (day, user, dateKey, arr) => {
     (workedAfternoon ? 0.5 : 0);
 
   day.present = present;
-  day.notMarked = Math.max(0, 1 - coveredTotal);
+  // coveredTotal represents the uncovered portion of the day: 0, 0.5, or 1.
+  day.notMarked = coveredTotal;
   if (user.name === "Abhishek EV") {
     console.log("arr,date,converted", arr, dateKey, coveredTotal)
     //     console.log("coveredmorning", coveredMorning)
@@ -6588,10 +6589,21 @@ const classifyAttendanceDay = ({
 
   const punchIn = parse12hToMinutes(attendance.inTime);
   const punchOut = parse12hToMinutes(attendance.outTime);
-  // 🔥 ADD THIS HERE (IMPORTANT FIX)
   const fullPresentCutoff = 13 * 60 + 30; // 1:30 PM
+  const eveningShortPunchCutoff = 17 * 60; // 5:00 PM
 
-  if (punchOut != null && punchOut < fullPresentCutoff) {
+  const isMorningShortPunch =
+    punchIn != null &&
+    punchOut != null &&
+    punchIn < fullPresentCutoff &&
+    punchOut < fullPresentCutoff;
+  const isAfternoonShortPunch =
+    punchIn != null &&
+    punchOut != null &&
+    punchIn > fullPresentCutoff &&
+    punchOut < eveningShortPunchCutoff;
+
+  if (isMorningShortPunch || isAfternoonShortPunch) {
     day.present = 0;
     day.late = 0;
     day.early = 0;
