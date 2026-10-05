@@ -230,17 +230,23 @@ const ReallocationTable = () => {
     }
   }, [data, selectedCompanyBranch])
   useEffect(() => {
-    if (
-      leadreallocation &&
-      leadreallocation.length > 0 &&
-      partners &&
-      partners.length > 0
-    ) {
-      const filteredLeads = filterLeadsByLastTaskLabel(leadreallocation, label)
-      setTableData(filteredLeads)
-      setpartner(partners)
-    }
-  }, [leadreallocation])
+    // Clear branch-specific rows and row selections before the next branch's
+    // request completes so the old branch can never remain on screen.
+    setTableData([])
+    setSelectedItem(null)
+    setselectedAllocationType({})
+    setSelectedAllocates({})
+    setValidateError({})
+    setValidatetypeError({})
+  }, [reduxselectedBranch])
+
+  useEffect(() => {
+    if (!leadreallocation) return
+
+    const filteredLeads = filterLeadsByLastTaskLabel(leadreallocation, label)
+    setTableData(filteredLeads)
+    setpartner(partners || [])
+  }, [leadreallocation, partners, label])
   const filterLeadsByLastTaskLabel = (leads, label) => {
     console.log(label)
     return leads.filter((lead) => {

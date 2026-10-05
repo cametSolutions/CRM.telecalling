@@ -208,32 +208,39 @@ console.log(reduxselectedBranch)
     }
   }, [data, selectedCompanyBranch])
   useEffect(() => {
-    if (leadreallocation && leadreallocation.length > 0) {
-      const taskByList = leadreallocation.reduce((acc, lead) => {
-        const logs = lead.activityLog
-        if (logs.length === 0) return acc
+    // Do not leave the previous branch's reallocation categories visible
+    // while the selected branch's request is loading.
+    setgridList([])
+    setTableData([])
+  }, [reduxselectedBranch])
 
-        const lastTask = lead.lasttask?.taskName
-        console.log(lead?.lasttask)
-        // const taskBy = lastTask.taskBy;
+  useEffect(() => {
+    if (!leadreallocation) return
 
-        if (lastTask) {
-          acc[lastTask] = (acc[lastTask] || 0) + 1
-        }
+    const taskByList = leadreallocation.reduce((acc, lead) => {
+      const logs = lead.activityLog
+      if (logs.length === 0) return acc
 
-        return acc
-      }, {})
-      // Convert to array of objects with label and value
-      const taskByCountArray = Object.entries(taskByList).map(
-        ([label, value]) => ({
-          label,
-          value
-        })
-      )
+      const lastTask = lead.lasttask?.taskName
+      console.log(lead?.lasttask)
+      // const taskBy = lastTask.taskBy;
 
-      setgridList(taskByCountArray)
-      setTableData(leadreallocation)
-    }
+      if (lastTask) {
+        acc[lastTask] = (acc[lastTask] || 0) + 1
+      }
+
+      return acc
+    }, {})
+    // Convert to array of objects with label and value
+    const taskByCountArray = Object.entries(taskByList).map(
+      ([label, value]) => ({
+        label,
+        value
+      })
+    )
+
+    setgridList(taskByCountArray)
+    setTableData(leadreallocation)
   }, [leadreallocation])
 
   const handleSelectedAllocates = (item, value) => {
