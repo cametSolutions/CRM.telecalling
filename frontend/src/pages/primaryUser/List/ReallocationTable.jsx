@@ -754,11 +754,18 @@ const ReallocationTable = () => {
                               <option>Select Type</option>
 
                               {tasks &&
-                                tasks.map((task) => (
+                                tasks
+                                  .filter(
+                                    (task) =>
+                                      String(task.taskName || "")
+                                        .trim()
+                                        .toLowerCase() !== "followup"
+                                  )
+                                  .map((task) => (
                                   <option key={task._id} value={task._id}>
                                     {task?.taskName}
                                   </option>
-                                ))}
+                                  ))}
                             </select>
                             {validatetypeError[item._id] && (
                               <p className="text-red-500 text-sm">

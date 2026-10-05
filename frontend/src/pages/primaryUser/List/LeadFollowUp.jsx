@@ -3502,10 +3502,16 @@ const LeadFollowUp = () => {
                             placeholder="Select type..."
                             value={demoData.selectedType}
                             options={
-                              taskList?.map((task) => ({
-                                value: task._id,
-                                label: task.taskName
-                              })) || []
+                              taskList
+                                ?.filter((task) =>
+                                  ["SYSTEM", "DEMO"].includes(
+                                    String(task.taskName || "").trim().toUpperCase()
+                                  )
+                                )
+                                .map((task) => ({
+                                  value: task._id,
+                                  label: task.taskName
+                                })) || []
                             }
                             onChange={(id) => {
                               const task = taskList.find((t) => t._id === id)
