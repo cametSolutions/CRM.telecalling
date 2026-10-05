@@ -254,6 +254,22 @@ const ReallocationTable = () => {
     })
   }
 
+  useEffect(() => {
+    if (!leadreallocation || !tasks) return
+
+    setselectedAllocationType((previous) => {
+      const next = { ...previous }
+
+      leadreallocation.forEach((lead) => {
+        if (lead.firstStageFollowupReallocation) {
+          next[lead._id] = lead.firstStageFollowupReallocation
+        }
+      })
+
+      return next
+    })
+  }, [leadreallocation, tasks])
+
   const handleSelectedAllocates = (item, value) => {
     console.log(item)
     console.log(value)
@@ -268,6 +284,7 @@ const ReallocationTable = () => {
     try {
       const selectedTaskId = selectedAllocationType[selectedItem._id]
       const isCodingAndQc = selectedTaskId === CODING_AND_QC_TASK_ID
+      const selectedTask = tasks?.find((task) => task._id === selectedTaskId)
 
       if (
         !isCodingAndQc &&
@@ -336,7 +353,7 @@ const ReallocationTable = () => {
       const response = await api.post(
         `/lead/leadReallocation?allocationTypeId=${encodeURIComponent(
           selected
-        )}&allocatedBy=${loggedUser._id}&allocationName=${encodeURIComponent(selectedType)}`,
+        )}&allocatedBy=${loggedUser._id}&allocationName=${encodeURIComponent(selectedTask?.taskName || selectedType || "")}`,
         { selectedItem, formData }
       )
       toast.success(response.data.message)
@@ -712,6 +729,7 @@ const ReallocationTable = () => {
                           <td className=" border border-t-0 border-b-0 border-gray-400 px-1 bg-white ">
                             <select
                               value={selectedAllocationType[item._id] || ""}
+                              disabled={Boolean(item.firstStageFollowupReallocation)}
                               onChange={(e) => {
                                 const selectedtask = tasks.find(
                                   (item) => item._id === e.target.value
@@ -731,7 +749,7 @@ const ReallocationTable = () => {
                                   [item._id]: ""
                                 }))
                               }}
-                              className="py-1 border border-gray-400 rounded-md  w-full focus:outline-none cursor-pointer"
+                              className="py-1 border border-gray-400 rounded-md  w-full focus:outline-none cursor-pointer disabled:cursor-not-allowed disabled:bg-slate-100"
                             >
                               <option>Select Type</option>
 
