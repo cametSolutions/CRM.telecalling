@@ -2,6 +2,24 @@ import { useState, useEffect, useMemo } from "react"
 import { Search, Check, X, Shield, ChevronDown, ChevronUp } from "lucide-react"
 import api from "../../api/api"
 
+const dashboardPermissions = [
+  {
+    key: "PrimaryDashboard",
+    label: "Primary Dashboard",
+    primaryDepartmentCodes: ["DEPARTMENT1", "DEPARTMENT2"]
+  },
+  {
+    key: "MarketingDashboard",
+    label: "Marketing Dashboard",
+    primaryDepartmentCodes: ["DEPARTMENT3"]
+  },
+  {
+    key: "ResearchAndDevelopmentDashboard",
+    label: "Research & Development Dashboard",
+    primaryDepartmentCodes: ["DEPARTMENT5"]
+  }
+]
+
 const UserPermissionList = ({ user, closeModal, refresh }) => {
   const [userPermissions, setUserPermissions] = useState({
     Company: false,
@@ -47,7 +65,10 @@ const UserPermissionList = ({ user, closeModal, refresh }) => {
     LeadReallocation: false,
     ProductandServices: false,
     Employee: false,
-    CollectionUpdate: false
+    CollectionUpdate: false,
+    PrimaryDashboard: false,
+    MarketingDashboard: false,
+    ResearchAndDevelopmentDashboard: false
   })
 
   const [selectAll, setSelectAll] = useState(false)
@@ -59,6 +80,7 @@ const UserPermissionList = ({ user, closeModal, refresh }) => {
     Transactions: true,
     Reports: true,
     Task: true,
+    Dashboards: true,
     ProductandServices: true,
     Employee: true
   })
@@ -79,8 +101,20 @@ const UserPermissionList = ({ user, closeModal, refresh }) => {
     "VoucherMaster"
   ]
 
+  const additionalDashboards = useMemo(() => {
+    const departmentCode = user?.department?.code
+    return dashboardPermissions.filter(
+      (dashboard) => !dashboard.primaryDepartmentCodes.includes(departmentCode)
+    )
+  }, [user?.department?.code])
+
   const permissionGroups = useMemo(
     () => [
+      {
+        key: "Dashboards",
+        label: "Additional Dashboards",
+        items: additionalDashboards.map(({ key, label }) => ({ key, label }))
+      },
       {
         key: "Masters",
         label: "Masters",
@@ -169,8 +203,21 @@ const UserPermissionList = ({ user, closeModal, refresh }) => {
         ]
       }
     ],
-    []
+    [additionalDashboards]
   )
+
+  const allPermissionKeys = useMemo(() => Object.keys(userPermissions), [])
+
+  const manageablePermissionKeys = useMemo(() => {
+    const additionalDashboardKeys = new Set(
+      additionalDashboards.map((dashboard) => dashboard.key)
+    )
+    return allPermissionKeys.filter(
+      (key) =>
+        !dashboardPermissions.some((dashboard) => dashboard.key === key) ||
+        additionalDashboardKeys.has(key)
+    )
+  }, [allPermissionKeys, additionalDashboards])
 
   useEffect(() => {
     if (user && user.permissions?.length > 0) {
@@ -183,13 +230,13 @@ const UserPermissionList = ({ user, closeModal, refresh }) => {
         })
       })
 
-      const allPermissionsTrue = Object.keys(updatedPermissions).every(
+      const allPermissionsTrue = manageablePermissionKeys.every(
         (key) => updatedPermissions[key] === true
       )
       setSelectAll(allPermissionsTrue)
       setUserPermissions(updatedPermissions)
     }
-  }, [user])
+  }, [user, manageablePermissionKeys])
 
   const handleChange = (e) => {
     const { name, checked } = e.target
@@ -216,7 +263,7 @@ const UserPermissionList = ({ user, closeModal, refresh }) => {
 
     setUserPermissions(updatedPermissions)
 
-    const allPermissionsTrue = Object.keys(updatedPermissions).every(
+    const allPermissionsTrue = manageablePermissionKeys.every(
       (key) => updatedPermissions[key] === true
     )
     setSelectAll(allPermissionsTrue)
@@ -226,7 +273,7 @@ const UserPermissionList = ({ user, closeModal, refresh }) => {
     const checked = e.target.checked
     setSelectAll(checked)
 
-    const updatedPermissions = Object.keys(userPermissions).reduce(
+    const updatedPermissions = manageablePermissionKeys.reduce(
       (acc, key) => {
         acc[key] = checked
         return acc
@@ -313,8 +360,10 @@ const UserPermissionList = ({ user, closeModal, refresh }) => {
       .filter((group) => group.items?.length > 0 || group.subgroups?.length > 0)
   }, [searchTerm, permissionGroups])
 
-  const enabledCount = Object.values(userPermissions).filter(Boolean).length
-  const totalCount = Object.keys(userPermissions).length
+  const enabledCount = manageablePermissionKeys.filter(
+    (key) => userPermissions[key]
+  ).length
+  const totalCount = manageablePermissionKeys.length
 
   const renderPermission = (item, nested = false) => {
     const children = item.children || []

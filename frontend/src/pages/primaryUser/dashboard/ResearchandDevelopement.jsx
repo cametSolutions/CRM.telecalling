@@ -75,17 +75,27 @@ const formatWorkDate = (value) => {
       })
 }
 
-const toDateInputValue = (value) => {
+const formatTime = (value) => {
+  if (!value) return ""
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return getToday()
-
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, "0")
-  const day = String(date.getDate()).padStart(2, "0")
-  return `${year}-${month}-${day}`
+  return Number.isNaN(date.getTime())
+    ? ""
+    : date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: true })
 }
 
-const formatDate = (value) => value ? new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value)) : "-"
+const to24HourTime = (hour, minute, period) => {
+  if (!hour || !minute || !period) return "00:00"
+  const normalizedHour = (Number(hour) % 12) + (period === "PM" ? 12 : 0)
+  return `${String(normalizedHour).padStart(2, "0")}:${minute}`
+}
+
+const isResearchAndDevelopmentDepartment = (department) => {
+  if (department?.code === "DEPARTMENT5") return true
+  const departmentName = String(department?.department || department?.name || department || "")
+    .replace(/[^a-z]/gi, "")
+    .toLowerCase()
+  return departmentName === "researchanddevelopment"
+}
 
 const getWorkedDuration = (sessions = [], activeStartedAt) => {
   const now = Date.now()
@@ -97,6 +107,18 @@ const getWorkedDuration = (sessions = [], activeStartedAt) => {
   const minutes = Math.floor(total / 60000)
   return `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, "0")}m`
 }
+
+const toDateInputValue = (value) => {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return getToday()
+
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
+const formatDate = (value) => value ? new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value)) : "-"
 
 const getRemainingDays = (status, expectedCompletionDate) => {
   if (status !== "In Progress" || !expectedCompletionDate) return "-"
@@ -211,7 +233,11 @@ export default function ResearchandDevelopement() {
             ownedItems.some((item) => status === "Overdue" ? isOverdue(item) : item.status === status)
           )
           setWorkItems(items)
-          setLeadScope("Owned")
+          setLeadScope(
+            isResearchAndDevelopmentDepartment(loggedUser?.department)
+              ? "Owned"
+              : "All"
+          )
           setActiveStatusFilter(preferredStatus || "Pending")
         }
       } catch (error) {
@@ -298,6 +324,13 @@ export default function ResearchandDevelopement() {
     if (!completedAt) return false
     const completedDate = new Date(completedAt)
     return completedDate.getFullYear() === Number(year) && months[completedDate.getMonth()] === month
+  }).sort((left, right) => {
+    if (!["In Progress", "Pending", "Overdue"].includes(activeStatusFilter)) return 0
+    const leftTime = new Date(left.expectedCompletionDate).getTime()
+    const rightTime = new Date(right.expectedCompletionDate).getTime()
+    if (Number.isNaN(leftTime)) return Number.isNaN(rightTime) ? 0 : 1
+    if (Number.isNaN(rightTime)) return -1
+    return leftTime - rightTime
   })
   const announcement = announcementList?.[0]?.announcement
     ? announcementList[0]
@@ -319,6 +352,9 @@ export default function ResearchandDevelopement() {
       assignedDeveloper: item.assignedDeveloper || "",
       priority: item.priority,
       expectedCompletionDate: "",
+      expectedCompletionHour: "",
+      expectedCompletionMinute: "00",
+      expectedCompletionPeriod: "AM",
       taskTitle: "",
       allocationDescription: ""
     })
@@ -345,7 +381,9 @@ export default function ResearchandDevelopement() {
         allocatedTo: allocation.assignedDeveloper,
         allocationDate: allocation.allocationDate,
         allocationTime: allocation.allocationTime,
-        expectedCompletionDate: allocation.expectedCompletionDate,
+        expectedCompletionDate: allocation.expectedCompletionDate
+          ? `${allocation.expectedCompletionDate}T${to24HourTime(allocation.expectedCompletionHour, allocation.expectedCompletionMinute, allocation.expectedCompletionPeriod)}`
+          : "",
         taskTitle: allocation.taskTitle,
         allocationDescription: allocation.allocationDescription
       })
@@ -459,14 +497,14 @@ export default function ResearchandDevelopement() {
 
           <div className="hidden min-h-0 flex-1 overflow-auto md:block">
             <table className="w-full min-w-[820px] text-left text-xs">
-              <thead className="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500"><tr><th className="px-5 py-3 font-semibold">Lead ID</th><th className="px-4 py-3 font-semibold">Customer</th><th className="px-4 py-3 font-semibold">Task title</th><th className="px-4 py-3 font-semibold">Priority</th><th className="px-4 py-3 font-semibold">Remaining</th><th className="px-4 py-3 font-semibold">Status</th><th className="px-4 py-3 text-center font-semibold">Start / Time worked</th><th className="px-4 py-3 text-center font-semibold">End</th><th className="px-4 py-3 text-center font-semibold">Timeline</th><th className="px-5 py-3 text-center font-semibold">Action</th></tr></thead>
+              <thead className="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500"><tr><th className="px-5 py-2 font-semibold">Lead ID</th><th className="px-4 py-2 font-semibold">Customer</th><th className="px-4 py-2 font-semibold">Task title</th><th className="px-4 py-2 font-semibold">Developer</th><th className="px-4 py-2 font-semibold">Priority</th><th className="px-4 py-2 font-semibold">Remaining</th><th className="px-4 py-2 font-semibold">Status</th><th className="px-4 py-2 text-center font-semibold">Start</th><th className="px-4 py-2 text-center font-semibold">End</th><th className="px-4 py-2 text-center font-semibold">Timeline</th><th className="px-5 py-2 text-center font-semibold">Action</th></tr></thead>
               <tbody className="divide-y divide-slate-100">
                 {isLoading ? (
-                  <tr><td colSpan="10" className="px-5 py-10 text-center text-sm text-slate-500">Loading R&D leads...</td></tr>
+                  <tr><td colSpan="11" className="px-5 py-10 text-center text-sm text-slate-500">Loading R&D leads...</td></tr>
                 ) : loadError ? (
-                  <tr><td colSpan="10" className="px-5 py-10 text-center text-sm text-rose-600">{loadError}</td></tr>
+                  <tr><td colSpan="11" className="px-5 py-10 text-center text-sm text-rose-600">{loadError}</td></tr>
                 ) : filteredWorkItems.length === 0 ? (
-                  <tr><td colSpan="10" className="px-5 py-10 text-center text-sm text-slate-500">No {activeStatusFilter.toLowerCase()} leads found.</td></tr>
+                  <tr><td colSpan="11" className="px-5 py-10 text-center text-sm text-slate-500">No {activeStatusFilter.toLowerCase()} leads found.</td></tr>
                 ) : (
                   filteredWorkItems.map((item) => <WorkRow key={item.leadDocId} item={item} canOperate={String(item.assignedDeveloperId) === String(loggedUser?._id)} isActive={Boolean(item.taskStartedAt && !item.taskEndedAt)} onAllocate={openAllocation} onUpdate={openUpdate} onStart={startTask} onEnd={openEndTask} onDescription={(work) => { setDescriptionWork(work); setModal("description") }} onTimeline={(work) => { setTimelineWork(work); setModal("timeline") }} />)
                 )}
@@ -495,23 +533,35 @@ function WorkRow({ item, canOperate, isActive, onAllocate, onUpdate, onStart, on
   const isAllocated = Boolean(item.assignedDeveloper) && item.status !== "New"
   const isStartEndBlocked = ["Hold", "Completed"].includes(item.status)
   const disabledClass = "cursor-not-allowed bg-slate-100 text-slate-300"
-  const workedDuration = getWorkedDuration(item.taskSessions, item.taskStartedAt)
   const remainingDays = getRemainingDays(item.status, item.expectedCompletionDate)
+  const startedAt = formatTime(item.taskStartedAt)
+  const workedDuration = getWorkedDuration(item.taskSessions, item.taskStartedAt)
   const startDisabled = !isAllocated || !canOperate || isActive || isStartEndBlocked
   const endDisabled = !isAllocated || !canOperate || !isActive || isStartEndBlocked
+  const startClass = startedAt && startDisabled
+    ? "cursor-not-allowed bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200"
+    : startDisabled
+      ? disabledClass
+      : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
   const blockedTitle = isStartEndBlocked ? "Tasks on hold or completed cannot be started or ended" : !isAllocated ? "Allocate a developer first" : "Only the assigned developer can start or end this task"
   const title = item.taskTitle || item.work
-  return <tr className="text-slate-600 transition hover:bg-slate-50/80"><td className="whitespace-nowrap px-5 py-3 font-semibold text-blue-600">{item.id}</td><td className="whitespace-nowrap px-4 py-3 font-medium text-slate-700">{item.customer}</td><td className="max-w-[230px] px-4 py-3"><button type="button" onClick={() => onDescription(item)} className="max-w-full truncate text-left font-semibold text-blue-600 transition hover:text-blue-800 hover:underline" title="View task description">{title}</button></td><td className="px-4 py-3"><Badge className={priorityStyles[item.priority]}>{item.priority}</Badge></td><td className="whitespace-nowrap px-4 py-3 font-semibold text-slate-600">{remainingDays}</td><td className="px-4 py-3"><Badge className={statusStyles[item.status]}>{item.status}</Badge></td><td className="px-4 py-3 text-center"><button type="button" disabled={startDisabled} onClick={() => onStart(item)} title={startDisabled ? blockedTitle : "Start task"} className={`inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-semibold transition ${startDisabled ? disabledClass : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"}`}><Play size={13} />Start</button><p className="mt-1 text-[10px] font-semibold text-slate-500">{workedDuration}</p></td><td className="px-4 py-3 text-center"><button type="button" disabled={endDisabled} onClick={() => onEnd(item)} title={endDisabled ? blockedTitle : "End task"} className={`inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-semibold transition ${endDisabled ? disabledClass : "bg-rose-50 text-rose-600 hover:bg-rose-100"}`}><Square size={12} />End</button></td><td className="px-4 py-3 text-center"><button type="button" disabled={!isAllocated} onClick={() => onTimeline(item)} title={isAllocated ? "View Coding & QC timeline" : "Allocate a developer first"} className={`inline-grid h-8 w-8 place-items-center rounded-md transition ${isAllocated ? "bg-violet-50 text-violet-600 hover:bg-violet-100" : disabledClass}`}><Clock3 size={14} /></button></td><td className="px-5 py-3 text-center"><button type="button" onClick={() => isAllocated ? onUpdate(item) : onAllocate(item)} title={isAllocated ? "Task status" : "Allocate work"} className="inline-grid h-8 w-8 place-items-center rounded-md bg-blue-50 text-blue-600 transition hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300">{isAllocated ? <Pencil size={14} /> : <UserRoundCheck size={15} />}</button></td></tr>
+  return <tr className="text-slate-600 transition hover:bg-slate-50/80"><td className="whitespace-nowrap px-5 py-2 font-semibold text-blue-600">{item.id}</td><td className="whitespace-nowrap px-4 py-2 font-medium uppercase text-slate-700">{item.customer}</td><td className="max-w-[230px] px-4 py-2"><button type="button" onClick={() => onDescription(item)} className="max-w-full truncate text-left font-semibold text-blue-600 transition hover:text-blue-800 hover:underline" title="View task description">{title}</button></td><td className="whitespace-nowrap px-4 py-2 font-medium text-slate-700">{item.assignedDeveloper || "-"}</td><td className="px-4 py-2"><Badge className={priorityStyles[item.priority]}>{item.priority}</Badge></td><td className="whitespace-nowrap px-4 py-2 font-semibold text-slate-600">{remainingDays}</td><td className="px-4 py-2"><Badge className={statusStyles[item.status]}>{item.status}</Badge></td><td className="px-4 py-2 text-center"><button type="button" disabled={startDisabled} onClick={() => onStart(item)} title={startDisabled ? blockedTitle : "Start task"} className={`inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-bold transition ${startClass}`}><Play size={13} strokeWidth={2.5} />{startedAt ? `Running · ${workedDuration}` : "Start"}</button></td><td className="px-4 py-2 text-center"><button type="button" disabled={endDisabled} onClick={() => onEnd(item)} title={endDisabled ? blockedTitle : "End task"} className={`inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-semibold transition ${endDisabled ? disabledClass : "bg-rose-50 text-rose-600 hover:bg-rose-100"}`}><Square size={12} />End</button></td><td className="px-4 py-2 text-center"><button type="button" disabled={!isAllocated} onClick={() => onTimeline(item)} title={isAllocated ? "View Coding & QC timeline" : "Allocate a developer first"} className={`inline-grid h-8 w-8 place-items-center rounded-md transition ${isAllocated ? "bg-violet-50 text-violet-600 hover:bg-violet-100" : disabledClass}`}><Clock3 size={14} /></button></td><td className="px-5 py-2 text-center"><button type="button" onClick={() => isAllocated ? onUpdate(item) : onAllocate(item)} title={isAllocated ? "Task status" : "Allocate work"} className="inline-grid h-8 w-8 place-items-center rounded-md bg-blue-50 text-blue-600 transition hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300">{isAllocated ? <Pencil size={14} /> : <UserRoundCheck size={15} />}</button></td></tr>
 }
 
 function WorkCard({ item, canOperate, isActive, onAllocate, onUpdate, onStart, onEnd, onDescription, onTimeline }) {
   const isAllocated = Boolean(item.assignedDeveloper) && item.status !== "New"
   const isStartEndBlocked = ["Hold", "Completed"].includes(item.status)
-  return <article className="p-4"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="text-xs font-semibold text-blue-600">{item.id}</p><button type="button" onClick={() => onDescription(item)} className="mt-1 text-left text-sm font-semibold text-blue-600 hover:underline">{item.taskTitle || item.work}</button><p className="mt-1 text-xs text-slate-500">{item.customer}</p></div><Badge className={priorityStyles[item.priority]}>{item.priority}</Badge></div><div className="mt-3 flex items-center justify-between gap-3 text-xs"><span className="text-slate-500">Due: <strong className="font-medium text-slate-700">{item.due}</strong></span><Badge className={statusStyles[item.status]}>{item.status}</Badge></div><div className="mt-3 flex flex-wrap gap-2"><button type="button" disabled={!isAllocated || !canOperate || isActive || isStartEndBlocked} onClick={() => onStart(item)} className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-600 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-300"><Play size={13} />Start</button><button type="button" disabled={!isAllocated || !canOperate || !isActive || isStartEndBlocked} onClick={() => onEnd(item)} className="inline-flex items-center gap-1.5 rounded-md bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-600 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-300"><Square size={12} />End</button>{isAllocated && <button type="button" onClick={() => onTimeline(item)} className="inline-flex items-center gap-1.5 rounded-md bg-violet-50 px-2.5 py-1.5 text-xs font-semibold text-violet-600"><Clock3 size={13} />Timeline</button>}<button type="button" onClick={() => isAllocated ? onUpdate(item) : onAllocate(item)} className="inline-flex items-center gap-1.5 rounded-md bg-blue-50 px-2.5 py-1.5 text-xs font-semibold text-blue-600 transition hover:bg-blue-100">{isAllocated ? <Pencil size={13} /> : <UserRoundCheck size={13} />}{isAllocated ? "Task acceptance" : "Allocate work"}</button></div></article>
+  const startedAt = formatTime(item.taskStartedAt)
+  const workedDuration = getWorkedDuration(item.taskSessions, item.taskStartedAt)
+  const startDisabled = !isAllocated || !canOperate || isActive || isStartEndBlocked
+  const startClass = startedAt && startDisabled
+    ? "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200 disabled:cursor-not-allowed"
+    : "bg-emerald-50 text-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-300"
+  return <article className="p-4"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="text-xs font-semibold text-blue-600">{item.id}</p><button type="button" onClick={() => onDescription(item)} className="mt-1 text-left text-sm font-semibold text-blue-600 hover:underline">{item.taskTitle || item.work}</button><p className="mt-1 text-xs text-slate-500">{item.customer}{item.assignedDeveloper ? ` · ${item.assignedDeveloper}` : ""}</p></div><Badge className={priorityStyles[item.priority]}>{item.priority}</Badge></div><div className="mt-3 flex items-center justify-between gap-3 text-xs"><span className="text-slate-500">Due: <strong className="font-medium text-slate-700">{item.due}</strong></span><Badge className={statusStyles[item.status]}>{item.status}</Badge></div><div className="mt-3 flex flex-wrap gap-2"><button type="button" disabled={startDisabled} onClick={() => onStart(item)} className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-bold ${startClass}`}><Play size={13} strokeWidth={2.5} />{startedAt ? `Running · ${workedDuration}` : "Start"}</button><button type="button" disabled={!isAllocated || !canOperate || !isActive || isStartEndBlocked} onClick={() => onEnd(item)} className="inline-flex items-center gap-1.5 rounded-md bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-600 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-300"><Square size={12} />End</button>{isAllocated && <button type="button" onClick={() => onTimeline(item)} className="inline-flex items-center gap-1.5 rounded-md bg-violet-50 px-2.5 py-1.5 text-xs font-semibold text-violet-600"><Clock3 size={13} />Timeline</button>}<button type="button" onClick={() => isAllocated ? onUpdate(item) : onAllocate(item)} className="inline-flex items-center gap-1.5 rounded-md bg-blue-50 px-2.5 py-1.5 text-xs font-semibold text-blue-600 transition hover:bg-blue-100">{isAllocated ? <Pencil size={13} /> : <UserRoundCheck size={13} />}{isAllocated ? "Task acceptance" : "Allocate work"}</button></div></article>
 }
 
-function ModalShell({ title, subtitle, children, onClose }) {
-  return <div className="fixed inset-0 z-50 flex items-end bg-slate-950/40 p-0 backdrop-blur-[1px] sm:items-center sm:justify-center sm:p-4"><section role="dialog" aria-modal="true" aria-label={title} className="max-h-[92vh] w-full overflow-y-auto rounded-t-2xl bg-white shadow-2xl sm:max-w-2xl sm:rounded-2xl"><header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-100 bg-white px-5 py-4"><div><p className="text-sm font-bold text-slate-900">{title}</p><p className="mt-0.5 text-xs text-slate-500">{subtitle}</p></div><button type="button" onClick={onClose} className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"><X size={18} /></button></header>{children}</section></div>
+function ModalShell({ title, subtitle, children, onClose, scrollable = true }) {
+  return <div className="fixed inset-0 z-50 flex items-end bg-slate-950/40 p-0 backdrop-blur-[1px] sm:items-center sm:justify-center sm:p-4"><section role="dialog" aria-modal="true" aria-label={title} className="flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:max-w-2xl sm:rounded-2xl"><header className="z-10 shrink-0 flex items-start justify-between gap-4 border-b border-slate-100 bg-white px-5 py-4"><div><p className="text-sm font-bold text-slate-900">{title}</p><p className="mt-0.5 text-xs text-slate-500">{subtitle}</p></div><button type="button" onClick={onClose} className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"><X size={18} /></button></header><div className={scrollable ? "min-h-0 flex-1 overflow-y-auto" : "contents"}>{children}</div></section></div>
 }
 
 function Field({ label, children }) {
@@ -523,7 +573,40 @@ const selectClass = "h-10 w-full cursor-pointer rounded-lg border border-slate-2
 
 function AllocationModal({ work, value, developmentStaff, onChange, onClose, onSubmit }) {
   const set = (key, nextValue) => onChange((current) => ({ ...current, [key]: nextValue }))
-  return <ModalShell title="Allocate development work" subtitle={`${work.id} · ${work.work}`} onClose={onClose}><form onSubmit={onSubmit}><div className="space-y-5 p-5"><div className="grid gap-x-4 gap-y-3 rounded-xl bg-slate-50 p-3 text-xs text-slate-600 sm:grid-cols-3"><span><strong className="block text-slate-800">{work.customer}</strong>Customer</span><span><strong className="block text-slate-800">{work.id}</strong>Lead Id</span><span><strong className="block text-slate-800">R&D</strong>Department</span><span><strong className="block text-slate-800">{formatDate(value.allocationDate)}</strong>Allocation date</span><span><strong className="block text-slate-800">{value.allocationTime || "-"}</strong>Allocation time</span><span><strong className="block text-slate-800">Pending</strong>Initial status</span></div><div className="grid gap-4 sm:grid-cols-2"><Field label="Assigned by"><input readOnly value={value.assignedBy || "-"} className={inputClass} /></Field><Field label="Assigned developer"><select required value={value.assignedDeveloper} onChange={(e) => set("assignedDeveloper", e.target.value)} className={selectClass} disabled={developmentStaff.length === 0}><option value="">{developmentStaff.length ? "Select R&D staff" : "No R&D staff available"}</option>{developmentStaff.map((staff) => <option key={staff._id} value={staff._id}>{staff.name}</option>)}</select></Field><Field label="Priority"><select value={value.priority} onChange={(e) => set("priority", e.target.value)} className={selectClass}>{["High", "Medium", "Low"].map((priority) => <option key={priority}>{priority}</option>)}</select></Field><Field label="Expected completion date"><input type="date" min={toDateInputValue(value.allocationDate)} value={value.expectedCompletionDate} onChange={(e) => set("expectedCompletionDate", e.target.value)} className={inputClass} /></Field></div><Field label="Task title"><input required value={value.taskTitle} onChange={(e) => set("taskTitle", e.target.value)} placeholder="Enter a clear task title" className={inputClass} /></Field><Field label="Task description"><textarea required rows="5" value={value.allocationDescription} onChange={(e) => set("allocationDescription", e.target.value)} placeholder="Describe the work to be completed..." className="min-h-[120px] w-full resize-y rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100" /></Field></div><footer className="flex justify-end gap-3 border-t border-slate-100 px-5 py-4"><button type="button" onClick={onClose} className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">Cancel</button><button type="submit" className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"><Save size={15} /> Allocate task</button></footer></form></ModalShell>
+  return <ModalShell title="Allocate development work" subtitle={`${work.id} · ${work.work}`} onClose={onClose} scrollable={false}>
+    <form onSubmit={onSubmit} className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-5">
+        <div className="grid gap-x-4 gap-y-3 rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600 sm:grid-cols-3">
+          <span><strong className="block text-slate-800">{work.customer}</strong>Customer</span>
+          <span><strong className="block text-slate-800">{work.id}</strong>Lead Id</span>
+          <span><strong className="block text-slate-800">R&D</strong>Department</span>
+          <span><strong className="block text-slate-800">{formatDate(value.allocationDate)}</strong>Allocation date</span>
+          <span><strong className="block text-slate-800">{value.allocationTime || "-"}</strong>Allocation time</span>
+          <span><strong className="block text-slate-800">Pending</strong>Initial status</span>
+        </div>
+
+        <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+          <Field label="Assigned by"><input readOnly value={value.assignedBy || "-"} className={inputClass} /></Field>
+          <Field label="Assigned developer"><select required value={value.assignedDeveloper} onChange={(e) => set("assignedDeveloper", e.target.value)} className={selectClass} disabled={developmentStaff.length === 0}><option value="">{developmentStaff.length ? "Select R&D staff" : "No R&D staff available"}</option>{developmentStaff.map((staff) => <option key={staff._id} value={staff._id}>{staff.name}</option>)}</select></Field>
+          <Field label="Priority"><select value={value.priority} onChange={(e) => set("priority", e.target.value)} className={selectClass}>{["High", "Medium", "Low"].map((priority) => <option key={priority}>{priority}</option>)}</select></Field>
+          <section className="sm:col-span-2 rounded-xl border border-slate-200 bg-slate-50/70 p-3.5">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2"><span className="grid h-7 w-7 place-items-center rounded-lg bg-blue-600 text-white shadow-sm"><CalendarDays size={14} /></span><div><p className="text-xs font-bold text-slate-800">Delivery schedule</p><p className="text-[10px] text-slate-500">Set the expected completion date and time.</p></div></div>
+              <span className="rounded-full bg-blue-50 px-2 py-1 text-[10px] font-bold text-blue-700">12-hour time</span>
+            </div>
+            <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+              <label className="block min-w-0"><span className="mb-1.5 block text-[11px] font-semibold text-slate-600">Target date</span><input type="date" min={toDateInputValue(value.allocationDate)} value={value.expectedCompletionDate} onChange={(e) => set("expectedCompletionDate", e.target.value)} className="h-10 min-w-0 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100" /></label>
+              <div className="min-w-0"><span className="mb-1.5 flex items-center gap-1 text-[11px] font-semibold text-slate-600"><Clock3 size={12} className="text-blue-600" /> Target time</span><div className="flex h-10 min-w-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 transition focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100"><label className="min-w-0 flex-1"><span className="sr-only">Expected completion hour</span><select value={value.expectedCompletionHour} onChange={(e) => set("expectedCompletionHour", e.target.value)} className="h-8 w-full min-w-0 bg-transparent px-1 text-center text-sm font-semibold text-slate-800 outline-none"><option value="">HH</option>{Array.from({ length: 12 }, (_, index) => String(index + 1).padStart(2, "0")).map((hour) => <option key={hour} value={hour}>{hour}</option>)}</select></label><span className="text-base font-semibold text-slate-300">:</span><label className="min-w-0 flex-1"><span className="sr-only">Expected completion minute</span><select value={value.expectedCompletionMinute} onChange={(e) => set("expectedCompletionMinute", e.target.value)} className="h-8 w-full min-w-0 bg-transparent px-1 text-center text-sm font-semibold text-slate-800 outline-none">{["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"].map((minute) => <option key={minute} value={minute}>{minute}</option>)}</select></label><span className="h-5 w-px bg-slate-200" /><label className="min-w-0 flex-[1.15]"><span className="sr-only">Expected completion period</span><select value={value.expectedCompletionPeriod} onChange={(e) => set("expectedCompletionPeriod", e.target.value)} className="h-8 w-full min-w-0 bg-transparent px-1 text-center text-xs font-bold text-blue-700 outline-none"><option>AM</option><option>PM</option></select></label></div></div>
+            </div>
+          </section>
+        </div>
+
+        <Field label="Task title"><input required value={value.taskTitle} onChange={(e) => set("taskTitle", e.target.value)} placeholder="Enter a clear task title" className={inputClass} /></Field>
+        <Field label="Task description"><textarea required rows="5" value={value.allocationDescription} onChange={(e) => set("allocationDescription", e.target.value)} placeholder="Describe the work to be completed..." className="min-h-[120px] w-full resize-y rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100" /></Field>
+      </div>
+      <footer className="z-20 shrink-0 flex justify-end gap-3 border-t border-slate-100 bg-white/95 px-5 py-4 shadow-[0_-8px_20px_rgba(15,23,42,0.06)] backdrop-blur"><button type="button" onClick={onClose} className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100">Cancel</button><button type="submit" className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"><Save size={15} /> Allocate task</button></footer>
+    </form>
+  </ModalShell>
 }
 
 function WorkUpdateModal({ work, value, onChange, onClose, onSubmit }) {

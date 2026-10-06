@@ -151,7 +151,10 @@ const staffSchema = new Schema(
         LeadReallocation: Boolean,
         Employee: Boolean,
         ProductandServices: Boolean,
-        CollectionUpdate: Boolean
+        CollectionUpdate: Boolean,
+        PrimaryDashboard: { type: Boolean, default: false },
+        MarketingDashboard: { type: Boolean, default: false },
+        ResearchAndDevelopmentDashboard: { type: Boolean, default: false }
       }
 
     ],

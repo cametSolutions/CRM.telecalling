@@ -1522,6 +1522,7 @@ onpasswordClick,
   const [mobileMenu, setMobileMenu] = useState(null)
   const [mobileChildMenu, setMobileChildMenu] = useState(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [dashboardMenuOpen, setDashboardMenuOpen] = useState(false)
 
   const navigate = useNavigate()
   const location = useLocation()
@@ -1570,6 +1571,14 @@ onpasswordClick,
       navigate(path, options)
     })
   }
+
+  const dashboardLinks = [
+    { to: "/admin/dashBoard", label: "Primary Dashboard" },
+    { to: "/admin/reports/markettingdashboard", label: "Marketing Dashboard" },
+    { to: "/admin/reports/researchandDevelopment", label: "Research & Development Dashboard" },
+    { to: "/admin/support&department", label: "Support Department" }
+  ]
+  const additionalDashboardLinks = dashboardLinks.slice(1)
 
   const logout = async () => {
     try {
@@ -1764,6 +1773,15 @@ onpasswordClick,
     </div>
   )
 
+  const DashboardDropdown = ({ items }) => (
+    <div className={`absolute left-0 top-full z-50 min-w-[270px] pt-2 transition-all duration-150 ${dashboardMenuOpen ? "visible translate-y-0 opacity-100" : "invisible translate-y-1 opacity-0"}`}>
+      <div className="rounded-2xl border border-white/10 bg-[#162033] p-2 shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
+        <div className="px-3 pb-1.5 pt-1 text-[11px] font-bold uppercase tracking-wider text-sky-400">Switch dashboard</div>
+        {items.map((item) => <button key={item.to} type="button" onClick={() => { setDashboardMenuOpen(false); handleSafeNavigate(item.to) }} className={`block w-full rounded-xl px-3 py-2.5 text-left text-[13px] font-medium transition ${isPathActive(item.to) ? "bg-[#243145] text-white" : "text-slate-100 hover:bg-[#1E293B] hover:text-white"}`}>{item.label}</button>)}
+      </div>
+    </div>
+  )
+
   const DesktopReportsDropdown = ({ groups }) => (
     <div className="invisible absolute left-0 top-[calc(100%+12px)] z-50 w-64 translate-y-1 rounded-2xl border border-white/10 bg-[#162033] p-2 opacity-0 shadow-[0_20px_60px_rgba(0,0,0,0.45)] transition-all duration-150 group-hover/menu:visible group-hover/menu:translate-y-0 group-hover/menu:opacity-100 group-focus-within/menu:visible group-focus-within/menu:translate-y-0 group-focus-within/menu:opacity-100">
       {groups.map((groupItem, idx) => (
@@ -1847,17 +1865,17 @@ onpasswordClick,
           {/* Center nav */}
           <div className="hidden xl:flex justify-center">
             <nav className="flex h-10 items-center gap-1 rounded-full border border-white/10 bg-[#081224] px-2 shadow-[0_8px_24px_rgba(0,0,0,0.22)]">
-              <button
-                type="button"
-                onClick={() => handleSafeNavigate("/admin/dashBoard")}
-                className={`rounded-full px-5 py-1 text-[14px] font-semibold transition ${
-                  isPathActive("/admin/dashBoard")
-                    ? "bg-[#0F3A68] text-sky-300"
-                    : "text-slate-300 hover:bg-white/5 hover:text-white"
-                }`}
-              >
-                Dashboard
-              </button>
+              <div className="relative flex items-center" onMouseEnter={() => setDashboardMenuOpen(true)} onMouseLeave={() => setDashboardMenuOpen(false)}>
+                <button
+                  type="button"
+                  onClick={() => handleSafeNavigate("/admin/dashBoard")}
+                  className={`rounded-l-full px-4 py-1 pr-2 text-[14px] font-semibold transition ${dashboardLinks.some((item) => isPathActive(item.to)) ? "bg-[#0F3A68] text-sky-300" : "text-slate-300 hover:bg-white/5 hover:text-white"}`}
+                >
+                  Dashboard
+                </button>
+                <button type="button" onClick={() => setDashboardMenuOpen((open) => !open)} className={`flex h-7 items-center rounded-r-full px-2 text-slate-300 transition hover:bg-white/5 hover:text-white ${dashboardLinks.some((item) => isPathActive(item.to)) ? "bg-[#0F3A68]" : ""}`} aria-label="Switch dashboard"><FiChevronDown size={13} /></button>
+                <DashboardDropdown items={additionalDashboardLinks} />
+              </div>
 
               {menuGroups.map((group) => {
                 const isReports = group.label === "Reports"
@@ -2083,17 +2101,11 @@ onpasswordClick,
             </div>
 
             <div className="p-3">
-              <button
-                type="button"
-                onClick={() => handleSafeNavigate("/admin/dashBoard")}
-                className={`mb-2 block w-full rounded-2xl px-4 py-3 text-left text-[14px] font-medium ${
-                  isPathActive("/admin/dashBoard")
-                    ? "bg-[#243145] text-white"
-                    : "text-slate-200 hover:bg-[#1E293B]"
-                }`}
-              >
-                Dashboard
-              </button>
+              <div className="mb-2 overflow-hidden rounded-2xl border border-white/10 bg-[#162033]">
+                <button type="button" onClick={() => handleSafeNavigate("/admin/dashBoard")} className={`block w-full px-4 py-3 text-left text-[14px] font-medium ${dashboardLinks.some((item) => isPathActive(item.to)) ? "bg-[#243145] text-white" : "text-slate-200 hover:bg-[#1E293B]"}`}>Dashboard</button>
+                <button type="button" onClick={() => setMobileMenu(mobileMenu === "Dashboards" ? null : "Dashboards")} className="flex w-full items-center justify-between border-t border-white/10 px-4 py-2.5 text-left text-xs font-semibold text-sky-300"><span>Switch dashboard</span>{mobileMenu === "Dashboards" ? <FiChevronDown size={16} /> : <FiChevronRight size={16} />}</button>
+                {mobileMenu === "Dashboards" && <div className="border-t border-white/10 px-2 py-1">{additionalDashboardLinks.map((dashboard) => <button key={dashboard.to} type="button" onClick={() => handleSafeNavigate(dashboard.to)} className={`block w-full rounded-xl px-3 py-2.5 text-left text-[13px] font-medium transition ${isPathActive(dashboard.to) ? "bg-[#243145] text-white" : "text-slate-200 hover:bg-[#1E293B]"}`}>{dashboard.label}</button>)}</div>}
+              </div>
 
               {menuGroups.map((group) => {
                 const isReports = group.label === "Reports"
