@@ -3504,9 +3504,10 @@ const LeadFollowUp = () => {
                             options={
                               taskList
                                 ?.filter((task) =>
-                                  ["SYSTEM", "DEMO"].includes(
-                                    String(task.taskName || "").trim().toUpperCase()
-                                  )
+                                  task.listed === true &&
+                                  String(task.taskName || "")
+                                    .replace(/[^a-z]/gi, "")
+                                    .toLowerCase() !== "followup"
                                 )
                                 .map((task) => ({
                                   value: task._id,
