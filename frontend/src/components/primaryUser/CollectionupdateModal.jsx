@@ -397,8 +397,11 @@ export function CollectionupdateModal({
       : []
 
     console.log(data?.originalpaymentHistory)
-    const lastPayment = data?.originalpaymentHistory.length
-      ? data?.originalpaymentHistory[data?.originalpaymentHistory.length - 1]
+    const originalPaymentHistory = Array.isArray(data?.originalpaymentHistory)
+      ? data.originalpaymentHistory
+      : history
+    const lastPayment = originalPaymentHistory.length
+      ? originalPaymentHistory[originalPaymentHistory.length - 1]
       : null
     console.log(history)
     const hasPaymentEntries =
@@ -464,12 +467,20 @@ export function CollectionupdateModal({
       const hasPrimaryProduct = data?.leadFor?.some(
         (item) => item.productorservicetype === "Primaryproduct"
       )
+      const leadForNetTotal = data.leadFor.reduce(
+        (total, item) => total + safeNumber(item.netAmount ?? item.productPrice),
+        0
+      )
+      const leadNetAmount = safeNumber(data.netAmount)
+      const useLeadNetFallback = leadForNetTotal === 0 && leadNetAmount > 0
       console.log(hasPrimaryProduct)
 
       setIsHavePrimaryProduct(hasPrimaryProduct)
       setPaymentRows(
-        data.leadFor.map((p) => {
-          const net = safeNumber(p.netAmount ?? p.productPrice)
+        data.leadFor.map((p, index) => {
+          const net = useLeadNetFallback && index === 0
+            ? leadNetAmount
+            : safeNumber(p.netAmount ?? p.productPrice)
           console.log(p)
           return {
             id: crypto.randomUUID(),
@@ -501,7 +512,7 @@ export function CollectionupdateModal({
           productorServicemodel: null,
           netAmount: String(net),
           receivedAmount: "",
-          productorservicetype: p?.productorservicetype,
+          productorservicetype: "",
           _balance: balance,
           _baseBalance: balance,
           _netAmt: net,
