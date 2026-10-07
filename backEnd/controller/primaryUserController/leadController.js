@@ -5949,12 +5949,83 @@ export const UpdateLeadRegister = async (req, res) => {
         console.log("[reverse-gate] SKIPPED - from !== 'closedlead'");
       }
 
-      const mappedLeadData = leadItemsForUpdate.map((item) => {
-        const productPrice = toNumber(item?.productPrice);
-        const netAmount = toNumber(item?.netAmount);
+      const hasPrimaryProduct = leadItemsForUpdate.some(
+        (item) => safeString(item?.productorservicetype).toLowerCase() === "primaryproduct"
+      );
+      const onlyAdditionalServices =
+        !hasPrimaryProduct &&
+        leadItemsForUpdate.every(
+          (item) => safeString(item?.productorservicetype).toLowerCase() === "additionalservice"
+        );
+      const discountAmount = round2(data?.discamnt || 0);
+      const inputTaxableAmount = round2(data?.taxableAmount || 0);
+      const inputTaxAmount = round2(data?.taxAmount || 0);
+      const inputNetAmount = round2(data?.netAmount || 0);
+      const grossAmount = round2(
+        leadItemsForUpdate.reduce((sum, item) => sum + toNumber(item?.netAmount), 0)
+      );
+
+      let newTaxableAmount = inputTaxableAmount;
+      let newTaxAmount = inputTaxAmount;
+      let newNetAmount = inputNetAmount;
+      let runningTotal = 0;
+
+      const adjustedItems = leadItemsForUpdate.map((item, index) => {
+        const originalProductPrice = round2(
+          onlyAdditionalServices
+            ? item?.actualproductPrice ?? item?.productPrice ?? 0
+            : item?.productPrice ?? 0
+        );
+        const originalNetAmount = round2(
+          onlyAdditionalServices
+            ? item?.actualNetAmount ?? item?.netAmount ?? 0
+            : item?.netAmount ?? 0
+        );
+
+        if (onlyAdditionalServices) {
+          return {
+            item,
+            finalNetAmount: originalNetAmount,
+            scaledProductPrice: originalProductPrice,
+            scaledTaxAmount: round2(originalNetAmount - originalProductPrice),
+          };
+        }
+
+        if (index === 0) {
+          newNetAmount = round2(data?.netAmount ?? grossAmount - discountAmount);
+        }
+
+        const ratio = grossAmount > 0 ? originalNetAmount / grossAmount : 0;
+        let finalNetAmount = round2(originalNetAmount - ratio * discountAmount);
+        if (index === leadItemsForUpdate.length - 1) {
+          finalNetAmount = round2(newNetAmount - runningTotal);
+        }
+        runningTotal = round2(runningTotal + finalNetAmount);
+
+        const scaleFactor =
+          originalNetAmount > 0 ? finalNetAmount / originalNetAmount : 0;
+
+        const scaledProductPrice = round2(originalProductPrice * scaleFactor);
+
+        return {
+          item,
+          finalNetAmount,
+          scaledProductPrice,
+          scaledTaxAmount: round2(finalNetAmount - scaledProductPrice),
+        };
+      });
+
+      const mappedLeadData = adjustedItems.map(({
+        item,
+        finalNetAmount,
+        scaledProductPrice,
+        scaledTaxAmount,
+      }) => {
+        const productPrice = scaledProductPrice;
+        const netAmount = finalNetAmount;
         const hsn = toNumber(item?.hsn);
         const actualHsn = toNumber(item?.actualHsn);
-        const taxAmount = netAmount - productPrice;
+        const taxAmount = scaledTaxAmount;
         const itemType = safeString(item?.productorservicetype).toLowerCase();
         const isAdditionalService = itemType === "additionalservice";
         const existingAdditionalService = isAdditionalService
@@ -6013,18 +6084,6 @@ export const UpdateLeadRegister = async (req, res) => {
           branch_id: toObjectIdOrNull(item?.branch_id),
         };
       });
-
-      const newTaxableAmount = mappedLeadData.reduce(
-        (sum, item) => sum + toNumber(item.productPrice),
-        0
-      );
-
-      const newNetAmount = mappedLeadData.reduce(
-        (sum, item) => sum + toNumber(item.netAmount),
-        0
-      );
-
-      const newTaxAmount = newNetAmount - newTaxableAmount;
 
       const totalPaidAmount = toNumber(matchedDoc.totalPaidAmount);
       const rawBalanceAmount = newNetAmount - totalPaidAmount;
@@ -6103,6 +6162,7 @@ export const UpdateLeadRegister = async (req, res) => {
 
       const updatePayload = {
         ...data,
+        discountAmount,
         taxableAmount: newTaxableAmount,
         taxAmount: newTaxAmount,
         netAmount: newNetAmount,
@@ -9580,8 +9640,7 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
       String(followupFirstStage || "") === codingAndQcTaskId;
     const shouldReallocateToFirstStage =
       formData.followupType === "closed" &&
-      hasProductFirstStage &&
-      !isCodingAndQcFirstStage;
+      (!hasProductFirstStage || !isCodingAndQcFirstStage);
 
     // 2) Close previous open followup if lead closed
     if (
@@ -9745,7 +9804,6 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
       }
       updateDoc.$set.leadConvertedDate = new Date();
       updateDoc.$set.leadClosed = true;
-      // updateDoc.$set.leadClosedDate = new Date();
     }
 
     // lead lost

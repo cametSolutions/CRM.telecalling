@@ -796,6 +796,11 @@ const LeadMaster = ({
     useState(isReadOnly)
   const [selectedState, setSelectedState] = useState(null)
   const [selectedleadlist, setSelectedLeadList] = useState([])
+  const hasPrimaryProductInLead = selectedleadlist.some(
+    (lead) =>
+      String(lead?.productorservicetype || "").toLowerCase() ===
+      "primaryproduct"
+  )
   console.log(selectedleadlist)
   const [selectedCustomer, setSelectedCustomer] = useState(null)
   const [selectedLicense, setSelectedLicense] = useState(null)
@@ -1241,6 +1246,7 @@ const LeadMaster = ({
       setValueMain("leadId", Data[0]?.leadId)
       setValueMain("partner", Data[0]?.partner)
       setValueMain("remark", Data[0].remark)
+      setValueMain("discamnt", Data[0]?.discountAmount || 0)
       setValueMain(
         "selfAllocation",
         Data[0]?.selfAllocation === true ? "true" : "false"
@@ -1615,7 +1621,7 @@ const LeadMaster = ({
   useEffect(() => {
     if (selectedleadlist && selectedleadlist.length) {
       console.log(selectedleadlist)
-      if (!haveprimaryProduct) {
+      if (!hasPrimaryProductInLead) {
         setSelectedLeadList((prev) =>
           prev.map((lead) => {
             if (
@@ -1648,7 +1654,7 @@ const LeadMaster = ({
         )
       }
     }
-  }, [discountAmount])
+  }, [discountAmount, hasPrimaryProductInLead])
   useEffect(() => {
     console.log("hhh")
     if (!selectedLicense && leadList && leadList.length > 0 && !Data) {
@@ -2878,7 +2884,7 @@ const LeadMaster = ({
             //   console.log("hh")
             //   return `Lead amount is required for ${row?.productName || row?.productorServiceName} ${tag?.licensenumber},not less than 0`
             // }
-            if (Number(productAmount) <= 0 && !haveprimaryProduct) {
+            if (Number(productAmount) <= 0 && !hasPrimaryProductInLead) {
               console.log("hh")
               return `Lead amount is required for ${
                 row?.productName || row?.productorServiceName
@@ -3187,12 +3193,14 @@ const LeadMaster = ({
           return {
             ...row,
             applicationDate: detailsForm.applicationDate,
-            productPrice: haveprimaryProduct
+            productPrice: hasPrimaryProductInLead
               ? row?.productPrice
               : totaltaxexclusiveAmount,
             hsn:
               isAdditionalOnly && hasTaggedLicenses ? savedLeadTax : row?.hsn,
-            netAmount: haveprimaryProduct ? row?.netAmount : updatedNetAmount,
+            netAmount: hasPrimaryProductInLead
+              ? row?.netAmount
+              : updatedNetAmount,
             noofusers: detailsForm.noofusers,
 
             amount: detailsForm.amount,
@@ -4059,7 +4067,9 @@ convertexcel
                       <col style={{ width: "12%" }} />
                       <col style={{ width: "15%" }} />
                       <col style={{ width: "7%" }} />
-                      {process === "closing" && <col style={{ width: "7%" }} />}
+                      {(process === "closing" || process === "edit") && (
+                        <col style={{ width: "7%" }} />
+                      )}
                     </colgroup>
                     <thead>
                       <tr className="bg-[#1B2A4A] text-white">
@@ -4087,7 +4097,9 @@ convertexcel
                         >
                           Action
                         </th>
-                        {(process === "closing" || from === "closedlead") && (
+                        {(process === "closing" ||
+                          process === "edit" ||
+                          from === "closedlead") && (
                           <th
                             rowSpan={2}
                             className="border border-blue-900 px-2 py-2 text-center text-xs"
@@ -4328,7 +4340,9 @@ convertexcel
                                 </button>
                               </div>
                             </td>
-                            {(process === "closing" || from === "closedlead") &&
+                            {(process === "closing" ||
+                              process === "edit" ||
+                              from === "closedlead") &&
                               !isEnhancedService && (
                                 <td className="border border-gray-300 px-1 py-1 text-center">
                                   <div className="relative inline-block group">
@@ -4437,7 +4451,7 @@ convertexcel
                         field: "taxAmount",
                         viewonly: true
                       },
-                      ...(process === "closing"
+                      ...(process === "closing" || process === "edit"
                         ? [
                             {
                               label: "Disc.Amount",
@@ -4460,7 +4474,10 @@ convertexcel
                           type="number"
                           {...registerMain(field)}
                           onFocus={(e) => {
-                            if (field === "discamnt" && !haveprimaryProduct) {
+                            if (
+                              field === "discamnt" &&
+                              !hasPrimaryProductInLead
+                            ) {
                               console.log("hh")
                               const isInvalid = selectedleadlist.some(
                                 (lead) =>
@@ -4686,7 +4703,7 @@ convertexcel
                     ).toLowerCase() === "primaryproduct"
                       ? "sm:max-w-xl"
                       : detailsForm?.taggeddata?.length > 0
-                        ? haveprimaryProduct
+                        ? hasPrimaryProductInLead
                           ? "sm:max-w-2xl"
                           : "sm:max-w-4xl"
                         : "sm:max-w-2xl"
@@ -4950,7 +4967,7 @@ convertexcel
                               <div className="w-full">
                                 <table className="w-full table-fixed border-collapse">
                                   <colgroup>
-                                    {!haveprimaryProduct ? (
+                                    {!hasPrimaryProductInLead ? (
                                       <>
                                         <col style={{ width: "10%" }} />
                                         <col style={{ width: "5%" }} />
@@ -4986,7 +5003,7 @@ convertexcel
                                         Serial No
                                       </th>
 
-                                      {!haveprimaryProduct && (
+                                      {!hasPrimaryProductInLead && (
                                         <>
                                           <th className="border-b border-slate-200 px-1.5 py-2.5 text-center">
                                             Lead Amt
@@ -5069,7 +5086,7 @@ convertexcel
                                             />
                                           </td>
 
-                                          {!haveprimaryProduct && (
+                                          {!hasPrimaryProductInLead && (
                                             <>
                                               <td className="px-1.5 py-2">
                                                 <div className="space-y-0.5">
