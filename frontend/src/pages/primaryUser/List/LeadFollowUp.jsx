@@ -454,12 +454,9 @@ const LeadFollowUp = () => {
 
       setAllocatedLeads(normalizeTableData(nonsubmittedtakleads))
 
-      const mergedall = [
-        ...neverfollowupedLeads,
-        ...uniqueoverdueAndcurrentdate,
-        ...postdatefollowup,
-        ...(safeState?.viewMode ? [] : taskSubmittedLeads)
-      ]
+      const mergedall = ownFollow.filter(
+        (lead) => lead.taskfromFollowup === false
+      )
       console.log(mergedall)
       setnetTotalAmount(TotalAmount(mergedall))
       setTableData(normalizeTableData(mergedall))
@@ -515,12 +512,9 @@ const LeadFollowUp = () => {
 
       setAllocatedLeads(nonsubmittedtakleads)
 
-      const mergedall = [
-        ...neverfollowupedLeads,
-        ...uniqueoverdueAndcurrentdate,
-        ...postdatefollowup,
-        ...(safeState?.viewMode ? [] : taskSubmittedLeads)
-      ]
+      const mergedall = filteredLeads.filter(
+        (lead) => lead.taskfromFollowup === false
+      )
 
       const groupedLeads = {}
 
@@ -1086,12 +1080,9 @@ const LeadFollowUp = () => {
               const allocatedData = normalizeTableData(nonsubmittedtakleads)
               setAllocatedLeads(allocatedData)
 
-              const mergedall = [
-                ...neverfollowupedLeads,
-                ...uniqueoverdueAndcurrentdate,
-                ...postdatefollowup,
-                ...(safeState?.viewMode ? [] : taskSubmittedLeads)
-              ]
+              const mergedall = ownFollow.filter(
+                (lead) => lead.taskfromFollowup === false
+              )
               console.log(mergedall)
               const Data = normalizeTableData(mergedall)
               // then store it in state
@@ -1152,12 +1143,9 @@ const LeadFollowUp = () => {
               console.log(uniqueoverdueAndcurrentdate)
               console.log(postdatefollowup)
               console.log(safeState?.viewMode ? [] : taskSubmittedLeads)
-              const mergedall = [
-                ...neverfollowupedLeads,
-                ...uniqueoverdueAndcurrentdate,
-                ...postdatefollowup,
-                ...(safeState?.viewMode ? [] : taskSubmittedLeads)
-              ]
+              const mergedall = filteredLeads.filter(
+                (lead) => lead.taskfromFollowup === false
+              )
               const groupedLeads = {}
               let grandTotal = 0
               mergedall.forEach((lead) => {
@@ -1976,12 +1964,9 @@ const LeadFollowUp = () => {
             setallocatednetAmount(TotalAmount(nonsubmittedtakleads))
             setAllocatedLeads(allocatedData)
 
-            const mergedall = [
-              ...neverfollowupedLeads,
-              ...uniqueoverdueAndcurrentdate,
-              ...postdatefollowup,
-              ...taskSubmittedLeads
-            ]
+            const mergedall = ownFollow.filter(
+              (lead) => lead.taskfromFollowup === false
+            )
             const Data = normalizeTableData(mergedall)
             console.log(Data)
             // then store it in state
@@ -2102,12 +2087,9 @@ const LeadFollowUp = () => {
               )
               setAllocatedLeads(groupedallocatedData)
 
-              const mergedall = [
-                ...neverfollowupedLeads,
-                ...uniqueoverdueAndcurrentdate,
-                ...postdatefollowup
-                // ...taskSubmittedLeads
-              ]
+              const mergedall = leads.filter(
+                (lead) => lead.taskfromFollowup === false
+              )
               const groupedLeads = {}
               let grandTotal = 0
               mergedall.forEach((lead) => {

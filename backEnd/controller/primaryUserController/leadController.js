@@ -198,6 +198,7 @@ export const GetallfollowupList = async (req, res) => {
         leadBranch: branchObjectId,
         reallocatedTo: false,
         leadLost: false,
+        taskfromFollowup: false,
       };
     } else if (pendingfollowup === "false") {
       const followupMatch = {
