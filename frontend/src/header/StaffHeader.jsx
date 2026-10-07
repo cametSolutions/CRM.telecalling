@@ -446,6 +446,9 @@ console.log(user?.department?.code)
       : []),
     ...(permissions.ResearchAndDevelopmentDashboard
       ? [{ to: "/staff/reports/researchandDevelopment", label: "Research & Development Dashboard" }]
+      : []),
+    ...(permissions.SupportDashboard
+      ? [{ to: "/staff/support&department", label: "Support Department Dashboard" }]
       : [])
   ].filter(
     (item, index, items) =>

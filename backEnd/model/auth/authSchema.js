@@ -154,7 +154,8 @@ const staffSchema = new Schema(
         CollectionUpdate: Boolean,
         PrimaryDashboard: { type: Boolean, default: false },
         MarketingDashboard: { type: Boolean, default: false },
-        ResearchAndDevelopmentDashboard: { type: Boolean, default: false }
+        ResearchAndDevelopmentDashboard: { type: Boolean, default: false },
+        SupportDashboard: { type: Boolean, default: false }
       }
 
     ],
