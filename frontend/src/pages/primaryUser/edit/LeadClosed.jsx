@@ -155,9 +155,23 @@ function LeadClosed() {
 
   useEffect(() => {
     if (closingCompleted) {
-      navigate(-1)
+      const basePath =
+        userData?.role === "Admin"
+          ? "/admin/transaction/lead"
+          : "/staff/transaction/lead"
+      const destination =
+        closingOrigin === "reallocation"
+          ? `${basePath}/leadReallocation`
+          : closingOrigin === "followup"
+            ? `${basePath}/leadFollowUp`
+            : basePath
+
+      navigate(destination, {
+        replace: true,
+        state: { refreshKey: Date.now() }
+      })
     }
-  }, [closingCompleted, navigate])
+  }, [closingCompleted, closingOrigin, navigate, userData?.role])
 
   const handleClosingFailure = async (reason) => {
     setclosedLoader(false)

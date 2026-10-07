@@ -3589,7 +3589,9 @@ const LeadFollowUp = () => {
                   )}
 
                   {/* Payment Section */}
-                  {formData.followupType === "closed" && (
+                  {(formData.followupType === "closed" ||
+                    formData.followupType ===
+                      "followup_closed_and_lead_closed") && (
                     <div className="rounded-2xl p-5 bg-white/80 border border-white shadow-sm">
                       <label className="flex items-start gap-3 cursor-pointer group mb-1">
                         <input
