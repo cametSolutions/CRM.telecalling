@@ -17,6 +17,11 @@ const dashboardPermissions = [
     key: "ResearchAndDevelopmentDashboard",
     label: "Research & Development Dashboard",
     primaryDepartmentCodes: ["DEPARTMENT5"]
+  },
+  {
+    key: "SupportDashboard",
+    label: "Support Department Dashboard",
+    primaryDepartmentCodes: ["DEPARTMENT4"]
   }
 ]
 
@@ -68,7 +73,8 @@ const UserPermissionList = ({ user, closeModal, refresh }) => {
     CollectionUpdate: false,
     PrimaryDashboard: false,
     MarketingDashboard: false,
-    ResearchAndDevelopmentDashboard: false
+    ResearchAndDevelopmentDashboard: false,
+    SupportDashboard: false
   })
 
   const [selectAll, setSelectAll] = useState(false)

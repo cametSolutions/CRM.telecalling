@@ -533,7 +533,7 @@ console.log(historyList)
           </button>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4">
+        <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4 lg:flex lg:flex-col lg:overflow-hidden">
           {historyRows.length === 0 ? (
             <div className="grid min-h-40 place-items-center rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 text-center text-sm text-gray-500">
               No history available for this lead.
@@ -595,23 +595,23 @@ console.log(historyList)
                 ))}
               </div>
 
-              <div className="hidden overflow-visible rounded-lg border border-gray-200 lg:block">
+              <div className="hidden min-h-0 flex-1 overflow-auto rounded-lg border border-gray-200 lg:block">
                 <table className="w-full table-fixed border-collapse text-xs">
-                  <thead className="sticky top-0 z-20 bg-indigo-50 text-slate-700">
+                  <thead className="text-slate-700">
                     <tr>
-                      <th className="w-28 border-b border-indigo-100 px-3 py-2 text-left font-semibold">
+                      <th className="sticky top-0 z-20 w-28 border-b border-indigo-100 bg-indigo-50 px-3 py-2 text-left font-semibold">
                         Date
                       </th>
-                      <th className="w-28 border-b border-indigo-100 px-3 py-2 text-left font-semibold">
+                      <th className="sticky top-0 z-20 w-28 border-b border-indigo-100 bg-indigo-50 px-3 py-2 text-left font-semibold">
                         User
                       </th>
-                      <th className="w-[27%] border-b border-indigo-100 px-3 py-2 text-left font-semibold">
+                      <th className="sticky top-0 z-20 w-[27%] border-b border-indigo-100 bg-indigo-50 px-3 py-2 text-left font-semibold">
                         Task
                       </th>
-                      <th className="border-b border-indigo-100 px-3 py-2 text-left font-semibold">
+                      <th className="sticky top-0 z-20 border-b border-indigo-100 bg-indigo-50 px-3 py-2 text-left font-semibold">
                         Remarks
                       </th>
-                      <th className="w-32 border-b border-indigo-100 px-3 py-2 text-left font-semibold">
+                      <th className="sticky top-0 z-20 w-32 border-b border-indigo-100 bg-indigo-50 px-3 py-2 text-left font-semibold">
                         Next follow-up
                       </th>
                     </tr>

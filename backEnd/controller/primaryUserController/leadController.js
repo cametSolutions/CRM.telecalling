@@ -13720,11 +13720,16 @@ export const GetcollectionLeads = async (req, res) => {
         const paymentHistory = validObjects(lead.paymentHistory);
         const leadFor = validObjects(lead.leadFor);
 
-        const latestFollowup = activityLogs
-          .filter((activity) => activity.taskTo === "followup")
-          .at(-1);
+        // A lead can be sent back to follow-up after an earlier follow-up was
+        // completed and a collection was recorded. Keep it eligible once any
+        // follow-up has closed; a later pending follow-up must not hide that
+        // collection from this list.
+        const hasClosedFollowup = activityLogs.some(
+          (activity) =>
+            activity.taskTo === "followup" && activity.followupClosed === true
+        );
 
-        if (!latestFollowup?.followupClosed) return null;
+        if (!hasClosedFollowup) return null;
 
         const paymentHistoryWithIndex = paymentHistory.map(
           (history, originalIndex) => ({
@@ -15354,6 +15359,10 @@ export const AllocateResearchAndDevelopmentTask = async (req, res) => {
         $push: { activityLog: activityLogEntry },
         $set: {
           allocationType: task._id,
+          // Coding & QC allocations from ReallocationTable use this endpoint
+          // instead of /lead/leadReallocation. Clear the root reallocation
+          // flag just as the standard reallocation path does.
+          reallocatedTo: false,
           allocatedTo,
           allocatedBy,
           allocatedToModel: "Staff",
