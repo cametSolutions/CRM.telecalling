@@ -2529,6 +2529,34 @@ export const gettargetResult = async (req, res) => {
       );
     };
 
+    // Achieved-lead reporting is grouped by the primary product, but a
+    // license can live on an attached additional-service row. Collect every
+    // supported leadFor license representation for the modal display.
+    const getLeadLicenseNumbers = (lead) => {
+      const licenses = new Set();
+
+      const addLicense = (value) => {
+        if (value === null || value === undefined || String(value).trim() === "") {
+          return;
+        }
+        licenses.add(String(value));
+      };
+
+      for (const item of objects(lead.leadFor)) {
+        addLicense(item?.licenseNumber);
+
+        for (const license of objects(item?.licenseNumbers)) {
+          addLicense(license?.licenseNumber);
+        }
+
+        for (const tag of objects(item?.taggeddata)) {
+          addLicense(tag?.licensenumber ?? tag?.licenseNumber);
+        }
+      }
+
+      return [...licenses].join(", ") || null;
+    };
+
     const getLeadCategoryItems = (lead, configCategoryId) => {
       const primaryItem = getPrimaryLeadItem(lead);
       const meta = getItemMeta(primaryItem);
@@ -2545,7 +2573,7 @@ export const gettargetResult = async (req, res) => {
         id: String(primaryItem.productorServiceId),
         model: primaryItem.productorServicemodel,
         name: meta.name,
-        licenseNumber: primaryItem.licenseNumber || null,
+        licenseNumber: getLeadLicenseNumbers(lead),
       }];
     };
 

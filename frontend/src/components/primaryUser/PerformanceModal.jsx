@@ -941,6 +941,7 @@ const handleMetricTab = (tab) => {
 
 function AchievedLeadsModal({ userName, leads, loggedUser, onClose, onEventLog, onViewLead }) {
   const navigate = useNavigate()
+console.log("h")
   const location = useLocation()
   const uniqueLeads = [...new Map((leads || []).filter((lead) => lead?.leadMongoId)
     .map((lead) => [lead.leadMongoId, lead])).values()]
@@ -1004,7 +1005,7 @@ function AchievedLeadsModal({ userName, leads, loggedUser, onClose, onEventLog, 
             </thead>
             <tbody className="divide-y divide-slate-100">
               {uniqueLeads.map((lead) => {
-console.log(lead)
+console.log(lead?.categoryItems)
                 const displayName = lead.customerName || lead.leadId || "—";
                 const showTooltip = displayName !== "—" && displayName.length > 20; // adjust threshold as needed
 
