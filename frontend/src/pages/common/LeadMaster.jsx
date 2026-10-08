@@ -88,7 +88,9 @@ function LicenseDropdown({
   setTakenLicense
 }) {
   console.log(item)
-  const isMulti = item?.productorservicetype === "Additionalservice"
+  const itemType = String(item?.productorservicetype || "").toLowerCase()
+  const isMulti = itemType === "additionalservice"
+  const isEnhancedService = itemType === "enhancedservice"
 
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState("")
@@ -185,7 +187,10 @@ function LicenseDropdown({
     }
 
     updateRow({
-      licenseNumber: lic?.licenseNumber || ""
+      licenseNumber: lic?.licenseNumber || "",
+      ...(isEnhancedService
+        ? { licenseNumbers: [], taggeddata: [] }
+        : {})
     })
 
     setSearch(String(lic?.licenseNumber ?? ""))
@@ -1271,7 +1276,25 @@ const LeadMaster = ({
       setValueMain("remark", Data[0].remark)
       setSelectedCustomer(Data[0]?.customerName)
       console.log(Data[0].leadFor)
-      const leadData = Data[0]?.leadFor.map((item) => {
+      const sourceLeadItems = Array.isArray(Data[0]?.leadFor)
+        ? Data[0].leadFor
+        : []
+      const isClosedLeadEdit = from === "closedlead"
+      const hasPrimaryProduct = sourceLeadItems.some(
+        (item) =>
+          String(item?.productorservicetype || "").toLowerCase() ===
+          "primaryproduct"
+      )
+      const originalValueOrFallback = (originalValue, fallbackValue) =>
+        Number(originalValue) > 0 ? originalValue : fallbackValue
+
+      const leadData = sourceLeadItems.map((item) => {
+        const itemType = String(
+          item?.productorservicetype || ""
+        ).toLowerCase()
+        const isAdditionalService = itemType === "additionalservice"
+        const hideAdditionalServiceCharge =
+          isClosedLeadEdit && hasPrimaryProduct && isAdditionalService
         const leadTaggedData = Array.isArray(item?.taggeddata)
           ? item.taggeddata
           : []
@@ -1322,11 +1345,26 @@ const LeadMaster = ({
           serialNumber: item?.serialNumber,
           productorServiceId: item?.productorServiceId?._id,
           itemType: item?.productorServicemodel,
-          productPrice: item?.productPrice,
+          productPrice: hideAdditionalServiceCharge
+            ? 0
+            : isClosedLeadEdit
+              ? originalValueOrFallback(
+                  item?.actualproductPrice,
+                  item?.productPrice
+                )
+              : item?.productPrice,
           actualproductPrice: item?.actualproductPrice,
-          hsn: item?.hsn,
+          hsn: hideAdditionalServiceCharge
+            ? 0
+            : isClosedLeadEdit
+              ? originalValueOrFallback(item?.actualHsn, item?.hsn)
+              : item?.hsn,
           actualHsn: item?.actualHsn,
-          netAmount: item?.netAmount,
+          netAmount: hideAdditionalServiceCharge
+            ? 0
+            : isClosedLeadEdit
+              ? originalValueOrFallback(item?.actualNetAmount, item?.netAmount)
+              : item?.netAmount,
           actualNetAmount: item?.actualNetAmount,
           price: item?.price,
           company_id: item?.company_id,
@@ -1519,7 +1557,7 @@ const LeadMaster = ({
         setcustomerTableData(selectedcustomerlicenseandproduct)
       }
     }
-  }, [customerOptions, Data])
+  }, [customerOptions, Data, from])
 
   useEffect(() => {
     if (customerData && customerData.length > 0) {
@@ -1611,11 +1649,16 @@ const LeadMaster = ({
   useEffect(() => {
     const total = Number(calculateTotalAmount()) || 0
     const discount = Number(discountAmount) || 0
+    const discountedNetAmount = Math.max(total - discount, 0)
+    const discountFactor = total > 0 ? discountedNetAmount / total : 0
+    const taxableAmount = Number(calculatetaxableAmount()) || 0
+    const taxAmount = Number(calculatetaxAmount()) || 0
+
     console.log(discount)
-    setValueMain("taxAmount", calculatetaxAmount())
-    setValueMain("taxableAmount", calculatetaxableAmount())
+    setValueMain("taxableAmount", (taxableAmount * discountFactor).toFixed(2))
+    setValueMain("taxAmount", (taxAmount * discountFactor).toFixed(2))
     console.log(selectedleadlist)
-    setValueMain("netAmount", Math.max(total - discount, 0).toFixed(2))
+    setValueMain("netAmount", discountedNetAmount.toFixed(2))
   }, [selectedleadlist, discountAmount])
 
   useEffect(() => {
@@ -3394,8 +3437,16 @@ const LeadMaster = ({
     const itemProductId = String(
       item?.productorServiceId?._id ?? item?.productorServiceId ?? ""
     )
+    const selectedCustomerId = String(
+      selectedCustomer?._id ?? selectedCustomer?.value ?? ""
+    )
+    const customerWithProducts = Array.isArray(selectedCustomer?.selected)
+      ? selectedCustomer
+      : allcustomer?.find(
+          (customer) => String(customer?._id ?? "") === selectedCustomerId
+        )
     const filteredproduct =
-      selectedCustomer?.selected?.filter(
+      customerWithProducts?.selected?.filter(
         (it) =>
           String(it?.product_id?._id ?? it?.product_id ?? "") ===
           itemProductId
@@ -3424,21 +3475,23 @@ const LeadMaster = ({
                 )
               : null
             console.log(existing)
-            // 1. Pick the one WALLET product row (or all, but you showed one)
-            const primaryProduct = Array.isArray(filteredproduct)
-              ? filteredproduct[0] // or a .find if there are many
+            // The selected-customer state may be only a dropdown option during
+            // closing, so resolve the customer record above before reading its
+            // tagged license data.
+            const customerProduct = Array.isArray(filteredproduct)
+              ? filteredproduct[0]
               : null
             console.log(filteredproduct[0])
 
-            // 2. Find tag inside that primary product’s taggeddata
+            // Find the exact customer tag for the license selected on this row.
             const existingTag =
-              primaryProduct && Array.isArray(primaryProduct.taggeddata)
-                ? primaryProduct.taggeddata.find(
+              customerProduct && Array.isArray(customerProduct.taggeddata)
+                ? customerProduct.taggeddata.find(
                     (tag) =>
-                      String(tag?.licensenumber) === String(lic?.licenseNumber)
+                      String(tag?.licensenumber ?? tag?.licenseNumber) ===
+                      String(lic?.licenseNumber)
                   )
                 : null
-            const customerProduct = filteredproduct[0] || null
             const masterProduct = newproduct[0] || null
             const priceSources = [
               existing,
@@ -3496,6 +3549,30 @@ const LeadMaster = ({
               }
               return 0
             }
+            // Due details belong to the customer's tagged license. Do not let
+            // an empty/zero lead draft value hide that existing customer data.
+            // When the customer has no tagged value, use the product master.
+            const dueDetailSources = [existingTag, masterProduct]
+            const getDueDetailValue = (...fields) => {
+              for (const source of dueDetailSources) {
+                for (const field of fields) {
+                  const value = source?.[field]
+                  if (value !== undefined && value !== null && value !== "") {
+                    return value
+                  }
+                }
+              }
+              return undefined
+            }
+            const getPositiveDueDetailValue = (...fields) => {
+              for (const source of dueDetailSources) {
+                for (const field of fields) {
+                  const value = Number(source?.[field])
+                  if (Number.isFinite(value) && value > 0) return value
+                }
+              }
+              return 0
+            }
             console.log(existing?.productAmount)
             console.log(existingTag?.productAmount)
             console.log(item?.actualNetAmount)
@@ -3511,20 +3588,19 @@ const LeadMaster = ({
                 "amount"
               ) ?? 0
             console.log(productAmount)
-            const nextDue = getFirstValue("nextDue") || ""
-            const nextDueAmount = Number(
-              getFirstValue(
+            const nextDue = getDueDetailValue("nextDue") || ""
+            const nextDueAmount = getPositiveDueDetailValue(
                 "nextDueAmount",
                 "actualproductPrice",
                 "productPrice",
                 "amount"
-              ) ?? 0
             )
-            const totalNextDueAmount = Number(
-              getFirstValue("totalnextDueAmount", "actualNetAmount", "netAmount") ??
-                0
+            const totalNextDueAmount = getPositiveDueDetailValue(
+              "totalnextDueAmount",
+              "actualNetAmount",
+              "netAmount"
             )
-            const configuredTax = getFirstPositiveValue(
+            const configuredTax = getPositiveDueDetailValue(
               "nextDueTax",
               "actualHsn",
               "hsn"
@@ -3671,6 +3747,11 @@ const LeadMaster = ({
   console.log(detailsForm)
   console.log(showdetailsopen)
   const tableRows = selectedleadlist || []
+  const hasRowsWithDetails = tableRows.some(
+    (item) =>
+      String(item?.productorservicetype || "").toLowerCase() !==
+      "enhancedservice"
+  )
   console.log(tableRows)
   console.log(selectedCustomer)
 
@@ -4067,7 +4148,8 @@ convertexcel
                       <col style={{ width: "12%" }} />
                       <col style={{ width: "15%" }} />
                       <col style={{ width: "7%" }} />
-                      {(process === "closing" || process === "edit") && (
+                      {(process === "closing" || process === "edit") &&
+                        hasRowsWithDetails && (
                         <col style={{ width: "7%" }} />
                       )}
                     </colgroup>
@@ -4099,7 +4181,8 @@ convertexcel
                         </th>
                         {(process === "closing" ||
                           process === "edit" ||
-                          from === "closedlead") && (
+                          from === "closedlead") &&
+                          hasRowsWithDetails && (
                           <th
                             rowSpan={2}
                             className="border border-blue-900 px-2 py-2 text-center text-xs"
@@ -4124,8 +4207,13 @@ convertexcel
                     <tbody>
                       {tableRows.map((item, index) => {
                         console.log(item)
+                        const itemType = String(
+                          item?.productorservicetype || ""
+                        ).toLowerCase()
                         const showLicenseDropdown =
-                          item?.productorservicetype === "Additionalservice"
+                          itemType === "additionalservice" ||
+                          (process === "closing" &&
+                            itemType === "enhancedservice")
                         console.log("jjj")
                         console.log(showLicenseDropdown)
                         const isAmountLocked =
@@ -4480,12 +4568,22 @@ convertexcel
                             ) {
                               console.log("hh")
                               const isInvalid = selectedleadlist.some(
-                                (lead) =>
-                                  !lead.taggeddata?.length ||
-                                  lead.taggeddata.some(
-                                    (tag) =>
-                                      Number(tag.taxexclusiveAmount || 0) <= 0
+                                (lead) => {
+                                  const isAdditionalService =
+                                    String(
+                                      lead?.productorservicetype || ""
+                                    ).toLowerCase() === "additionalservice"
+
+                                  return (
+                                    isAdditionalService &&
+                                    (!lead.taggeddata?.length ||
+                                      lead.taggeddata.some(
+                                        (tag) =>
+                                          Number(tag.taxexclusiveAmount || 0) <=
+                                          0
+                                      ))
                                   )
+                                }
                               )
                               console.log(selectedleadlist)
                               if (isInvalid) {

@@ -4790,7 +4790,14 @@ export const Leadclosing = async (req, res) => {
       const inputNetAmount = round2(data?.netAmount || 0);
 
       const grossAmount = round2(
-        leadData.reduce((sum, item) => sum + toNum(item?.netAmount, 0), 0)
+        leadData
+          .filter((item) => !isEnhancedService(item))
+          .reduce((sum, item) => sum + toNum(item?.netAmount, 0), 0)
+      );
+      const lastDiscountableItemIndex = leadData.reduce(
+        (lastIndex, item, index) =>
+          isEnhancedService(item) ? lastIndex : index,
+        -1
       );
 
       let newTaxableAmount = inputTaxableAmount;
@@ -4832,20 +4839,36 @@ export const Leadclosing = async (req, res) => {
 
         adjustedItems = leadData.map((item, index) => {
           const originalNetAmount = round2(item?.netAmount || 0);
+          const originalProductPrice = round2(item?.productPrice || 0);
+
+          // Enhanced services are lead-only charges. Their saved amount and
+          // single selected license must not be redistributed by the primary
+          // product's closing discount.
+          if (isEnhancedService(item)) {
+            return {
+              item,
+              originalNetAmount,
+              finalNetAmount: originalNetAmount,
+              scaledProductPrice: originalProductPrice,
+              scaledTaxAmount: round2(
+                item?.taxAmount ?? originalNetAmount - originalProductPrice
+              ),
+            };
+          }
+
           const ratio = grossAmount > 0 ? originalNetAmount / grossAmount : 0;
 
           let finalNetAmount = round2(
             originalNetAmount - ratio * discountAmount
           );
 
-          const isLastItem = index === leadData.length - 1;
+          const isLastItem = index === lastDiscountableItemIndex;
           if (isLastItem) {
             finalNetAmount = round2(newNetAmount - runningTotal);
           }
 
           runningTotal = round2(runningTotal + finalNetAmount);
 
-          const originalProductPrice = round2(item?.productPrice || 0);
           const scaleFactor =
             originalNetAmount > 0 ? finalNetAmount / originalNetAmount : 0;
 
@@ -4866,9 +4889,12 @@ export const Leadclosing = async (req, res) => {
       }
 
       const mappedleadData = adjustedItems.map(
-        ({ item, finalNetAmount, scaledProductPrice, scaledTaxAmount }) => ({
+        ({ item, finalNetAmount, scaledProductPrice, scaledTaxAmount }) => {
+          const enhancedService = isEnhancedService(item);
+
+          return {
           licenseNumber: normalizeLicenseNumberValue(item?.licenseNumber),
-          licenseNumbers: Array.isArray(item?.licenseNumbers)
+          licenseNumbers: !enhancedService && Array.isArray(item?.licenseNumbers)
             ? item.licenseNumbers.map((license) => ({
               ...(license?.toObject ? license.toObject() : license),
               licenseNumber: normalizeLicenseNumberValue(license?.licenseNumber),
@@ -4877,7 +4903,9 @@ export const Leadclosing = async (req, res) => {
               sourceIndex: license?.sourceIndex,
             }))
             : [],
-          taggeddata: buildLeadMasterTaggedData(item?.taggeddata),
+          taggeddata: enhancedService
+            ? []
+            : buildLeadMasterTaggedData(item?.taggeddata),
           productorServiceName: item?.productorServiceName || "",
           productorServiceId: item?.productorServiceId || null,
           productorServicemodel: item?.itemType || "",
@@ -4901,7 +4929,8 @@ export const Leadclosing = async (req, res) => {
           actualNetAmount: toNum(item?.actualNetAmount, 0),
           parentPrimaryProductId: item?.parentPrimaryProductId || null,
           isDefaultService: !!item?.isDefaultService,
-        })
+          };
+        }
       );
 
       const mappedproductData = adjustedItems.map(
@@ -6026,10 +6055,46 @@ export const UpdateLeadRegister = async (req, res) => {
         const productPrice = scaledProductPrice;
         const netAmount = finalNetAmount;
         const hsn = toNumber(item?.hsn);
-        const actualHsn = toNumber(item?.actualHsn);
         const taxAmount = scaledTaxAmount;
         const itemType = safeString(item?.productorservicetype).toLowerCase();
         const isAdditionalService = itemType === "additionalservice";
+        const existingLeadItem = existingLeadFor.find(
+          (existingItem) =>
+            safeString(existingItem?.productorservicetype).toLowerCase() ===
+              itemType &&
+            String(existingItem?.productorServiceId || "") ===
+              String(item?.productorServiceId || "") &&
+            String(existingItem?.licenseNumber ?? "") ===
+              String(item?.licenseNumber ?? "")
+        );
+        // The displayed row is discount-adjusted on every closed-lead edit.
+        // Keep the pre-discount fields separately so the next edit can always
+        // restore the original table values instead of treating a prior
+        // discounted value as a new base amount.
+        const originalValue = (incomingValue, storedValue, fallbackValue) => {
+          const incoming = toNumber(incomingValue);
+          if (incoming > 0) return round2(incoming);
+
+          const stored = toNumber(storedValue);
+          if (stored > 0) return round2(stored);
+
+          return round2(fallbackValue);
+        };
+        const actualproductPrice = originalValue(
+          item?.actualproductPrice,
+          existingLeadItem?.actualproductPrice,
+          item?.productPrice
+        );
+        const actualNetAmount = originalValue(
+          item?.actualNetAmount,
+          existingLeadItem?.actualNetAmount,
+          item?.netAmount
+        );
+        const actualHsn = originalValue(
+          item?.actualHsn,
+          existingLeadItem?.actualHsn,
+          item?.hsn
+        );
         const existingAdditionalService = isAdditionalService
           ? existingLeadFor.find(
             (existingItem) =>
@@ -6079,7 +6144,9 @@ export const UpdateLeadRegister = async (req, res) => {
           productPrice,
           hsn,
           actualHsn,
+          actualproductPrice,
           netAmount,
+          actualNetAmount,
           taxAmount,
           productorservicetype: safeString(item?.productorservicetype),
           company_id: toObjectIdOrNull(item?.company_id),
