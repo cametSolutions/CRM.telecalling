@@ -858,6 +858,12 @@ const LeadMaster = ({
   const tradeDropdownRef = useRef(null)
   const isFirstRender = useRef(true)
   const isMobileTypedByUser = useRef(false)
+  const initialDetailsDiscountRef = useRef(0)
+  // Existing leads store both the original row values and the discounted
+  // document totals. Keep the saved totals during the initial hydration so
+  // the discount is not applied to those totals a second time.
+  const existingLeadTotalsRef = useRef(null)
+  const isHydratingExistingLeadRef = useRef(false)
   console.log(mobileValue)
   console.log(customerNameValue)
   console.log(customerIdValue)
@@ -1252,6 +1258,12 @@ const LeadMaster = ({
       setValueMain("partner", Data[0]?.partner)
       setValueMain("remark", Data[0].remark)
       setValueMain("discamnt", Data[0]?.discountAmount || 0)
+      existingLeadTotalsRef.current = {
+        taxableAmount: Data[0]?.taxableAmount,
+        taxAmount: Data[0]?.taxAmount,
+        netAmount: Data[0]?.netAmount
+      }
+      isHydratingExistingLeadRef.current = true
       setValueMain(
         "selfAllocation",
         Data[0]?.selfAllocation === true ? "true" : "false"
@@ -1347,24 +1359,18 @@ const LeadMaster = ({
           itemType: item?.productorServicemodel,
           productPrice: hideAdditionalServiceCharge
             ? 0
-            : isClosedLeadEdit
-              ? originalValueOrFallback(
-                  item?.actualproductPrice,
-                  item?.productPrice
-                )
-              : item?.productPrice,
+            : originalValueOrFallback(
+                item?.actualproductPrice,
+                item?.productPrice
+              ),
           actualproductPrice: item?.actualproductPrice,
           hsn: hideAdditionalServiceCharge
             ? 0
-            : isClosedLeadEdit
-              ? originalValueOrFallback(item?.actualHsn, item?.hsn)
-              : item?.hsn,
+            : originalValueOrFallback(item?.actualHsn, item?.hsn),
           actualHsn: item?.actualHsn,
           netAmount: hideAdditionalServiceCharge
             ? 0
-            : isClosedLeadEdit
-              ? originalValueOrFallback(item?.actualNetAmount, item?.netAmount)
-              : item?.netAmount,
+            : originalValueOrFallback(item?.actualNetAmount, item?.netAmount),
           actualNetAmount: item?.actualNetAmount,
           price: item?.price,
           company_id: item?.company_id,
@@ -1647,6 +1653,22 @@ const LeadMaster = ({
   //   setValueMain("taxableAmount", calculatetaxableAmount())
   // }, [selectedleadlist])
   useEffect(() => {
+    if (isHydratingExistingLeadRef.current) {
+      // Wait for the fetched rows to reach the table. The discount field is
+      // set in the same hydration pass and can otherwise run this effect
+      // before the rows are available.
+      if (!selectedleadlist?.length) return
+
+      const savedTotals = existingLeadTotalsRef.current
+      if (savedTotals) {
+        setValueMain("taxableAmount", savedTotals.taxableAmount ?? 0)
+        setValueMain("taxAmount", savedTotals.taxAmount ?? 0)
+        setValueMain("netAmount", savedTotals.netAmount ?? 0)
+      }
+      isHydratingExistingLeadRef.current = false
+      return
+    }
+
     const total = Number(calculateTotalAmount()) || 0
     const discount = Number(discountAmount) || 0
     const discountedNetAmount = Math.max(total - discount, 0)
@@ -3267,7 +3289,21 @@ const LeadMaster = ({
       })
     )
 
-    setValueMain("discamnt", totaldiscount)
+    // A primary-product details popup does not manage the lead discount.
+    // For an additional service, apply only the change made in this popup so
+    // an untouched tagged discount cannot overwrite the lead-level discount.
+    if (itemType === "additionalservice") {
+      const discountDifference = Number(
+        (totaldiscount - initialDetailsDiscountRef.current).toFixed(2)
+      )
+      if (discountDifference !== 0) {
+        const currentLeadDiscount = Number(discountAmount || 0)
+        setValueMain(
+          "discamnt",
+          Math.max(0, currentLeadDiscount + discountDifference).toFixed(2)
+        )
+      }
+    }
     setdetailsopen(false)
   }
   console.log(detailsForm)
@@ -3406,6 +3442,9 @@ const LeadMaster = ({
   }
   const handleDetails = (row, index) => {
     const item = selectedleadlist[index] || row
+    const applicationDateValue = item?.applicationDate
+      ? String(item.applicationDate).slice(0, 10)
+      : ""
     console.log("k")
     console.log(selectedCustomer)
     console.log(item)
@@ -3549,10 +3588,10 @@ const LeadMaster = ({
               }
               return 0
             }
-            // Due details belong to the customer's tagged license. Do not let
-            // an empty/zero lead draft value hide that existing customer data.
-            // When the customer has no tagged value, use the product master.
-            const dueDetailSources = [existingTag, masterProduct]
+            // Prefer a due record saved in this lead so reopening the popup
+            // shows the user's latest edits. Empty lead values still fall
+            // through to the customer's tagged license, then product master.
+            const dueDetailSources = [existing, existingTag, masterProduct]
             const getDueDetailValue = (...fields) => {
               for (const source of dueDetailSources) {
                 for (const field of fields) {
@@ -3600,6 +3639,20 @@ const LeadMaster = ({
               "actualNetAmount",
               "netAmount"
             )
+            // A product master's HSN is stored on the matching branch entry,
+            // not as a flat `hsn`/`actualHsn` property on the product itself.
+            const masterBranch = masterProduct?.selected?.find(
+              (branch) =>
+                String(branch?.branch_id ?? "") === String(selectedBranch ?? "")
+            )
+            const hsnNameTaxMatch = String(masterBranch?.hsnName || "").match(
+              /(\d+(?:\.\d+)?)\s*%/
+            )
+            const masterTaxRate = Number(
+              masterBranch?.hsn_id?.onValue?.igstRate ||
+                hsnNameTaxMatch?.[1] ||
+                0
+            )
             const configuredTax = getPositiveDueDetailValue(
               "nextDueTax",
               "actualHsn",
@@ -3614,7 +3667,7 @@ const LeadMaster = ({
                     ).toFixed(2)
                   )
                 : 0
-            const nextDueTax = configuredTax || inferredTax
+            const nextDueTax = configuredTax || inferredTax || masterTaxRate
             const calculatedTotalNextDueAmount = Number(
               (nextDueAmount * (1 + nextDueTax / 100)).toFixed(2)
             )
@@ -3695,6 +3748,10 @@ const LeadMaster = ({
               actualNetAmount: item?.netAmount
             }))
           : []
+    initialDetailsDiscountRef.current = normalizedTaggedData.reduce(
+      (sum, tag) => sum + (Number(tag?.discountAmount) || 0),
+      0
+    )
     console.log(item)
     console.log(normalizedTaggedData)
     if (isAdditionalService && normalizedTaggedData.length > 0) {
@@ -3732,7 +3789,7 @@ const LeadMaster = ({
       name: item?.productorServiceName || "",
       licenseNumber: item?.licenseNumber || "",
       softwareTrade: item?.softwareTrade || "",
-      applicationDate: item?.applicationDate || "",
+      applicationDate: applicationDateValue,
       status: item?.status || item?.isActive || "Running",
       nextDue: item?.nextDue || "",
       quantityUsers: item?.quantityUsers || "",
