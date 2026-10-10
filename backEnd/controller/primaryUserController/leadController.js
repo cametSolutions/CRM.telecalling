@@ -7765,9 +7765,23 @@ export const ApprovedforcefullyClosedTarget = async (req, res) => {
         .json({ success: false, message: "leadDocId is required" })
     }
 
+    // Preserve the first force-close target month from the lead date. Later
+    // collections must not move the lead into a payment month.
     const result = await LeadMaster.updateOne(
       { _id: leadDocId },
-      { $set: { forcefullyClosedTarget: true } }
+      [
+        {
+          $set: {
+            forcefullyClosedTarget: true,
+            forcefullyClosedTargetDate: {
+              $ifNull: [
+                "$forcefullyClosedTargetDate",
+                { $ifNull: ["$leadDate", "$$NOW"] }
+              ]
+            }
+          }
+        }
+      ]
     )
 
     // result.matchedCount: how many docs matched filter
@@ -15020,22 +15034,158 @@ export const GetResearchAndDevelopmentLeads = async (req, res) => {
 
 
 
- const branchObjectId = new mongoose.Types.ObjectId(
-      "66f7b26c1e7129afd9aee189"
-    );
+//  const branchObjectId = new mongoose.Types.ObjectId(
+//       "66f7b26c1e7129afd9aee189"
+//     );
 
-    const leads = await LeadMaster.find({
-      leadBranch: branchId,
-      leadId: { $nin: excludedLeadIds },
-      paymentHistory: {
-        $elemMatch: {
-          paymentDate: {
-            $gte: octoberStart,
-            $lt: octoberEnd
-          }
-        }
-      }
-    }).lean();
+
+
+
+// // October 2026 in IST
+// const octoberStart = new Date("2026-09-30T18:30:00.000Z");
+// const octoberEnd = new Date("2026-10-31T18:30:00.000Z");
+
+// // September 30, 2026 at 00:00:00 UTC
+// const septemberDate = new Date("2026-09-30T00:00:00.000Z");
+
+// // For September 30, 2026 at 12:00 AM IST, use:
+// // const septemberDate = new Date("2026-09-29T18:30:00.000Z");
+
+// // Exclude these lead IDs
+// const excludedLeadIds = ["01106", "00733","01166","01167"];
+
+// function isOctoberDate(value) {
+//   if (!value) return false;
+
+//   const date = new Date(value);
+//   if (isNaN(date.getTime())) return false;
+
+//   return date >= octoberStart && date < octoberEnd;
+// }
+
+// function updateOctoberDatesRecursive(
+//   value,
+//   currentPath,
+//   excludedPaths,
+//   updates
+// ) {
+//   if (value === null || value === undefined) return value;
+
+//   if (value instanceof Date) {
+//     if (
+//       isOctoberDate(value) &&
+//       !excludedPaths.includes(currentPath)
+//     ) {
+//       updates[currentPath] = septemberDate;
+//       return septemberDate;
+//     }
+
+//     return value;
+//   }
+
+//   if (Array.isArray(value)) {
+//     return value.map((item, index) =>
+//       updateOctoberDatesRecursive(
+//         item,
+//         `${currentPath}.${index}`,
+//         excludedPaths,
+//         updates
+//       )
+//     );
+//   }
+
+//   if (typeof value === "object") {
+//     const updatedObject = {};
+
+//     for (const key of Object.keys(value)) {
+//       const childPath = currentPath ? `${currentPath}.${key}` : key;
+
+//       updatedObject[key] = updateOctoberDatesRecursive(
+//         value[key],
+//         childPath,
+//         excludedPaths,
+//         updates
+//       );
+//     }
+
+//     return updatedObject;
+//   }
+
+//   return value;
+// }
+
+// const leads = await LeadMaster.find({
+//   leadBranch: branchObjectId,
+//   leadId: { $nin: excludedLeadIds },
+//   paymentHistory: {
+//     $elemMatch: {
+//       paymentDate: {
+//         $gte: octoberStart,
+//         $lt: octoberEnd
+//       }
+//     }
+//   }
+// }).lean();
+
+// const operations = [];
+
+// for (const lead of leads) {
+//   const updates = {};
+
+//   const excludedPaths = [
+//     "leadDate",
+//     "activityLog.0.submissionDate"
+//   ];
+
+//   updateOctoberDatesRecursive(
+//     lead,
+//     "",
+//     excludedPaths,
+//     updates
+//   );
+
+//   if (!Object.keys(updates).length) continue;
+
+//   operations.push({
+//     updateOne: {
+//       filter: { _id: lead._id },
+//       update: { $set: updates }
+//     }
+//   });
+// }
+
+// if (operations.length) {
+//   await LeadMaster.bulkWrite(operations, {
+//     ordered: false
+//   });
+// }
+
+
+
+
+
+
+
+
+// const octoberStart = new Date("2026-09-30T18:30:00.000Z");
+// const octoberEnd = new Date("2026-10-31T18:30:00.000Z");
+// const excludedLeadIds=["01106","00733","01166","01167"]
+
+//     const leads = await LeadMaster.find({
+//       leadBranch: branchObjectId,
+//       leadId: { $nin: excludedLeadIds },
+//       paymentHistory: {
+//         $elemMatch: {
+//           paymentDate: {
+//             $gte: octoberStart,
+//             $lt: octoberEnd
+//           }
+//         }
+//       }
+//     }).lean();
+// const ress=leads.map((ite)=>ite.leadId)
+// console.log("lengthhhhhhhhhhhhhhhhhhhhhh",ress.length)
+// console.log(JSON.stringify(ress, null, 2));
 
     // const a=await LeadMaster.find({
     //   leadBranch: ObjectId("66ffb2fb39904d78447cfaec"),
