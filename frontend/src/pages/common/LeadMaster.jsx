@@ -1684,43 +1684,6 @@ const LeadMaster = ({
   }, [selectedleadlist, discountAmount])
 
   useEffect(() => {
-    if (selectedleadlist && selectedleadlist.length) {
-      console.log(selectedleadlist)
-      if (!hasPrimaryProductInLead) {
-        setSelectedLeadList((prev) =>
-          prev.map((lead) => {
-            if (
-              lead.productorservicetype !== "Additionalservice" ||
-              !Array.isArray(lead.taggeddata)
-            ) {
-              return lead
-            }
-
-            return {
-              ...lead,
-              taggeddata: lead.taggeddata.map((row) => {
-                const taxExclusive = Number(row.taxexclusiveAmount || 0)
-                const taxRate = Number(row.leadTax || 0)
-                const discount = Number(discountAmount || 0)
-                console.log(discount)
-                const taxAmount = (taxExclusive * taxRate) / 100
-                console.log(taxAmount)
-                console.log(taxExclusive)
-                return {
-                  ...row,
-                  taxinclusiveamount: Number(
-                    (taxExclusive + taxAmount - discount).toFixed(2)
-                  ),
-                  discountAmount: discount
-                }
-              })
-            }
-          })
-        )
-      }
-    }
-  }, [discountAmount, hasPrimaryProductInLead])
-  useEffect(() => {
     console.log("hhh")
     if (!selectedLicense && leadList && leadList.length > 0 && !Data) {
       const initialProductListwithoutlicense = leadList?.map((product) => ({
@@ -3029,6 +2992,123 @@ const LeadMaster = ({
 
     return null
   }
+  // Existing-lead rows stay undiscounted in the table. This creates the
+  // discounted copy used only by edit/closing save requests.
+  const buildDiscountSynchronizedLeadData = (rows, leadDiscount) => {
+    const roundAmount = (value) => Number((Number(value) || 0).toFixed(2))
+    const typeOf = (item) =>
+      String(item?.productorservicetype || "").toLowerCase()
+    const discount = Math.max(0, roundAmount(leadDiscount))
+    const copiedRows = rows.map((row) => ({
+      ...row,
+      taggeddata: Array.isArray(row?.taggeddata)
+        ? row.taggeddata.map((tag) => ({ ...tag }))
+        : row?.taggeddata
+    }))
+    const additionalOnly =
+      copiedRows.length > 0 &&
+      !copiedRows.some((row) => typeOf(row) === "primaryproduct") &&
+      copiedRows.every((row) => typeOf(row) === "additionalservice")
+
+    if (additionalOnly) {
+      const entries = copiedRows.flatMap((row, rowIndex) =>
+        (Array.isArray(row.taggeddata) ? row.taggeddata : []).map(
+          (tag, tagIndex) => {
+            const taxable = roundAmount(tag?.taxexclusiveAmount)
+            const taxRate = Number(tag?.leadTax || 0)
+            const undiscountedNetAmount = roundAmount(
+              taxable + (taxable * taxRate) / 100
+            )
+            const netAmount = roundAmount(
+              undiscountedNetAmount || tag?.taxinclusiveamount || 0
+            )
+            return { rowIndex, tagIndex, taxable, netAmount }
+          }
+        )
+      )
+      const gross = roundAmount(
+        entries.reduce((sum, entry) => sum + entry.netAmount, 0)
+      )
+
+      if (gross > 0 && entries.length) {
+        let appliedDiscount = 0
+        entries.forEach((entry, index) => {
+          const tagDiscount =
+            index === entries.length - 1
+              ? roundAmount(Math.min(discount, gross) - appliedDiscount)
+              : roundAmount((Math.min(discount, gross) * entry.netAmount) / gross)
+          appliedDiscount = roundAmount(appliedDiscount + tagDiscount)
+          const netAmount = roundAmount(Math.max(entry.netAmount - tagDiscount, 0))
+          const taxable = roundAmount(
+            entry.netAmount > 0 ? (entry.taxable * netAmount) / entry.netAmount : 0
+          )
+          const tag = copiedRows[entry.rowIndex].taggeddata[entry.tagIndex]
+          copiedRows[entry.rowIndex].taggeddata[entry.tagIndex] = {
+            ...tag,
+            taxexclusiveAmount: taxable,
+            taxinclusiveamount: netAmount,
+            productAmount: netAmount,
+            leadAmount: taxable,
+            totalleadAmount: netAmount,
+            discountAmount: tagDiscount
+          }
+        })
+
+        return copiedRows.map((row) => {
+          const tags = Array.isArray(row.taggeddata) ? row.taggeddata : []
+          const productPrice = roundAmount(
+            tags.reduce((sum, tag) => sum + (Number(tag?.taxexclusiveAmount) || 0), 0)
+          )
+          const netAmount = roundAmount(
+            tags.reduce((sum, tag) => sum + (Number(tag?.taxinclusiveamount) || 0), 0)
+          )
+          return {
+            ...row,
+            productPrice,
+            netAmount,
+            taxAmount: roundAmount(netAmount - productPrice)
+          }
+        })
+      }
+    }
+
+    const discountableRows = copiedRows.filter(
+      (row) => typeOf(row) !== "enhancedservice" && Number(row?.netAmount) > 0
+    )
+    const gross = roundAmount(
+      discountableRows.reduce((sum, row) => sum + (Number(row?.netAmount) || 0), 0)
+    )
+    let appliedDiscount = 0
+    let rowIndex = 0
+
+    return copiedRows.map((row) => {
+      if (typeOf(row) === "enhancedservice" || Number(row?.netAmount) <= 0 || gross <= 0) {
+        return row
+      }
+      const originalNetAmount = roundAmount(row.netAmount)
+      const originalProductPrice = roundAmount(row.productPrice)
+      const rowDiscount =
+        rowIndex === discountableRows.length - 1
+          ? roundAmount(Math.min(discount, gross) - appliedDiscount)
+          : roundAmount((Math.min(discount, gross) * originalNetAmount) / gross)
+      rowIndex += 1
+      appliedDiscount = roundAmount(appliedDiscount + rowDiscount)
+      const netAmount = roundAmount(Math.max(originalNetAmount - rowDiscount, 0))
+      const productPrice = roundAmount(
+        originalNetAmount > 0
+          ? (originalProductPrice * netAmount) / originalNetAmount
+          : 0
+      )
+
+      return {
+        ...row,
+        productPrice,
+        netAmount,
+        taxAmount: roundAmount(netAmount - productPrice)
+      }
+    })
+  }
+
   const onSubmit = async (data) => {
     console.log(data)
     console.log(duplicateWarning)
@@ -3037,6 +3117,10 @@ const LeadMaster = ({
     setsubmitLoading(true)
     if (duplicateWarning) return
     const submitData = { ...data }
+    const synchronizedLeadData = buildDiscountSynchronizedLeadData(
+      selectedleadlist,
+      submitData.discamnt
+    )
 
     if (!selfAllocation) {
       delete submitData.allocationType
@@ -3105,8 +3189,8 @@ const LeadMaster = ({
         // }
         seteditLoadingState(true)
         const updated = await handleEditData(
-          data,
-          selectedleadlist,
+          { ...submitData, discountSynchronized: true },
+          synchronizedLeadData,
           Data[0]?._id,
           from,
           previousLeadCustomer,
@@ -3130,8 +3214,8 @@ const LeadMaster = ({
 
         seteditLoadingState(true)
         const updated = await handleclosingData(
-          data,
-          selectedleadlist,
+          { ...submitData, discountSynchronized: true },
+          synchronizedLeadData,
           Data[0]?._id,
           loggeduser._id,
           loggeduser?.role

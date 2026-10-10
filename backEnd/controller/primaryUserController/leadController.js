@@ -4785,6 +4785,9 @@ export const Leadclosing = async (req, res) => {
         !hasPrimaryProduct && leadData.every(isAdditionalService);
 
       const discountAmount = round2(data?.discamnt || 0);
+      // LeadMaster sends already-distributed line values for edit/closing.
+      // Do not distribute the same lead discount a second time here.
+      const discountSynchronized = data?.discountSynchronized === true;
       const inputTaxableAmount = round2(data?.taxableAmount || 0);
       const inputTaxAmount = round2(data?.taxAmount || 0);
       const inputNetAmount = round2(data?.netAmount || 0);
@@ -4806,7 +4809,21 @@ export const Leadclosing = async (req, res) => {
 
       let adjustedItems = [];
 
-      if (onlyAdditionalServices) {
+      if (discountSynchronized) {
+        adjustedItems = leadData.map((item) => {
+          const finalNetAmount = round2(item?.netAmount ?? 0);
+          const scaledProductPrice = round2(item?.productPrice ?? 0);
+          return {
+            item,
+            originalNetAmount: finalNetAmount,
+            finalNetAmount,
+            scaledProductPrice,
+            scaledTaxAmount: round2(
+              item?.taxAmount ?? finalNetAmount - scaledProductPrice
+            ),
+          };
+        });
+      } else if (onlyAdditionalServices) {
         adjustedItems = leadData.map((item) => {
           const originalProductPrice = round2(
             item?.actualproductPrice ?? item?.productPrice ?? 0
@@ -4893,42 +4910,42 @@ export const Leadclosing = async (req, res) => {
           const enhancedService = isEnhancedService(item);
 
           return {
-          licenseNumber: normalizeLicenseNumberValue(item?.licenseNumber),
-          licenseNumbers: !enhancedService && Array.isArray(item?.licenseNumbers)
-            ? item.licenseNumbers.map((license) => ({
-              ...(license?.toObject ? license.toObject() : license),
-              licenseNumber: normalizeLicenseNumberValue(license?.licenseNumber),
-              productorServiceId: license?.productorServiceId || null,
-              productorServiceName: license?.productorServiceName || "",
-              sourceIndex: license?.sourceIndex,
-            }))
-            : [],
-          taggeddata: enhancedService
-            ? []
-            : buildLeadMasterTaggedData(item?.taggeddata),
-          productorServiceName: item?.productorServiceName || "",
-          productorServiceId: item?.productorServiceId || null,
-          productorServicemodel: item?.itemType || "",
-          price: item?.price ?? null,
-          productPrice: scaledProductPrice,
-          hsn: toNum(item?.hsn || 0, 0),
-          netAmount: round2(finalNetAmount),
-          taxAmount: round2(scaledTaxAmount),
-          productorservicetype: item?.productorservicetype || "",
-          company_id: item?.company_id || null,
-          branch_id: item?.branch_id || null,
-          applicationDate: item?.applicationDate || "",
-          softwareTrade: item?.softwareTrade || "",
-          nextDue: item?.nextDue || "",
-          noofusers: toNum(item?.noofusers, 0),
-          isActive: item?.status ?? item?.isActive,
-          version: item?.version,
-          status: item?.status,
-          actualproductPrice: toNum(item?.actualproductPrice, 0),
-          actualHsn: toNum(item?.actualHsn, 0),
-          actualNetAmount: toNum(item?.actualNetAmount, 0),
-          parentPrimaryProductId: item?.parentPrimaryProductId || null,
-          isDefaultService: !!item?.isDefaultService,
+            licenseNumber: normalizeLicenseNumberValue(item?.licenseNumber),
+            licenseNumbers: !enhancedService && Array.isArray(item?.licenseNumbers)
+              ? item.licenseNumbers.map((license) => ({
+                ...(license?.toObject ? license.toObject() : license),
+                licenseNumber: normalizeLicenseNumberValue(license?.licenseNumber),
+                productorServiceId: license?.productorServiceId || null,
+                productorServiceName: license?.productorServiceName || "",
+                sourceIndex: license?.sourceIndex,
+              }))
+              : [],
+            taggeddata: enhancedService
+              ? []
+              : buildLeadMasterTaggedData(item?.taggeddata),
+            productorServiceName: item?.productorServiceName || "",
+            productorServiceId: item?.productorServiceId || null,
+            productorServicemodel: item?.itemType || "",
+            price: item?.price ?? null,
+            productPrice: scaledProductPrice,
+            hsn: toNum(item?.hsn || 0, 0),
+            netAmount: round2(finalNetAmount),
+            taxAmount: round2(scaledTaxAmount),
+            productorservicetype: item?.productorservicetype || "",
+            company_id: item?.company_id || null,
+            branch_id: item?.branch_id || null,
+            applicationDate: item?.applicationDate || "",
+            softwareTrade: item?.softwareTrade || "",
+            nextDue: item?.nextDue || "",
+            noofusers: toNum(item?.noofusers, 0),
+            isActive: item?.status ?? item?.isActive,
+            version: item?.version,
+            status: item?.status,
+            actualproductPrice: toNum(item?.actualproductPrice, 0),
+            actualHsn: toNum(item?.actualHsn, 0),
+            actualNetAmount: toNum(item?.actualNetAmount, 0),
+            parentPrimaryProductId: item?.parentPrimaryProductId || null,
+            isDefaultService: !!item?.isDefaultService,
           };
         }
       );
@@ -5989,6 +6006,9 @@ export const UpdateLeadRegister = async (req, res) => {
           (item) => safeString(item?.productorservicetype).toLowerCase() === "additionalservice"
         );
       const discountAmount = round2(data?.discamnt || 0);
+      // LeadMaster sends already-distributed line values for edit/closing.
+      // Do not distribute the same lead discount a second time here.
+      const discountSynchronized = data?.discountSynchronized === true;
       const inputTaxableAmount = round2(data?.taxableAmount || 0);
       const inputTaxAmount = round2(data?.taxAmount || 0);
       const inputNetAmount = round2(data?.netAmount || 0);
@@ -6002,6 +6022,18 @@ export const UpdateLeadRegister = async (req, res) => {
       let runningTotal = 0;
 
       const adjustedItems = leadItemsForUpdate.map((item, index) => {
+        if (discountSynchronized) {
+          const finalNetAmount = round2(item?.netAmount ?? 0);
+          const scaledProductPrice = round2(item?.productPrice ?? 0);
+          return {
+            item,
+            finalNetAmount,
+            scaledProductPrice,
+            scaledTaxAmount: round2(
+              item?.taxAmount ?? finalNetAmount - scaledProductPrice
+            ),
+          };
+        }
         const originalProductPrice = round2(
           onlyAdditionalServices
             ? item?.actualproductPrice ?? item?.productPrice ?? 0
@@ -6061,11 +6093,11 @@ export const UpdateLeadRegister = async (req, res) => {
         const existingLeadItem = existingLeadFor.find(
           (existingItem) =>
             safeString(existingItem?.productorservicetype).toLowerCase() ===
-              itemType &&
+            itemType &&
             String(existingItem?.productorServiceId || "") ===
-              String(item?.productorServiceId || "") &&
+            String(item?.productorServiceId || "") &&
             String(existingItem?.licenseNumber ?? "") ===
-              String(item?.licenseNumber ?? "")
+            String(item?.licenseNumber ?? "")
         );
         // The displayed row is discount-adjusted on every closed-lead edit.
         // Keep the pre-discount fields separately so the next edit can always
@@ -14986,6 +15018,188 @@ export const GetResearchAndDevelopmentLeads = async (req, res) => {
       "689c23493e94902039b97743"
     );
 
+
+
+ const branchObjectId = new mongoose.Types.ObjectId(
+      "66f7b26c1e7129afd9aee189"
+    );
+
+    const leads = await LeadMaster.find({
+      leadBranch: branchId,
+      leadId: { $nin: excludedLeadIds },
+      paymentHistory: {
+        $elemMatch: {
+          paymentDate: {
+            $gte: octoberStart,
+            $lt: octoberEnd
+          }
+        }
+      }
+    }).lean();
+
+    // const a=await LeadMaster.find({
+    //   leadBranch: ObjectId("66ffb2fb39904d78447cfaec"),
+    //   leadDate: {
+    //     $gte: ISODate("2026-09-30T18:30:00.000Z"),
+    //     $lt: ISODate("2026-10-31T18:30:00.000Z")
+    //   }
+    // })
+    // const a = await LeadMaster.find({
+
+
+
+
+
+
+
+    //   activityLog.taskallocatedTo: new mongoose.Types.ObjectId("672072c7a80cc9c3f31d97d0"),
+    //   leadFor.productorServiceId: {
+    //   $in: [
+    //     new mongoose.Types.ObjectId("6a326c5fa587143676cf54f1"),
+    //     new mongoose.Types.ObjectId("6a326d76a587143676cf6ee7"),
+    //     new mongoose.Types.ObjectId("6a326db3a587143676cf71fb"), new mongoose.Types.ObjectId("6a326e04a587143676cf7249"), new mongoose.Types.ObjectId("6a326e27a587143676cf7298"), new mongoose.Types.ObjectId('6a4dfe6d4fd0a4cd037274b0')
+    //   ]
+    // }, totalPaidAmount: { $gte: 0 }, leadBranch: new mongoose.Types.ObjectId('66f7b26c1e7129afd9aee189'), leadClosed: false, leadConfirmed: true
+
+    // });
+    // const a = await LeadMaster.find({
+    //   "activityLog.taskallocatedTo": new mongoose.Types.ObjectId(
+    //     "672072c7a80cc9c3f31d97d0"
+    //   ),
+    //   "leadFor.productorServiceId": {
+    //     $in: [
+    //       new mongoose.Types.ObjectId("6a326c5fa587143676cf54f1"),
+    //       new mongoose.Types.ObjectId("6a326d76a587143676cf6ee7"),
+    //       new mongoose.Types.ObjectId("6a326db3a587143676cf71fb"),
+    //       new mongoose.Types.ObjectId("6a326e04a587143676cf7249"),
+    //       new mongoose.Types.ObjectId("6a326e27a587143676cf7298"),
+    //       new mongoose.Types.ObjectId("6a4dfe6d4fd0a4cd037274b0")
+    //     ]
+    //   },
+    //   totalPaidAmount: { $gte: 0 },
+    //   leadBranch: new mongoose.Types.ObjectId("66f7b26c1e7129afd9aee189"),
+    //   leadClosed: false,
+    //   leadConfirmed: true
+    // });
+    // const rrr = a.map((i) => i.leadId)
+    // console.log("octoberrr", rrr)
+
+    //  const leadIds = [
+    //       "01239", "01237", "01234", "01232", "01231",
+    //       "01230", "01229", "01225", "01224", "01223",
+    //       "01222", "01220", "01213", "01212", "01211",
+    //       "01206", "01205", "01204", "01203", "01202",
+    //       "01201", "01200", "01199", "01198", "01197",
+    //       "01196", "01195", "01194", "01193", "01192",
+    //       "01191", "01190", "01188", "01187", "01186",
+    //       "01185", "01184", "01183", "01182", "01181",
+    //       "01180", "01179", "01178", "01177", "01176",
+    //       "01175", "01174", "01165", "01164", "01163",
+    //       "01162", "01161", "01151"
+    //     ]
+
+    //     const octoberStart = new Date("2026-10-01T00:00:00.000Z")
+    //     const novemberStart = new Date("2026-11-01T00:00:00.000Z")
+
+    //     const moveOctober2026ToSeptember = (field) => ({
+    //       $cond: [
+    //         {
+    //           $and: [
+    //             { $gte: [field, octoberStart] },
+    //             { $lt: [field, novemberStart] }
+    //           ]
+    //         },
+    //         {
+    //           $dateSubtract: {
+    //             startDate: field,
+    //             unit: "month",
+    //             amount: 1
+    //           }
+    //         },
+    //         field
+    //       ]
+    //     })
+
+    // const result = await LeadMaster.updateMany(
+    //   { leadId: { $in: leadIds } },
+    //   [
+    //     {
+    //       $set: {
+    //         leadDate: moveOctober2026ToSeptember("$leadDate"),
+    //         leadConvertedDate: moveOctober2026ToSeptember("$leadConvertedDate"),
+    //         leadClosedDate: moveOctober2026ToSeptember("$leadClosedDate"),
+    //         leadLostDate: moveOctober2026ToSeptember("$leadLostDate"),
+    //         dueDate: moveOctober2026ToSeptember("$dueDate"),
+    //         selfAllocationDueDate: moveOctober2026ToSeptember(
+    //           "$selfAllocationDueDate"
+    //         ),
+    //         createdAt: moveOctober2026ToSeptember("$createdAt"),
+    //         updatedAt: moveOctober2026ToSeptember("$updatedAt"),
+
+    //         paymentHistory: {
+    //           $map: {
+    //             input: { $ifNull: ["$paymentHistory", []] },
+    //             as: "payment",
+    //             in: {
+    //               $mergeObjects: [
+    //                 "$$payment",
+    //                 {
+    //                   paymentDate: moveOctober2026ToSeptember(
+    //                     "$$payment.paymentDate"
+    //                   ),
+    //                   verifiedAt: moveOctober2026ToSeptember(
+    //                     "$$payment.verifiedAt"
+    //                   ),
+    //                   createdAt: moveOctober2026ToSeptember(
+    //                     "$$payment.createdAt"
+    //                   ),
+    //                   updatedAt: moveOctober2026ToSeptember(
+    //                     "$$payment.updatedAt"
+    //                   )
+    //                 }
+    //               ]
+    //             }
+    //           }
+    //         },
+
+    //         activityLog: {
+    //           $map: {
+    //             input: { $ifNull: ["$activityLog", []] },
+    //             as: "activity",
+    //             in: {
+    //               $mergeObjects: [
+    //                 "$$activity",
+    //                 {
+    //                   submissionDate: moveOctober2026ToSeptember(
+    //                     "$$activity.submissionDate"
+    //                   ),
+    //                   allocationDate: moveOctober2026ToSeptember(
+    //                     "$$activity.allocationDate"
+    //                   ),
+    //                   followUpDate: moveOctober2026ToSeptember(
+    //                     "$$activity.followUpDate"
+    //                   ),
+    //                   nextFollowUpDate: moveOctober2026ToSeptember(
+    //                     "$$activity.nextFollowUpDate"
+    //                   ),
+    //                   taskSubmissionDate: moveOctober2026ToSeptember(
+    //                     "$$activity.taskSubmissionDate"
+    //                   ),
+    //                   createdAt: moveOctober2026ToSeptember(
+    //                     "$$activity.createdAt"
+    //                   ),
+    //                   updatedAt: moveOctober2026ToSeptember(
+    //                     "$$activity.updatedAt"
+    //                   )
+    //                 }
+    //               ]
+    //             }
+    //           }
+    //         }
+    //       }
+    //     }
+    //   ]
+    // )
     if (branchId && !isValidObjectId(branchId)) {
       return res.status(400).json({
         success: false,
