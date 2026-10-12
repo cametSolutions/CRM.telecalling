@@ -974,7 +974,7 @@ export default function CollectionUpdate() {
             className="
       mt-2 grid grid-cols-1 gap-1.5
       sm:grid-cols-[minmax(0,1fr)_auto]
-      lg:grid-cols-[minmax(220px,1fr)_auto_auto]
+      lg:grid-cols-[minmax(220px,1fr)_auto_auto_auto]
     "
           >
             <div className="min-w-0">
