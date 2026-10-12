@@ -2322,12 +2322,14 @@ export const gettargetResult = async (req, res) => {
       $or: [
         { leadDate: activePeriodRange },
         { "paymentHistory.paymentDate": activePeriodRange },
+        { forcefullyClosedTargetDate: activePeriodRange },
       ],
     })
       .select(`
         leadId leadDate customerName mobile phone leadClosed paymentVerified
         netAmount balanceAmount totalPaidAmount
-        forcefullyClosedTarget leadFor paymentHistory activityLog
+        forcefullyClosedTarget forcefullyClosedTargetDate
+        leadFor paymentHistory activityLog
       `)
       .lean();
 
@@ -2910,17 +2912,41 @@ export const gettargetResult = async (req, res) => {
               num(lead.balanceAmount) === 0 &&
               num(lead.totalPaidAmount) >= num(lead.netAmount);
             const lastPaymentDate = getLastPaymentDate(lead);
+            const forcefullyClosedTargetSourceDate =
+              lead.forcefullyClosedTargetDate || lead.leadDate;
+            const forcefullyClosedTargetDate = forcefullyClosedTargetSourceDate
+              ? new Date(forcefullyClosedTargetSourceDate)
+              : null;
+            const hasForcefullyClosedTargetDate =
+              forcefullyClosedTargetDate &&
+              !Number.isNaN(forcefullyClosedTargetDate.getTime());
 
-            // Quantity is credited once, in the month of the final payment,
-            // only after the lead is fully paid and every payment is verified.
-            leadAchievement =
-              isFullyVerified &&
-              isFullyPaid &&
-              isDateInTargetMonth(lastPaymentDate, targetMonth) &&
-              lead.leadClosed === true &&
-              closingActivity.followupClosed === true
-                ? 1
-                : 0;
+            // A force-closed target is credited only in the month it was
+            // force-closed. It must never be credited again when a later
+            // collection makes the lead fully paid.
+            if (lead.forcefullyClosedTarget === true) {
+              leadAchievement =
+                hasForcefullyClosedTargetDate &&
+                isDateInTargetMonth(
+                  forcefullyClosedTargetDate,
+                  targetMonth
+                ) &&
+                lead.leadClosed === true &&
+                closingActivity.followupClosed === true
+                  ? 1
+                  : 0;
+            } else {
+              // Normal quantity leads are credited once, in the month of
+              // their final payment, only after full verified payment.
+              leadAchievement =
+                isFullyVerified &&
+                isFullyPaid &&
+                isDateInTargetMonth(lastPaymentDate, targetMonth) &&
+                lead.leadClosed === true &&
+                closingActivity.followupClosed === true
+                  ? 1
+                  : 0;
+            }
           }
 
           if (leadAchievement <= 0) continue;

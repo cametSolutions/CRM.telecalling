@@ -889,6 +889,7 @@ const leadSchema = new mongoose.Schema(
     leadLostDate: { type: Date, default: null },
     leadConvertedDate: { type: Date, default: null },
     forcefullyClosedTarget: { type: Boolean, default: false },
+    forcefullyClosedTargetDate: { type: Date, default: null },
     leadLost: { type: Boolean, default: false },
     leadBranch: {
       type: mongoose.Schema.Types.ObjectId,
