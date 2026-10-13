@@ -7758,6 +7758,7 @@ export const GetleadById = async (req, res) => {
 export const ApprovedforcefullyClosedTarget = async (req, res) => {
   try {
     const { leadDocId } = req.query
+    const { verifyDate, paymentHistoryIndexes = [] } = req.body
 
     if (!leadDocId) {
       return res
@@ -7765,40 +7766,46 @@ export const ApprovedforcefullyClosedTarget = async (req, res) => {
         .json({ success: false, message: "leadDocId is required" })
     }
 
-    // Preserve the first force-close target month from the lead date. Later
-    // collections must not move the lead into a payment month.
-    const result = await LeadMaster.updateOne(
-      { _id: leadDocId },
-      [
-        {
-          $set: {
-            forcefullyClosedTarget: true,
-            forcefullyClosedTargetDate: {
-              $ifNull: [
-                "$forcefullyClosedTargetDate",
-                { $ifNull: ["$leadDate", "$$NOW"] }
-              ]
-            }
-          }
-        }
-      ]
-    )
+    const selectedVerifyDate = new Date(verifyDate)
+    if (!verifyDate || Number.isNaN(selectedVerifyDate.getTime())) {
+      return res
+        .status(400)
+        .json({ success: false, message: "A valid verify date is required" })
+    }
 
-    // result.matchedCount: how many docs matched filter
-    // result.modifiedCount: how many docs actually changed
-    if (result.matchedCount === 0) {
+    const lead = await LeadMaster.findById(leadDocId)
+    if (!lead) {
       return res
         .status(404)
         .json({ success: false, message: "Lead not found" })
     }
 
+    const validIndexes = [...new Set(paymentHistoryIndexes)]
+      .map(Number)
+      .filter(
+        (index) =>
+          Number.isInteger(index) &&
+          index >= 0 &&
+          index < lead.paymentHistory.length &&
+          lead.paymentHistory[index]?.paymentVerified === true
+      )
+
+    lead.forcefullyClosedTarget = true
+    lead.forcefullyClosedTargetDate = selectedVerifyDate
+
+    validIndexes.forEach((index) => {
+      lead.paymentHistory[index].verifiedAt = selectedVerifyDate
+    })
+
+    await lead.save()
+
     return res.status(200).json({
       success: true,
-      message: "Target forcefully closed successfully",
+      message: "Verify date saved successfully",
       data: {
         leadDocId,
-        matchedCount: result.matchedCount,
-        modifiedCount: result.modifiedCount
+        forcefullyClosedTargetDate: lead.forcefullyClosedTargetDate,
+        updatedPayments: validIndexes.length
       }
     })
   } catch (error) {

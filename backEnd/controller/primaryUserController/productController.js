@@ -170,14 +170,18 @@ export const GetallProducts = async (req, res) => {
         }
       })
         .populate({
+          path: "selected.company_id",
+          select: "companyName"
+        })
+        .populate({ path: "selected.brand_id", select: "brand" })
+        .populate({ path: "selected.category_id", select: "category" })
+        .populate({ path: "selected.hsn_id", select: "hsnSac onValue" })
+        .populate({
           path: "defaultservices",
           populate: {
             path: "selected.hsn_id"
           }
         })
-
-
-
       if (products && products.length) {
 
         return res.status(201).json({ message: "foound products", data: products })
@@ -199,7 +203,12 @@ export const GetallProducts = async (req, res) => {
               branch_id: { $in: decodedbranches }
             }
           }
-        }).populate({ path: "selected.hsn_id", select: "onValue" }).populate({
+        })
+          .populate({ path: "selected.company_id", select: "companyName" })
+          .populate({ path: "selected.brand_id", select: "brand" })
+          .populate({ path: "selected.category_id", select: "category" })
+          .populate({ path: "selected.hsn_id", select: "hsnSac onValue" })
+          .populate({
           path: "defaultservices",
           populate: {
             path: "selected.hsn_id"
