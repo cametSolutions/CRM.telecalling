@@ -13,7 +13,7 @@ status:{type:String,enum:["Active","Inactive"]},
   selected: [{
     hsn_id: { type: mongoose.Schema.Types.ObjectId, ref: "Hsn", set: v => (v === "" ? undefined : v) },
     hsnName: { type: String },
-    company_id: { type: String },
+    company_id: { type: String, ref: "Company" },
     companyName: { type: String },
     branch_id: {
       type: String

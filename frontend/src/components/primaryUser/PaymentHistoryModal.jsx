@@ -37,13 +37,6 @@ export const PaymentHistoryModal = ({
   const [editingRow, setEditingRow] = useState(null)
   const [editmessage, seteditMessage] = useState("")
   console.log(editmessage)
-  const [warningMessage, setwarningMessage] = useState(
-    isChecked?.checked
-      ? `This is ${isChecked.month} target,you can forcefully closed this target`
-      : `This is ${isChecked.month} target,you can forcefully closed this target`
-  )
-  console.log(isChecked)
-  console.log(warningMessage)
   const [message, setMessage] = useState({})
   console.log(message)
   const [excessamountWarning, setexcessAmountWarning] = useState(null)
@@ -53,6 +46,33 @@ export const PaymentHistoryModal = ({
   const [ispermissionEdit, setispermissionEdit] = useState(false)
 
   const [submitLoading, setsubmitLoading] = useState(false)
+  const [verifyDate, setVerifyDate] = useState("")
+
+  const toDateInputValue = (date) => {
+    if (!date) return ""
+
+    const parsedDate = new Date(date)
+    if (Number.isNaN(parsedDate.getTime())) return ""
+
+    return [
+      parsedDate.getFullYear(),
+      String(parsedDate.getMonth() + 1).padStart(2, "0"),
+      String(parsedDate.getDate()).padStart(2, "0")
+    ].join("-")
+  }
+
+  useEffect(() => {
+    if (!verifiedLead) {
+      setVerifyDate("")
+      return
+    }
+
+    const verifiedPayments = data.filter((payment) => payment?.paymentVerified)
+    const paymentForDefaultDate =
+      verifiedPayments[verifiedPayments.length - 1] || data[data.length - 1]
+
+    setVerifyDate(toDateInputValue(paymentForDefaultDate?.paymentDate))
+  }, [data, verifiedLead])
 
   const formatDate = (dateString) => {
     const date = new Date(dateString)
@@ -177,15 +197,29 @@ export const PaymentHistoryModal = ({
       [field]: value
     }))
   }
-  const handleCloseTarget = async () => {
-    onClose(false)
-    console.log("h")
-    setwarningMessage("")
-    const response = await api.post(
-      `/lead/approveforcefullyclosetarget?leadDocId=${leadDocId}`
-    )
-    if (response.status === 200) {
-      console.log("Hhhh")
+  const handleSaveVerifyDate = async () => {
+    if (!verifyDate) {
+      toast.error("Select a verify date")
+      return
+    }
+
+    const paymentHistoryIndexes = data
+      .filter((payment) => payment?.paymentVerified)
+      .map((payment, index) => payment?.originalIndex ?? index)
+
+    try {
+      setsubmitLoading(true)
+      await api.post(
+        `/lead/approveforcefullyclosetarget?leadDocId=${leadDocId}`,
+        { verifyDate, paymentHistoryIndexes }
+      )
+      toast.success("Verify date saved successfully")
+      refresh()
+    } catch (error) {
+      console.error("Unable to save verify date", error)
+      toast.error("Unable to save verify date")
+    } finally {
+      setsubmitLoading(false)
     }
   }
 
@@ -1047,27 +1081,28 @@ export const PaymentHistoryModal = ({
           </p>
 
           <div className="ml-auto flex flex-wrap items-center justify-end gap-2 sm:gap-3">
-            {isdepartmentisAccountant &&
-              warningMessage &&
-              !isforcefullyclosed && (
-                <>
-                  <p
-                    role="alert"
-                    className="max-w-xs text-xs font-medium leading-5 text-red-600 sm:text-sm"
-                  >
-                    {warningMessage}
-                  </p>
-
-                  <button
-                    type="button"
-                    onClick={handleCloseTarget}
+            {isdepartmentisAccountant && verifiedLead && (
+              <div className="flex flex-wrap items-end gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+                <label className="flex flex-col gap-1 text-xs font-semibold text-emerald-800">
+                  Verify date
+                  <input
+                    type="date"
+                    value={verifyDate}
+                    onChange={(event) => setVerifyDate(event.target.value)}
                     disabled={submitLoading}
-                    className="rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    Close target
-                  </button>
-                </>
-              )}
+                    className="h-8 rounded-md border border-emerald-200 bg-white px-2 text-sm font-medium text-slate-700 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 disabled:cursor-not-allowed disabled:opacity-60"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={handleSaveVerifyDate}
+                  disabled={submitLoading || !verifyDate}
+                  className="inline-flex h-8 items-center rounded-md bg-emerald-600 px-3 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Save verify date
+                </button>
+              </div>
+            )}
 
             <button
               type="button"
