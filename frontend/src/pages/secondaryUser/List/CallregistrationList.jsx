@@ -83,8 +83,11 @@ const [annoucementsubmitloader,setannouncementLoader]=useState(false)
   const [openannoucementpopup, setopenannoucementpopup] = useState(false)
 console.log(openannoucementpopup)
   const { data: branches } = UseFetch("/branch/getbranch")
+  const callListEndpoint = selectedCompanyBranch
+    ? `/customer/getcallregistrationlist?branchName=${encodeURIComponent(selectedCompanyBranch)}`
+    : null
   const { data: callscount, loading: loadingcounts } = UseFetch(
-    "/customer/getcallregistrationlist"
+    callListEndpoint
   )
 console.log(users)
   const { data: branchProduct } = UseFetch(
@@ -313,14 +316,6 @@ console.log("ddddddddddddddddddd",announcementlist)
                 brancharray.includes(branch)
               )
 
-            if (brancharray.length === 1) {
-              return (
-                hasMatchingBranch &&
-                registration.branchName.length === 1 &&
-                registration.branchName[0] === brancharray[0]
-              )
-            }
-
             return hasMatchingBranch
           })
       )
@@ -340,18 +335,17 @@ console.log("ddddddddddddddddddd",announcementlist)
   }, [callList, users, filterCallData])
 
   const getTodaysSolved = (calls) => {
-    const today = new Date().toISOString().split("T")[0]
     let todaysSolvedCount = 0
     let arr = []
     console.log(calls)
     calls.forEach((customer) => {
       customer.callregistration?.forEach((call) => {
-        if (call.formdata?.status === "solved") {
-          const callDate = call.timedata?.endTime?.split("T")[0]
-          if (callDate === today) {
-            todaysSolvedCount++
-            arr.push(call.timedata?.token)
-          }
+        // The list endpoint supplies solved calls only when they were solved
+        // today, so do not exclude a valid result based on a different date
+        // field such as the original call end time.
+        if (call.formdata?.status?.toLowerCase() === "solved") {
+          todaysSolvedCount++
+          arr.push(call.timedata?.token)
         }
       })
     })
@@ -520,7 +514,9 @@ console.log("ddddddddddddddddddd",announcementlist)
   }, [callList])
   const getBaseRows = useMemo(() => {
     const todayDate = new Date().toISOString().split("T")[0]
-    const branchArray = userBranch || []
+    const branchArray = selectedCompanyBranch
+      ? [selectedCompanyBranch]
+      : userBranch || []
     console.log(callList.length)
     console.log(callList)
     return (callList || [])
@@ -553,11 +549,35 @@ console.log("ddddddddddddddddddd",announcementlist)
           item?.timedata?.startTime?.split("T")[0]
         if (activeFilter === "Pending") return status === "pending"
         if (activeFilter === "Solved") return status === "solved"
-        if (activeFilter === "Today") return callDate === todayDate
-        if (activeFilter === "online") return false
+        if (activeFilter === "Today") {
+          return status === "pending" && callDate === todayDate
+        }
+        if (activeFilter === "online") return status === "online"
         return true
       })
-  }, [callList, userBranch, searchTerm, activeFilter])
+  }, [
+    callList,
+    selectedCompanyBranch,
+    userBranch,
+    searchTerm,
+    activeFilter
+  ])
+
+  const onlineCallsCount = useMemo(() => {
+    const branchArray = selectedCompanyBranch
+      ? [selectedCompanyBranch]
+      : userBranch || []
+
+    return (callList || [])
+      .flatMap((call) => call.callregistration || [])
+      .filter((call) =>
+        !branchArray.length ||
+        branchArray.some((branch) => call.branchName?.includes(branch))
+      )
+      .filter(
+        (call) => call?.formdata?.status?.toLowerCase() === "online"
+      ).length
+  }, [callList, selectedCompanyBranch, userBranch])
 
   useEffect(() => {
     console.log("h")
@@ -597,11 +617,10 @@ announcementrefresh()
     const today = new Date().toISOString().split("T")[0]
 
     return filteredCalls
-      .filter((item) =>
-        statusType === "pending"
-          ? item?.formdata?.status === "pending"
-          : item?.formdata?.status === "solved"
-      )
+      .filter((item) => {
+        const status = item?.formdata?.status?.toLowerCase()
+        return statusType === "solved" ? status === "solved" : status !== "solved"
+      })
       .sort((a, b) => {
         const aDate = a?.timedata?.endTime?.split("T")[0] || ""
         const bDate = b?.timedata?.endTime?.split("T")[0] || ""
@@ -855,7 +874,7 @@ show={true}
 
                 <Tiles
                   title="Online Calls"
-                  count={0}
+                  count={onlineCallsCount}
                   subtitle="Online"
                   icon={<PhoneCall size={12} strokeWidth={2.2} />}
                   style={{

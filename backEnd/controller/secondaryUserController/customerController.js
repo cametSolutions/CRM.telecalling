@@ -5095,105 +5095,107 @@ export const existsameCallnote = async (req, res) => {
 
 export const Getallcallregistrationlist = async (req, res) => {
   try {
-    // Set today start/end in ISO format
-    const todayStart = new Date().toISOString().split("T")[0] + "T00:00:00.000Z";
-    const todayEnd = new Date().toISOString().split("T")[0] + "T23:59:59.999Z";
+    const branchName = String(req.query.branchName || "").trim();
+    // Build the current calendar day in IST.  A call at 04:00 IST is still
+    // on the previous UTC date, so using a UTC midnight boundary hides it.
+    const istOffsetMs = 5.5 * 60 * 60 * 1000;
+    const istDate = new Date(Date.now() + istOffsetMs).toISOString().slice(0, 10);
+    const todayStart = new Date(`${istDate}T00:00:00.000+05:30`);
+    const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
 
-    // 1️⃣ Aggregate pending + today's solved calls
+    // This list intentionally contains only its four views: all pending
+    // calls (which includes today's pending calls), today's solved calls,
+    // and online calls.  Older solved calls must not be loaded into the UI.
+    const match = { "callregistration.0": { $exists: true } };
+    if (branchName) {
+      match["callregistration.branchName"] = branchName;
+    }
+
     let aggregated = await CallRegistration.aggregate([
       {
-        $facet: {
-          pending: [
-            {
-              $set: {
-                callregistration: {
-                  $filter: {
-                    input: "$callregistration",
-                    as: "cr",
-                    cond: { $eq: ["$$cr.formdata.status", "pending"] }
-                  }
-                }
-              }
-            },
-            { $match: { "callregistration.0": { $exists: true } } }
-          ],
-          todaySolved: [
-            {
-              $set: {
-                callregistration: {
-                  $filter: {
-                    input: "$callregistration",
-                    as: "cr",
-                    cond: {
-                      $and: [
-                        { $eq: ["$$cr.formdata.status", "solved"] },
-                        {
-                          $anyElementTrue: {
-                            $map: {
-                              input: {
-                                $cond: {
-                                  if: { $isArray: "$$cr.formdata.attendedBy" },
-                                  then: "$$cr.formdata.attendedBy",
-                                  else: {
-                                    $cond: {
-                                      if: { $eq: ["$$cr.formdata.attendedBy", null] },
-                                      then: [],
-                                      else: ["$$cr.formdata.attendedBy"]
+        $match: match
+      },
+      {
+        $set: {
+          callregistration: {
+            $filter: {
+              input: "$callregistration",
+              as: "cr",
+              cond: {
+                $and: [
+                  ...(branchName
+                    ? [{ $in: [branchName, { $ifNull: ["$$cr.branchName", []] }] }]
+                    : []),
+                  {
+                    $or: [
+                      { $eq: [{ $toLower: { $ifNull: ["$$cr.formdata.status", ""] } }, "pending"] },
+                      { $eq: [{ $toLower: { $ifNull: ["$$cr.formdata.status", ""] } }, "online"] },
+                      {
+                        $and: [
+                          { $eq: [{ $toLower: { $ifNull: ["$$cr.formdata.status", ""] } }, "solved"] },
+                          {
+                            $anyElementTrue: {
+                              $map: {
+                                input: {
+                                  $cond: {
+                                    if: { $isArray: "$$cr.formdata.attendedBy" },
+                                    then: "$$cr.formdata.attendedBy",
+                                    else: {
+                                      $cond: {
+                                        if: { $eq: ["$$cr.formdata.attendedBy", null] },
+                                        then: [],
+                                        else: ["$$cr.formdata.attendedBy"]
+                                      }
                                     }
                                   }
+                                },
+                                as: "att",
+                                in: {
+                                  $and: [
+                                    {
+                                      $gte: [
+                                        {
+                                          $convert: {
+                                            input: "$$att.calldate",
+                                            to: "date",
+                                            onError: null,
+                                            onNull: null
+                                          }
+                                        },
+                                        todayStart
+                                      ]
+                                    },
+                                    {
+                                      $lt: [
+                                        {
+                                          $convert: {
+                                            input: "$$att.calldate",
+                                            to: "date",
+                                            onError: null,
+                                            onNull: null
+                                          }
+                                        },
+                                        todayEnd
+                                      ]
+                                    }
+                                  ]
                                 }
-                              },
-                              as: "att",
-                              in: {
-                                $and: [
-                                  { $gte: ["$$att.calldate", todayStart] },
-                                  { $lt: ["$$att.calldate", todayEnd] }
-                                ]
                               }
                             }
                           }
-                        }
-                      ]
-                    }
+                        ]
+                      }
+                    ]
                   }
-                }
+                ]
               }
-            },
-            { $match: { "callregistration.0": { $exists: true } } }
-          ]
-        }
-      },
-      // 2️⃣ Merge both arrays into one
-      {
-        $project: {
-          data: { $concatArrays: ["$pending", "$todaySolved"] }
-        }
-      },
-      { $unwind: "$data" },
-      { $replaceRoot: { newRoot: "$data" } },
-      {
-        $group: {
-          _id: "$_id",
-          callregistration: { $push: "$callregistration" },
-          root: { $first: "$$ROOT" }
-        }
-      },
-      {
-        $project: {
-          _id: 1,
-          callregistration: {
-            $reduce: {
-              input: "$callregistration",
-              initialValue: [],
-              in: { $concatArrays: ["$$value", "$$this"] }
             }
-          },
-          root: 1
+          }
         }
       },
-      { $replaceRoot: { newRoot: { $mergeObjects: ["$root", { callregistration: "$callregistration" }] } } },
-
-      // 3️⃣ Lookup products ONCE after merging
+      {
+        $match: { "callregistration.0": { $exists: true } }
+      },
       {
         $lookup: {
           from: "products",
