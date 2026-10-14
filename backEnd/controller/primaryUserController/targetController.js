@@ -2579,33 +2579,44 @@ export const gettargetResult = async (req, res) => {
       }];
     };
 
-    const getVerifiedAmountForCategory = (
-      lead,
-      configCategoryId
-    ) => {
-      let total = 0;
+    const getVerifiedCategoryAmountsByPayment = (lead, configCategoryId) => {
+      const cappedAmounts = new Map();
+      const netAmount = Math.max(num(lead.netAmount), 0);
+      let creditedAmount = 0;
 
-      for (const payment of objects(lead.paymentHistory)) {
-        if (payment.paymentVerified !== true) continue;
+      objects(lead.paymentHistory)
+        .map((payment, index) => ({ payment, index }))
+        .filter(({ payment }) => payment.paymentVerified === true)
+        .sort((left, right) =>
+          getPaymentDate(left.payment)?.getTime() -
+          getPaymentDate(right.payment)?.getTime()
+        )
+        .forEach(({ payment, index }) => {
+          const categoryAmount = objects(payment.paymentEntries).reduce(
+            (total, entry) => {
+              const meta = getItemMeta(entry);
+              return meta?.categoryId &&
+                String(meta.categoryId) === String(configCategoryId)
+                ? total + num(entry.receivedAmount)
+                : total;
+            },
+            0
+          );
 
-        for (const entry of objects(payment.paymentEntries)) {
-          const meta = getItemMeta(entry);
+          const cappedAmount = Math.min(
+            categoryAmount,
+            Math.max(netAmount - creditedAmount, 0)
+          );
+          cappedAmounts.set(index, cappedAmount);
+          creditedAmount += cappedAmount;
+        });
 
-          if (!meta?.categoryId) continue;
-
-          if (
-            String(meta.categoryId) !==
-            String(configCategoryId)
-          ) {
-            continue;
-          }
-
-          total += num(entry.receivedAmount);
-        }
-      }
-
-      return total;
+      return cappedAmounts;
     };
+
+    const getVerifiedAmountForCategory = (lead, configCategoryId) =>
+      [...getVerifiedCategoryAmountsByPayment(lead, configCategoryId).values()]
+        .reduce((total, amount) => total + amount, 0);
 
     const getPaymentDate = (payment) => {
       const date = new Date(payment?.paymentDate);
@@ -2623,8 +2634,12 @@ export const gettargetResult = async (req, res) => {
       targetMonth
     ) => {
       let total = 0;
+      const cappedAmounts = getVerifiedCategoryAmountsByPayment(
+        lead,
+        configCategoryId
+      );
 
-      for (const payment of objects(lead.paymentHistory)) {
+      for (const [index, payment] of objects(lead.paymentHistory).entries()) {
         const paymentDate = getPaymentDate(payment);
         if (
           payment.paymentVerified !== true ||
@@ -2633,15 +2648,7 @@ export const gettargetResult = async (req, res) => {
           continue;
         }
 
-        for (const entry of objects(payment.paymentEntries)) {
-          const meta = getItemMeta(entry);
-          if (
-            meta?.categoryId &&
-            String(meta.categoryId) === String(configCategoryId)
-          ) {
-            total += num(entry.receivedAmount);
-          }
-        }
+        total += cappedAmounts.get(index) || 0;
       }
 
       return total;
@@ -3598,13 +3605,35 @@ const buildIncentiveReportData = async ({
         ? total + num(entry.receivedAmount)
         : total;
     }, 0);
-  const getLeadVerifiedCategoryAmount = (lead, categoryId) =>
+  const getCappedVerifiedCategoryAmountsByPayment = (lead, categoryId) => {
+    const cappedAmounts = new Map();
+    const netAmount = Math.max(num(lead.netAmount), 0);
+    let creditedAmount = 0;
+
     objects(lead.paymentHistory)
-      .filter((payment) => payment.paymentVerified === true)
-      .reduce(
-        (total, payment) => total + getPaymentCategoryAmount(payment, categoryId),
-        0
-      );
+      .map((payment, index) => ({ payment, index }))
+      .filter(({ payment }) => payment.paymentVerified === true)
+      .sort(
+        (left, right) =>
+          validDate(left.payment.paymentDate)?.getTime() -
+          validDate(right.payment.paymentDate)?.getTime()
+      )
+      .forEach(({ payment, index }) => {
+        const categoryAmount = getPaymentCategoryAmount(payment, categoryId);
+        const cappedAmount = Math.min(
+          categoryAmount,
+          Math.max(netAmount - creditedAmount, 0)
+        );
+
+        cappedAmounts.set(index, cappedAmount);
+        creditedAmount += cappedAmount;
+      });
+
+    return cappedAmounts;
+  };
+  const getLeadVerifiedCategoryAmount = (lead, categoryId) =>
+    [...getCappedVerifiedCategoryAmountsByPayment(lead, categoryId).values()]
+      .reduce((total, amount) => total + amount, 0);
   const isCompleted = (activity) =>
     activity.taskClosed === true ||
     activity.followupClosed === true ||
@@ -3709,9 +3738,13 @@ const buildIncentiveReportData = async ({
       };
 
       if (config.measurementType === "amount") {
+        const cappedPaymentAmounts = getCappedVerifiedCategoryAmountsByPayment(
+          lead,
+          categoryId
+        );
         for (const [paymentIndex, payment] of payments.entries()) {
           if (payment.paymentVerified !== true || !isWithinPeriod(payment.paymentDate, config)) continue;
-          const paymentAmount = getPaymentCategoryAmount(payment, categoryId);
+          const paymentAmount = cappedPaymentAmounts.get(paymentIndex) || 0;
           if (paymentAmount <= 0) continue;
           for (const [activityIndex, activity] of objects(lead.activityLog).entries()) {
             if (!isWithinPeriod(activityCompletedAt(lead, activity, activityIndex), config)) continue;
