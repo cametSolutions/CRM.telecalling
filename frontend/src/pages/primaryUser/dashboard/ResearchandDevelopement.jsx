@@ -369,7 +369,10 @@ export default function ResearchandDevelopement() {
       remark: item.taskRemark || "",
       allocationDate: toDateInputValue(item.allocationDate),
       expectedCompletionDate: item.expectedCompletionDate ? toDateInputValue(item.expectedCompletionDate) : "",
-      isNeedChangeDate: false
+      isNeedChangeDate: false,
+      isTransfer: false,
+      transferredTo: "",
+      transferRemark: ""
     })
     setModal("update")
   }
@@ -440,6 +443,19 @@ export default function ResearchandDevelopement() {
   const saveUpdate = async (event) => {
     event.preventDefault()
     try {
+      if (update.isTransfer) {
+        await api.post("/lead/rnd-task-transfer", {
+          leadDocId: selectedWork.leadDocId,
+          transferredTo: update.transferredTo,
+          transferRemark: update.transferRemark,
+          expectedCompletionDate: update.expectedCompletionDate || undefined
+        })
+        toast.success("Coding & QC task transferred")
+        setModal(null)
+        setRefreshKey((current) => current + 1)
+        return
+      }
+
       const response = await api.post("/lead/rnd-task-update", {
         leadDocId: selectedWork.leadDocId,
         action: "status",
@@ -521,7 +537,7 @@ export default function ResearchandDevelopement() {
         </section>
       </div>
       {modal === "allocation" && <AllocationModal work={selectedWork} value={allocation} developmentStaff={developmentStaff} onChange={setAllocation} onClose={() => setModal(null)} onSubmit={saveAllocation} />}
-      {modal === "update" && <WorkUpdateModal work={selectedWork} value={update} onChange={setUpdate} onClose={() => setModal(null)} onSubmit={saveUpdate} />}
+      {modal === "update" && <WorkUpdateModal work={selectedWork} value={update} developmentStaff={developmentStaff} onChange={setUpdate} onClose={() => setModal(null)} onSubmit={saveUpdate} />}
       {modal === "end-task" && <EndTaskModal work={endTaskWork} value={taskDescription} onChange={setTaskDescription} onClose={() => setModal(null)} onSubmit={saveEndTask} />}
       {modal === "timeline" && <TaskTimelineModal work={timelineWork} onClose={() => setModal(null)} />}
       {modal === "description" && <WorkDescriptionModal work={descriptionWork} onClose={() => setModal(null)} />}
@@ -614,17 +630,22 @@ function AllocationModal({ work, value, developmentStaff, onChange, onClose, onS
   </ModalShell>
 }
 
-function WorkUpdateModal({ work, value, onChange, onClose, onSubmit }) {
+function WorkUpdateModal({ work, value, developmentStaff, onChange, onClose, onSubmit }) {
   const set = (key, nextValue) => onChange((current) => ({ ...current, [key]: nextValue }))
   const canManageDates = ["Pending", "In Progress"].includes(value.status)
+  const canTransfer = value.status === "In Progress"
+  const availableStaff = developmentStaff.filter(
+    (staff) => String(staff._id) !== String(work.assignedDeveloperId)
+  )
   return <ModalShell title="Update task status" subtitle={`${work.id} · ${work.work}`} onClose={onClose}>
     <form onSubmit={onSubmit}>
       <div className="space-y-5 p-5">
         <Field label="Task status"><select value={value.status} onChange={(e) => onChange((current) => ({ ...current, status: e.target.value, isNeedChangeDate: ["Pending", "In Progress"].includes(e.target.value) ? current.isNeedChangeDate : false }))} className={selectClass}>{["Pending", "In Progress", "Hold", "Completed"].map((status) => <option key={status}>{status}</option>)}</select></Field>
         {canManageDates && <div className="space-y-4"><Field label="Allocation date"><input readOnly type="date" value={value.allocationDate} className={inputClass} /></Field><label className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-700"><input type="checkbox" checked={Boolean(value.isNeedChangeDate)} onChange={(e) => set("isNeedChangeDate", e.target.checked)} className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" /><span>Need to change the expected completion date?</span></label>{value.isNeedChangeDate && <Field label="Expected completion date"><input required type="date" min={value.allocationDate} value={value.expectedCompletionDate} onChange={(e) => set("expectedCompletionDate", e.target.value)} className={inputClass} /></Field>}</div>}
+        {canTransfer && <section className="rounded-xl border border-violet-100 bg-violet-50/70 p-3.5"><label className="flex cursor-pointer items-center gap-3 text-sm font-semibold text-slate-800"><input type="checkbox" checked={Boolean(value.isTransfer)} onChange={(event) => set("isTransfer", event.target.checked)} className="h-4 w-4 rounded border-violet-300 text-violet-600 focus:ring-violet-500" /><span>Transfer this task to another developer</span></label><p className="mt-1 pl-7 text-xs leading-5 text-slate-500">Leave this off to keep the current developer and save a normal status update.</p>{value.isTransfer && <div className="mt-4 space-y-4 border-t border-violet-100 pt-4"><Field label="Transfer to"><select required value={value.transferredTo} onChange={(event) => set("transferredTo", event.target.value)} className={selectClass} disabled={availableStaff.length === 0}><option value="">{availableStaff.length ? "Select R&D staff" : "No other R&D staff available"}</option>{availableStaff.map((staff) => <option key={staff._id} value={staff._id}>{staff.name}</option>)}</select></Field><Field label="Transfer reason"><textarea required rows="3" value={value.transferRemark} onChange={(event) => set("transferRemark", event.target.value)} placeholder="Explain why this task is being transferred..." className="w-full resize-none rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100" /></Field></div>}</section>}
         <Field label="Remark"><textarea rows="4" value={value.remark} onChange={(e) => set("remark", e.target.value)} placeholder="Add a remark about this status update..." className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100" /></Field>
       </div>
-      <footer className="flex justify-end gap-3 border-t border-slate-100 px-5 py-4"><button type="button" onClick={onClose} className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">Close</button><button type="submit" className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"><Save size={15} /> Save status</button></footer>
+      <footer className="flex justify-end gap-3 border-t border-slate-100 px-5 py-4"><button type="button" onClick={onClose} className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">Close</button><button type="submit" className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-sm transition ${value.isTransfer ? "bg-violet-600 hover:bg-violet-700" : "bg-blue-600 hover:bg-blue-700"}`}><Save size={15} /> {value.isTransfer ? "Transfer task" : "Save status"}</button></footer>
     </form>
   </ModalShell>
 }

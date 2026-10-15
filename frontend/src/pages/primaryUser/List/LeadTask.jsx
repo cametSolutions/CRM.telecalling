@@ -172,7 +172,7 @@ console.log(data)
 console.log(data)
       const finalOutput = []
       data.forEach((entry) => {
-        const activitylog = entry.activityLog
+        const activitylog = entry.taskActivityLog || entry.activityLog || []
 
         activitylog.forEach((log) => {
           if (
@@ -200,7 +200,7 @@ console.log(data)
               remarks: log.remarks,
               closedDate: log?.submissionDate,
               matchedlog: log,
-              activityLog: activitylog,
+              activityLog: entry.activityLog || activitylog,
               taskallocatedTo: entry.taskallocatedTo,
               taskallocatedBy: entry.taskallocatedBy,
               sameUser: loggedUser?._id === entry.taskallocatedTo?._id
@@ -250,7 +250,7 @@ console.log(finalOutput)
       const finalOutput = []
 
       data.forEach((entry) => {
-        const activitylog = entry.activityLog
+        const activitylog = entry.taskActivityLog || entry.activityLog || []
 
         const matchedLog = activitylog.find(
           (log) =>
@@ -269,7 +269,7 @@ console.log(finalOutput)
             netAmount: entry?.netAmount,
             mobile: entry?.mobile,
             email: entry?.email,
-            activityLog: activitylog,
+            activityLog: entry.activityLog || activitylog,
             matchedlog: matchedLog,
             taskallocatedTo: entry?.taskallocatedTo,
             taskallocatedBy: entry?.taskallocatedBy,

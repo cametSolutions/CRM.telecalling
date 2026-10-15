@@ -57,7 +57,8 @@ RejectTask,
   GetclosedLeads,
   GetResearchAndDevelopmentLeads,
   UpdateResearchAndDevelopmentTask,
-  AllocateResearchAndDevelopmentTask
+  AllocateResearchAndDevelopmentTask,
+  TransferResearchAndDevelopmentTask
 } from "../../controller/primaryUserController/leadController.js";
 const router = express.Router();
 // router.get("/export-branch-wise-product-usage",exportBranchWiseProductUsage)
@@ -132,5 +133,6 @@ router.post(
 router.post("/approveforcefullyclosetarget",authMiddleware,ApprovedforcefullyClosedTarget)
 router.post("/rnd-allocation", authMiddleware, AllocateResearchAndDevelopmentTask)
 router.post("/rnd-task-update", authMiddleware, UpdateResearchAndDevelopmentTask)
+router.post("/rnd-task-transfer", authMiddleware, TransferResearchAndDevelopmentTask)
 
 export default router;

@@ -11206,6 +11206,7 @@ const buildMap = (docs) =>
 export const GetrespectedleadTask = async (req, res) => {
   try {
     const { userid, branchSelected, role, ownTask, taskStatus } = req.query;
+    const codingAndQcTaskId = "689c23493e94902039b97743";
 
     const userObjectId = toObjectId(userid);
     const branchObjectId = toObjectId(branchSelected);
@@ -11282,6 +11283,9 @@ export const GetrespectedleadTask = async (req, res) => {
       taskTo: { $ne: "followup" },
       taskallocatedTo: { $ne: null },
       ...(isPendingTask ? { taskClosed: false } : {}),
+      ...(isPendingTask
+        ? { taskId: { $ne: new mongoose.Types.ObjectId(codingAndQcTaskId) } }
+        : {}),
       ...(isClearedTask ? { taskClosed: true } : {}),
       ...(allowedUserIds
         ? {
@@ -11299,17 +11303,6 @@ export const GetrespectedleadTask = async (req, res) => {
       },
     };
 
-    const activityLogConditions = [
-      { $eq: ["$$log.allocationChanged", false] },
-      { $ne: ["$$log.taskTo", "followup"] },
-      { $ne: ["$$log.taskallocatedTo", null] },
-      ...(isPendingTask ? [{ $eq: ["$$log.taskClosed", false] }] : []),
-      ...(isClearedTask ? [{ $eq: ["$$log.taskClosed", true] }] : []),
-      ...(allowedUserIds
-        ? [{ $in: ["$$log.taskallocatedTo", allowedUserIds] }]
-        : []),
-    ];
-
     const selectedfollowup = await LeadMaster.aggregate([
       { $match: query },
       {
@@ -11325,13 +11318,9 @@ export const GetrespectedleadTask = async (req, res) => {
           leadFor: 1,
           leadBy: 1,
           leadByModel: 1,
-          activityLog: {
-            $filter: {
-              input: "$activityLog",
-              as: "log",
-              cond: { $and: activityLogConditions },
-            },
-          },
+          // Keep the full history for the Event Log modal. The task-list
+          // access checks below still decide which lead appears in this page.
+          activityLog: 1,
         },
       },
     ]);
@@ -11500,7 +11489,9 @@ export const GetrespectedleadTask = async (req, res) => {
     };
 
     /*
-      This filters activityLog before sending data to the client.
+      This filters task allocations used to decide which lead rows the current
+      user can access. The complete activityLog remains available for the
+      Event Log modal.
 
       Example:
       A Manager with ownTask=false may receive:
@@ -11524,6 +11515,13 @@ export const GetrespectedleadTask = async (req, res) => {
       }
 
       if (isPendingTask && log?.taskClosed !== false) {
+        return false;
+      }
+
+      if (
+        isPendingTask &&
+        String(log?.taskId) === codingAndQcTaskId
+      ) {
         return false;
       }
 
@@ -11574,7 +11572,7 @@ export const GetrespectedleadTask = async (req, res) => {
       const lastAccessibleAllocation =
         accessibleActivityLog[accessibleActivityLog.length - 1];
 
-      const populatedActivityLog = accessibleActivityLog.map((log) => ({
+      const populateActivityLog = (log) => ({
         ...log,
         taskBy: resolveTask(log?.taskBy),
         taskId: resolveTask(log?.taskId),
@@ -11593,7 +11591,12 @@ export const GetrespectedleadTask = async (req, res) => {
           log?.taskallocatedBy,
           log?.taskallocatedByModel
         ),
-      }));
+      });
+
+      const populatedActivityLog = activityLog.map(populateActivityLog);
+      const populatedTaskActivityLog = accessibleActivityLog.map(
+        populateActivityLog
+      );
 
       const populatedLeadFor = leadFor.map((item) => ({
         ...item,
@@ -11622,6 +11625,7 @@ export const GetrespectedleadTask = async (req, res) => {
         ),
 
         activityLog: populatedActivityLog,
+        taskActivityLog: populatedTaskActivityLog,
         leadFor: populatedLeadFor,
       });
     }
@@ -15038,40 +15042,207 @@ export const GetResearchAndDevelopmentLeads = async (req, res) => {
     const codingAndQcTaskId = new mongoose.Types.ObjectId(
       "689c23493e94902039b97743"
     );
-    // October 2026 in IST
-//     const octoberStart = new Date("2026-09-30T18:30:00.000Z");
-//     const octoberEnd = new Date("2026-10-31T18:30:00.000Z");
-// const septemberThirty = new Date("2026-09-29T18:30:00.000Z")
-//     await LeadMaster.updateMany(
-//       {
-//         leadDate: {
-//           $gte: octoberStart,
-//           $lt: octoberEnd
-//         },
-//         leadBranch: new mongoose.Types.ObjectId("66ffb2fb39904d78447cfaec"),
-//         leadId: {
-//           $nin: [
-//             "01173",
-//             "01172",
-//             "01171",
-//             "01170",
-//             "01169",
-//             "01168",
-//             "01210",
-//             "01208",
-//             "01189",
-//             "01207",
-//             "01152"
-//           ]
-//         }
-//       },
-//       {
-//         $set: {
-//           leadDate:septemberThirty,
-//           "activityLog.0.submission":septemberThirty
+
+
+
+
+    if (!isValidObjectId(branchId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid branchId is required"
+      });
+    }
+    console.log("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh")
+  
+
+
+const result = await LeadMaster.updateMany(
+  {
+    leadBranch: new mongoose.Types.ObjectId("66ffb2fb39904d78447cfaec"),
+    activityLog: {
+      $elemMatch: {
+        taskId: new mongoose.Types.ObjectId(codingAndQcTaskId),
+        taskStatus: "Completed",
+        $or: [
+          { taskClosed: { $ne: true } },
+          { reallocatedTo: { $ne: true } }
+        ]
+      }
+    }
+  },
+  {
+    $set: {
+      "activityLog.$[codingTask].taskClosed": true,
+      "activityLog.$[codingTask].reallocatedTo": true
+    }
+  },
+  {
+    arrayFilters: [
+      {
+        "codingTask.taskId": new mongoose.Types.ObjectId(codingAndQcTaskId),
+        "codingTask.taskStatus": "Completed"
+      }
+    ]
+  }
+);
+
+//  const branchI = "66ffb2fb39904d78447cfaec";
+
+//     const taskObjectId = new mongoose.Types.ObjectId(codingAndQcTaskId);
+//     const branchObjectId = new mongoose.Types.ObjectId(branchI);
+
+//     const leads = await LeadMaster.find({
+//       leadBranch: branchObjectId,
+//       activityLog: {
+//         $elemMatch: {
+//           taskId: taskObjectId,
+//           taskStatus: "Completed"
 //         }
 //       }
-//     )
+//     });
+
+//     console.log("Matched completed Coding & QC leads:", leads.length);
+
+//     let updatedCount = 0;
+//     const updatedLeads = [];
+
+//     for (const lead of leads) {
+//       let leadUpdated = false;
+//       const insertedLogs = [];
+
+//       // Reverse loop keeps indexes correct after inserting new logs.
+//       for (let index = lead.activityLog.length - 1; index >= 0; index--) {
+//         const codingTaskLog = lead.activityLog[index];
+
+//         const isCodingAndQcTask =
+//           String(codingTaskLog.taskId?._id || codingTaskLog.taskId) ===
+//           String(codingAndQcTaskId);
+
+//         const isCompleted =
+//           String(codingTaskLog.taskStatus || "").trim() === "Completed";
+
+//         console.log("Checking activity log:", {
+//           leadId: lead.leadId,
+//           index,
+//           taskId: String(codingTaskLog.taskId?._id || codingTaskLog.taskId),
+//           taskStatus: codingTaskLog.taskStatus
+//         });
+
+//         if (!isCodingAndQcTask || !isCompleted) {
+//           continue;
+//         }
+
+//         const lastTimelineEvent =
+//           codingTaskLog.taskTimeline?.[
+//             codingTaskLog.taskTimeline.length - 1
+//           ];
+
+//         const taskRemark =
+//           lastTimelineEvent?.detail?.trim() ||
+//           codingTaskLog.taskRemark ||
+//           codingTaskLog.taskDescription ||
+//           "";
+
+//         const completionLogId = new mongoose.Types.ObjectId();
+
+//         // Inserts immediately after Coding & QC allocation.
+//         // Existing logs after this index are moved forward automatically.
+//         lead.activityLog.splice(index + 1, 0, {
+//           _id: completionLogId,
+//           submissionDate:
+//             codingTaskLog.taskCompletedAt ||
+//             lastTimelineEvent?.at ||
+//             new Date(),
+//           submittedUser: codingTaskLog.taskallocatedTo,
+//           submissiondoneByModel: codingTaskLog.taskallocatedToModel,
+//           taskBy: taskObjectId,
+//           taskStatus: "Completed",
+//           taskRemark,
+//           remarks: taskRemark,
+//           taskClosed: true,
+//           taskfromFollowup: false,
+//           allocatedClosed: false,
+//           reallocatedTo: true
+//         });
+
+//         insertedLogs.push({
+//           codingTaskLogId: String(codingTaskLog._id),
+//           completionLogId: String(completionLogId)
+//         });
+
+//         leadUpdated = true;
+//       }
+
+//       if (!leadUpdated) {
+//         continue;
+//       }
+
+//       lead.markModified("activityLog");
+//       await lead.save();
+
+//       const updateInfo = {
+//         leadDocId: String(lead._id),
+//         leadId: lead.leadId,
+//         insertedLogs: insertedLogs.map((item) => ({
+//           ...item,
+//           finalActivityLogIndex: lead.activityLog.findIndex(
+//             (log) => String(log._id) === item.completionLogId
+//           )
+//         }))
+//       };
+
+//       updatedLeads.push(updateInfo);
+
+//       console.log(
+//         "Coding & QC completion activity inserted:",
+//         JSON.stringify(updateInfo, null, 2)
+//       );
+
+//       updatedCount += 1;
+//     }
+
+//     console.log("Total updated leads:", updatedCount);
+//     console.log(
+//       "Updated lead details:",
+//       JSON.stringify(updatedLeads, null, 2)
+//     );
+
+
+    ////////////////////////////////////////
+    // October 2026 in IST
+    //     const octoberStart = new Date("2026-09-30T18:30:00.000Z");
+    //     const octoberEnd = new Date("2026-10-31T18:30:00.000Z");
+    // const septemberThirty = new Date("2026-09-29T18:30:00.000Z")
+    //     await LeadMaster.updateMany(
+    //       {
+    //         leadDate: {
+    //           $gte: octoberStart,
+    //           $lt: octoberEnd
+    //         },
+    //         leadBranch: new mongoose.Types.ObjectId("66ffb2fb39904d78447cfaec"),
+    //         leadId: {
+    //           $nin: [
+    //             "01173",
+    //             "01172",
+    //             "01171",
+    //             "01170",
+    //             "01169",
+    //             "01168",
+    //             "01210",
+    //             "01208",
+    //             "01189",
+    //             "01207",
+    //             "01152"
+    //           ]
+    //         }
+    //       },
+    //       {
+    //         $set: {
+    //           leadDate:septemberThirty,
+    //           "activityLog.0.submission":septemberThirty
+    //         }
+    //       }
+    //     )
 
     // const branchObjectId = new mongoose.Types.ObjectId(
     //   "66ffb2fb39904d78447cfaec"
@@ -15679,7 +15850,7 @@ export const UpdateResearchAndDevelopmentTask = async (req, res) => {
       .find(
         (log) =>
           log.taskallocatedTo &&
-          (String(log.taskId) === codingAndQcTaskId || String(log.taskBy) === codingAndQcTaskId)
+          String(log.taskId) === codingAndQcTaskId
       );
 
     if (!allocationLog) {
@@ -15729,11 +15900,32 @@ export const UpdateResearchAndDevelopmentTask = async (req, res) => {
         allocationLog.expectedCompletionDate = new Date(expectedCompletionDate);
         lead.dueDate = allocationLog.expectedCompletionDate;
       }
+      const wasCompleted = allocationLog.taskStatus === "Completed";
       allocationLog.taskStatus = status;
       allocationLog.taskRemark = remark?.trim() || "";
       if (status === "Completed") {
         allocationLog.taskCompletedAt = now;
+        allocationLog.taskSubmissionDate = now;
+        allocationLog.taskDescription = allocationLog.taskRemark || allocationLog.taskDescription;
+        allocationLog.taskClosed = true;
+        allocationLog.reallocatedTo = true;
         lead.reallocatedTo = true;
+
+        // Keep the completed R&D allocation and its completion submission as
+        // separate activity-log entries, matching the standard Lead Task flow.
+        if (!wasCompleted) {
+          lead.activityLog.push({
+            submissionDate: now,
+            submittedUser: allocationLog.taskallocatedTo,
+            submissiondoneByModel: allocationLog.taskallocatedToModel,
+            remarks: allocationLog.taskRemark,
+            taskBy: allocationLog.taskId || allocationLog.taskBy,
+            taskClosed: true,
+            taskfromFollowup: false,
+            allocatedClosed: false,
+            reallocatedTo: true
+          });
+        }
       }
       timelineEvent = status === "Completed" ? "Development Completed" : `Status changed to ${status}`;
       timelineDetail = allocationLog.taskRemark;
@@ -15762,6 +15954,159 @@ export const UpdateResearchAndDevelopmentTask = async (req, res) => {
   } catch (error) {
     console.error("UpdateResearchAndDevelopmentTask error:", error);
     return res.status(500).json({ success: false, message: "Unable to update Coding & QC task" });
+  }
+};
+
+export const TransferResearchAndDevelopmentTask = async (req, res) => {
+  try {
+    const { leadDocId, transferredTo, transferRemark, expectedCompletionDate } = req.body;
+    const codingAndQcTaskId = "689c23493e94902039b97743";
+    const transferredBy = req.owner?.userId;
+
+    if (
+      !isValidObjectId(leadDocId) ||
+      !isValidObjectId(transferredTo) ||
+      !isValidObjectId(transferredBy)
+    ) {
+      return res.status(400).json({ success: false, message: "Valid lead and staff IDs are required" });
+    }
+
+    if (!transferRemark?.trim()) {
+      return res.status(400).json({ success: false, message: "A transfer reason is required" });
+    }
+
+    const [lead, assignedStaff, transferringStaff, transferringAdmin] = await Promise.all([
+      LeadMaster.findById(leadDocId),
+      Staff.findById(transferredTo)
+        .select("_id name department")
+        .populate({ path: "department", select: "department" })
+        .lean(),
+      Staff.findById(transferredBy).select("_id name").lean(),
+      Admin.findById(transferredBy).select("_id name").lean()
+    ]);
+
+    if (!lead) {
+      return res.status(404).json({ success: false, message: "Lead was not found" });
+    }
+
+    if (!assignedStaff) {
+      return res.status(400).json({ success: false, message: "Transfer staff member was not found" });
+    }
+
+    if (
+      assignedStaff.department?.department?.trim().toLowerCase() !==
+      "research and development"
+    ) {
+      return res.status(400).json({ success: false, message: "Transfer staff member must belong to Research and Development" });
+    }
+
+    const currentAllocation = [...lead.activityLog]
+      .reverse()
+      .find(
+        (log) =>
+          String(log.taskId) === codingAndQcTaskId &&
+          log.taskStatus === "In Progress" &&
+          log.taskClosed !== true &&
+          log.allocationChanged !== true
+      );
+
+    if (!currentAllocation) {
+      return res.status(400).json({ success: false, message: "An in-progress Coding & QC task was not found" });
+    }
+
+    if (String(currentAllocation.taskallocatedTo) === String(transferredTo)) {
+      return res.status(400).json({ success: false, message: "Select a different R&D staff member" });
+    }
+
+    const now = new Date();
+    const originalAssigneeId = currentAllocation.taskallocatedTo;
+    const originalAssignee = await Staff.findById(originalAssigneeId)
+      .select("name")
+      .lean();
+    const transferredByModel = transferringStaff ? "Staff" : transferringAdmin ? "Admin" : null;
+
+    if (!transferredByModel) {
+      return res.status(403).json({ success: false, message: "Authenticated user is not authorized to transfer this task" });
+    }
+
+    const transferDetail = `Transferred from ${originalAssignee?.name || "previous developer"} to ${assignedStaff.name}. ${transferRemark.trim()}`;
+    const activeSession = [...(currentAllocation.taskSessions || [])]
+      .reverse()
+      .find((session) => !session.endedAt);
+
+    if (activeSession) {
+      activeSession.endedAt = now;
+      activeSession.description = activeSession.description || transferDetail;
+      currentAllocation.taskEndedAt = now;
+    }
+
+    currentAllocation.allocationChanged = true;
+    currentAllocation.changeReason = transferRemark.trim();
+    currentAllocation.taskTimeline = currentAllocation.taskTimeline || [];
+    currentAllocation.taskTimeline.push({
+      event: "Task Transferred",
+      at: now,
+      detail: transferDetail
+    });
+
+    const nextExpectedCompletionDate = expectedCompletionDate
+      ? new Date(expectedCompletionDate)
+      : currentAllocation.expectedCompletionDate || null;
+
+    if (expectedCompletionDate && Number.isNaN(nextExpectedCompletionDate.getTime())) {
+      return res.status(400).json({ success: false, message: "Invalid expected completion date" });
+    }
+
+    lead.activityLog.push({
+      submissionDate: now,
+      submittedUser: transferredBy,
+      submissiondoneByModel: transferredByModel,
+      taskallocatedBy: transferredBy,
+      taskallocatedByModel: transferredByModel,
+      taskallocatedTo: transferredTo,
+      taskallocatedToModel: "Staff",
+      allocationDate: now,
+      allocationTime: now.toTimeString().slice(0, 5),
+      expectedCompletionDate: nextExpectedCompletionDate,
+      taskTitle: currentAllocation.taskTitle || "Coding & QC",
+      allocationDescription: currentAllocation.allocationDescription || "",
+      taskBy: new mongoose.Types.ObjectId(codingAndQcTaskId),
+      taskTo: currentAllocation.taskTo || "Coding & QC",
+      taskId: new mongoose.Types.ObjectId(codingAndQcTaskId),
+      taskStatus: "In Progress",
+      taskTimeline: [{ event: "Task Transferred", at: now, detail: transferDetail }],
+      taskClosed: false,
+      followupClosed: false,
+      allocatedClosed: false,
+      allocationChanged: false,
+      taskfromFollowup: false,
+      remarks: transferRemark.trim()
+    });
+
+    lead.allocatedTo = transferredTo;
+    lead.allocatedBy = transferredBy;
+    lead.allocatedToModel = "Staff";
+    lead.allocatedByModel = transferredByModel;
+    lead.reallocatedTo = false;
+    if (nextExpectedCompletionDate) lead.dueDate = nextExpectedCompletionDate;
+
+    await lead.save();
+
+    const transferredAllocation = lead.activityLog.at(-1);
+    return res.status(200).json({
+      success: true,
+      message: "Coding & QC task transferred",
+      data: {
+        assignedDeveloper: assignedStaff.name,
+        assignedDeveloperId: assignedStaff._id,
+        taskStatus: transferredAllocation.taskStatus,
+        expectedCompletionDate: transferredAllocation.expectedCompletionDate,
+        taskTimeline: transferredAllocation.taskTimeline
+      }
+    });
+  } catch (error) {
+    console.error("TransferResearchAndDevelopmentTask error:", error);
+    return res.status(500).json({ success: false, message: "Unable to transfer Coding & QC task" });
   }
 };
 
