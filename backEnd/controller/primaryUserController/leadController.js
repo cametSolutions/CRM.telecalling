@@ -42,6 +42,16 @@ const toIdString = (v) => {
 
 const uniqueIds = (values = []) => [...new Set(values.filter(Boolean).map(String))];
 
+const COLLECTION_PAYMENT_MODES = new Set([
+  "HDFC BANK - MET",
+  "SOUTH INDIAN BANK - CAMET",
+  "PUNJAB NATIONAL BANK - ACCUANET",
+  "INDIAN OVERSEAS BANK - ACCUANET",
+  "BANK OF BARODA - ACCUANET",
+  "CASH - ACCUANET",
+  "CASH - CAMET"
+]);
+
 const addEndOfDay = (date) => {
   const d = new Date(date);
   d.setHours(23, 59, 59, 999);
@@ -1903,6 +1913,253 @@ export const LeadRegister = async (req, res) => {
   }
 }
 
+// Creates multiple independent leads from the compact Lead Master bulk grid.
+// The shared remark/allocation is applied to every submitted row.
+export const BulkLeadRegister = async (req, res) => {
+  try {
+    const {
+      leadBranch,
+      leads,
+      remark = "",
+      selfAllocation = false,
+      dueDate = null
+    } = req.body
+
+    if (!isValidObjectId(leadBranch) || !Array.isArray(leads) || !leads.length) {
+      return res.status(400).json({ message: "A branch and at least one bulk lead are required" })
+    }
+    if (leads.length > 100) {
+      return res.status(400).json({ message: "A maximum of 100 leads can be created at once" })
+    }
+
+    const leadBy = req.owner?.userId
+    if (!isValidObjectId(leadBy)) {
+      return res.status(401).json({ message: "Unable to identify the logged-in user" })
+    }
+
+    const [staffUser, adminUser] = await Promise.all([
+      Staff.findById(leadBy).populate("department", "department code").lean(),
+      Admin.findById(leadBy).lean()
+    ])
+    const leadByModel = staffUser ? "Staff" : adminUser ? "Admin" : null
+    if (!leadByModel) {
+      return res.status(403).json({ message: "The logged-in user cannot create leads" })
+    }
+
+    const department = staffUser?.department || {}
+    const isMarketingStaff =
+      leadByModel === "Staff" &&
+      (department?.code === "DEPARTMENT3" ||
+        String(department?.department || "").toLowerCase().includes("marketing"))
+    if (!isMarketingStaff) {
+      return res.status(403).json({ message: "Bulk lead creation is available only to Marketing staff" })
+    }
+    if (selfAllocation && !dueDate) {
+      return res.status(400).json({ message: "A due date is required for self allocation" })
+    }
+
+    const customerIds = [...new Set(leads.map((lead) => String(lead?.customerId || "")).filter(isValidObjectId))]
+    const productIds = [...new Set(
+      leads.flatMap((lead) => (lead?.products || []).map((product) => String(product?.productId || "")))
+        .filter(isValidObjectId)
+    )]
+    if (!customerIds.length || !productIds.length) {
+      return res.status(400).json({ message: "Every bulk row must contain a customer and product" })
+    }
+
+    const [customers, products, leadTask, allocationTask, followupTask] = await Promise.all([
+      Customer.find({ _id: { $in: customerIds } }).lean(),
+      Product.find({ _id: { $in: productIds }, status: { $ne: "Inactive" } }).lean(),
+      Task.findOne({ taskName: "Lead" }).lean(),
+      selfAllocation ? Task.findOne({ taskName: "Allocation" }).lean() : null,
+      selfAllocation ? Task.findOne({ taskName: { $regex: /^followup$/i } }).lean() : null
+    ])
+    if (selfAllocation && (!allocationTask || !followupTask)) {
+      return res.status(500).json({ message: "Allocation or Followup task is not configured" })
+    }
+
+    const customerById = new Map(customers.map((customer) => [String(customer._id), customer]))
+    const productById = new Map(products.map((product) => [String(product._id), product]))
+    const invalidRows = []
+    const normalizedLeads = []
+
+    for (let index = 0; index < leads.length; index += 1) {
+      const row = leads[index] || {}
+      const customer = customerById.get(String(row.customerId))
+      const rowProducts = Array.isArray(row.products) ? row.products : []
+      if (!customer || !row.source || !rowProducts.length) {
+        invalidRows.push({ row: index + 1, reason: "Customer, source, and product are required" })
+        continue
+      }
+
+      const leadFor = []
+      let taxableAmount = 0
+      let taxAmount = 0
+      let invalidProduct = false
+      for (const rowProduct of rowProducts) {
+        const product = productById.get(String(rowProduct?.productId))
+        const productBranch = product?.selected?.find(
+          (selection) => String(selection?.branch_id) === String(leadBranch)
+        )
+        const amount = Number(rowProduct?.amount || 0)
+        const taxRate = Number(rowProduct?.tax || 0)
+        if (!product || !productBranch || !Number.isFinite(amount) || amount < 0 || !Number.isFinite(taxRate) || taxRate < 0) {
+          invalidProduct = true
+          break
+        }
+        const itemTaxAmount = Number(((amount * taxRate) / 100).toFixed(2))
+        const itemNetAmount = Number((amount + itemTaxAmount).toFixed(2))
+        taxableAmount += amount
+        taxAmount += itemTaxAmount
+        leadFor.push({
+          productorServiceId: product._id,
+          productorServicemodel: "Product",
+          productorServiceName: product.shortName || product.productName || "",
+          productorservicetype: product.productorservicetype,
+          company_id: productBranch.company_id,
+          branch_id: leadBranch,
+          licenseNumber: rowProduct?.license || null,
+          productPrice: amount,
+          taxAmount: itemTaxAmount,
+          netAmount: itemNetAmount,
+          actualproductPrice: amount,
+          actualNetAmount: itemNetAmount,
+          hsn: productBranch.hsnName || 0,
+          actualHsn: productBranch.hsnName || 0,
+          licenseNumbers: []
+        })
+      }
+
+      if (invalidProduct) {
+        invalidRows.push({ row: index + 1, reason: "Select active products available in the chosen branch and enter valid amounts" })
+        continue
+      }
+      normalizedLeads.push({
+        customer,
+        partner: isValidObjectId(row.partner) ? row.partner : null,
+        source: String(row.source).trim(),
+        taxableAmount: Number(taxableAmount.toFixed(2)),
+        taxAmount: Number(taxAmount.toFixed(2)),
+        netAmount: Number((taxableAmount + taxAmount).toFixed(2)),
+        leadFor
+      })
+    }
+
+    if (!normalizedLeads.length) {
+      return res.status(400).json({ message: "No valid bulk lead rows were found", skipped: invalidRows })
+    }
+
+    const existingLeads = await LeadMaster.find({
+      customerName: { $in: normalizedLeads.map((lead) => lead.customer._id) },
+      "leadFor.productorServiceId": { $in: productIds }
+    }).select("customerName leadFor.productorServiceId").lean()
+    const existingPairs = new Set(
+      existingLeads.flatMap((lead) =>
+        (lead.leadFor || []).map((item) => `${lead.customerName}:${item.productorServiceId}`)
+      )
+    )
+    const seenPairs = new Set()
+    const eligibleLeads = normalizedLeads.filter((lead, index) => {
+      const pairs = lead.leadFor.map((item) => `${lead.customer._id}:${item.productorServiceId}`)
+      if (pairs.some((pair) => existingPairs.has(pair) || seenPairs.has(pair))) {
+        invalidRows.push({ row: index + 1, reason: "A lead already exists for this customer and product" })
+        return false
+      }
+      pairs.forEach((pair) => seenPairs.add(pair))
+      return true
+    })
+    if (!eligibleLeads.length) {
+      return res.status(409).json({ message: "All submitted bulk leads already exist", skipped: invalidRows })
+    }
+
+    const session = await mongoose.startSession()
+    try {
+      await session.withTransaction(async () => {
+        const lastLead = await LeadId.findOne().sort({ leadId: -1 }).session(session)
+        let nextLeadNumber = lastLead ? Number.parseInt(lastLead.leadId, 10) + 1 : 1
+        const leadDate = new Date()
+        const documents = eligibleLeads.map((lead) => {
+          const leadId = String(nextLeadNumber++).padStart(5, "0")
+          const activityLog = [{
+            submissionDate: leadDate,
+            submittedUser: leadBy,
+            submissiondoneByModel: leadByModel,
+            remarks: remark,
+            taskBy: leadTask?._id
+          }]
+          if (selfAllocation) {
+            activityLog.push({
+              submissionDate: leadDate,
+              submittedUser: leadBy,
+              submissiondoneByModel: leadByModel,
+              taskallocatedBy: leadBy,
+              taskallocatedByModel: leadByModel,
+              taskallocatedTo: leadBy,
+              taskallocatedToModel: leadByModel,
+              remarks: remark,
+              taskBy: allocationTask._id,
+              taskTo: "followup",
+              taskId: followupTask._id,
+              allocationChanged: false,
+              followupClosed: false,
+              taskfromFollowup: false,
+              allocationDate: new Date(dueDate)
+            })
+          }
+          return {
+            leadId,
+            leadDate,
+            customerName: lead.customer._id,
+            mobile: lead.customer.mobile || "",
+            phone: lead.customer.landline || "",
+            email: lead.customer.email || "",
+            location: lead.customer.city || lead.customer.address1 || "",
+            pincode: lead.customer.pincode || "",
+            source: lead.source,
+            partner: lead.partner,
+            leadBranch,
+            remark,
+            leadBy,
+            leadByModel,
+            taxableAmount: lead.taxableAmount,
+            taxAmount: lead.taxAmount,
+            netAmount: lead.netAmount,
+            balanceAmount: lead.netAmount,
+            selfAllocation: Boolean(selfAllocation),
+            ...(selfAllocation && {
+              allocationType: followupTask._id,
+              selfAllocationType: followupTask._id,
+              selfAllocationDueDate: new Date(dueDate),
+              dueDate: new Date(dueDate),
+              taskfromFollowup: false
+            }),
+            activityLog,
+            leadFor: lead.leadFor
+          }
+        })
+        await LeadMaster.insertMany(documents, { session })
+        await LeadId.insertMany(documents.map((lead) => ({
+          leadId: lead.leadId,
+          leadBy,
+          assignedtoleadByModel: leadByModel
+        })), { session })
+      })
+    } finally {
+      await session.endSession()
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: `${eligibleLeads.length} lead${eligibleLeads.length === 1 ? "" : "s"} created successfully`,
+      created: eligibleLeads.length,
+      skipped: invalidRows
+    })
+  } catch (error) {
+    console.error("Bulk lead creation failed:", error)
+    return res.status(500).json({ message: "Unable to create bulk leads" })
+  }
+}
+
 // Creates one lead per customer for a branch-valid target product selected in
 // the Expiry Register. Customer and product values are read from the database.
 export const BulkCreateAdditionalServiceLeads = async (req, res) => {
@@ -2395,6 +2652,103 @@ export const UpdatereceivedAmount = async (req, res) => {
     session.endSession();
   }
 };
+
+// Accountants can reject a collection entry from either the pending or the
+// verified collection view. The lead totals are always derived from the
+// payment records that remain after the rejection.
+export const RejectCollectionPayment = async (req, res) => {
+  const session = await mongoose.startSession()
+
+  try {
+    const { leadDocId, paymentIndex } = req.body
+    const index = Number(paymentIndex)
+    const userId = req.owner?.userId
+
+    if (!isValidObjectId(userId)) {
+      return res.status(401).json({ message: "Unable to identify the logged-in user" })
+    }
+    if (!isValidObjectId(leadDocId) || !Number.isInteger(index) || index < 0) {
+      return res.status(400).json({ message: "A valid lead and payment record are required" })
+    }
+
+    const accountant = await Staff.findById(userId)
+      .populate("department", "department code")
+      .lean()
+    const department = accountant?.department || {}
+    const isAccountant =
+      department?.code === "DEPARTMENT2" ||
+      /accounts?|accounting/i.test(String(department?.department || ""))
+
+    if (!isAccountant) {
+      return res.status(403).json({ message: "Only Accounts staff can reject a collection" })
+    }
+
+    await session.withTransaction(async () => {
+      const lead = await LeadMaster.findById(leadDocId).session(session)
+      if (!lead) throw new Error("Lead not found")
+      if (index >= lead.paymentHistory.length) throw new Error("Invalid payment record")
+
+      lead.paymentHistory.splice(index, 1)
+
+      // Payment-entry balances are running balances. When an older payment is
+      // removed, every later entry must start again from the correct previous
+      // balance (for example: remove 1,000 before a later 2,000 payment).
+      const runningBalances = new Map()
+      for (const payment of lead.paymentHistory) {
+        if (!Array.isArray(payment.paymentEntries) || !payment.paymentEntries.length) {
+          continue
+        }
+
+        for (const entry of payment.paymentEntries) {
+          const key = `${entry.productorServicemodel || "Product"}:${entry.productorServiceId}`
+          const originalNetAmount = Number(entry.netAmount || 0)
+          const previousBalance = runningBalances.has(key)
+            ? runningBalances.get(key)
+            : originalNetAmount
+          const receivedAmount = Number(entry.receivedAmount || 0)
+          const balanceAmount = Math.max(
+            0,
+            Number((previousBalance - receivedAmount).toFixed(2))
+          )
+
+          entry.balanceAmount = balanceAmount
+          runningBalances.set(key, balanceAmount)
+        }
+
+        payment.receivedAmount = Number(
+          payment.paymentEntries
+            .reduce((total, entry) => total + Number(entry.receivedAmount || 0), 0)
+            .toFixed(2)
+        )
+      }
+
+      const totalPaidAmount = Number(
+        lead.paymentHistory
+          .reduce((total, payment) => total + Number(payment?.receivedAmount || 0), 0)
+          .toFixed(2)
+      )
+      const netAmount = Number(lead.netAmount || 0)
+
+      lead.totalPaidAmount = totalPaidAmount
+      lead.balanceAmount = Math.max(0, Number((netAmount - totalPaidAmount).toFixed(2)))
+      lead.paymentVerified =
+        lead.paymentHistory.length > 0 &&
+        lead.paymentHistory.every((payment) => payment.paymentVerified === true) &&
+        totalPaidAmount === netAmount
+
+      await lead.save({ session })
+    })
+
+    return res.status(200).json({ message: "Collection rejected and lead balances updated" })
+  } catch (error) {
+    console.error("Reject collection payment error:", error)
+    return res.status(error.message === "Lead not found" || error.message === "Invalid payment record" ? 404 : 500)
+      .json({ message: error.message || "Unable to reject collection" })
+  } finally {
+    session.endSession()
+  }
+};
+
 export const UpdatepaymentVerification = async (req, res) => {
   try {
     const {
@@ -3721,6 +4075,11 @@ export const UpdateCollection = async (req, res) => {
       return res.status(400).json({ message: "Missing customerId" })
     }
 
+    const paymentMode = paymentData?.paymentMode ?? formData?.paymentMode
+    if (!COLLECTION_PAYMENT_MODES.has(paymentMode)) {
+      return res.status(400).json({ message: "Select a valid mode of payment" })
+    }
+
     const customerId = formData.customerId
     const leadDocId = formData.leadDocId
 
@@ -3795,6 +4154,7 @@ export const UpdateCollection = async (req, res) => {
           paymentData?.receivedModel || model || formData?.receivedModel,
         bankRemarks:
           paymentData?.bankRemarks ?? formData?.bankRemarks ?? "",
+        paymentMode,
         updatedAt: new Date()
       }
 

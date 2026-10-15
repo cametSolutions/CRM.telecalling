@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { X, Edit2, Save, DollarSign } from "lucide-react"
+import { X, Edit2, Save, DollarSign, Trash2 } from "lucide-react"
 import { PropagateLoader } from "react-spinners"
 import { toast } from "react-toastify"
 import api from "../../api/api"
@@ -223,15 +223,15 @@ export const PaymentHistoryModal = ({
     }
   }
 
-  const handleVerify = async (index, checkverified) => {
+  const handleVerify = async (index, isCurrentlyVerified) => {
     console.log(index)
-    console.log(!checkverified?.[index])
+    console.log(!isCurrentlyVerified)
     console.log(loggedUser?._id)
 
     try {
       setsubmitLoading(true)
       const payload = {
-        isverified: !checkverified?.[index],
+        isverified: !isCurrentlyVerified,
         index: index,
         leadId: leadDocId,
         verifiedBy: loggedUser?._id
@@ -244,10 +244,10 @@ export const PaymentHistoryModal = ({
         setsubmitLoading(false)
         setcheckverified((prev) => ({
           ...prev,
-          [index]: !checkverified?.[index]
+          [index]: !isCurrentlyVerified
         }))
       }
-      if (checkverified?.[index]) {
+      if (isCurrentlyVerified) {
         toast.success("Payment univerified succssfully")
       } else {
         toast.success("Payment verified successfully")
@@ -275,7 +275,7 @@ export const PaymentHistoryModal = ({
         setsubmitLoading(false)
         setcheckverified((prev) => ({
           ...prev,
-          [index]: !checkverified?.[index]
+          [index]: false
         }))
       }
 
@@ -283,6 +283,30 @@ export const PaymentHistoryModal = ({
     } catch (error) {
       console.log(error)
       toast.error("Something went wrong")
+      setsubmitLoading(false)
+    }
+  }
+
+  const handleRejectCollection = async (paymentIndex, amount) => {
+    const confirmed = window.confirm(
+      `Reject the ${formatAmount(amount)} collection? This removes it from payment history and recalculates the lead balance.`
+    )
+    if (!confirmed) return
+
+    try {
+      setsubmitLoading(true)
+      const response = await api.post("/lead/rejectCollectionPayment", {
+        leadDocId,
+        paymentIndex
+      })
+
+      toast.success(response.data?.message || "Collection rejected successfully")
+      onClose(false)
+      setselectedLeadId(null)
+      refresh()
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Unable to reject collection")
+    } finally {
       setsubmitLoading(false)
     }
   }
@@ -837,6 +861,12 @@ export const PaymentHistoryModal = ({
                       `${row?.originalIndex ?? index}-${row?.paymentDate ?? "payment"}`
 
                     const rowOriginalIndex = row?.originalIndex ?? index
+                    // `paymentVerified` comes from the database. The local map
+                    // only overrides it immediately after an action, before the
+                    // refreshed collection list returns.
+                    const isPaymentVerified =
+                      checkverified?.[rowOriginalIndex] ??
+                      Boolean(row?.paymentVerified)
 
                     return (
                       <tr
@@ -977,31 +1007,41 @@ export const PaymentHistoryModal = ({
                                     ))}
 
                                   {isdepartmentisAccountant && (
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        handleVerify(
-                                          rowOriginalIndex,
-                                          checkverified
-                                        )
-                                      }
-                                      disabled={submitLoading}
-                                      className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                                        checkverified?.[rowOriginalIndex]
-                                          ? "bg-emerald-600 hover:bg-emerald-700"
-                                          : "bg-amber-500 hover:bg-amber-600"
-                                      }`}
-                                    >
-                                      {checkverified?.[rowOriginalIndex] ? (
-                                        <CheckCircle2 className="h-3.5 w-3.5" />
+                                    <>
+                                      {isPaymentVerified ? (
+                                        <span className="inline-flex h-8 items-center gap-1 rounded-lg bg-emerald-50 px-2.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                                          <CheckCircle2 className="h-3.5 w-3.5" />
+                                          Verified
+                                        </span>
                                       ) : (
-                                        <AlertTriangle className="h-3.5 w-3.5" />
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            handleVerify(rowOriginalIndex, false)
+                                          }
+                                          disabled={submitLoading}
+                                          className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-amber-500 px-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+                                        >
+                                          <AlertTriangle className="h-3.5 w-3.5" />
+                                          Verify
+                                        </button>
                                       )}
-
-                                      {checkverified?.[rowOriginalIndex]
-                                        ? "Verified"
-                                        : "Verify"}
-                                    </button>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          handleRejectCollection(
+                                            rowOriginalIndex,
+                                            row?.receivedAmount
+                                          )
+                                        }
+                                        disabled={submitLoading}
+                                        className="inline-flex h-8 items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 text-xs font-semibold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                        title="Reject and remove collection"
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                        Reject
+                                      </button>
+                                    </>
                                   )}
                                 </>
                               )}
@@ -1028,28 +1068,34 @@ export const PaymentHistoryModal = ({
                           <td className="px-3 py-3 text-center">
                             <div className="flex flex-col items-center justify-center gap-2">
                               {isdepartmentisAccountant && (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleUnverify(rowOriginalIndex)
-                                  }
-                                  disabled={submitLoading}
-                                  className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                                    checkverified?.[rowOriginalIndex]
-                                      ? "bg-emerald-600 hover:bg-emerald-700"
-                                      : "bg-amber-500 hover:bg-amber-600"
-                                  }`}
-                                >
-                                  {checkverified?.[rowOriginalIndex] ? (
-                                    <CheckCircle2 className="h-3.5 w-3.5" />
-                                  ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleUnverify(rowOriginalIndex)
+                                    }
+                                    disabled={submitLoading}
+                                    className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-amber-500 px-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+                                  >
                                     <AlertTriangle className="h-3.5 w-3.5" />
-                                  )}
-
-                                  {checkverified?.[rowOriginalIndex]
-                                    ? "Verified"
-                                    : "Unverify"}
-                                </button>
+                                    Unverify
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleRejectCollection(
+                                        rowOriginalIndex,
+                                        row?.receivedAmount
+                                      )
+                                    }
+                                    disabled={submitLoading}
+                                    className="inline-flex h-8 items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 text-xs font-semibold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                    title="Reject and remove collection"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                    Reject
+                                  </button>
+                                </>
                               )}
 
                               {message?.warning &&
