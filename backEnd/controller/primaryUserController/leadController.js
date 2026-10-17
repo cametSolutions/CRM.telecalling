@@ -5939,6 +5939,22 @@ export const UpdateLeadRegister = async (req, res) => {
         throw Object.assign(new Error("Lead not found"), { statusCode: 404 });
       }
 
+      const activePendingTask = (matchedDoc.activityLog || []).find(
+        (log) =>
+          log?.taskClosed === false &&
+          log?.allocationChanged !== true &&
+          log?.taskTo !== "followup"
+      );
+
+      if (activePendingTask) {
+        throw Object.assign(
+          new Error(
+            `Lead cannot be edited while pending task "${activePendingTask.taskTo}" is active.`
+          ),
+          { statusCode: 403 }
+        );
+      }
+
       const existingLeadFor = Array.isArray(matchedDoc.leadFor)
         ? matchedDoc.leadFor.map((item) => toPlainObject(item))
         : [];
@@ -11297,11 +11313,20 @@ export const GetrespectedleadTask = async (req, res) => {
     };
 
     const query = {
-      leadBranch: branchObjectId,
       activityLog: {
         $elemMatch: elemMatch,
       },
     };
+
+    /*
+      An allocation is actionable for its assignee even when the lead belongs
+      to another branch. For example, a CAMET user assigned an ACCUANET lead
+      must still receive that task. Admin's All Task view remains restricted
+      to the branch selected in the UI.
+    */
+    if (isAdmin && !isOwnTask) {
+      query.leadBranch = branchObjectId;
+    }
 
     const selectedfollowup = await LeadMaster.aggregate([
       { $match: query },
@@ -15053,165 +15078,210 @@ export const GetResearchAndDevelopmentLeads = async (req, res) => {
       });
     }
     console.log("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh")
-  
+
+    //     const leads = await LeadMaster.find({
+    //       leadClosedDate: {
+    //         $gte: new Date("2026-09-30T18:30:00.000Z"),
+    //         $lt: new Date("2026-10-16T18:30:00.000Z"),
+    //       },
+    //       leadBranch: new mongoose.Types.ObjectId(
+    //         "66ffb2fb39904d78447cfaec"
+    //       ),
+    //       forcefullyClosedTarget: false, "paymentHistory.paymentDate": {
+    //         "$gte": new Date("2026-07-01T00:00:00.000+05:30"),
+    //         "$lt": new Date("2026-10-01T00:00:00.000+05:30")
+    //       }
+    //     }).lean();
+    //     const bb = leads.map((it) => it.leadId)
+    //     const le = await LeadMaster.find({
+    //       leadClosedDate: {
+    //         $gte: new Date("2026-09-30T18:30:00.000Z"),
+    //         $lt: new Date("2026-10-16T18:30:00.000Z"),
+    //       },
+    //       leadBranch: new mongoose.Types.ObjectId(
+    //         "66ffb2fb39904d78447cfaec"
+    //       ),
+    //       forcefullyClosedTarget: false,
+    //     })
+    //     const l = le.map((it) => it.leadId)
+
+    // const bbSet = new Set(bb.map(String));
+    // const missingLeadIds = le
+    //   .filter((it) => !bbSet.has(String(it.leadId)))
+    //   .map((it) => ({
+    //     _id: it._id,
+    //     leadId: it.leadId,
+    //     leadClosedDate: it.leadClosedDate,
+    //     paymentHistory: it.paymentHistory,
+    //   }));
+
+    // console.log(missingLeadIds);
 
 
-const result = await LeadMaster.updateMany(
-  {
-    leadBranch: new mongoose.Types.ObjectId("66ffb2fb39904d78447cfaec"),
-    activityLog: {
-      $elemMatch: {
-        taskId: new mongoose.Types.ObjectId(codingAndQcTaskId),
-        taskStatus: "Completed",
-        $or: [
-          { taskClosed: { $ne: true } },
-          { reallocatedTo: { $ne: true } }
-        ]
-      }
-    }
-  },
-  {
-    $set: {
-      "activityLog.$[codingTask].taskClosed": true,
-      "activityLog.$[codingTask].reallocatedTo": true
-    }
-  },
-  {
-    arrayFilters: [
-      {
-        "codingTask.taskId": new mongoose.Types.ObjectId(codingAndQcTaskId),
-        "codingTask.taskStatus": "Completed"
-      }
-    ]
-  }
-);
 
-//  const branchI = "66ffb2fb39904d78447cfaec";
+    // const result = await LeadMaster.updateMany(
+    //   {
+    //     leadBranch: new mongoose.Types.ObjectId("66ffb2fb39904d78447cfaec"),
+    //     activityLog: {
+    //       $elemMatch: {
+    //         taskId: new mongoose.Types.ObjectId(codingAndQcTaskId),
+    //         taskStatus: "Completed",
+    //         $or: [
+    //           { taskClosed: { $ne: true } },
+    //           { reallocatedTo: { $ne: true } }
+    //         ]
+    //       }
+    //     }
+    //   },
+    //   {
+    //     $set: {
+    //       "activityLog.$[codingTask].taskClosed": true,
+    //       "activityLog.$[codingTask].reallocatedTo": true
+    //     }
+    //   },
+    //   {
+    //     arrayFilters: [
+    //       {
+    //         "codingTask.taskId": new mongoose.Types.ObjectId(codingAndQcTaskId),
+    //         "codingTask.taskStatus": "Completed"
+    //       }
+    //     ]
+    //   }
+    // );
 
-//     const taskObjectId = new mongoose.Types.ObjectId(codingAndQcTaskId);
-//     const branchObjectId = new mongoose.Types.ObjectId(branchI);
 
-//     const leads = await LeadMaster.find({
-//       leadBranch: branchObjectId,
-//       activityLog: {
-//         $elemMatch: {
-//           taskId: taskObjectId,
-//           taskStatus: "Completed"
-//         }
-//       }
-//     });
 
-//     console.log("Matched completed Coding & QC leads:", leads.length);
 
-//     let updatedCount = 0;
-//     const updatedLeads = [];
 
-//     for (const lead of leads) {
-//       let leadUpdated = false;
-//       const insertedLogs = [];
 
-//       // Reverse loop keeps indexes correct after inserting new logs.
-//       for (let index = lead.activityLog.length - 1; index >= 0; index--) {
-//         const codingTaskLog = lead.activityLog[index];
 
-//         const isCodingAndQcTask =
-//           String(codingTaskLog.taskId?._id || codingTaskLog.taskId) ===
-//           String(codingAndQcTaskId);
 
-//         const isCompleted =
-//           String(codingTaskLog.taskStatus || "").trim() === "Completed";
+    //  const branchI = "66ffb2fb39904d78447cfaec";
 
-//         console.log("Checking activity log:", {
-//           leadId: lead.leadId,
-//           index,
-//           taskId: String(codingTaskLog.taskId?._id || codingTaskLog.taskId),
-//           taskStatus: codingTaskLog.taskStatus
-//         });
+    //     const taskObjectId = new mongoose.Types.ObjectId(codingAndQcTaskId);
+    //     const branchObjectId = new mongoose.Types.ObjectId(branchI);
 
-//         if (!isCodingAndQcTask || !isCompleted) {
-//           continue;
-//         }
+    //     const leads = await LeadMaster.find({
+    //       leadBranch: branchObjectId,
+    // activityLog: {
+    //   $elemMatch: {
+    //     taskId: taskObjectId,
+    //     taskStatus: "Completed"
+    //   }
+    // }
+    //     });
 
-//         const lastTimelineEvent =
-//           codingTaskLog.taskTimeline?.[
-//             codingTaskLog.taskTimeline.length - 1
-//           ];
+    //     console.log("Matched completed Coding & QC leads:", leads.length);
 
-//         const taskRemark =
-//           lastTimelineEvent?.detail?.trim() ||
-//           codingTaskLog.taskRemark ||
-//           codingTaskLog.taskDescription ||
-//           "";
+    //     let updatedCount = 0;
+    //     const updatedLeads = [];
 
-//         const completionLogId = new mongoose.Types.ObjectId();
+    //     for (const lead of leads) {
+    //       let leadUpdated = false;
+    //       const insertedLogs = [];
 
-//         // Inserts immediately after Coding & QC allocation.
-//         // Existing logs after this index are moved forward automatically.
-//         lead.activityLog.splice(index + 1, 0, {
-//           _id: completionLogId,
-//           submissionDate:
-//             codingTaskLog.taskCompletedAt ||
-//             lastTimelineEvent?.at ||
-//             new Date(),
-//           submittedUser: codingTaskLog.taskallocatedTo,
-//           submissiondoneByModel: codingTaskLog.taskallocatedToModel,
-//           taskBy: taskObjectId,
-//           taskStatus: "Completed",
-//           taskRemark,
-//           remarks: taskRemark,
-//           taskClosed: true,
-//           taskfromFollowup: false,
-//           allocatedClosed: false,
-//           reallocatedTo: true
-//         });
+    //       // Reverse loop keeps indexes correct after inserting new logs.
+    //       for (let index = lead.activityLog.length - 1; index >= 0; index--) {
+    //         const codingTaskLog = lead.activityLog[index];
 
-//         insertedLogs.push({
-//           codingTaskLogId: String(codingTaskLog._id),
-//           completionLogId: String(completionLogId)
-//         });
+    //         const isCodingAndQcTask =
+    //           String(codingTaskLog.taskId?._id || codingTaskLog.taskId) ===
+    //           String(codingAndQcTaskId);
 
-//         leadUpdated = true;
-//       }
+    //         const isCompleted =
+    //           String(codingTaskLog.taskStatus || "").trim() === "Completed";
 
-//       if (!leadUpdated) {
-//         continue;
-//       }
+    //         console.log("Checking activity log:", {
+    //           leadId: lead.leadId,
+    //           index,
+    //           taskId: String(codingTaskLog.taskId?._id || codingTaskLog.taskId),
+    //           taskStatus: codingTaskLog.taskStatus
+    //         });
 
-//       lead.markModified("activityLog");
-//       await lead.save();
+    //         if (!isCodingAndQcTask || !isCompleted) {
+    //           continue;
+    //         }
 
-//       const updateInfo = {
-//         leadDocId: String(lead._id),
-//         leadId: lead.leadId,
-//         insertedLogs: insertedLogs.map((item) => ({
-//           ...item,
-//           finalActivityLogIndex: lead.activityLog.findIndex(
-//             (log) => String(log._id) === item.completionLogId
-//           )
-//         }))
-//       };
+    //         const lastTimelineEvent =
+    //           codingTaskLog.taskTimeline?.[
+    //             codingTaskLog.taskTimeline.length - 1
+    //           ];
 
-//       updatedLeads.push(updateInfo);
+    //         const taskRemark =
+    //           lastTimelineEvent?.detail?.trim() ||
+    //           codingTaskLog.taskRemark ||
+    //           codingTaskLog.taskDescription ||
+    //           "";
 
-//       console.log(
-//         "Coding & QC completion activity inserted:",
-//         JSON.stringify(updateInfo, null, 2)
-//       );
+    //         const completionLogId = new mongoose.Types.ObjectId();
 
-//       updatedCount += 1;
-//     }
+    //         // Inserts immediately after Coding & QC allocation.
+    //         // Existing logs after this index are moved forward automatically.
+    //         lead.activityLog.splice(index + 1, 0, {
+    //           _id: completionLogId,
+    //           submissionDate:
+    //             codingTaskLog.taskCompletedAt ||
+    //             lastTimelineEvent?.at ||
+    //             new Date(),
+    //           submittedUser: codingTaskLog.taskallocatedTo,
+    //           submissiondoneByModel: codingTaskLog.taskallocatedToModel,
+    //           taskBy: taskObjectId,
+    //           taskStatus: "Completed",
+    //           taskRemark,
+    //           remarks: taskRemark,
+    //           taskClosed: true,
+    //           taskfromFollowup: false,
+    //           allocatedClosed: false,
+    //           reallocatedTo: true
+    //         });
 
-//     console.log("Total updated leads:", updatedCount);
-//     console.log(
-//       "Updated lead details:",
-//       JSON.stringify(updatedLeads, null, 2)
-//     );
+    //         insertedLogs.push({
+    //           codingTaskLogId: String(codingTaskLog._id),
+    //           completionLogId: String(completionLogId)
+    //         });
+
+    //         leadUpdated = true;
+    //       }
+
+    //       if (!leadUpdated) {
+    //         continue;
+    //       }
+
+    //       lead.markModified("activityLog");
+    //       await lead.save();
+
+    //       const updateInfo = {
+    //         leadDocId: String(lead._id),
+    //         leadId: lead.leadId,
+    //         insertedLogs: insertedLogs.map((item) => ({
+    //           ...item,
+    //           finalActivityLogIndex: lead.activityLog.findIndex(
+    //             (log) => String(log._id) === item.completionLogId
+    //           )
+    //         }))
+    //       };
+
+    //       updatedLeads.push(updateInfo);
+
+    //       console.log(
+    //         "Coding & QC completion activity inserted:",
+    //         JSON.stringify(updateInfo, null, 2)
+    //       );
+
+    //       updatedCount += 1;
+    //     }
+
+    //     console.log("Total updated leads:", updatedCount);
+    //     console.log(
+    //       "Updated lead details:",
+    //       JSON.stringify(updatedLeads, null, 2)
+    //     );
 
 
     ////////////////////////////////////////
     // October 2026 in IST
-    //     const octoberStart = new Date("2026-09-30T18:30:00.000Z");
-    //     const octoberEnd = new Date("2026-10-31T18:30:00.000Z");
+        // const octoberStart = new Date("2026-10-01T18:30:00.000Z");
+        // const octoberEnd = new Date("2026-10-31T18:30:00.000Z");
     // const septemberThirty = new Date("2026-09-29T18:30:00.000Z")
     //     await LeadMaster.updateMany(
     //       {
@@ -15260,7 +15330,7 @@ const result = await LeadMaster.updateMany(
     // // const septemberDate = new Date("2026-09-29T18:30:00.000Z");
 
     // // Exclude these lead IDs
-    // const excludedLeadIds = ["01173", "01172", "01171", "01170", "01169", "01168", "01210", "01208", "01189", "01207", "01152"];
+    // const excludedLeadIds = ["00219"];
 
     // function isOctoberDate(value) {
     //   if (!value) return false;
@@ -15325,14 +15395,14 @@ const result = await LeadMaster.updateMany(
     // const leads = await LeadMaster.find({
     //   leadBranch: branchObjectId,
     //   leadId: { $nin: excludedLeadIds },
-    //   paymentHistory: {
-    //     $elemMatch: {
-    //       paymentDate: {
-    //         $gte: octoberStart,
-    //         $lt: octoberEnd
-    //       }
-    //     }
+
+
+    //   leadClosedDate: {
+    //     $gte: octoberStart,
+    //     $lt: octoberEnd
     //   }
+
+
     // }).lean();
 
     // const operations = [];
@@ -15391,6 +15461,10 @@ const result = await LeadMaster.updateMany(
     //         }
     //       }
     //     }).lean();
+
+
+
+
     // const ress=leads.map((ite)=>ite.leadId)
     // console.log("lengthhhhhhhhhhhhhhhhhhhhhh",ress.length)
     // console.log(JSON.stringify(ress, null, 2));
@@ -16073,7 +16147,9 @@ export const TransferResearchAndDevelopmentTask = async (req, res) => {
       taskBy: new mongoose.Types.ObjectId(codingAndQcTaskId),
       taskTo: currentAllocation.taskTo || "Coding & QC",
       taskId: new mongoose.Types.ObjectId(codingAndQcTaskId),
-      taskStatus: "In Progress",
+      // A transfer is a fresh allocation for the receiving developer. They
+      // must explicitly start it before it becomes In Progress.
+      taskStatus: "Pending",
       taskTimeline: [{ event: "Task Transferred", at: now, detail: transferDetail }],
       taskClosed: false,
       followupClosed: false,

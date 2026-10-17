@@ -144,6 +144,34 @@ const getCompletedAt = (item) => item.taskCompletedAt || [...(item.taskTimeline 
   .reverse()
   .find((event) => event.event === "Development Completed")?.at
 
+const codingAndQcTaskId = "689c23493e94902039b97743"
+
+const getIdValue = (value) => String(value?._id || value || "")
+
+/*
+  /rnd-leads intentionally exposes the current Coding & QC allocation only.
+  The lead-detail endpoint already exposes the complete activity log, so use
+  its Coding & QC entries to build one chronological history on the client.
+*/
+const getMergedRndTimeline = (activityLog = [], fallbackTimeline = []) => {
+  const events = activityLog
+    .filter((log) =>
+      getIdValue(log?.taskId) === codingAndQcTaskId ||
+      getIdValue(log?.taskBy) === codingAndQcTaskId
+    )
+    .flatMap((log) =>
+      (log.taskTimeline || []).map((event) => ({
+        ...event,
+        allocatedTo: log.taskallocatedTo?.name || "",
+        allocatedBy: log.taskallocatedBy?.name || "",
+        isSelfAllocated:
+          getIdValue(log.taskallocatedTo) === getIdValue(log.taskallocatedBy)
+      }))
+    )
+
+  return events.length ? events : fallbackTimeline
+}
+
 const toWorkItem = (lead) => ({
   id: lead.leadId,
   leadDocId: lead.leadDocId,
@@ -377,6 +405,37 @@ export default function ResearchandDevelopement() {
     setModal("update")
   }
 
+  const openTimeline = async (item) => {
+    // Show the current allocation immediately while the complete lead history
+    // is being loaded. This keeps the modal responsive on slower connections.
+    setTimelineWork({ ...item, timelineLoading: true })
+    setModal("timeline")
+
+    try {
+      const response = await api.get("/lead/getSelectedLead", {
+        params: { leadId: item.leadDocId }
+      })
+      const lead = response.data?.data?.[0]
+      const taskTimeline = getMergedRndTimeline(
+        lead?.activityLog,
+        item.taskTimeline
+      )
+
+      setTimelineWork((current) =>
+        current?.leadDocId === item.leadDocId
+          ? { ...current, taskTimeline, timelineLoading: false }
+          : current
+      )
+    } catch {
+      // The current allocation's timeline remains usable if detail loading fails.
+      setTimelineWork((current) =>
+        current?.leadDocId === item.leadDocId
+          ? { ...current, timelineLoading: false }
+          : current
+      )
+    }
+  }
+
   const saveAllocation = async (event) => {
     event.preventDefault()
     try {
@@ -444,12 +503,32 @@ export default function ResearchandDevelopement() {
     event.preventDefault()
     try {
       if (update.isTransfer) {
-        await api.post("/lead/rnd-task-transfer", {
+        const response = await api.post("/lead/rnd-task-transfer", {
           leadDocId: selectedWork.leadDocId,
           transferredTo: update.transferredTo,
           transferRemark: update.transferRemark,
           expectedCompletionDate: update.expectedCompletionDate || undefined
         })
+        const transferredTask = response.data?.data || {}
+
+        // A transfer is a new allocation for the receiving developer.
+        // Reflect its Pending state immediately while the list refreshes.
+        setWorkItems((items) => items.map((item) =>
+          item.id === selectedWork.id
+            ? {
+                ...item,
+                assignedDeveloper:
+                  transferredTask.assignedDeveloper || item.assignedDeveloper,
+                assignedDeveloperId:
+                  transferredTask.assignedDeveloperId || item.assignedDeveloperId,
+                status: transferredTask.taskStatus || "Pending",
+                expectedCompletionDate:
+                  transferredTask.expectedCompletionDate || item.expectedCompletionDate,
+                taskTimeline: transferredTask.taskTimeline || item.taskTimeline
+              }
+            : item
+        ))
+        setActiveStatusFilter("Pending")
         toast.success("Coding & QC task transferred")
         setModal(null)
         setRefreshKey((current) => current + 1)
@@ -523,7 +602,7 @@ export default function ResearchandDevelopement() {
                 ) : filteredWorkItems.length === 0 ? (
                   <tr><td colSpan="11" className="px-5 py-10 text-center text-sm text-slate-500">No {activeStatusFilter.toLowerCase()} leads found.</td></tr>
                 ) : (
-                  filteredWorkItems.map((item) => <WorkRow key={item.leadDocId} item={item} showAllocationColumns={showAllocationColumns} canOperate={String(item.assignedDeveloperId) === String(loggedUser?._id)} isActive={Boolean(item.taskStartedAt && !item.taskEndedAt)} onAllocate={openAllocation} onUpdate={openUpdate} onStart={startTask} onEnd={openEndTask} onDescription={(work) => { setDescriptionWork(work); setModal("description") }} onTimeline={(work) => { setTimelineWork(work); setModal("timeline") }} />)
+                  filteredWorkItems.map((item) => <WorkRow key={item.leadDocId} item={item} showAllocationColumns={showAllocationColumns} canOperate={String(item.assignedDeveloperId) === String(loggedUser?._id)} isActive={Boolean(item.taskStartedAt && !item.taskEndedAt)} onAllocate={openAllocation} onUpdate={openUpdate} onStart={startTask} onEnd={openEndTask} onDescription={(work) => { setDescriptionWork(work); setModal("description") }} onTimeline={openTimeline} />)
                 )}
               </tbody>
             </table>
@@ -532,7 +611,7 @@ export default function ResearchandDevelopement() {
             {isLoading && <p className="p-5 text-center text-sm text-slate-500">Loading R&D leads...</p>}
             {!isLoading && loadError && <p className="p-5 text-center text-sm text-rose-600">{loadError}</p>}
             {!isLoading && !loadError && filteredWorkItems.length === 0 && <p className="p-5 text-center text-sm text-slate-500">No {activeStatusFilter.toLowerCase()} leads found.</p>}
-            {!isLoading && !loadError && filteredWorkItems.map((item) => <WorkCard key={item.leadDocId} item={item} canOperate={String(item.assignedDeveloperId) === String(loggedUser?._id)} isActive={Boolean(item.taskStartedAt && !item.taskEndedAt)} onAllocate={openAllocation} onUpdate={openUpdate} onStart={startTask} onEnd={openEndTask} onDescription={(work) => { setDescriptionWork(work); setModal("description") }} onTimeline={(work) => { setTimelineWork(work); setModal("timeline") }} />)}
+            {!isLoading && !loadError && filteredWorkItems.map((item) => <WorkCard key={item.leadDocId} item={item} canOperate={String(item.assignedDeveloperId) === String(loggedUser?._id)} isActive={Boolean(item.taskStartedAt && !item.taskEndedAt)} onAllocate={openAllocation} onUpdate={openUpdate} onStart={startTask} onEnd={openEndTask} onDescription={(work) => { setDescriptionWork(work); setModal("description") }} onTimeline={openTimeline} />)}
           </div>
         </section>
       </div>
@@ -669,11 +748,11 @@ function TaskTimelineModal({ work, onClose }) {
   })
   const eventDetail = (event) => {
     if (event.event !== "Work Allocated") return event.detail
-    if (work.isSelfAllocated) return "Self allocated"
-    return `Allocated by ${work.allocatedBy || "Unknown"} · Received by ${work.allocatedTo || "Unknown"}`
+    if (event.isSelfAllocated) return "Self allocated"
+    return `Allocated by ${event.allocatedBy || work.allocatedBy || "Unknown"} · Received by ${event.allocatedTo || work.allocatedTo || "Unknown"}`
   }
 
-  return <ModalShell title="Coding & QC timeline" subtitle={`${work.id} · ${work.work}`} onClose={onClose}><div className="p-5">{events.length === 0 ? <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">No Coding & QC activity has been recorded yet.</p> : <ol className="space-y-0">{events.map((event, index) => <li key={`${event.at}-${index}`} className="relative grid grid-cols-[112px_20px_1fr] gap-3 pb-6 last:pb-0"><time className="pt-0.5 text-right text-xs font-semibold leading-5 text-slate-500">{formatTimelineTime(event.at)}</time><div className="relative flex justify-center"><span className="z-10 mt-1 h-3 w-3 rounded-full border-[3px] border-white bg-blue-600 shadow-sm" />{index < events.length - 1 && <span className="absolute top-4 h-full w-px bg-slate-200" />}</div><div><p className="text-sm font-semibold text-slate-800">{event.event}</p>{eventDetail(event) && <p className="mt-1 text-xs leading-5 text-slate-500">{eventDetail(event)}</p>}</div></li>)}</ol>}</div></ModalShell>
+  return <ModalShell title="Coding & QC timeline" subtitle={`${work.id} · ${work.work}`} onClose={onClose}><div className="p-5">{work.timelineLoading && <p className="mb-4 text-xs font-medium text-slate-500">Loading complete task history...</p>}{events.length === 0 ? <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">No Coding & QC activity has been recorded yet.</p> : <ol className="space-y-0">{events.map((event, index) => <li key={`${event.at}-${index}`} className="relative grid grid-cols-[112px_20px_1fr] gap-3 pb-6 last:pb-0"><time className="pt-0.5 text-right text-xs font-semibold leading-5 text-slate-500">{formatTimelineTime(event.at)}</time><div className="relative flex justify-center"><span className="z-10 mt-1 h-3 w-3 rounded-full border-[3px] border-white bg-blue-600 shadow-sm" />{index < events.length - 1 && <span className="absolute top-4 h-full w-px bg-slate-200" />}</div><div><p className="text-sm font-semibold text-slate-800">{event.event}</p>{eventDetail(event) && <p className="mt-1 text-xs leading-5 text-slate-500">{eventDetail(event)}</p>}</div></li>)}</ol>}</div></ModalShell>
 }
 
 function Badge({ children, className }) {

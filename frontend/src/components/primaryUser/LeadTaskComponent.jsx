@@ -484,6 +484,8 @@ export default function LeadTaskComponent({
   };
 
   const renderTable = (data) => {
+    const colCount = isLeadTaskClosed ? 7 : pending ? (ownTask ? 10 : 9) : 6;
+
     const LeadRow = ({ item, index }) => {
       const [open, setOpen] = useState(false);
       const activityLogs = Array.isArray(item?.activityLog)
@@ -509,6 +511,39 @@ export default function LeadTaskComponent({
           String(it?.taskallocatedTo?._id || it?.taskallocatedTo) ===
             String(loggedUser?._id) && it?.taskClosed === false
       );
+      const detailFields = [
+        ["Lead By", item?.leadBy?.name || "-"],
+        ["Assigned To", item?.taskallocatedTo?.name || "-"],
+        ["Assigned By", item?.taskallocatedBy?.name || "-"],
+        ["Lead ID", item?.leadId || "-"],
+        ["Lead Date", item?.leadDate?.toString().split("T")[0] || "-"],
+        ...(isLeadTaskClosed
+          ? [["Submitted Remark", submittedRemark]]
+          : [
+              [
+                "No. of Calls",
+                activityLogs.filter(
+                  (log) =>
+                    log?.taskBy?.taskName?.toLowerCase() === "followup" &&
+                    log?.nextFollowUpDate
+                ).length || 0,
+              ],
+              ["Phone", item?.phone || "-"],
+              [
+                "Product Name",
+                item?.leadFor?.[0]?.productorServiceId?.shortName ||
+                  item?.leadFor?.[0]?.productorServiceId?.productName ||
+                  "-",
+              ],
+            ]),
+      ];
+      const expandedFields = [
+        ...detailFields,
+        ...Array.from(
+          { length: Math.max(0, colCount - 1 - detailFields.length) },
+          (_, index) => [`detail-pad-${index}`, ""]
+        ),
+      ];
 
       return (
         <>
@@ -516,7 +551,7 @@ export default function LeadTaskComponent({
             onClick={() => setOpen((v) => !v)}
             className="cursor-pointer bg-white hover:bg-blue-50 transition-colors border border-gray-200"
           >
-            <td className="pl-2 pr-1 py-2 w-5 border border-gray-200">
+            <td className="w-5 border border-gray-200 py-1 pl-1.5 pr-0.5">
               {open ? (
                 <ChevronDown className="w-3.5 h-3.5 text-blue-500" />
               ) : (
@@ -524,7 +559,7 @@ export default function LeadTaskComponent({
               )}
             </td>
 
-            <td className="max-w-0 overflow-hidden border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-900">
+            <td className="max-w-0 overflow-hidden border border-gray-200 px-2 py-1 text-xs font-semibold text-gray-900">
               <span
                 title={customerName}
                 className="block w-full truncate uppercase"
@@ -533,13 +568,13 @@ export default function LeadTaskComponent({
               </span>
             </td>
 
-            <td className="px-3 py-2 text-gray-700 text-xs border border-gray-200 whitespace-nowrap">
+            <td className="whitespace-nowrap border border-gray-200 px-2 py-1 text-xs text-gray-700">
               {item?.mobile || "-"}
             </td>
 
             {pending && (
               <>
-                <td className="px-3 py-2 text-xs border border-gray-200 whitespace-nowrap">
+                <td className="whitespace-nowrap border border-gray-200 px-2 py-1 text-xs">
                   <span className="text-red-600 font-medium">
                     {item?.matchedlog?.allocationDate
                       ? new Date(item.matchedlog.allocationDate).toLocaleDateString(
@@ -549,12 +584,12 @@ export default function LeadTaskComponent({
                   </span>
                 </td>
 
-                <td className="px-3 py-2 text-xs text-blue-600 border border-gray-200 whitespace-nowrap">
+                <td className="whitespace-nowrap border border-gray-200 px-2 py-1 text-xs text-blue-600">
                   {getRemainingDays(item?.matchedlog?.allocationDate)} days left
                 </td>
 
                 {/* Layout fix: text is truncated, tooltip shows the full remark. */}
-                <td className="relative px-3 py-2 text-xs border border-gray-200">
+                <td className="relative border border-gray-200 px-2 py-1 text-xs">
                   {remark ? (
                     <div className="group relative min-w-0" tabIndex={0}>
                       <p
@@ -582,7 +617,7 @@ export default function LeadTaskComponent({
             )}
 
             {isLeadTaskClosed && (
-              <td className="max-w-0 border border-gray-200 px-3 py-2 text-xs">
+              <td className="max-w-0 border border-gray-200 px-2 py-1 text-xs">
                 <span title={productNames} className="block truncate font-medium text-blue-600">
                   {productNames}
                 </span>
@@ -590,21 +625,21 @@ export default function LeadTaskComponent({
             )}
 
             <td
-              className="w-[110px] border border-gray-200 px-2 py-2 text-center"
+              className="w-[110px] border border-gray-200 px-1 py-1 text-center"
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 type="button"
                 onClick={() => handleHistory(item)}
                 title="Event Log"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-indigo-600 p-0 text-xs font-semibold text-white hover:bg-indigo-700"
+                className="inline-flex h-7 w-7 items-center justify-center rounded bg-indigo-600 p-0 text-xs font-semibold text-white hover:bg-indigo-700"
               >
-                <BellRing className="w-3.5 h-3.5" />
+                <BellRing className="h-3 w-3" />
               </button>
             </td>
 
             <td
-              className="w-[110px] border border-gray-200 px-2 py-2 text-center"
+              className="w-[110px] border border-gray-200 px-1 py-1 text-center"
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -625,15 +660,15 @@ export default function LeadTaskComponent({
                       })
                 }
                 title="View Lead"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-blue-600 p-0 text-xs font-semibold text-white hover:bg-blue-700"
+                className="inline-flex h-7 w-7 items-center justify-center rounded bg-blue-600 p-0 text-xs font-semibold text-white hover:bg-blue-700"
               >
-                <Eye className="w-3.5 h-3.5" />
+                <Eye className="h-3 w-3" />
               </button>
             </td>
 
             {pending && ownTask && (
               <td
-                className="px-2 py-2 border border-gray-200"
+                className="border border-gray-200 px-1 py-1"
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
@@ -643,14 +678,14 @@ export default function LeadTaskComponent({
                     setselectedData(item);
                   }}
                   title="Update Task"
-                  className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-white bg-amber-500 rounded hover:bg-amber-600 w-full justify-center"
+                  className="inline-flex w-full items-center justify-center gap-1 rounded bg-amber-500 px-1.5 py-1 text-xs font-semibold text-white hover:bg-amber-600"
                 >
                   <RefreshCcw className="w-3.5 h-3.5" />
                 </button>
               </td>
             )}
 
-            <td className="px-3 py-2 text-xs font-semibold text-green-700 border border-gray-200 whitespace-nowrap text-center">
+            <td className="whitespace-nowrap border border-gray-200 px-2 py-1 text-center text-xs font-semibold text-green-700">
               <span className="inline-flex items-center gap-0.5 justify-center">
                 <IndianRupee className="w-3 h-3" />
                 {Number(item?.netAmount || 0).toLocaleString("en-IN")}
@@ -660,133 +695,21 @@ export default function LeadTaskComponent({
 
           {open && (
             <>
-              <tr className="text-xs font-medium border border-gray-200 bg-blue-50">
+              <tr className="border border-gray-200 bg-blue-50 text-xs font-medium text-gray-600">
                 <td className="border border-gray-200 px-3 py-1" />
-                <td className="px-3 py-1 border border-gray-200 text-gray-600">
-                  Lead By
-                </td>
-                <td className="px-3 py-1 border border-gray-200 text-gray-600">
-                  Assigned To
-                </td>
-                <td className="px-3 py-1 border border-gray-200 text-gray-600">
-                  Assigned By
-                </td>
-
-                {isLeadTaskClosed ? (
-                  <td className="px-3 py-1 border border-gray-200 text-gray-600">
-                    Lead ID
+                {expandedFields.map(([label], index) => (
+                  <td key={`${label}-${index}`} className="border border-gray-200 px-3 py-1">
+                    {label.startsWith("detail-pad-") ? "" : label}
                   </td>
-                ) : (
-                  <>
-                    <td className="px-3 py-1 border border-gray-200 text-gray-600 text-center">
-                      No. of Calls
-                    </td>
-                    {pending && ownTask && (
-                      <td className="px-3 py-1 border border-gray-200" />
-                    )}
-                  </>
-                )}
-
-                <td className="px-3 py-1 border border-gray-200 text-gray-600">
-                  Lead Date
-                </td>
-
-                {isLeadTaskClosed && (
-                  <td className="px-3 py-1 border border-gray-200 text-gray-600">
-                    Submitted Remark
-                  </td>
-                )}
-
-                {!isLeadTaskClosed && (
-                  <td className="px-3 py-1 border border-gray-200 text-gray-600">
-                    Lead ID
-                  </td>
-                )}
-
-                {!isLeadTaskClosed && (
-                  <>
-                    <td className="px-3 py-1 border border-gray-200 text-gray-600">
-                      Phone
-                    </td>
-                    <td className="px-3 py-1 border border-gray-200 text-gray-600">
-                      Product Name
-                    </td>
-                  </>
-                )}
+                ))}
               </tr>
-
-              <tr className="bg-white text-xs border border-gray-200">
+              <tr className="border border-gray-200 bg-white text-xs">
                 <td className="border border-gray-200 px-3 py-1" />
-                <td className="px-3 py-1.5 border border-gray-200">
-                  {item?.leadBy?.name || "-"}
-                </td>
-                <td className="px-3 py-1.5 border border-gray-200">
-                  {item?.taskallocatedTo?.name || "-"}
-                </td>
-                <td className="px-3 py-1.5 border border-gray-200">
-                  {item?.taskallocatedBy?.name || "-"}
-                </td>
-
-                {isLeadTaskClosed ? (
-                  <td className="whitespace-nowrap px-3 py-1.5 border border-gray-200 font-bold text-blue-700">
-                    {item?.leadId || "-"}
+                {expandedFields.map(([label, value], index) => (
+                  <td key={`${label}-${index}`} title={String(value)} className="break-words border border-gray-200 px-3 py-1.5">
+                    {value}
                   </td>
-                ) : (
-                  <>
-                    <td className="px-3 py-1.5 border border-gray-200 text-center">
-                      {activityLogs.filter(
-                        (log) =>
-                          log?.taskBy?.taskName?.toLowerCase() === "followup" &&
-                          log?.nextFollowUpDate
-                      ).length || 0}
-                    </td>
-                    {pending && ownTask && (
-                      <td className="px-3 py-1.5 border border-gray-200" />
-                    )}
-                  </>
-                )}
-
-                <td className="whitespace-nowrap px-3 py-1.5 border border-gray-200">
-                  {item?.leadDate?.toString().split("T")[0] || "-"}
-                </td>
-
-                {isLeadTaskClosed && (
-                  <td className="max-w-0 border border-gray-200 px-3 py-1.5 text-red-600">
-                    <div className="group relative min-w-0" tabIndex={0}>
-                      <span title={submittedRemark} className="block truncate">
-                        {submittedRemark}
-                      </span>
-                      <div
-                        role="tooltip"
-                        className="pointer-events-none absolute left-0 top-full z-50 mt-2 hidden w-max max-w-[min(22rem,calc(100vw-2rem))] rounded-lg bg-slate-900 px-3 py-2 text-xs leading-5 text-white shadow-xl lg:group-hover:block lg:group-focus:block"
-                      >
-                        <span className="block whitespace-normal break-words">
-                          {submittedRemark}
-                        </span>
-                        <span className="absolute -top-1 left-4 h-2 w-2 rotate-45 bg-slate-900" />
-                      </div>
-                    </div>
-                  </td>
-                )}
-
-                {!isLeadTaskClosed && (
-                  <td className="px-3 py-1.5 border border-gray-200 font-bold text-blue-700">
-                    {item?.leadId || "-"}
-                  </td>
-                )}
-
-                {!isLeadTaskClosed && (
-                  <>
-                    <td className="px-3 py-1.5 border border-gray-200">
-                      {item?.phone || "-"}
-                    </td>
-                    <td className="px-3 py-1.5 border border-gray-200 text-blue-500 font-medium">
-                      {item?.leadFor?.[0]?.productorServiceId?.shortName ||
-                        item?.leadFor?.[0]?.productorServiceId?.productName ||
-                        "-"}
-                    </td>
-                  </>
-                )}
+                ))}
               </tr>
             </>
           )}
@@ -794,10 +717,8 @@ export default function LeadTaskComponent({
       );
     };
 
-    const colCount = isLeadTaskClosed ? 7 : pending ? (ownTask ? 10 : 9) : 6;
-
     return (
-      <table className="w-full min-w-[980px] table-fixed border-collapse border border-gray-200 text-sm">
+      <table className="w-full min-w-[980px] table-fixed border-collapse border border-gray-200 text-xs">
         <thead className="whitespace-nowrap bg-gradient-to-r from-blue-600 to-blue-700 text-white sticky top-0 z-30 text-xs">
           <tr>
             <th className="border border-blue-500 w-5" />
@@ -818,8 +739,8 @@ export default function LeadTaskComponent({
               <th className="border border-blue-500 px-3 py-2 text-left">Product Name</th>
             )}
 
-            <th className="w-[110px] whitespace-nowrap border border-blue-500 px-2 py-2 text-center">Event Log</th>
-            <th className="w-[110px] whitespace-nowrap border border-blue-500 px-2 py-2 text-center">View</th>
+            <th className="w-[110px] whitespace-nowrap border border-blue-500 px-2 py-1.5 text-center">Event Log</th>
+            <th className="w-[110px] whitespace-nowrap border border-blue-500 px-2 py-1.5 text-center">View</th>
 
             {pending && ownTask && (
               <th className="border border-blue-500 px-3 py-2 text-center">Update</th>
