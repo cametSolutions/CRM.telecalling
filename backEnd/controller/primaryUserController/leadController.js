@@ -15466,357 +15466,8 @@ export const GetResearchAndDevelopmentLeads = async (req, res) => {
     const codingAndQcTaskId = new mongoose.Types.ObjectId(
       "689c23493e94902039b97743"
     );
-    // October 2026 in IST
-//     const octoberStart = new Date("2026-09-30T18:30:00.000Z");
-//     const octoberEnd = new Date("2026-10-31T18:30:00.000Z");
-// const septemberThirty = new Date("2026-09-29T18:30:00.000Z")
-//     await LeadMaster.updateMany(
-//       {
-//         leadDate: {
-//           $gte: octoberStart,
-//           $lt: octoberEnd
-//         },
-//         leadBranch: new mongoose.Types.ObjectId("66ffb2fb39904d78447cfaec"),
-//         leadId: {
-//           $nin: [
-//             "01173",
-//             "01172",
-//             "01171",
-//             "01170",
-//             "01169",
-//             "01168",
-//             "01210",
-//             "01208",
-//             "01189",
-//             "01207",
-//             "01152"
-//           ]
-//         }
-//       },
-//       {
-//         $set: {
-//           leadDate:septemberThirty,
-//           "activityLog.0.submission":septemberThirty
-//         }
-//       }
-//     )
+   
 
-    // const branchObjectId = new mongoose.Types.ObjectId(
-    //   "66ffb2fb39904d78447cfaec"
-    // );
-
-
-
-
-
-
-    // // September 30, 2026 at 00:00:00 UTC
-    // const septemberDate = new Date("2026-09-30T00:00:00.000Z");
-
-    // // For September 30, 2026 at 12:00 AM IST, use:
-    // // const septemberDate = new Date("2026-09-29T18:30:00.000Z");
-
-    // // Exclude these lead IDs
-    // const excludedLeadIds = ["01173", "01172", "01171", "01170", "01169", "01168", "01210", "01208", "01189", "01207", "01152"];
-
-    // function isOctoberDate(value) {
-    //   if (!value) return false;
-
-    //   const date = new Date(value);
-    //   if (isNaN(date.getTime())) return false;
-
-    //   return date >= octoberStart && date < octoberEnd;
-    // }
-
-    // function updateOctoberDatesRecursive(
-    //   value,
-    //   currentPath,
-    //   excludedPaths,
-    //   updates
-    // ) {
-    //   if (value === null || value === undefined) return value;
-
-    //   if (value instanceof Date) {
-    //     if (
-    //       isOctoberDate(value) &&
-    //       !excludedPaths.includes(currentPath)
-    //     ) {
-    //       updates[currentPath] = septemberDate;
-    //       return septemberDate;
-    //     }
-
-    //     return value;
-    //   }
-
-    //   if (Array.isArray(value)) {
-    //     return value.map((item, index) =>
-    //       updateOctoberDatesRecursive(
-    //         item,
-    //         `${currentPath}.${index}`,
-    //         excludedPaths,
-    //         updates
-    //       )
-    //     );
-    //   }
-
-    //   if (typeof value === "object") {
-    //     const updatedObject = {};
-
-    //     for (const key of Object.keys(value)) {
-    //       const childPath = currentPath ? `${currentPath}.${key}` : key;
-
-    //       updatedObject[key] = updateOctoberDatesRecursive(
-    //         value[key],
-    //         childPath,
-    //         excludedPaths,
-    //         updates
-    //       );
-    //     }
-
-    //     return updatedObject;
-    //   }
-
-    //   return value;
-    // }
-
-    // const leads = await LeadMaster.find({
-    //   leadBranch: branchObjectId,
-    //   leadId: { $nin: excludedLeadIds },
-    //   paymentHistory: {
-    //     $elemMatch: {
-    //       paymentDate: {
-    //         $gte: octoberStart,
-    //         $lt: octoberEnd
-    //       }
-    //     }
-    //   }
-    // }).lean();
-
-    // const operations = [];
-
-    // for (const lead of leads) {
-    //   const updates = {};
-
-    //   const excludedPaths = [
-    //     "leadDate",
-    //     "activityLog.0.submissionDate"
-    //   ];
-
-    //   updateOctoberDatesRecursive(
-    //     lead,
-    //     "",
-    //     excludedPaths,
-    //     updates
-    //   );
-
-    //   if (!Object.keys(updates).length) continue;
-
-    //   operations.push({
-    //     updateOne: {
-    //       filter: { _id: lead._id },
-    //       update: { $set: updates }
-    //     }
-    //   });
-    // }
-
-    // if (operations.length) {
-    //   await LeadMaster.bulkWrite(operations, {
-    //     ordered: false
-    //   });
-    // }
-
-
-
-
-
-
-
-
-    // const octoberStart = new Date("2026-09-30T18:30:00.000Z");
-    // const octoberEnd = new Date("2026-10-31T18:30:00.000Z");
-    // const excludedLeadIds=["01106","00733","01166","01167"]
-
-    //     const leads = await LeadMaster.find({
-    //       leadBranch: branchObjectId,
-    //       leadId: { $nin: excludedLeadIds },
-    //       paymentHistory: {
-    //         $elemMatch: {
-    //           paymentDate: {
-    //             $gte: octoberStart,
-    //             $lt: octoberEnd
-    //           }
-    //         }
-    //       }
-    //     }).lean();
-    // const ress=leads.map((ite)=>ite.leadId)
-    // console.log("lengthhhhhhhhhhhhhhhhhhhhhh",ress.length)
-    // console.log(JSON.stringify(ress, null, 2));
-
-    // const a=await LeadMaster.find({
-    //   leadBranch: ObjectId("66ffb2fb39904d78447cfaec"),
-    //   leadDate: {
-    //     $gte: ISODate("2026-09-30T18:30:00.000Z"),
-    //     $lt: ISODate("2026-10-31T18:30:00.000Z")
-    //   }
-    // })
-    // const a = await LeadMaster.find({
-
-
-
-
-
-
-
-    //   activityLog.taskallocatedTo: new mongoose.Types.ObjectId("672072c7a80cc9c3f31d97d0"),
-    //   leadFor.productorServiceId: {
-    //   $in: [
-    //     new mongoose.Types.ObjectId("6a326c5fa587143676cf54f1"),
-    //     new mongoose.Types.ObjectId("6a326d76a587143676cf6ee7"),
-    //     new mongoose.Types.ObjectId("6a326db3a587143676cf71fb"), new mongoose.Types.ObjectId("6a326e04a587143676cf7249"), new mongoose.Types.ObjectId("6a326e27a587143676cf7298"), new mongoose.Types.ObjectId('6a4dfe6d4fd0a4cd037274b0')
-    //   ]
-    // }, totalPaidAmount: { $gte: 0 }, leadBranch: new mongoose.Types.ObjectId('66f7b26c1e7129afd9aee189'), leadClosed: false, leadConfirmed: true
-
-    // });
-
-
-    // const a = await LeadMaster.find({
-    //   "activityLog.taskallocatedTo": new mongoose.Types.ObjectId(
-    //     "672072c7a80cc9c3f31d97d0"
-    //   ),
-    //   "leadFor.productorServiceId": {
-    //     $in: [
-    //       new mongoose.Types.ObjectId("6a326c5fa587143676cf54f1"),
-    //       new mongoose.Types.ObjectId("6a326d76a587143676cf6ee7"),
-    //       new mongoose.Types.ObjectId("6a326db3a587143676cf71fb"),
-    //       new mongoose.Types.ObjectId("6a326e04a587143676cf7249"),
-    //       new mongoose.Types.ObjectId("6a326e27a587143676cf7298"),
-    //       new mongoose.Types.ObjectId("6a4dfe6d4fd0a4cd037274b0")
-    //     ]
-    //   },
-    //   totalPaidAmount: { $gte: 0 },
-    //   leadBranch: new mongoose.Types.ObjectId("66f7b26c1e7129afd9aee189"),
-    //   leadClosed: false,
-    //   leadConfirmed: true
-    // });
-    // const rrr = a.map((i) => i.leadId)
-    // console.log("octoberrr", rrr)
-
-    //  const leadIds = [
-    //       "01239", "01237", "01234", "01232", "01231",
-    //       "01230", "01229", "01225", "01224", "01223",
-    //       "01222", "01220", "01213", "01212", "01211",
-    //       "01206", "01205", "01204", "01203", "01202",
-    //       "01201", "01200", "01199", "01198", "01197",
-    //       "01196", "01195", "01194", "01193", "01192",
-    //       "01191", "01190", "01188", "01187", "01186",
-    //       "01185", "01184", "01183", "01182", "01181",
-    //       "01180", "01179", "01178", "01177", "01176",
-    //       "01175", "01174", "01165", "01164", "01163",
-    //       "01162", "01161", "01151"
-    //     ]
-
-    //     const octoberStart = new Date("2026-10-01T00:00:00.000Z")
-    //     const novemberStart = new Date("2026-11-01T00:00:00.000Z")
-
-    //     const moveOctober2026ToSeptember = (field) => ({
-    //       $cond: [
-    //         {
-    //           $and: [
-    //             { $gte: [field, octoberStart] },
-    //             { $lt: [field, novemberStart] }
-    //           ]
-    //         },
-    //         {
-    //           $dateSubtract: {
-    //             startDate: field,
-    //             unit: "month",
-    //             amount: 1
-    //           }
-    //         },
-    //         field
-    //       ]
-    //     })
-
-    // const result = await LeadMaster.updateMany(
-    //   { leadId: { $in: leadIds } },
-    //   [
-    //     {
-    //       $set: {
-    //         leadDate: moveOctober2026ToSeptember("$leadDate"),
-    //         leadConvertedDate: moveOctober2026ToSeptember("$leadConvertedDate"),
-    //         leadClosedDate: moveOctober2026ToSeptember("$leadClosedDate"),
-    //         leadLostDate: moveOctober2026ToSeptember("$leadLostDate"),
-    //         dueDate: moveOctober2026ToSeptember("$dueDate"),
-    //         selfAllocationDueDate: moveOctober2026ToSeptember(
-    //           "$selfAllocationDueDate"
-    //         ),
-    //         createdAt: moveOctober2026ToSeptember("$createdAt"),
-    //         updatedAt: moveOctober2026ToSeptember("$updatedAt"),
-
-    //         paymentHistory: {
-    //           $map: {
-    //             input: { $ifNull: ["$paymentHistory", []] },
-    //             as: "payment",
-    //             in: {
-    //               $mergeObjects: [
-    //                 "$$payment",
-    //                 {
-    //                   paymentDate: moveOctober2026ToSeptember(
-    //                     "$$payment.paymentDate"
-    //                   ),
-    //                   verifiedAt: moveOctober2026ToSeptember(
-    //                     "$$payment.verifiedAt"
-    //                   ),
-    //                   createdAt: moveOctober2026ToSeptember(
-    //                     "$$payment.createdAt"
-    //                   ),
-    //                   updatedAt: moveOctober2026ToSeptember(
-    //                     "$$payment.updatedAt"
-    //                   )
-    //                 }
-    //               ]
-    //             }
-    //           }
-    //         },
-
-    //         activityLog: {
-    //           $map: {
-    //             input: { $ifNull: ["$activityLog", []] },
-    //             as: "activity",
-    //             in: {
-    //               $mergeObjects: [
-    //                 "$$activity",
-    //                 {
-    //                   submissionDate: moveOctober2026ToSeptember(
-    //                     "$$activity.submissionDate"
-    //                   ),
-    //                   allocationDate: moveOctober2026ToSeptember(
-    //                     "$$activity.allocationDate"
-    //                   ),
-    //                   followUpDate: moveOctober2026ToSeptember(
-    //                     "$$activity.followUpDate"
-    //                   ),
-    //                   nextFollowUpDate: moveOctober2026ToSeptember(
-    //                     "$$activity.nextFollowUpDate"
-    //                   ),
-    //                   taskSubmissionDate: moveOctober2026ToSeptember(
-    //                     "$$activity.taskSubmissionDate"
-    //                   ),
-    //                   createdAt: moveOctober2026ToSeptember(
-    //                     "$$activity.createdAt"
-    //                   ),
-    //                   updatedAt: moveOctober2026ToSeptember(
-    //                     "$$activity.updatedAt"
-    //                   )
-    //                 }
-    //               ]
-    //             }
-    //           }
-    //         }
-    //       }
-    //     }
-    //   ]
-    // )
     if (branchId && !isValidObjectId(branchId)) {
       return res.status(400).json({
         success: false,
@@ -15826,7 +15477,7 @@ export const GetResearchAndDevelopmentLeads = async (req, res) => {
 
     const match = {
       leadLost: { $ne: true },
-      activityLog: { $elemMatch: { followupClosed: true } }
+      activityLog: { $elemMatch: { followupClosed: true,taskTo:"followup" } }
     };
 
     if (branchId) {
@@ -16108,12 +15759,44 @@ export const UpdateResearchAndDevelopmentTask = async (req, res) => {
       }
 
       const lastActivityLog = lead.activityLog?.at(-1);
-      if (String(lastActivityLog?.taskId) === codingAndQcTaskId) {
+      const followupClosingTaskId = "69f561f9563085eef7b0a482";
+      if (String(lastActivityLog?.taskId) !== codingAndQcTaskId) {
+        return res.status(400).json({ success: false, message: "Coding & QC is not the latest activity" });
+      }
+
+      const followupReturnAllocationType = "689c22e93e94902039b9772b";
+      // Remove only the contiguous Coding & QC entries at the end of the log.
+      // Older Coding & QC history must remain intact.
+      while (
+        lead.activityLog.length > 0 &&
+        String(lead.activityLog.at(-1)?.taskId) === codingAndQcTaskId
+      ) {
         lead.activityLog.pop();
       }
 
-      const restoredActivityLog = lead.activityLog?.at(-1);
-      lead.allocationType = restoredActivityLog?.taskId || null;
+      const restoredActivityLog = lead.activityLog.at(-1);
+      if (String(restoredActivityLog?.taskBy) === followupClosingTaskId) {
+        // The preceding Follow-Up Closing hand-off is being reversed. Reopen
+        // the latest Follow-Up task and restore the lead to its open state.
+        lead.activityLog.pop();
+
+        const followupLog = [...lead.activityLog]
+          .reverse()
+          .find((log) => log.taskTo === "followup");
+        if (followupLog) {
+          followupLog.taskClosed = false;
+          followupLog.followupClosed = false;
+        }
+
+        lead.followupClosed = false;
+        lead.leadClosed = false;
+        lead.leadConvertedDate = null;
+        lead.allocationType = followupReturnAllocationType;
+      } else {
+        // Restore only the previous task allocation for the normal path.
+        lead.allocationType = restoredActivityLog?.taskBy || null;
+        lead.reallocatedTo = true;
+      }
       await lead.save();
 
       return res.status(200).json({
