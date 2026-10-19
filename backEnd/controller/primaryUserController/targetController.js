@@ -2799,6 +2799,9 @@ export const gettargetResult = async (req, res) => {
         config.categoryId?.category ||
         config.categoryName ||
         "Category";
+      const isAmountTarget =
+        String(config.measurementType || "quantity").trim().toLowerCase() ===
+        "amount";
 
       const monthlyTargets = objects(
         config.monthlyTargets
@@ -2901,12 +2904,28 @@ export const gettargetResult = async (req, res) => {
 
           let leadAchievement = 0;
 
-          if (config.measurementType === "amount") {
-            leadAchievement = getVerifiedAmountForCategoryInMonth(
-              lead,
-              configCategoryId,
-              targetMonth
-            );
+          if (isAmountTarget) {
+            const forcefullyClosedTargetDate = lead.forcefullyClosedTargetDate
+              ? new Date(lead.forcefullyClosedTargetDate)
+              : null;
+            const hasForcefullyClosedTargetDate =
+              forcefullyClosedTargetDate &&
+              !Number.isNaN(forcefullyClosedTargetDate.getTime());
+
+            // A forcefully closed target earns its full lead amount in the
+            // force-close month, even if only a partial payment was received.
+            leadAchievement = lead.forcefullyClosedTarget === true
+              ? hasForcefullyClosedTargetDate &&
+                isDateInTargetMonth(forcefullyClosedTargetDate, targetMonth) &&
+                lead.leadClosed === true &&
+                closingActivity.followupClosed === true
+                ? num(lead.netAmount)
+                : 0
+              : getVerifiedAmountForCategoryInMonth(
+                lead,
+                configCategoryId,
+                targetMonth
+              );
           } else {
             const payments = objects(lead.paymentHistory);
             const isFullyVerified =
@@ -2984,10 +3003,9 @@ export const gettargetResult = async (req, res) => {
 
             const product = productWiseMap.get(productKey);
 
-            product.achieved +=
-              config.measurementType === "amount"
-                ? leadAchievement / itemCount
-                : 1;
+            product.achieved += isAmountTarget
+              ? leadAchievement / itemCount
+              : 1;
           }
 
           achievedByUser.categories.push({

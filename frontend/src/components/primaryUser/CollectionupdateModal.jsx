@@ -14,15 +14,22 @@ const todayString = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
 }
 
-const PAYMENT_MODES = [
-  "HDFC BANK - MET",
-  "SOUTH INDIAN BANK - CAMET",
-  "PUNJAB NATIONAL BANK - ACCUANET",
-  "INDIAN OVERSEAS BANK - ACCUANET",
-  "BANK OF BARODA - ACCUANET",
-  "CASH - ACCUANET",
-  "CASH - CAMET"
-]
+const CAMET_BRANCH_ID = "66ffb2fb39904d78447cfaec"
+const ACCUANET_BRANCH_ID = "66f7b26c1e7129afd9aee189"
+
+const PAYMENT_MODES_BY_BRANCH = {
+  [ACCUANET_BRANCH_ID]: [
+    { value: "PUNJAB NATIONAL BANK - ACCUANET", label: "Punjab National Bank" },
+    { value: "INDIAN OVERSEAS BANK - ACCUANET", label: "Indian Overseas Bank" },
+    { value: "CASH - ACCUANET", label: "Cash" },
+    { value: "BANK OF BARODA - ACCUANET", label: "Bank of Baroda" }
+  ],
+  [CAMET_BRANCH_ID]: [
+    { value: "SOUTH INDIAN BANK - CAMET", label: "South Indian Bank" },
+    { value: "CASH - CAMET", label: "Cash" },
+    { value: "HDFC BANK - MET", label: "HDFC Bank" }
+  ]
+}
 
 const emptyRow = () => ({
   id: crypto.randomUUID(),
@@ -480,6 +487,10 @@ export function CollectionupdateModal({
   })
   const [paymentRows, setPaymentRows] = useState([emptyRow()])
   console.log(paymentRows)
+  const leadBranchId = String(
+    data?.leadBranch?._id ?? data?.leadBranch ?? data?.branch_id?._id ?? data?.branch_id ?? ""
+  )
+  const paymentModeOptions = PAYMENT_MODES_BY_BRANCH[leadBranchId] || []
   const base = {
     width: "100%",
     padding: "5px 9px",
@@ -1168,7 +1179,7 @@ export function CollectionupdateModal({
                 placeholder="Select mode of payment"
                 options={[
                   { value: "", label: "Select mode of payment" },
-                  ...PAYMENT_MODES.map((mode) => ({ value: mode, label: mode }))
+                  ...paymentModeOptions
                 ]}
               />
             </Field>
