@@ -2,6 +2,7 @@ import express from "express";
 import authMiddleware from "../../middleware/authMiddleware.js";
 import {
   LeadRegister,
+  BulkLeadRegister,
   BulkCreateAdditionalServiceLeads,
   GetAllservices,
   GetallLead,
@@ -34,6 +35,7 @@ import {
   GetcollectionLeads,
   UpdateCollection,
   UpdatereceivedAmount,
+  RejectCollectionPayment,
   UpdatepaymentVerification,
   fixLeadVerifiedField,
   ChecktodeleteTask,
@@ -57,7 +59,8 @@ RejectTask,
   GetclosedLeads,
   GetResearchAndDevelopmentLeads,
   UpdateResearchAndDevelopmentTask,
-  AllocateResearchAndDevelopmentTask
+  AllocateResearchAndDevelopmentTask,
+  TransferResearchAndDevelopmentTask
 } from "../../controller/primaryUserController/leadController.js";
 const router = express.Router();
 // router.get("/export-branch-wise-product-usage",exportBranchWiseProductUsage)
@@ -112,9 +115,11 @@ router.post("/leadReallocation", authMiddleware, updateReallocation);
 router.post("/leadAllocationtask", authMiddleware, UpdateOrleadallocationTask);
 router.post("/setdemolead", authMiddleware, SetDemoallocation);
 router.post("/leadRegister", authMiddleware, LeadRegister);
+router.post("/bulkLeadRegister", authMiddleware, BulkLeadRegister);
 router.post("/bulkAdditionalServiceLeads", authMiddleware, BulkCreateAdditionalServiceLeads);
 router.post("/collectionUpdate", authMiddleware, UpdateCollection);
 router.post("/updatereceivedAmount", authMiddleware, UpdatereceivedAmount);
+router.post("/rejectCollectionPayment", authMiddleware, RejectCollectionPayment);
 router.post("/taskRegistration", authMiddleware, TaskRegistration);
 router.post("/taskSubmission", authMiddleware, UpdateLeadTask);
 router.post("/taskRejection",authMiddleware,RejectTask)
@@ -132,5 +137,6 @@ router.post(
 router.post("/approveforcefullyclosetarget",authMiddleware,ApprovedforcefullyClosedTarget)
 router.post("/rnd-allocation", authMiddleware, AllocateResearchAndDevelopmentTask)
 router.post("/rnd-task-update", authMiddleware, UpdateResearchAndDevelopmentTask)
+router.post("/rnd-task-transfer", authMiddleware, TransferResearchAndDevelopmentTask)
 
 export default router;

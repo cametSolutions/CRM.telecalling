@@ -347,7 +347,7 @@ const handleMetricTab = (tab) => {
   console.log(open)
   console.log(targetData)
 
-  const isAmountMode = splitType === "amount"
+  const isAmountMode = String(splitType || "").trim().toLowerCase() === "amount"
 
   const formatValue = (val) => {
     const num = Number(val || 0)
@@ -1000,7 +1000,7 @@ console.log("h")
                 <th className="border-r border-blue-400 px-3 py-2 text-center">Product Name</th>
                 <th className="border-r border-blue-400 px-3 py-2 text-center">Event Log</th>
                 <th className="border-r border-blue-400 px-3 py-2 text-center">View</th>
-                <th className="px-3 py-2 text-right">₹ Net Amount</th>
+                <th className="px-3 py-2 text-right">₹ Achieved Amount</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -1070,7 +1070,11 @@ console.log(lead?.categoryItems)
                       </button>
                     </td>
                     <td className="whitespace-nowrap px-3 py-2 text-right font-semibold text-green-700">
-                      ₹ {Number(lead.netAmount || 0).toLocaleString("en-IN")}
+                      ₹ {Number(
+                        lead.forcefullyClosedTarget
+                          ? lead.netAmount
+                          : lead.achievedValue
+                      ).toLocaleString("en-IN")}
                     </td>
                   </tr>
                 );

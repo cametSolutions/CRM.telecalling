@@ -2260,19 +2260,17 @@ export const GetAllCustomer = async (req, res) => {
 
 
 
+    const objectIds = new mongoose.Types.ObjectId(branchSelected)
+    // Do the branch filter in MongoDB. Previously this endpoint loaded every
+    // customer and every branch's product/license history before filtering it
+    // in Node, making the lead form slower as the dataset grew.
     const customers = await Customer.aggregate([
       {
-        $lookup: {
-          from: "partners",        // collection name
-          localField: "partner",   // field in Customer
-          foreignField: "_id",     // field in Partner
-          as: "partnerDoc"
-        }
-      },
-      {
-        $unwind: {
-          path: "$partnerDoc",
-          preserveNullAndEmptyArrays: true,
+        $match: {
+          $or: [
+            { selected: { $eq: [] } },
+            { "selected.branch_id": objectIds }
+          ]
         }
       },
       {
@@ -2283,14 +2281,6 @@ export const GetAllCustomer = async (req, res) => {
           mobile: 1,
           landline: 1,
           email: 1,
-          // selected: 1,
-          selected: {
-            $cond: [
-              { $isArray: "$selected" },
-              "$selected",
-              []
-            ]
-          },
           partner: 1,
           gstNo: 1,
           registrationType: 1,
@@ -2299,32 +2289,21 @@ export const GetAllCustomer = async (req, res) => {
           contactPerson: 1,
           country: 1,
           state: 1,
-          // pick partner name from the correct field
-          "partnerDoc._id": 1,
-          "partnerDoc.partner": 1,    // NOT partnerDoc.name
-          // or alias it:
-          partnerName: "$partnerDoc.partner",
+          // The lead form only uses the current branch's history.
+          selected: {
+            $filter: {
+              input: { $ifNull: ["$selected", []] },
+              as: "selection",
+              cond: { $eq: ["$$selection.branch_id", objectIds] }
+            }
+          }
         }
-      },
-    ]);
-
-
-    const objectIds = new mongoose.Types.ObjectId(branchSelected)
-    const filteredCustomers = customers.filter(
-      (customer) =>
-
-        //Include customers where `selected` is undefined or empty
-        !Array.isArray(customer.selected) ||
-        customer.selected.length === 0 ||
-        // Or those with at least one matching branch_id
-        customer.selected.some((selection) =>
-          objectIds.equals(selection.branch_id))
-
-    )
+      }
+    ])
 
     return res
       .status(200)
-      .json({ message: "customers found", data: filteredCustomers })
+      .json({ message: "customers found", data: customers })
 
   } catch (error) {
     console.log(error)

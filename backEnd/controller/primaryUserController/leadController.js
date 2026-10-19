@@ -42,6 +42,16 @@ const toIdString = (v) => {
 
 const uniqueIds = (values = []) => [...new Set(values.filter(Boolean).map(String))];
 
+const COLLECTION_PAYMENT_MODES = new Set([
+  "HDFC BANK - MET",
+  "SOUTH INDIAN BANK - CAMET",
+  "PUNJAB NATIONAL BANK - ACCUANET",
+  "INDIAN OVERSEAS BANK - ACCUANET",
+  "BANK OF BARODA - ACCUANET",
+  "CASH - ACCUANET",
+  "CASH - CAMET"
+]);
+
 const addEndOfDay = (date) => {
   const d = new Date(date);
   d.setHours(23, 59, 59, 999);
@@ -1903,6 +1913,321 @@ export const LeadRegister = async (req, res) => {
   }
 }
 
+// Creates multiple independent leads from the compact Lead Master bulk grid.
+// The shared remark/allocation is applied to every submitted row.
+export const BulkLeadRegister = async (req, res) => {
+  try {
+    const {
+      leadBranch,
+      leads,
+      remark = "",
+      selfAllocation = false,
+      dueDate = null
+    } = req.body
+
+    if (!isValidObjectId(leadBranch) || !Array.isArray(leads) || !leads.length) {
+      return res.status(400).json({ message: "A branch and at least one bulk lead are required" })
+    }
+    if (leads.length > 100) {
+      return res.status(400).json({ message: "A maximum of 100 leads can be created at once" })
+    }
+
+    const leadBy = req.owner?.userId
+    if (!isValidObjectId(leadBy)) {
+      return res.status(401).json({ message: "Unable to identify the logged-in user" })
+    }
+
+    const [staffUser, adminUser] = await Promise.all([
+      Staff.findById(leadBy).populate("department", "department code").lean(),
+      Admin.findById(leadBy).lean()
+    ])
+    const leadByModel = staffUser ? "Staff" : adminUser ? "Admin" : null
+    if (!leadByModel) {
+      return res.status(403).json({ message: "The logged-in user cannot create leads" })
+    }
+
+    const department = staffUser?.department || {}
+    const isMarketingStaff =
+      leadByModel === "Staff" &&
+      (department?.code === "DEPARTMENT3" ||
+        String(department?.department || "").toLowerCase().includes("marketing"))
+    if (!isMarketingStaff) {
+      return res.status(403).json({ message: "Bulk lead creation is available only to Marketing staff" })
+    }
+    if (selfAllocation && !dueDate) {
+      return res.status(400).json({ message: "A due date is required for self allocation" })
+    }
+
+    const customerIds = [...new Set(leads.map((lead) => String(lead?.customerId || "")).filter(isValidObjectId))]
+    const productIds = [...new Set(
+      leads.flatMap((lead) => (lead?.products || []).map((product) => String(product?.productId || "")))
+        .filter(isValidObjectId)
+    )]
+    const [customers, products, leadTask, allocationTask, followupTask] = await Promise.all([
+      Customer.find({ _id: { $in: customerIds } }).lean(),
+      Product.find({ _id: { $in: productIds }, status: { $ne: "Inactive" } }).lean(),
+      Task.findOne({ taskName: "Lead" }).lean(),
+      selfAllocation ? Task.findOne({ taskName: "Allocation" }).lean() : null,
+      selfAllocation ? Task.findOne({ taskName: { $regex: /^followup$/i } }).lean() : null
+    ])
+    if (selfAllocation && (!allocationTask || !followupTask)) {
+      return res.status(500).json({ message: "Allocation or Followup task is not configured" })
+    }
+
+    const customerById = new Map(customers.map((customer) => [String(customer._id), customer]))
+    const productById = new Map(products.map((product) => [String(product._id), product]))
+    const invalidRows = []
+    const normalizedLeads = []
+    const getProductNames = (rowProducts = []) =>
+      rowProducts
+        .map((rowProduct) => {
+          const product = productById.get(String(rowProduct?.productId))
+          return product?.shortName || product?.productName || rowProduct?.productName || ""
+        })
+        .filter(Boolean)
+        .join(", ")
+    const createSkippedRow = ({ row, customer, mobile, rowProducts, productName, reason }) => ({
+      row,
+      customerName: customer?.customerName || "Unknown customer",
+      mobile: mobile || "",
+      productName: productName || getProductNames(rowProducts),
+      reason
+    })
+
+    for (let index = 0; index < leads.length; index += 1) {
+      const row = leads[index] || {}
+      const customer = customerById.get(String(row.customerId))
+      const rowProducts = Array.isArray(row.products) ? row.products : []
+      const rowMobile = String(row.mobile || customer?.mobile || "")
+        .replace(/^\+?91/, "")
+        .replace(/\D/g, "")
+      if (!customer || !row.source || rowMobile.length !== 10 || !rowProducts.length) {
+        invalidRows.push(createSkippedRow({
+          row: index + 1,
+          customer,
+          mobile: rowMobile,
+          rowProducts,
+          reason: "Customer, valid mobile number, source, and product are required"
+        }))
+        continue
+      }
+
+      // Use the same active-customer name and mobile duplicate check as normal
+      // lead entry, while allowing the currently selected customer itself.
+      const duplicateCustomer = await Customer.findOne({
+        mobile: rowMobile,
+        customerName: {
+          $regex: `^${String(customer.customerName || "").trim()}$`,
+          $options: "i"
+        },
+        isActive: { $ne: "Deactive" },
+        _id: { $ne: customer._id }
+      }).select("_id").lean()
+      if (duplicateCustomer) {
+        invalidRows.push(createSkippedRow({
+          row: index + 1,
+          customer,
+          mobile: rowMobile,
+          rowProducts,
+          reason: "An active customer already exists with the same name and mobile number"
+        }))
+        continue
+      }
+
+      const leadFor = []
+      let taxableAmount = 0
+      let taxAmount = 0
+      let invalidProduct = false
+      for (const rowProduct of rowProducts) {
+        const product = productById.get(String(rowProduct?.productId))
+        const productBranch = product?.selected?.find(
+          (selection) => String(selection?.branch_id) === String(leadBranch)
+        )
+        const amount = Number(rowProduct?.amount || 0)
+        const taxRate = Number(rowProduct?.tax || 0)
+        if (!product || !productBranch || !Number.isFinite(amount) || amount < 0 || !Number.isFinite(taxRate) || taxRate < 0) {
+          invalidProduct = true
+          break
+        }
+        const itemTaxAmount = Number(((amount * taxRate) / 100).toFixed(2))
+        const itemNetAmount = Number((amount + itemTaxAmount).toFixed(2))
+        taxableAmount += amount
+        taxAmount += itemTaxAmount
+        leadFor.push({
+          productorServiceId: product._id,
+          productorServicemodel: "Product",
+          productorServiceName: product.shortName || product.productName || "",
+          productorservicetype: product.productorservicetype,
+          company_id: productBranch.company_id,
+          branch_id: leadBranch,
+          licenseNumber: rowProduct?.license || null,
+          productPrice: amount,
+          taxAmount: itemTaxAmount,
+          netAmount: itemNetAmount,
+          actualproductPrice: amount,
+          actualNetAmount: itemNetAmount,
+          hsn: productBranch.hsnName || 0,
+          actualHsn: productBranch.hsnName || 0,
+          licenseNumbers: []
+        })
+      }
+
+      if (invalidProduct) {
+        invalidRows.push(createSkippedRow({
+          row: index + 1,
+          customer,
+          mobile: rowMobile,
+          rowProducts,
+          reason: "Select active products available in the chosen branch and enter valid amounts"
+        }))
+        continue
+      }
+      normalizedLeads.push({
+        row: index + 1,
+        customer,
+        mobile: rowMobile,
+        partner: isValidObjectId(row.partner) ? row.partner : null,
+        source: String(row.source).trim(),
+        taxableAmount: Number(taxableAmount.toFixed(2)),
+        taxAmount: Number(taxAmount.toFixed(2)),
+        netAmount: Number((taxableAmount + taxAmount).toFixed(2)),
+        leadFor
+      })
+    }
+
+    if (!normalizedLeads.length) {
+      return res.status(400).json({ message: "No valid bulk lead rows were found", skipped: invalidRows })
+    }
+
+    const existingLeads = await LeadMaster.find({
+      customerName: { $in: normalizedLeads.map((lead) => lead.customer._id) },
+      "leadFor.productorServiceId": { $in: productIds },
+      // A confirmed lead may be registered again for the same customer/product.
+      // Only an unconfirmed lead blocks the bulk creation row.
+      leadConfirmed: { $ne: true }
+    }).select("customerName leadFor.productorServiceId").lean()
+    const existingPairs = new Set(
+      existingLeads.flatMap((lead) =>
+        (lead.leadFor || []).map((item) => `${lead.customerName}:${item.productorServiceId}`)
+      )
+    )
+    const seenPairs = new Set()
+    const eligibleLeads = normalizedLeads.filter((lead) => {
+      const pairs = lead.leadFor.map((item) => `${lead.customer._id}:${item.productorServiceId}`)
+      const duplicateItems = lead.leadFor
+        .filter((item) => {
+          const pair = `${lead.customer._id}:${item.productorServiceId}`
+          return existingPairs.has(pair) || seenPairs.has(pair)
+        })
+      const duplicateProducts = duplicateItems
+        .map((item) => item.productorServiceName)
+        .filter(Boolean)
+        .join(", ")
+      if (duplicateItems.length) {
+        invalidRows.push(createSkippedRow({
+          row: lead.row,
+          customer: lead.customer,
+          mobile: lead.mobile,
+          productName: duplicateProducts || duplicateItems.map((item) => String(item.productorServiceId)).join(", "),
+          reason: "A lead already exists for this customer and product"
+        }))
+        return false
+      }
+      pairs.forEach((pair) => seenPairs.add(pair))
+      return true
+    })
+    if (!eligibleLeads.length) {
+      return res.status(409).json({ message: "All submitted bulk leads already exist", skipped: invalidRows })
+    }
+
+    const session = await mongoose.startSession()
+    try {
+      await session.withTransaction(async () => {
+        const lastLead = await LeadId.findOne().sort({ leadId: -1 }).session(session)
+        let nextLeadNumber = lastLead ? Number.parseInt(lastLead.leadId, 10) + 1 : 1
+        const leadDate = new Date()
+        const documents = eligibleLeads.map((lead) => {
+          const leadId = String(nextLeadNumber++).padStart(5, "0")
+          const activityLog = [{
+            submissionDate: leadDate,
+            submittedUser: leadBy,
+            submissiondoneByModel: leadByModel,
+            remarks: remark,
+            taskBy: leadTask?._id
+          }]
+          if (selfAllocation) {
+            activityLog.push({
+              submissionDate: leadDate,
+              submittedUser: leadBy,
+              submissiondoneByModel: leadByModel,
+              taskallocatedBy: leadBy,
+              taskallocatedByModel: leadByModel,
+              taskallocatedTo: leadBy,
+              taskallocatedToModel: leadByModel,
+              remarks: remark,
+              taskBy: allocationTask._id,
+              taskTo: "followup",
+              taskId: followupTask._id,
+              allocationChanged: false,
+              followupClosed: false,
+              taskfromFollowup: false,
+              allocationDate: new Date(dueDate)
+            })
+          }
+          return {
+            leadId,
+            leadDate,
+            customerName: lead.customer._id,
+            mobile: lead.mobile,
+            phone: lead.customer.landline || "",
+            email: lead.customer.email || "",
+            location: lead.customer.city || lead.customer.address1 || "",
+            pincode: lead.customer.pincode || "",
+            source: lead.source,
+            partner: lead.partner,
+            leadBranch,
+            remark,
+            leadBy,
+            leadByModel,
+            taxableAmount: lead.taxableAmount,
+            taxAmount: lead.taxAmount,
+            netAmount: lead.netAmount,
+            balanceAmount: lead.netAmount,
+            selfAllocation: Boolean(selfAllocation),
+            ...(selfAllocation && {
+              allocationType: followupTask._id,
+              selfAllocationType: followupTask._id,
+              selfAllocationDueDate: new Date(dueDate),
+              dueDate: new Date(dueDate),
+              taskfromFollowup: false
+            }),
+            activityLog,
+            leadFor: lead.leadFor
+          }
+        })
+        await LeadMaster.insertMany(documents, { session })
+        await LeadId.insertMany(documents.map((lead) => ({
+          leadId: lead.leadId,
+          leadBy,
+          assignedtoleadByModel: leadByModel
+        })), { session })
+      })
+    } finally {
+      await session.endSession()
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: `${eligibleLeads.length} lead${eligibleLeads.length === 1 ? "" : "s"} created successfully`,
+      created: eligibleLeads.length,
+      skipped: invalidRows
+    })
+  } catch (error) {
+    console.error("Bulk lead creation failed:", error)
+    return res.status(500).json({ message: "Unable to create bulk leads" })
+  }
+}
+
 // Creates one lead per customer for a branch-valid target product selected in
 // the Expiry Register. Customer and product values are read from the database.
 export const BulkCreateAdditionalServiceLeads = async (req, res) => {
@@ -2395,6 +2720,103 @@ export const UpdatereceivedAmount = async (req, res) => {
     session.endSession();
   }
 };
+
+// Accountants can reject a collection entry from either the pending or the
+// verified collection view. The lead totals are always derived from the
+// payment records that remain after the rejection.
+export const RejectCollectionPayment = async (req, res) => {
+  const session = await mongoose.startSession()
+
+  try {
+    const { leadDocId, paymentIndex } = req.body
+    const index = Number(paymentIndex)
+    const userId = req.owner?.userId
+
+    if (!isValidObjectId(userId)) {
+      return res.status(401).json({ message: "Unable to identify the logged-in user" })
+    }
+    if (!isValidObjectId(leadDocId) || !Number.isInteger(index) || index < 0) {
+      return res.status(400).json({ message: "A valid lead and payment record are required" })
+    }
+
+    const accountant = await Staff.findById(userId)
+      .populate("department", "department code")
+      .lean()
+    const department = accountant?.department || {}
+    const isAccountant =
+      department?.code === "DEPARTMENT2" ||
+      /accounts?|accounting/i.test(String(department?.department || ""))
+
+    if (!isAccountant) {
+      return res.status(403).json({ message: "Only Accounts staff can reject a collection" })
+    }
+
+    await session.withTransaction(async () => {
+      const lead = await LeadMaster.findById(leadDocId).session(session)
+      if (!lead) throw new Error("Lead not found")
+      if (index >= lead.paymentHistory.length) throw new Error("Invalid payment record")
+
+      lead.paymentHistory.splice(index, 1)
+
+      // Payment-entry balances are running balances. When an older payment is
+      // removed, every later entry must start again from the correct previous
+      // balance (for example: remove 1,000 before a later 2,000 payment).
+      const runningBalances = new Map()
+      for (const payment of lead.paymentHistory) {
+        if (!Array.isArray(payment.paymentEntries) || !payment.paymentEntries.length) {
+          continue
+        }
+
+        for (const entry of payment.paymentEntries) {
+          const key = `${entry.productorServicemodel || "Product"}:${entry.productorServiceId}`
+          const originalNetAmount = Number(entry.netAmount || 0)
+          const previousBalance = runningBalances.has(key)
+            ? runningBalances.get(key)
+            : originalNetAmount
+          const receivedAmount = Number(entry.receivedAmount || 0)
+          const balanceAmount = Math.max(
+            0,
+            Number((previousBalance - receivedAmount).toFixed(2))
+          )
+
+          entry.balanceAmount = balanceAmount
+          runningBalances.set(key, balanceAmount)
+        }
+
+        payment.receivedAmount = Number(
+          payment.paymentEntries
+            .reduce((total, entry) => total + Number(entry.receivedAmount || 0), 0)
+            .toFixed(2)
+        )
+      }
+
+      const totalPaidAmount = Number(
+        lead.paymentHistory
+          .reduce((total, payment) => total + Number(payment?.receivedAmount || 0), 0)
+          .toFixed(2)
+      )
+      const netAmount = Number(lead.netAmount || 0)
+
+      lead.totalPaidAmount = totalPaidAmount
+      lead.balanceAmount = Math.max(0, Number((netAmount - totalPaidAmount).toFixed(2)))
+      lead.paymentVerified =
+        lead.paymentHistory.length > 0 &&
+        lead.paymentHistory.every((payment) => payment.paymentVerified === true) &&
+        totalPaidAmount === netAmount
+
+      await lead.save({ session })
+    })
+
+    return res.status(200).json({ message: "Collection rejected and lead balances updated" })
+  } catch (error) {
+    console.error("Reject collection payment error:", error)
+    return res.status(error.message === "Lead not found" || error.message === "Invalid payment record" ? 404 : 500)
+      .json({ message: error.message || "Unable to reject collection" })
+  } finally {
+    session.endSession()
+  }
+};
+
 export const UpdatepaymentVerification = async (req, res) => {
   try {
     const {
@@ -3721,6 +4143,11 @@ export const UpdateCollection = async (req, res) => {
       return res.status(400).json({ message: "Missing customerId" })
     }
 
+    const paymentMode = paymentData?.paymentMode ?? formData?.paymentMode
+    if (!COLLECTION_PAYMENT_MODES.has(paymentMode)) {
+      return res.status(400).json({ message: "Select a valid mode of payment" })
+    }
+
     const customerId = formData.customerId
     const leadDocId = formData.leadDocId
 
@@ -3795,6 +4222,7 @@ export const UpdateCollection = async (req, res) => {
           paymentData?.receivedModel || model || formData?.receivedModel,
         bankRemarks:
           paymentData?.bankRemarks ?? formData?.bankRemarks ?? "",
+        paymentMode,
         updatedAt: new Date()
       }
 
@@ -5937,6 +6365,22 @@ export const UpdateLeadRegister = async (req, res) => {
 
       if (!matchedDoc) {
         throw Object.assign(new Error("Lead not found"), { statusCode: 404 });
+      }
+
+      const activePendingTask = (matchedDoc.activityLog || []).find(
+        (log) =>
+          log?.taskClosed === false &&
+          log?.allocationChanged !== true &&
+          log?.taskTo !== "followup"
+      );
+
+      if (activePendingTask) {
+        throw Object.assign(
+          new Error(
+            `Lead cannot be edited while pending task "${activePendingTask.taskTo}" is active.`
+          ),
+          { statusCode: 403 }
+        );
       }
 
       const existingLeadFor = Array.isArray(matchedDoc.leadFor)
@@ -11206,6 +11650,7 @@ const buildMap = (docs) =>
 export const GetrespectedleadTask = async (req, res) => {
   try {
     const { userid, branchSelected, role, ownTask, taskStatus } = req.query;
+    const codingAndQcTaskId = "689c23493e94902039b97743";
 
     const userObjectId = toObjectId(userid);
     const branchObjectId = toObjectId(branchSelected);
@@ -11282,6 +11727,9 @@ export const GetrespectedleadTask = async (req, res) => {
       taskTo: { $ne: "followup" },
       taskallocatedTo: { $ne: null },
       ...(isPendingTask ? { taskClosed: false } : {}),
+      ...(isPendingTask
+        ? { taskId: { $ne: new mongoose.Types.ObjectId(codingAndQcTaskId) } }
+        : {}),
       ...(isClearedTask ? { taskClosed: true } : {}),
       ...(allowedUserIds
         ? {
@@ -11293,22 +11741,20 @@ export const GetrespectedleadTask = async (req, res) => {
     };
 
     const query = {
-      leadBranch: branchObjectId,
       activityLog: {
         $elemMatch: elemMatch,
       },
     };
 
-    const activityLogConditions = [
-      { $eq: ["$$log.allocationChanged", false] },
-      { $ne: ["$$log.taskTo", "followup"] },
-      { $ne: ["$$log.taskallocatedTo", null] },
-      ...(isPendingTask ? [{ $eq: ["$$log.taskClosed", false] }] : []),
-      ...(isClearedTask ? [{ $eq: ["$$log.taskClosed", true] }] : []),
-      ...(allowedUserIds
-        ? [{ $in: ["$$log.taskallocatedTo", allowedUserIds] }]
-        : []),
-    ];
+    /*
+      An allocation is actionable for its assignee even when the lead belongs
+      to another branch. For example, a CAMET user assigned an ACCUANET lead
+      must still receive that task. Admin's All Task view remains restricted
+      to the branch selected in the UI.
+    */
+    if (isAdmin && !isOwnTask) {
+      query.leadBranch = branchObjectId;
+    }
 
     const selectedfollowup = await LeadMaster.aggregate([
       { $match: query },
@@ -11325,13 +11771,9 @@ export const GetrespectedleadTask = async (req, res) => {
           leadFor: 1,
           leadBy: 1,
           leadByModel: 1,
-          activityLog: {
-            $filter: {
-              input: "$activityLog",
-              as: "log",
-              cond: { $and: activityLogConditions },
-            },
-          },
+          // Keep the full history for the Event Log modal. The task-list
+          // access checks below still decide which lead appears in this page.
+          activityLog: 1,
         },
       },
     ]);
@@ -11500,7 +11942,9 @@ export const GetrespectedleadTask = async (req, res) => {
     };
 
     /*
-      This filters activityLog before sending data to the client.
+      This filters task allocations used to decide which lead rows the current
+      user can access. The complete activityLog remains available for the
+      Event Log modal.
 
       Example:
       A Manager with ownTask=false may receive:
@@ -11524,6 +11968,13 @@ export const GetrespectedleadTask = async (req, res) => {
       }
 
       if (isPendingTask && log?.taskClosed !== false) {
+        return false;
+      }
+
+      if (
+        isPendingTask &&
+        String(log?.taskId) === codingAndQcTaskId
+      ) {
         return false;
       }
 
@@ -11574,7 +12025,7 @@ export const GetrespectedleadTask = async (req, res) => {
       const lastAccessibleAllocation =
         accessibleActivityLog[accessibleActivityLog.length - 1];
 
-      const populatedActivityLog = accessibleActivityLog.map((log) => ({
+      const populateActivityLog = (log) => ({
         ...log,
         taskBy: resolveTask(log?.taskBy),
         taskId: resolveTask(log?.taskId),
@@ -11593,7 +12044,12 @@ export const GetrespectedleadTask = async (req, res) => {
           log?.taskallocatedBy,
           log?.taskallocatedByModel
         ),
-      }));
+      });
+
+      const populatedActivityLog = activityLog.map(populateActivityLog);
+      const populatedTaskActivityLog = accessibleActivityLog.map(
+        populateActivityLog
+      );
 
       const populatedLeadFor = leadFor.map((item) => ({
         ...item,
@@ -11622,6 +12078,7 @@ export const GetrespectedleadTask = async (req, res) => {
         ),
 
         activityLog: populatedActivityLog,
+        taskActivityLog: populatedTaskActivityLog,
         leadFor: populatedLeadFor,
       });
     }
@@ -15038,357 +15495,8 @@ export const GetResearchAndDevelopmentLeads = async (req, res) => {
     const codingAndQcTaskId = new mongoose.Types.ObjectId(
       "689c23493e94902039b97743"
     );
-    // October 2026 in IST
-//     const octoberStart = new Date("2026-09-30T18:30:00.000Z");
-//     const octoberEnd = new Date("2026-10-31T18:30:00.000Z");
-// const septemberThirty = new Date("2026-09-29T18:30:00.000Z")
-//     await LeadMaster.updateMany(
-//       {
-//         leadDate: {
-//           $gte: octoberStart,
-//           $lt: octoberEnd
-//         },
-//         leadBranch: new mongoose.Types.ObjectId("66ffb2fb39904d78447cfaec"),
-//         leadId: {
-//           $nin: [
-//             "01173",
-//             "01172",
-//             "01171",
-//             "01170",
-//             "01169",
-//             "01168",
-//             "01210",
-//             "01208",
-//             "01189",
-//             "01207",
-//             "01152"
-//           ]
-//         }
-//       },
-//       {
-//         $set: {
-//           leadDate:septemberThirty,
-//           "activityLog.0.submission":septemberThirty
-//         }
-//       }
-//     )
+   
 
-    // const branchObjectId = new mongoose.Types.ObjectId(
-    //   "66ffb2fb39904d78447cfaec"
-    // );
-
-
-
-
-
-
-    // // September 30, 2026 at 00:00:00 UTC
-    // const septemberDate = new Date("2026-09-30T00:00:00.000Z");
-
-    // // For September 30, 2026 at 12:00 AM IST, use:
-    // // const septemberDate = new Date("2026-09-29T18:30:00.000Z");
-
-    // // Exclude these lead IDs
-    // const excludedLeadIds = ["01173", "01172", "01171", "01170", "01169", "01168", "01210", "01208", "01189", "01207", "01152"];
-
-    // function isOctoberDate(value) {
-    //   if (!value) return false;
-
-    //   const date = new Date(value);
-    //   if (isNaN(date.getTime())) return false;
-
-    //   return date >= octoberStart && date < octoberEnd;
-    // }
-
-    // function updateOctoberDatesRecursive(
-    //   value,
-    //   currentPath,
-    //   excludedPaths,
-    //   updates
-    // ) {
-    //   if (value === null || value === undefined) return value;
-
-    //   if (value instanceof Date) {
-    //     if (
-    //       isOctoberDate(value) &&
-    //       !excludedPaths.includes(currentPath)
-    //     ) {
-    //       updates[currentPath] = septemberDate;
-    //       return septemberDate;
-    //     }
-
-    //     return value;
-    //   }
-
-    //   if (Array.isArray(value)) {
-    //     return value.map((item, index) =>
-    //       updateOctoberDatesRecursive(
-    //         item,
-    //         `${currentPath}.${index}`,
-    //         excludedPaths,
-    //         updates
-    //       )
-    //     );
-    //   }
-
-    //   if (typeof value === "object") {
-    //     const updatedObject = {};
-
-    //     for (const key of Object.keys(value)) {
-    //       const childPath = currentPath ? `${currentPath}.${key}` : key;
-
-    //       updatedObject[key] = updateOctoberDatesRecursive(
-    //         value[key],
-    //         childPath,
-    //         excludedPaths,
-    //         updates
-    //       );
-    //     }
-
-    //     return updatedObject;
-    //   }
-
-    //   return value;
-    // }
-
-    // const leads = await LeadMaster.find({
-    //   leadBranch: branchObjectId,
-    //   leadId: { $nin: excludedLeadIds },
-    //   paymentHistory: {
-    //     $elemMatch: {
-    //       paymentDate: {
-    //         $gte: octoberStart,
-    //         $lt: octoberEnd
-    //       }
-    //     }
-    //   }
-    // }).lean();
-
-    // const operations = [];
-
-    // for (const lead of leads) {
-    //   const updates = {};
-
-    //   const excludedPaths = [
-    //     "leadDate",
-    //     "activityLog.0.submissionDate"
-    //   ];
-
-    //   updateOctoberDatesRecursive(
-    //     lead,
-    //     "",
-    //     excludedPaths,
-    //     updates
-    //   );
-
-    //   if (!Object.keys(updates).length) continue;
-
-    //   operations.push({
-    //     updateOne: {
-    //       filter: { _id: lead._id },
-    //       update: { $set: updates }
-    //     }
-    //   });
-    // }
-
-    // if (operations.length) {
-    //   await LeadMaster.bulkWrite(operations, {
-    //     ordered: false
-    //   });
-    // }
-
-
-
-
-
-
-
-
-    // const octoberStart = new Date("2026-09-30T18:30:00.000Z");
-    // const octoberEnd = new Date("2026-10-31T18:30:00.000Z");
-    // const excludedLeadIds=["01106","00733","01166","01167"]
-
-    //     const leads = await LeadMaster.find({
-    //       leadBranch: branchObjectId,
-    //       leadId: { $nin: excludedLeadIds },
-    //       paymentHistory: {
-    //         $elemMatch: {
-    //           paymentDate: {
-    //             $gte: octoberStart,
-    //             $lt: octoberEnd
-    //           }
-    //         }
-    //       }
-    //     }).lean();
-    // const ress=leads.map((ite)=>ite.leadId)
-    // console.log("lengthhhhhhhhhhhhhhhhhhhhhh",ress.length)
-    // console.log(JSON.stringify(ress, null, 2));
-
-    // const a=await LeadMaster.find({
-    //   leadBranch: ObjectId("66ffb2fb39904d78447cfaec"),
-    //   leadDate: {
-    //     $gte: ISODate("2026-09-30T18:30:00.000Z"),
-    //     $lt: ISODate("2026-10-31T18:30:00.000Z")
-    //   }
-    // })
-    // const a = await LeadMaster.find({
-
-
-
-
-
-
-
-    //   activityLog.taskallocatedTo: new mongoose.Types.ObjectId("672072c7a80cc9c3f31d97d0"),
-    //   leadFor.productorServiceId: {
-    //   $in: [
-    //     new mongoose.Types.ObjectId("6a326c5fa587143676cf54f1"),
-    //     new mongoose.Types.ObjectId("6a326d76a587143676cf6ee7"),
-    //     new mongoose.Types.ObjectId("6a326db3a587143676cf71fb"), new mongoose.Types.ObjectId("6a326e04a587143676cf7249"), new mongoose.Types.ObjectId("6a326e27a587143676cf7298"), new mongoose.Types.ObjectId('6a4dfe6d4fd0a4cd037274b0')
-    //   ]
-    // }, totalPaidAmount: { $gte: 0 }, leadBranch: new mongoose.Types.ObjectId('66f7b26c1e7129afd9aee189'), leadClosed: false, leadConfirmed: true
-
-    // });
-
-
-    // const a = await LeadMaster.find({
-    //   "activityLog.taskallocatedTo": new mongoose.Types.ObjectId(
-    //     "672072c7a80cc9c3f31d97d0"
-    //   ),
-    //   "leadFor.productorServiceId": {
-    //     $in: [
-    //       new mongoose.Types.ObjectId("6a326c5fa587143676cf54f1"),
-    //       new mongoose.Types.ObjectId("6a326d76a587143676cf6ee7"),
-    //       new mongoose.Types.ObjectId("6a326db3a587143676cf71fb"),
-    //       new mongoose.Types.ObjectId("6a326e04a587143676cf7249"),
-    //       new mongoose.Types.ObjectId("6a326e27a587143676cf7298"),
-    //       new mongoose.Types.ObjectId("6a4dfe6d4fd0a4cd037274b0")
-    //     ]
-    //   },
-    //   totalPaidAmount: { $gte: 0 },
-    //   leadBranch: new mongoose.Types.ObjectId("66f7b26c1e7129afd9aee189"),
-    //   leadClosed: false,
-    //   leadConfirmed: true
-    // });
-    // const rrr = a.map((i) => i.leadId)
-    // console.log("octoberrr", rrr)
-
-    //  const leadIds = [
-    //       "01239", "01237", "01234", "01232", "01231",
-    //       "01230", "01229", "01225", "01224", "01223",
-    //       "01222", "01220", "01213", "01212", "01211",
-    //       "01206", "01205", "01204", "01203", "01202",
-    //       "01201", "01200", "01199", "01198", "01197",
-    //       "01196", "01195", "01194", "01193", "01192",
-    //       "01191", "01190", "01188", "01187", "01186",
-    //       "01185", "01184", "01183", "01182", "01181",
-    //       "01180", "01179", "01178", "01177", "01176",
-    //       "01175", "01174", "01165", "01164", "01163",
-    //       "01162", "01161", "01151"
-    //     ]
-
-    //     const octoberStart = new Date("2026-10-01T00:00:00.000Z")
-    //     const novemberStart = new Date("2026-11-01T00:00:00.000Z")
-
-    //     const moveOctober2026ToSeptember = (field) => ({
-    //       $cond: [
-    //         {
-    //           $and: [
-    //             { $gte: [field, octoberStart] },
-    //             { $lt: [field, novemberStart] }
-    //           ]
-    //         },
-    //         {
-    //           $dateSubtract: {
-    //             startDate: field,
-    //             unit: "month",
-    //             amount: 1
-    //           }
-    //         },
-    //         field
-    //       ]
-    //     })
-
-    // const result = await LeadMaster.updateMany(
-    //   { leadId: { $in: leadIds } },
-    //   [
-    //     {
-    //       $set: {
-    //         leadDate: moveOctober2026ToSeptember("$leadDate"),
-    //         leadConvertedDate: moveOctober2026ToSeptember("$leadConvertedDate"),
-    //         leadClosedDate: moveOctober2026ToSeptember("$leadClosedDate"),
-    //         leadLostDate: moveOctober2026ToSeptember("$leadLostDate"),
-    //         dueDate: moveOctober2026ToSeptember("$dueDate"),
-    //         selfAllocationDueDate: moveOctober2026ToSeptember(
-    //           "$selfAllocationDueDate"
-    //         ),
-    //         createdAt: moveOctober2026ToSeptember("$createdAt"),
-    //         updatedAt: moveOctober2026ToSeptember("$updatedAt"),
-
-    //         paymentHistory: {
-    //           $map: {
-    //             input: { $ifNull: ["$paymentHistory", []] },
-    //             as: "payment",
-    //             in: {
-    //               $mergeObjects: [
-    //                 "$$payment",
-    //                 {
-    //                   paymentDate: moveOctober2026ToSeptember(
-    //                     "$$payment.paymentDate"
-    //                   ),
-    //                   verifiedAt: moveOctober2026ToSeptember(
-    //                     "$$payment.verifiedAt"
-    //                   ),
-    //                   createdAt: moveOctober2026ToSeptember(
-    //                     "$$payment.createdAt"
-    //                   ),
-    //                   updatedAt: moveOctober2026ToSeptember(
-    //                     "$$payment.updatedAt"
-    //                   )
-    //                 }
-    //               ]
-    //             }
-    //           }
-    //         },
-
-    //         activityLog: {
-    //           $map: {
-    //             input: { $ifNull: ["$activityLog", []] },
-    //             as: "activity",
-    //             in: {
-    //               $mergeObjects: [
-    //                 "$$activity",
-    //                 {
-    //                   submissionDate: moveOctober2026ToSeptember(
-    //                     "$$activity.submissionDate"
-    //                   ),
-    //                   allocationDate: moveOctober2026ToSeptember(
-    //                     "$$activity.allocationDate"
-    //                   ),
-    //                   followUpDate: moveOctober2026ToSeptember(
-    //                     "$$activity.followUpDate"
-    //                   ),
-    //                   nextFollowUpDate: moveOctober2026ToSeptember(
-    //                     "$$activity.nextFollowUpDate"
-    //                   ),
-    //                   taskSubmissionDate: moveOctober2026ToSeptember(
-    //                     "$$activity.taskSubmissionDate"
-    //                   ),
-    //                   createdAt: moveOctober2026ToSeptember(
-    //                     "$$activity.createdAt"
-    //                   ),
-    //                   updatedAt: moveOctober2026ToSeptember(
-    //                     "$$activity.updatedAt"
-    //                   )
-    //                 }
-    //               ]
-    //             }
-    //           }
-    //         }
-    //       }
-    //     }
-    //   ]
-    // )
     if (branchId && !isValidObjectId(branchId)) {
       return res.status(400).json({
         success: false,
@@ -15398,7 +15506,7 @@ export const GetResearchAndDevelopmentLeads = async (req, res) => {
 
     const match = {
       leadLost: { $ne: true },
-      activityLog: { $elemMatch: { followupClosed: true } }
+      activityLog: { $elemMatch: { followupClosed: true,taskTo:"followup" } }
     };
 
     if (branchId) {
@@ -15657,7 +15765,7 @@ export const UpdateResearchAndDevelopmentTask = async (req, res) => {
     const codingAndQcTaskId = "689c23493e94902039b97743";
     const validStatuses = ["Pending", "In Progress", "Hold", "Completed"];
 
-    if (!isValidObjectId(leadDocId) || !["start", "end", "status"].includes(action)) {
+    if (!isValidObjectId(leadDocId) || !["start", "end", "status", "reject"].includes(action)) {
       return res.status(400).json({ success: false, message: "Invalid task update" });
     }
 
@@ -15674,12 +15782,68 @@ export const UpdateResearchAndDevelopmentTask = async (req, res) => {
       return res.status(404).json({ success: false, message: "Lead was not found" });
     }
 
+    if (action === "reject") {
+      if (String(lead.allocationType) !== codingAndQcTaskId) {
+        return res.status(400).json({ success: false, message: "Coding & QC is not the active allocation" });
+      }
+
+      const lastActivityLog = lead.activityLog?.at(-1);
+      const followupClosingTaskId = "69f561f9563085eef7b0a482";
+      if (String(lastActivityLog?.taskId) !== codingAndQcTaskId) {
+        return res.status(400).json({ success: false, message: "Coding & QC is not the latest activity" });
+      }
+
+      const followupReturnAllocationType = "689c22e93e94902039b9772b";
+      // Remove only the contiguous Coding & QC entries at the end of the log.
+      // Older Coding & QC history must remain intact.
+      while (
+        lead.activityLog.length > 0 &&
+        String(lead.activityLog.at(-1)?.taskId) === codingAndQcTaskId
+      ) {
+        lead.activityLog.pop();
+      }
+
+      const restoredActivityLog = lead.activityLog.at(-1);
+      if (String(restoredActivityLog?.taskBy) === followupClosingTaskId) {
+        // The preceding Follow-Up Closing hand-off is being reversed. Reopen
+        // the latest Follow-Up task and restore the lead to its open state.
+        lead.activityLog.pop();
+
+        const followupLog = [...lead.activityLog]
+          .reverse()
+          .find((log) => log.taskTo === "followup");
+        if (followupLog) {
+          followupLog.taskClosed = false;
+          followupLog.followupClosed = false;
+        }
+
+        lead.followupClosed = false;
+        lead.leadClosed = false;
+        lead.leadConvertedDate = null;
+        lead.allocationType = followupReturnAllocationType;
+      } else {
+        // Restore only the previous task allocation for the normal path.
+        lead.allocationType = restoredActivityLog?.taskBy || null;
+        lead.reallocatedTo = true;
+      }
+      await lead.save();
+
+      return res.status(200).json({
+        success: true,
+        message: "Coding & QC task rejected and previous allocation restored",
+        data: {
+          allocationType: lead.allocationType,
+          rejected: true
+        }
+      });
+    }
+
     const allocationLog = [...lead.activityLog]
       .reverse()
       .find(
         (log) =>
           log.taskallocatedTo &&
-          (String(log.taskId) === codingAndQcTaskId || String(log.taskBy) === codingAndQcTaskId)
+          String(log.taskId) === codingAndQcTaskId
       );
 
     if (!allocationLog) {
@@ -15729,11 +15893,32 @@ export const UpdateResearchAndDevelopmentTask = async (req, res) => {
         allocationLog.expectedCompletionDate = new Date(expectedCompletionDate);
         lead.dueDate = allocationLog.expectedCompletionDate;
       }
+      const wasCompleted = allocationLog.taskStatus === "Completed";
       allocationLog.taskStatus = status;
       allocationLog.taskRemark = remark?.trim() || "";
       if (status === "Completed") {
         allocationLog.taskCompletedAt = now;
+        allocationLog.taskSubmissionDate = now;
+        allocationLog.taskDescription = allocationLog.taskRemark || allocationLog.taskDescription;
+        allocationLog.taskClosed = true;
+        allocationLog.reallocatedTo = true;
         lead.reallocatedTo = true;
+
+        // Keep the completed R&D allocation and its completion submission as
+        // separate activity-log entries, matching the standard Lead Task flow.
+        if (!wasCompleted) {
+          lead.activityLog.push({
+            submissionDate: now,
+            submittedUser: allocationLog.taskallocatedTo,
+            submissiondoneByModel: allocationLog.taskallocatedToModel,
+            remarks: allocationLog.taskRemark,
+            taskBy: allocationLog.taskId || allocationLog.taskBy,
+            taskClosed: true,
+            taskfromFollowup: false,
+            allocatedClosed: false,
+            reallocatedTo: true
+          });
+        }
       }
       timelineEvent = status === "Completed" ? "Development Completed" : `Status changed to ${status}`;
       timelineDetail = allocationLog.taskRemark;
@@ -15762,6 +15947,161 @@ export const UpdateResearchAndDevelopmentTask = async (req, res) => {
   } catch (error) {
     console.error("UpdateResearchAndDevelopmentTask error:", error);
     return res.status(500).json({ success: false, message: "Unable to update Coding & QC task" });
+  }
+};
+
+export const TransferResearchAndDevelopmentTask = async (req, res) => {
+  try {
+    const { leadDocId, transferredTo, transferRemark, expectedCompletionDate } = req.body;
+    const codingAndQcTaskId = "689c23493e94902039b97743";
+    const transferredBy = req.owner?.userId;
+
+    if (
+      !isValidObjectId(leadDocId) ||
+      !isValidObjectId(transferredTo) ||
+      !isValidObjectId(transferredBy)
+    ) {
+      return res.status(400).json({ success: false, message: "Valid lead and staff IDs are required" });
+    }
+
+    if (!transferRemark?.trim()) {
+      return res.status(400).json({ success: false, message: "A transfer reason is required" });
+    }
+
+    const [lead, assignedStaff, transferringStaff, transferringAdmin] = await Promise.all([
+      LeadMaster.findById(leadDocId),
+      Staff.findById(transferredTo)
+        .select("_id name department")
+        .populate({ path: "department", select: "department" })
+        .lean(),
+      Staff.findById(transferredBy).select("_id name").lean(),
+      Admin.findById(transferredBy).select("_id name").lean()
+    ]);
+
+    if (!lead) {
+      return res.status(404).json({ success: false, message: "Lead was not found" });
+    }
+
+    if (!assignedStaff) {
+      return res.status(400).json({ success: false, message: "Transfer staff member was not found" });
+    }
+
+    if (
+      assignedStaff.department?.department?.trim().toLowerCase() !==
+      "research and development"
+    ) {
+      return res.status(400).json({ success: false, message: "Transfer staff member must belong to Research and Development" });
+    }
+
+    const currentAllocation = [...lead.activityLog]
+      .reverse()
+      .find(
+        (log) =>
+          String(log.taskId) === codingAndQcTaskId &&
+          log.taskStatus === "In Progress" &&
+          log.taskClosed !== true &&
+          log.allocationChanged !== true
+      );
+
+    if (!currentAllocation) {
+      return res.status(400).json({ success: false, message: "An in-progress Coding & QC task was not found" });
+    }
+
+    if (String(currentAllocation.taskallocatedTo) === String(transferredTo)) {
+      return res.status(400).json({ success: false, message: "Select a different R&D staff member" });
+    }
+
+    const now = new Date();
+    const originalAssigneeId = currentAllocation.taskallocatedTo;
+    const originalAssignee = await Staff.findById(originalAssigneeId)
+      .select("name")
+      .lean();
+    const transferredByModel = transferringStaff ? "Staff" : transferringAdmin ? "Admin" : null;
+
+    if (!transferredByModel) {
+      return res.status(403).json({ success: false, message: "Authenticated user is not authorized to transfer this task" });
+    }
+
+    const transferDetail = `Transferred from ${originalAssignee?.name || "previous developer"} to ${assignedStaff.name}. ${transferRemark.trim()}`;
+    const activeSession = [...(currentAllocation.taskSessions || [])]
+      .reverse()
+      .find((session) => !session.endedAt);
+
+    if (activeSession) {
+      activeSession.endedAt = now;
+      activeSession.description = activeSession.description || transferDetail;
+      currentAllocation.taskEndedAt = now;
+    }
+
+    currentAllocation.allocationChanged = true;
+    currentAllocation.changeReason = transferRemark.trim();
+    currentAllocation.taskTimeline = currentAllocation.taskTimeline || [];
+    currentAllocation.taskTimeline.push({
+      event: "Task Transferred",
+      at: now,
+      detail: transferDetail
+    });
+
+    const nextExpectedCompletionDate = expectedCompletionDate
+      ? new Date(expectedCompletionDate)
+      : currentAllocation.expectedCompletionDate || null;
+
+    if (expectedCompletionDate && Number.isNaN(nextExpectedCompletionDate.getTime())) {
+      return res.status(400).json({ success: false, message: "Invalid expected completion date" });
+    }
+
+    lead.activityLog.push({
+      submissionDate: now,
+      submittedUser: transferredBy,
+      submissiondoneByModel: transferredByModel,
+      taskallocatedBy: transferredBy,
+      taskallocatedByModel: transferredByModel,
+      taskallocatedTo: transferredTo,
+      taskallocatedToModel: "Staff",
+      allocationDate: now,
+      allocationTime: now.toTimeString().slice(0, 5),
+      expectedCompletionDate: nextExpectedCompletionDate,
+      taskTitle: currentAllocation.taskTitle || "Coding & QC",
+      allocationDescription: currentAllocation.allocationDescription || "",
+      taskBy: new mongoose.Types.ObjectId(codingAndQcTaskId),
+      taskTo: currentAllocation.taskTo || "Coding & QC",
+      taskId: new mongoose.Types.ObjectId(codingAndQcTaskId),
+      // A transfer is a fresh allocation for the receiving developer. They
+      // must explicitly start it before it becomes In Progress.
+      taskStatus: "Pending",
+      taskTimeline: [{ event: "Task Transferred", at: now, detail: transferDetail }],
+      taskClosed: false,
+      followupClosed: false,
+      allocatedClosed: false,
+      allocationChanged: false,
+      taskfromFollowup: false,
+      remarks: transferRemark.trim()
+    });
+
+    lead.allocatedTo = transferredTo;
+    lead.allocatedBy = transferredBy;
+    lead.allocatedToModel = "Staff";
+    lead.allocatedByModel = transferredByModel;
+    lead.reallocatedTo = false;
+    if (nextExpectedCompletionDate) lead.dueDate = nextExpectedCompletionDate;
+
+    await lead.save();
+
+    const transferredAllocation = lead.activityLog.at(-1);
+    return res.status(200).json({
+      success: true,
+      message: "Coding & QC task transferred",
+      data: {
+        assignedDeveloper: assignedStaff.name,
+        assignedDeveloperId: assignedStaff._id,
+        taskStatus: transferredAllocation.taskStatus,
+        expectedCompletionDate: transferredAllocation.expectedCompletionDate,
+        taskTimeline: transferredAllocation.taskTimeline
+      }
+    });
+  } catch (error) {
+    console.error("TransferResearchAndDevelopmentTask error:", error);
+    return res.status(500).json({ success: false, message: "Unable to transfer Coding & QC task" });
   }
 };
 

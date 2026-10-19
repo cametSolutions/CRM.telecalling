@@ -144,6 +144,34 @@ const getCompletedAt = (item) => item.taskCompletedAt || [...(item.taskTimeline 
   .reverse()
   .find((event) => event.event === "Development Completed")?.at
 
+const codingAndQcTaskId = "689c23493e94902039b97743"
+
+const getIdValue = (value) => String(value?._id || value || "")
+
+/*
+  /rnd-leads intentionally exposes the current Coding & QC allocation only.
+  The lead-detail endpoint already exposes the complete activity log, so use
+  its Coding & QC entries to build one chronological history on the client.
+*/
+const getMergedRndTimeline = (activityLog = [], fallbackTimeline = []) => {
+  const events = activityLog
+    .filter((log) =>
+      getIdValue(log?.taskId) === codingAndQcTaskId ||
+      getIdValue(log?.taskBy) === codingAndQcTaskId
+    )
+    .flatMap((log) =>
+      (log.taskTimeline || []).map((event) => ({
+        ...event,
+        allocatedTo: log.taskallocatedTo?.name || "",
+        allocatedBy: log.taskallocatedBy?.name || "",
+        isSelfAllocated:
+          getIdValue(log.taskallocatedTo) === getIdValue(log.taskallocatedBy)
+      }))
+    )
+
+  return events.length ? events : fallbackTimeline
+}
+
 const toWorkItem = (lead) => ({
   id: lead.leadId,
   leadDocId: lead.leadDocId,
@@ -369,9 +397,43 @@ export default function ResearchandDevelopement() {
       remark: item.taskRemark || "",
       allocationDate: toDateInputValue(item.allocationDate),
       expectedCompletionDate: item.expectedCompletionDate ? toDateInputValue(item.expectedCompletionDate) : "",
-      isNeedChangeDate: false
+      isNeedChangeDate: false,
+      isTransfer: false,
+      transferredTo: "",
+      transferRemark: ""
     })
     setModal("update")
+  }
+
+  const openTimeline = async (item) => {
+    // Show the current allocation immediately while the complete lead history
+    // is being loaded. This keeps the modal responsive on slower connections.
+    setTimelineWork({ ...item, timelineLoading: true })
+    setModal("timeline")
+
+    try {
+      const response = await api.get("/lead/getSelectedLead", {
+        params: { leadId: item.leadDocId }
+      })
+      const lead = response.data?.data?.[0]
+      const taskTimeline = getMergedRndTimeline(
+        lead?.activityLog,
+        item.taskTimeline
+      )
+
+      setTimelineWork((current) =>
+        current?.leadDocId === item.leadDocId
+          ? { ...current, taskTimeline, timelineLoading: false }
+          : current
+      )
+    } catch {
+      // The current allocation's timeline remains usable if detail loading fails.
+      setTimelineWork((current) =>
+        current?.leadDocId === item.leadDocId
+          ? { ...current, timelineLoading: false }
+          : current
+      )
+    }
   }
 
   const saveAllocation = async (event) => {
@@ -440,6 +502,39 @@ export default function ResearchandDevelopement() {
   const saveUpdate = async (event) => {
     event.preventDefault()
     try {
+      if (update.isTransfer) {
+        const response = await api.post("/lead/rnd-task-transfer", {
+          leadDocId: selectedWork.leadDocId,
+          transferredTo: update.transferredTo,
+          transferRemark: update.transferRemark,
+          expectedCompletionDate: update.expectedCompletionDate || undefined
+        })
+        const transferredTask = response.data?.data || {}
+
+        // A transfer is a new allocation for the receiving developer.
+        // Reflect its Pending state immediately while the list refreshes.
+        setWorkItems((items) => items.map((item) =>
+          item.id === selectedWork.id
+            ? {
+                ...item,
+                assignedDeveloper:
+                  transferredTask.assignedDeveloper || item.assignedDeveloper,
+                assignedDeveloperId:
+                  transferredTask.assignedDeveloperId || item.assignedDeveloperId,
+                status: transferredTask.taskStatus || "Pending",
+                expectedCompletionDate:
+                  transferredTask.expectedCompletionDate || item.expectedCompletionDate,
+                taskTimeline: transferredTask.taskTimeline || item.taskTimeline
+              }
+            : item
+        ))
+        setActiveStatusFilter("Pending")
+        toast.success("Coding & QC task transferred")
+        setModal(null)
+        setRefreshKey((current) => current + 1)
+        return
+      }
+
       const response = await api.post("/lead/rnd-task-update", {
         leadDocId: selectedWork.leadDocId,
         action: "status",
@@ -454,6 +549,22 @@ export default function ResearchandDevelopement() {
       toast.success("Task status updated")
     } catch (error) {
       toast.error(error.response?.data?.message || "Unable to update task status")
+    }
+  }
+
+  const rejectTask = async (item) => {
+    if (!window.confirm(`Reject the Coding & QC task for lead ${item.id}?`)) return
+
+    try {
+      await api.post("/lead/rnd-task-update", {
+        leadDocId: item.leadDocId,
+        action: "reject"
+      })
+      setWorkItems((items) => items.filter((workItem) => workItem.id !== item.id))
+      setRefreshKey((current) => current + 1)
+      toast.success("Coding & QC task rejected and previous allocation restored")
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Unable to reject Coding & QC task")
     }
   }
 
@@ -498,7 +609,7 @@ export default function ResearchandDevelopement() {
 
           <div className="hidden min-h-0 flex-1 overflow-y-auto overflow-x-hidden md:block">
             <table className="w-full table-fixed text-left text-xs">
-              <thead className="sticky top-0 z-20 bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500 shadow-sm"><tr><th className="w-[60px] whitespace-nowrap bg-slate-50 px-3 py-2 font-semibold">Lead ID</th><th className="w-[120px] whitespace-nowrap bg-slate-50 px-3 py-2 font-semibold">Customer</th>{showAllocationColumns && <><th className="w-[160px] whitespace-nowrap bg-slate-50 px-3 py-2 font-semibold">Task title</th><th className="hidden w-[110px] whitespace-nowrap bg-slate-50 px-3 py-2 font-semibold lg:table-cell">Developer</th><th className="hidden w-[80px] whitespace-nowrap bg-slate-50 px-3 py-2 font-semibold xl:table-cell">Priority</th><th className="hidden w-[80px] whitespace-nowrap bg-slate-50 px-3 py-2 font-semibold xl:table-cell">Remaining</th></>}<th className="w-[90px] whitespace-nowrap bg-slate-50 px-3 py-2 font-semibold">Status</th><th className="w-[110px] whitespace-nowrap bg-slate-50 px-3 py-2 text-center font-semibold">Start</th><th className="w-[52px] whitespace-nowrap bg-slate-50 px-3 py-2 text-center font-semibold">End</th><th className="hidden w-[52px] whitespace-nowrap bg-slate-50 px-3 py-2 text-center font-semibold xl:table-cell">Timeline</th><th className="w-[52px] whitespace-nowrap bg-slate-50 px-3 py-2 text-center font-semibold">Action</th></tr></thead>
+              <thead className="sticky top-0 z-20 bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500 shadow-sm"><tr><th className="w-[60px] whitespace-nowrap bg-slate-50 px-3 py-2 font-semibold">Lead ID</th><th className="w-[120px] whitespace-nowrap bg-slate-50 px-3 py-2 font-semibold">Customer</th>{showAllocationColumns && <><th className="w-[160px] whitespace-nowrap bg-slate-50 px-3 py-2 font-semibold">Task title</th><th className="hidden w-[110px] whitespace-nowrap bg-slate-50 px-3 py-2 font-semibold lg:table-cell">Developer</th><th className="hidden w-[80px] whitespace-nowrap bg-slate-50 px-3 py-2 font-semibold xl:table-cell">Priority</th><th className="hidden w-[80px] whitespace-nowrap bg-slate-50 px-3 py-2 font-semibold xl:table-cell">Remaining</th></>}<th className="w-[90px] whitespace-nowrap bg-slate-50 px-3 py-2 font-semibold">Status</th><th className="w-[110px] whitespace-nowrap bg-slate-50 px-3 py-2 text-center font-semibold">Start</th><th className="w-[52px] whitespace-nowrap bg-slate-50 px-3 py-2 text-center font-semibold">End</th><th className="hidden w-[52px] whitespace-nowrap bg-slate-50 px-3 py-2 text-center font-semibold xl:table-cell">Timeline</th><th className="w-[90px] whitespace-nowrap bg-slate-50 px-2 py-2 text-center font-semibold">Action</th></tr></thead>
               <tbody className="divide-y divide-slate-100">
                 {isLoading ? (
                   <tr><td colSpan="11" className="px-5 py-10 text-center text-sm text-slate-500">Loading R&D leads...</td></tr>
@@ -507,7 +618,7 @@ export default function ResearchandDevelopement() {
                 ) : filteredWorkItems.length === 0 ? (
                   <tr><td colSpan="11" className="px-5 py-10 text-center text-sm text-slate-500">No {activeStatusFilter.toLowerCase()} leads found.</td></tr>
                 ) : (
-                  filteredWorkItems.map((item) => <WorkRow key={item.leadDocId} item={item} showAllocationColumns={showAllocationColumns} canOperate={String(item.assignedDeveloperId) === String(loggedUser?._id)} isActive={Boolean(item.taskStartedAt && !item.taskEndedAt)} onAllocate={openAllocation} onUpdate={openUpdate} onStart={startTask} onEnd={openEndTask} onDescription={(work) => { setDescriptionWork(work); setModal("description") }} onTimeline={(work) => { setTimelineWork(work); setModal("timeline") }} />)
+                  filteredWorkItems.map((item) => <WorkRow key={item.leadDocId} item={item} showAllocationColumns={showAllocationColumns} canOperate={String(item.assignedDeveloperId) === String(loggedUser?._id)} isActive={Boolean(item.taskStartedAt && !item.taskEndedAt)} onAllocate={openAllocation} onUpdate={openUpdate} onStart={startTask} onEnd={openEndTask} onReject={rejectTask} onDescription={(work) => { setDescriptionWork(work); setModal("description") }} onTimeline={(work) => { setTimelineWork(work); setModal("timeline") }} />)
                 )}
               </tbody>
             </table>
@@ -516,12 +627,12 @@ export default function ResearchandDevelopement() {
             {isLoading && <p className="p-5 text-center text-sm text-slate-500">Loading R&D leads...</p>}
             {!isLoading && loadError && <p className="p-5 text-center text-sm text-rose-600">{loadError}</p>}
             {!isLoading && !loadError && filteredWorkItems.length === 0 && <p className="p-5 text-center text-sm text-slate-500">No {activeStatusFilter.toLowerCase()} leads found.</p>}
-            {!isLoading && !loadError && filteredWorkItems.map((item) => <WorkCard key={item.leadDocId} item={item} canOperate={String(item.assignedDeveloperId) === String(loggedUser?._id)} isActive={Boolean(item.taskStartedAt && !item.taskEndedAt)} onAllocate={openAllocation} onUpdate={openUpdate} onStart={startTask} onEnd={openEndTask} onDescription={(work) => { setDescriptionWork(work); setModal("description") }} onTimeline={(work) => { setTimelineWork(work); setModal("timeline") }} />)}
+            {!isLoading && !loadError && filteredWorkItems.map((item) => <WorkCard key={item.leadDocId} item={item} canOperate={String(item.assignedDeveloperId) === String(loggedUser?._id)} isActive={Boolean(item.taskStartedAt && !item.taskEndedAt)} onAllocate={openAllocation} onUpdate={openUpdate} onStart={startTask} onEnd={openEndTask} onReject={rejectTask} onDescription={(work) => { setDescriptionWork(work); setModal("description") }} onTimeline={(work) => { setTimelineWork(work); setModal("timeline") }} />)}
           </div>
         </section>
       </div>
       {modal === "allocation" && <AllocationModal work={selectedWork} value={allocation} developmentStaff={developmentStaff} onChange={setAllocation} onClose={() => setModal(null)} onSubmit={saveAllocation} />}
-      {modal === "update" && <WorkUpdateModal work={selectedWork} value={update} onChange={setUpdate} onClose={() => setModal(null)} onSubmit={saveUpdate} />}
+      {modal === "update" && <WorkUpdateModal work={selectedWork} value={update} developmentStaff={developmentStaff} onChange={setUpdate} onClose={() => setModal(null)} onSubmit={saveUpdate} />}
       {modal === "end-task" && <EndTaskModal work={endTaskWork} value={taskDescription} onChange={setTaskDescription} onClose={() => setModal(null)} onSubmit={saveEndTask} />}
       {modal === "timeline" && <TaskTimelineModal work={timelineWork} onClose={() => setModal(null)} />}
       {modal === "description" && <WorkDescriptionModal work={descriptionWork} onClose={() => setModal(null)} />}
@@ -534,7 +645,7 @@ function CellTooltip({ value, className = "" }) {
   return <span className="group relative block min-w-0"><span className={`block truncate ${className}`}>{value}</span><span role="tooltip" className="pointer-events-none invisible absolute left-0 top-[calc(100%+6px)] z-30 max-w-64 rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-medium normal-case text-white opacity-0 shadow-lg transition group-hover:visible group-hover:opacity-100">{value}</span></span>
 }
 
-function WorkRow({ item, showAllocationColumns, canOperate, isActive, onAllocate, onUpdate, onStart, onEnd, onDescription, onTimeline }) {
+function WorkRow({ item, showAllocationColumns, canOperate, isActive, onAllocate, onUpdate, onStart, onEnd, onReject, onDescription, onTimeline }) {
   const isAllocated = Boolean(item.assignedDeveloper) && item.status !== "New"
   const isStartEndBlocked = ["Hold", "Completed"].includes(item.status)
   const disabledClass = "cursor-not-allowed bg-slate-100 text-slate-300"
@@ -550,10 +661,10 @@ function WorkRow({ item, showAllocationColumns, canOperate, isActive, onAllocate
       : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
   const blockedTitle = isStartEndBlocked ? "Tasks on hold or completed cannot be started or ended" : !isAllocated ? "Allocate a developer first" : "Only the assigned developer can start or end this task"
   const title = item.taskTitle || item.work
-  return <tr className="text-slate-600 transition hover:bg-slate-50/80"><td className="whitespace-nowrap px-3 py-2 font-semibold text-blue-600">{item.id}</td><td className="px-3 py-2"><CellTooltip value={item.customer} className="font-medium uppercase text-slate-700" /></td>{showAllocationColumns && <><td className="px-3 py-2">{isAllocated && <span className="group relative block min-w-0"><button type="button" onClick={() => onDescription(item)} className="block w-full truncate text-left font-semibold text-blue-600 transition hover:text-blue-800 hover:underline" title="View task description">{title}</button><span role="tooltip" className="pointer-events-none invisible absolute left-0 top-[calc(100%+6px)] z-30 max-w-64 rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition group-hover:visible group-hover:opacity-100">{title}</span></span>}</td><td className="hidden px-3 py-2 lg:table-cell">{isAllocated && <CellTooltip value={item.assignedDeveloper || "-"} className="font-medium text-slate-700" />}</td><td className="hidden px-3 py-2 xl:table-cell">{isAllocated && <Badge className={priorityStyles[item.priority]}>{item.priority}</Badge>}</td><td className="hidden whitespace-nowrap px-3 py-2 font-semibold text-slate-600 xl:table-cell">{isAllocated && remainingDays}</td></>}<td className="px-3 py-2"><Badge className={statusStyles[item.status]}>{item.status}</Badge></td><td className="px-3 py-2 text-center"><button type="button" disabled={startDisabled} onClick={() => onStart(item)} title={startDisabled ? blockedTitle : "Start task"} className={`inline-flex h-8 max-w-full items-center gap-1 truncate rounded-md px-2 text-xs font-bold transition ${startClass}`}><Play size={13} strokeWidth={2.5} /><span className="truncate">{startedAt ? `Running · ${workedDuration}` : "Start"}</span></button></td><td className="px-3 py-2 text-center"><button type="button" disabled={endDisabled} onClick={() => onEnd(item)} title={endDisabled ? blockedTitle : "End task"} className={`inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-semibold transition ${endDisabled ? disabledClass : "bg-rose-50 text-rose-600 hover:bg-rose-100"}`}><Square size={12} />End</button></td><td className="hidden px-3 py-2 text-center xl:table-cell"><button type="button" disabled={!isAllocated} onClick={() => onTimeline(item)} title={isAllocated ? "View Coding & QC timeline" : "Allocate a developer first"} className={`inline-grid h-8 w-8 place-items-center rounded-md transition ${isAllocated ? "bg-violet-50 text-violet-600 hover:bg-violet-100" : disabledClass}`}><Clock3 size={14} /></button></td><td className="px-3 py-2 text-center"><button type="button" onClick={() => isAllocated ? onUpdate(item) : onAllocate(item)} title={isAllocated ? "Task status" : "Allocate work"} className="inline-grid h-8 w-8 place-items-center rounded-md bg-blue-50 text-blue-600 transition hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300">{isAllocated ? <Pencil size={14} /> : <UserRoundCheck size={15} />}</button></td></tr>
+  return <tr className="text-slate-600 transition hover:bg-slate-50/80"><td className="whitespace-nowrap px-3 py-2 font-semibold text-blue-600">{item.id}</td><td className="px-3 py-2"><CellTooltip value={item.customer} className="font-medium uppercase text-slate-700" /></td>{showAllocationColumns && <><td className="px-3 py-2">{isAllocated && <span className="group relative block min-w-0"><button type="button" onClick={() => onDescription(item)} className="block w-full truncate text-left font-semibold text-blue-600 transition hover:text-blue-800 hover:underline" title="View task description">{title}</button><span role="tooltip" className="pointer-events-none invisible absolute left-0 top-[calc(100%+6px)] z-30 max-w-64 rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition group-hover:visible group-hover:opacity-100">{title}</span></span>}</td><td className="hidden px-3 py-2 lg:table-cell">{isAllocated && <CellTooltip value={item.assignedDeveloper || "-"} className="font-medium text-slate-700" />}</td><td className="hidden px-3 py-2 xl:table-cell">{isAllocated && <Badge className={priorityStyles[item.priority]}>{item.priority}</Badge>}</td><td className="hidden whitespace-nowrap px-3 py-2 font-semibold text-slate-600 xl:table-cell">{isAllocated && remainingDays}</td></>}<td className="px-3 py-2"><Badge className={statusStyles[item.status]}>{item.status}</Badge></td><td className="px-3 py-2 text-center"><button type="button" disabled={startDisabled} onClick={() => onStart(item)} title={startDisabled ? blockedTitle : "Start task"} className={`inline-flex h-8 max-w-full items-center gap-1 truncate rounded-md px-2 text-xs font-bold transition ${startClass}`}><Play size={13} strokeWidth={2.5} /><span className="truncate">{startedAt ? `Running · ${workedDuration}` : "Start"}</span></button></td><td className="px-3 py-2 text-center"><button type="button" disabled={endDisabled} onClick={() => onEnd(item)} title={endDisabled ? blockedTitle : "End task"} className={`inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-semibold transition ${endDisabled ? disabledClass : "bg-rose-50 text-rose-600 hover:bg-rose-100"}`}><Square size={12} />End</button></td><td className="hidden px-3 py-2 text-center xl:table-cell"><button type="button" disabled={!isAllocated} onClick={() => onTimeline(item)} title={isAllocated ? "View Coding & QC timeline" : "Allocate a developer first"} className={`inline-grid h-8 w-8 place-items-center rounded-md transition ${isAllocated ? "bg-violet-50 text-violet-600 hover:bg-violet-100" : disabledClass}`}><Clock3 size={14} /></button></td><td className="px-2 py-2 text-center"><div className="flex justify-center gap-1.5"><button type="button" onClick={() => isAllocated ? onUpdate(item) : onAllocate(item)} title={isAllocated ? "Task status" : "Allocate work"} className="inline-grid h-9 w-9 place-items-center rounded-lg bg-blue-50 text-blue-600 transition hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300">{isAllocated ? <Pencil size={17} /> : <UserRoundCheck size={18} />}</button>{(isAllocated || item.status === "New") && <button type="button" onClick={() => onReject(item)} title="Reject Coding & QC task" className="inline-grid h-9 w-9 place-items-center rounded-lg bg-rose-50 text-rose-600 transition hover:bg-rose-100 focus:outline-none focus:ring-2 focus:ring-rose-200"><X size={17} strokeWidth={2.5} /></button>}</div></td></tr>
 }
 
-function WorkCard({ item, canOperate, isActive, onAllocate, onUpdate, onStart, onEnd, onDescription, onTimeline }) {
+function WorkCard({ item, canOperate, isActive, onAllocate, onUpdate, onStart, onEnd, onReject, onDescription, onTimeline }) {
   const isAllocated = Boolean(item.assignedDeveloper) && item.status !== "New"
   const isStartEndBlocked = ["Hold", "Completed"].includes(item.status)
   const startedAt = formatTime(item.taskStartedAt)
@@ -562,7 +673,7 @@ function WorkCard({ item, canOperate, isActive, onAllocate, onUpdate, onStart, o
   const startClass = startedAt && startDisabled
     ? "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200 disabled:cursor-not-allowed"
     : "bg-emerald-50 text-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-300"
-  return <article className="p-4"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="text-xs font-semibold text-blue-600">{item.id}</p><button type="button" onClick={() => onDescription(item)} className="mt-1 text-left text-sm font-semibold text-blue-600 hover:underline">{item.taskTitle || item.work}</button><p className="mt-1 text-xs text-slate-500">{item.customer}{item.assignedDeveloper ? ` · ${item.assignedDeveloper}` : ""}</p></div><Badge className={priorityStyles[item.priority]}>{item.priority}</Badge></div><div className="mt-3 flex items-center justify-between gap-3 text-xs"><span className="text-slate-500">Due: <strong className="font-medium text-slate-700">{item.due}</strong></span><Badge className={statusStyles[item.status]}>{item.status}</Badge></div><div className="mt-3 flex flex-wrap gap-2"><button type="button" disabled={startDisabled} onClick={() => onStart(item)} className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-bold ${startClass}`}><Play size={13} strokeWidth={2.5} />{startedAt ? `Running · ${workedDuration}` : "Start"}</button><button type="button" disabled={!isAllocated || !canOperate || !isActive || isStartEndBlocked} onClick={() => onEnd(item)} className="inline-flex items-center gap-1.5 rounded-md bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-600 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-300"><Square size={12} />End</button>{isAllocated && <button type="button" onClick={() => onTimeline(item)} className="inline-flex items-center gap-1.5 rounded-md bg-violet-50 px-2.5 py-1.5 text-xs font-semibold text-violet-600"><Clock3 size={13} />Timeline</button>}<button type="button" onClick={() => isAllocated ? onUpdate(item) : onAllocate(item)} className="inline-flex items-center gap-1.5 rounded-md bg-blue-50 px-2.5 py-1.5 text-xs font-semibold text-blue-600 transition hover:bg-blue-100">{isAllocated ? <Pencil size={13} /> : <UserRoundCheck size={13} />}{isAllocated ? "Task acceptance" : "Allocate work"}</button></div></article>
+  return <article className="p-4"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="text-xs font-semibold text-blue-600">{item.id}</p><button type="button" onClick={() => onDescription(item)} className="mt-1 text-left text-sm font-semibold text-blue-600 hover:underline">{item.taskTitle || item.work}</button><p className="mt-1 text-xs text-slate-500">{item.customer}{item.assignedDeveloper ? ` · ${item.assignedDeveloper}` : ""}</p></div><Badge className={priorityStyles[item.priority]}>{item.priority}</Badge></div><div className="mt-3 flex items-center justify-between gap-3 text-xs"><span className="text-slate-500">Due: <strong className="font-medium text-slate-700">{item.due}</strong></span><Badge className={statusStyles[item.status]}>{item.status}</Badge></div><div className="mt-3 flex flex-wrap gap-2"><button type="button" disabled={startDisabled} onClick={() => onStart(item)} className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-bold ${startClass}`}><Play size={13} strokeWidth={2.5} />{startedAt ? `Running · ${workedDuration}` : "Start"}</button><button type="button" disabled={!isAllocated || !canOperate || !isActive || isStartEndBlocked} onClick={() => onEnd(item)} className="inline-flex items-center gap-1.5 rounded-md bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-600 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-300"><Square size={12} />End</button>{isAllocated && <button type="button" onClick={() => onTimeline(item)} className="inline-flex items-center gap-1.5 rounded-md bg-violet-50 px-2.5 py-1.5 text-xs font-semibold text-violet-600"><Clock3 size={13} />Timeline</button>}<button type="button" onClick={() => isAllocated ? onUpdate(item) : onAllocate(item)} className="inline-flex items-center gap-1.5 rounded-md bg-blue-50 px-2.5 py-1.5 text-xs font-semibold text-blue-600 transition hover:bg-blue-100">{isAllocated ? <Pencil size={13} /> : <UserRoundCheck size={13} />}{isAllocated ? "Task acceptance" : "Allocate work"}</button>{(isAllocated || item.status === "New") && <button type="button" onClick={() => onReject(item)} className="inline-flex items-center gap-1.5 rounded-md bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-600 transition hover:bg-rose-100"><X size={13} />Reject</button>}</div></article>
 }
 
 function ModalShell({ title, subtitle, children, onClose, scrollable = true }) {
@@ -614,17 +725,22 @@ function AllocationModal({ work, value, developmentStaff, onChange, onClose, onS
   </ModalShell>
 }
 
-function WorkUpdateModal({ work, value, onChange, onClose, onSubmit }) {
+function WorkUpdateModal({ work, value, developmentStaff, onChange, onClose, onSubmit }) {
   const set = (key, nextValue) => onChange((current) => ({ ...current, [key]: nextValue }))
   const canManageDates = ["Pending", "In Progress"].includes(value.status)
+  const canTransfer = value.status === "In Progress"
+  const availableStaff = developmentStaff.filter(
+    (staff) => String(staff._id) !== String(work.assignedDeveloperId)
+  )
   return <ModalShell title="Update task status" subtitle={`${work.id} · ${work.work}`} onClose={onClose}>
     <form onSubmit={onSubmit}>
       <div className="space-y-5 p-5">
         <Field label="Task status"><select value={value.status} onChange={(e) => onChange((current) => ({ ...current, status: e.target.value, isNeedChangeDate: ["Pending", "In Progress"].includes(e.target.value) ? current.isNeedChangeDate : false }))} className={selectClass}>{["Pending", "In Progress", "Hold", "Completed"].map((status) => <option key={status}>{status}</option>)}</select></Field>
         {canManageDates && <div className="space-y-4"><Field label="Allocation date"><input readOnly type="date" value={value.allocationDate} className={inputClass} /></Field><label className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-700"><input type="checkbox" checked={Boolean(value.isNeedChangeDate)} onChange={(e) => set("isNeedChangeDate", e.target.checked)} className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" /><span>Need to change the expected completion date?</span></label>{value.isNeedChangeDate && <Field label="Expected completion date"><input required type="date" min={value.allocationDate} value={value.expectedCompletionDate} onChange={(e) => set("expectedCompletionDate", e.target.value)} className={inputClass} /></Field>}</div>}
+        {canTransfer && <section className="rounded-xl border border-violet-100 bg-violet-50/70 p-3.5"><label className="flex cursor-pointer items-center gap-3 text-sm font-semibold text-slate-800"><input type="checkbox" checked={Boolean(value.isTransfer)} onChange={(event) => set("isTransfer", event.target.checked)} className="h-4 w-4 rounded border-violet-300 text-violet-600 focus:ring-violet-500" /><span>Transfer this task to another developer</span></label><p className="mt-1 pl-7 text-xs leading-5 text-slate-500">Leave this off to keep the current developer and save a normal status update.</p>{value.isTransfer && <div className="mt-4 space-y-4 border-t border-violet-100 pt-4"><Field label="Transfer to"><select required value={value.transferredTo} onChange={(event) => set("transferredTo", event.target.value)} className={selectClass} disabled={availableStaff.length === 0}><option value="">{availableStaff.length ? "Select R&D staff" : "No other R&D staff available"}</option>{availableStaff.map((staff) => <option key={staff._id} value={staff._id}>{staff.name}</option>)}</select></Field><Field label="Transfer reason"><textarea required rows="3" value={value.transferRemark} onChange={(event) => set("transferRemark", event.target.value)} placeholder="Explain why this task is being transferred..." className="w-full resize-none rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100" /></Field></div>}</section>}
         <Field label="Remark"><textarea rows="4" value={value.remark} onChange={(e) => set("remark", e.target.value)} placeholder="Add a remark about this status update..." className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100" /></Field>
       </div>
-      <footer className="flex justify-end gap-3 border-t border-slate-100 px-5 py-4"><button type="button" onClick={onClose} className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">Close</button><button type="submit" className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"><Save size={15} /> Save status</button></footer>
+      <footer className="flex justify-end gap-3 border-t border-slate-100 px-5 py-4"><button type="button" onClick={onClose} className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">Close</button><button type="submit" className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-sm transition ${value.isTransfer ? "bg-violet-600 hover:bg-violet-700" : "bg-blue-600 hover:bg-blue-700"}`}><Save size={15} /> {value.isTransfer ? "Transfer task" : "Save status"}</button></footer>
     </form>
   </ModalShell>
 }
@@ -648,11 +764,11 @@ function TaskTimelineModal({ work, onClose }) {
   })
   const eventDetail = (event) => {
     if (event.event !== "Work Allocated") return event.detail
-    if (work.isSelfAllocated) return "Self allocated"
-    return `Allocated by ${work.allocatedBy || "Unknown"} · Received by ${work.allocatedTo || "Unknown"}`
+    if (event.isSelfAllocated) return "Self allocated"
+    return `Allocated by ${event.allocatedBy || work.allocatedBy || "Unknown"} · Received by ${event.allocatedTo || work.allocatedTo || "Unknown"}`
   }
 
-  return <ModalShell title="Coding & QC timeline" subtitle={`${work.id} · ${work.work}`} onClose={onClose}><div className="p-5">{events.length === 0 ? <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">No Coding & QC activity has been recorded yet.</p> : <ol className="space-y-0">{events.map((event, index) => <li key={`${event.at}-${index}`} className="relative grid grid-cols-[112px_20px_1fr] gap-3 pb-6 last:pb-0"><time className="pt-0.5 text-right text-xs font-semibold leading-5 text-slate-500">{formatTimelineTime(event.at)}</time><div className="relative flex justify-center"><span className="z-10 mt-1 h-3 w-3 rounded-full border-[3px] border-white bg-blue-600 shadow-sm" />{index < events.length - 1 && <span className="absolute top-4 h-full w-px bg-slate-200" />}</div><div><p className="text-sm font-semibold text-slate-800">{event.event}</p>{eventDetail(event) && <p className="mt-1 text-xs leading-5 text-slate-500">{eventDetail(event)}</p>}</div></li>)}</ol>}</div></ModalShell>
+  return <ModalShell title="Coding & QC timeline" subtitle={`${work.id} · ${work.work}`} onClose={onClose}><div className="p-5">{work.timelineLoading && <p className="mb-4 text-xs font-medium text-slate-500">Loading complete task history...</p>}{events.length === 0 ? <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">No Coding & QC activity has been recorded yet.</p> : <ol className="space-y-0">{events.map((event, index) => <li key={`${event.at}-${index}`} className="relative grid grid-cols-[112px_20px_1fr] gap-3 pb-6 last:pb-0"><time className="pt-0.5 text-right text-xs font-semibold leading-5 text-slate-500">{formatTimelineTime(event.at)}</time><div className="relative flex justify-center"><span className="z-10 mt-1 h-3 w-3 rounded-full border-[3px] border-white bg-blue-600 shadow-sm" />{index < events.length - 1 && <span className="absolute top-4 h-full w-px bg-slate-200" />}</div><div><p className="text-sm font-semibold text-slate-800">{event.event}</p>{eventDetail(event) && <p className="mt-1 text-xs leading-5 text-slate-500">{eventDetail(event)}</p>}</div></li>)}</ol>}</div></ModalShell>
 }
 
 function Badge({ children, className }) {
