@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react"
-import { X, IndianRupee, ClipboardCheck, Lock } from "lucide-react"
+import { X, IndianRupee, ClipboardCheck, Lock, Check, ChevronDown } from "lucide-react"
 import { BarLoader } from "../../components/loader/BarLoader"
 import PopUp from "../common/PopUp"
 import { toast } from "react-toastify"
@@ -12,6 +12,23 @@ const safeNumber = (v) => {
 const todayString = () => {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+}
+
+const CAMET_BRANCH_ID = "66ffb2fb39904d78447cfaec"
+const ACCUANET_BRANCH_ID = "66f7b26c1e7129afd9aee189"
+
+const PAYMENT_MODES_BY_BRANCH = {
+  [ACCUANET_BRANCH_ID]: [
+    { value: "PUNJAB NATIONAL BANK - ACCUANET", label: "Punjab National Bank" },
+    { value: "INDIAN OVERSEAS BANK - ACCUANET", label: "Indian Overseas Bank" },
+    { value: "CASH - ACCUANET", label: "Cash" },
+    { value: "BANK OF BARODA - ACCUANET", label: "Bank of Baroda" }
+  ],
+  [CAMET_BRANCH_ID]: [
+    { value: "SOUTH INDIAN BANK - CAMET", label: "South Indian Bank" },
+    { value: "CASH - CAMET", label: "Cash" },
+    { value: "HDFC BANK - MET", label: "HDFC Bank" }
+  ]
 }
 
 const emptyRow = () => ({
@@ -194,6 +211,134 @@ function Field({ label, error, children }) {
   )
 }
 
+function ModernSelect({
+  name,
+  value,
+  onChange,
+  options,
+  placeholder,
+  disabled = false,
+  menuPlacement = "bottom"
+}) {
+  const [isOpen, setIsOpen] = useState(false)
+  const selectRef = useRef(null)
+  const selectedOption = options.find((option) => String(option.value) === String(value))
+
+  useEffect(() => {
+    const closeOnOutsideClick = (event) => {
+      if (!selectRef.current?.contains(event.target)) setIsOpen(false)
+    }
+    document.addEventListener("mousedown", closeOnOutsideClick)
+    return () => document.removeEventListener("mousedown", closeOnOutsideClick)
+  }, [])
+
+  const selectOption = (optionValue) => {
+    onChange({ target: { name, value: optionValue } })
+    setIsOpen(false)
+  }
+
+  return (
+    <div
+      ref={selectRef}
+      style={{
+        position: "relative",
+        minWidth: 0,
+        zIndex: isOpen ? 50 : "auto"
+      }}
+    >
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setIsOpen((open) => !open)}
+        style={{
+          width: "100%",
+          minWidth: 0,
+          height: 31,
+          padding: "0 9px",
+          border: `1px solid ${isOpen ? "#6366f1" : "#dbe3ef"}`,
+          borderRadius: 8,
+          background: disabled ? "#f1f5f9" : "linear-gradient(180deg,#ffffff,#f8fafc)",
+          color: selectedOption ? "#1e293b" : "#94a3b8",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+          cursor: disabled ? "not-allowed" : "pointer",
+          fontFamily: "inherit",
+          fontSize: 11.5,
+          fontWeight: 600,
+          boxShadow: isOpen ? "0 0 0 3px rgba(99,102,241,0.12)" : "0 1px 1px rgba(15,23,42,0.02)",
+          transition: "border-color .15s, box-shadow .15s"
+        }}
+      >
+        <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "left" }}>
+          {selectedOption?.label || placeholder}
+        </span>
+        <ChevronDown
+          size={15}
+          style={{ flexShrink: 0, color: "#64748b", transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform .15s" }}
+        />
+      </button>
+
+      {isOpen && (
+        <div
+          role="listbox"
+          style={{
+            position: "absolute",
+            zIndex: 40,
+            top: menuPlacement === "bottom" ? "calc(100% + 5px)" : "auto",
+            bottom: menuPlacement === "top" ? "calc(100% + 5px)" : "auto",
+            left: 0,
+            width: "100%",
+            minWidth: 0,
+            maxHeight: 196,
+            overflowY: "auto",
+            padding: 4,
+            borderRadius: 9,
+            border: "1px solid #dbe3ef",
+            background: "#fff",
+            boxShadow: "0 12px 28px rgba(15,23,42,0.16)"
+          }}
+        >
+          {options.map((option) => {
+            const selected = String(option.value) === String(value)
+            return (
+              <button
+                key={option.value || "empty"}
+                type="button"
+                role="option"
+                aria-selected={selected}
+                onClick={() => selectOption(option.value)}
+                style={{
+                  width: "100%",
+                  minWidth: 0,
+                  border: 0,
+                  borderRadius: 6,
+                  padding: "7px 8px",
+                  background: selected ? "#eef2ff" : "transparent",
+                  color: selected ? "#4338ca" : "#334155",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 8,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  fontSize: 11,
+                  fontWeight: selected ? 700 : 500,
+                  textAlign: "left"
+                }}
+              >
+                <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{option.label}</span>
+                {selected && <Check size={13} style={{ flexShrink: 0 }} />}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function AmtInput({ value, onChange, highlight }) {
   return (
     <div style={{ position: "relative" }}>
@@ -273,20 +418,22 @@ function SummaryChip({ label, value, color, bg, border, suffix = "" }) {
     <div
       style={{
         display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "6px 10px",
+        minWidth: 0,
+        flexDirection: "column",
+        alignItems: "flex-start",
+        gap: 2,
+        padding: "5px 7px",
         borderRadius: 8,
         background: bg,
         border: `1px solid ${border}`
       }}
     >
-      <span style={{ fontSize: 10.5, fontWeight: 600, color, opacity: 0.8 }}>
+      <span style={{ fontSize: 9, fontWeight: 700, color, opacity: 0.8, textTransform: "uppercase", letterSpacing: "0.04em" }}>
         {label}
       </span>
       <span
         style={{
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: 700,
           color,
           display: "flex",
@@ -294,7 +441,7 @@ function SummaryChip({ label, value, color, bg, border, suffix = "" }) {
           gap: 3
         }}
       >
-        <IndianRupee size={10} />
+        <IndianRupee size={9} />
         {value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
         {suffix && <span style={{ fontSize: 9.5 }}>{suffix}</span>}
       </span>
@@ -324,6 +471,7 @@ export function CollectionupdateModal({
   const [formData, setFormData] = useState({
     submissionDate: todayString(),
     bankRemark: "",
+    paymentMode: "",
     registrationType: "",
     registrationNo: "",
     customerName: "",
@@ -339,6 +487,10 @@ export function CollectionupdateModal({
   })
   const [paymentRows, setPaymentRows] = useState([emptyRow()])
   console.log(paymentRows)
+  const leadBranchId = String(
+    data?.leadBranch?._id ?? data?.leadBranch ?? data?.branch_id?._id ?? data?.branch_id ?? ""
+  )
+  const paymentModeOptions = PAYMENT_MODES_BY_BRANCH[leadBranchId] || []
   const base = {
     width: "100%",
     padding: "5px 9px",
@@ -376,6 +528,7 @@ export function CollectionupdateModal({
       ...prev,
       customerId: data?.customerName?._id ?? "",
       bankRemark: data.bankRemark ?? "",
+      paymentMode: editData?.paymentMode ?? "",
       totalpaidAmountBefore: data?.totalPaidAmount,
       registrationType: data.customerName?.registrationType ?? "",
       registrationNo: data.customerName?.registrationNo ?? "",
@@ -625,6 +778,11 @@ export function CollectionupdateModal({
       setpopupOpen(true)
       return
     }
+    if (!formData.paymentMode) {
+      setError((previous) => ({ ...previous, paymentMode: "Select a mode of payment" }))
+      toast.warning("Select a mode of payment")
+      return
+    }
 
     console.log("hhh")
     const payload = {
@@ -641,6 +799,7 @@ export function CollectionupdateModal({
       })),
       totalNetAmount: totalNet,
       totalReceivedAmount: totalReceived,
+      paymentMode: formData.paymentMode,
       updatedBy: loggedUser?._id
     }
     console.log(payload)
@@ -673,13 +832,34 @@ export function CollectionupdateModal({
         background: "rgba(15,23,42,0.55)"
       }}
     >
+      <style>{`
+        @media (max-width: 900px) {
+          .collection-update-form {
+            grid-template-columns: minmax(0, 1fr) minmax(210px, 0.7fr) !important;
+          }
+          .collection-payment-panel {
+            grid-column: 1 / -1;
+            min-height: 240px;
+          }
+        }
+        @media (max-width: 640px) {
+          .collection-update-form {
+            grid-template-columns: minmax(0, 1fr) !important;
+          }
+          .collection-customer-panel,
+          .collection-details-panel,
+          .collection-payment-panel {
+            grid-column: auto;
+          }
+        }
+      `}</style>
       <div
         style={{
           position: "relative",
           zIndex: 1,
           width: "calc(100vw - 24px)",
           maxWidth: 1120,
-          maxHeight: "93vh",
+          maxHeight: "97vh",
           display: "flex",
           flexDirection: "column",
           borderRadius: 18,
@@ -696,7 +876,7 @@ export function CollectionupdateModal({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "11px 20px",
+            padding: "9px 16px",
             background:
               "linear-gradient(130deg,#0c1e3d 0%,#1a3560 55%,#1e4480 100%)",
             borderBottom: "1px solid rgba(255,255,255,0.07)"
@@ -790,28 +970,33 @@ export function CollectionupdateModal({
         {/* ── 3-COLUMN BODY ── */}
         <form
           id="collection-form"
+          className="collection-update-form"
           onSubmit={handleSubmit}
           style={{
             flex: 1,
             display: "grid",
-            gridTemplateColumns: "1fr 210px 1fr",
-            gap: 10,
-            padding: 12,
+            gridTemplateColumns: "minmax(0,1fr) minmax(230px,260px) minmax(0,1fr)",
+            gap: 8,
+            padding: 10,
             overflow: "hidden",
-            minHeight: 0
+            minHeight: 0,
+            alignItems: "start",
+            alignContent: "start"
           }}
         >
           {/* COL 1 — Customer Information */}
           <div
+            className="collection-customer-panel"
             style={{
               background: "#fff",
               borderRadius: 12,
               border: "1px solid #e2e8f0",
-              padding: "13px",
+              padding: "10px",
               display: "flex",
               flexDirection: "column",
               gap: 7,
-              overflow: "hidden"
+              overflow: "hidden",
+              minWidth: 0
             }}
           >
             <SectionTitle>Customer Information</SectionTitle>
@@ -929,18 +1114,18 @@ export function CollectionupdateModal({
               }}
             >
               <Field label="Reg. Type">
-                <select
+                <ModernSelect
                   name="registrationType"
                   value={formData.registrationType}
                   onChange={handleChange}
-                  style={{ ...base, cursor: "pointer" }}
-                  onFocus={focusOn}
-                  onBlur={focusOff}
-                >
-                  <option value="">Select</option>
-                  <option value="unregistered">Unregistered</option>
-                  <option value="regular">Regular</option>
-                </select>
+                  placeholder="Select registration type"
+                  menuPlacement="top"
+                  options={[
+                    { value: "", label: "Select registration type" },
+                    { value: "unregistered", label: "Unregistered" },
+                    { value: "regular", label: "Regular" }
+                  ]}
+                />
               </Field>
               <Field label="Reg. No">
                 <input
@@ -961,14 +1146,18 @@ export function CollectionupdateModal({
 
           {/* COL 2 — Date + Partner + Remark + Summary */}
           <div
+            className="collection-details-panel"
             style={{
               background: "#fff",
               borderRadius: 12,
               border: "1px solid #e2e8f0",
-              padding: "13px",
+              padding: "10px",
               display: "flex",
               flexDirection: "column",
-              gap: 8
+              gap: 5,
+              minWidth: 0,
+              position: "relative",
+              zIndex: 2
             }}
           >
             <SectionTitle>Details</SectionTitle>
@@ -982,23 +1171,34 @@ export function CollectionupdateModal({
               />
             </Field>
 
+            <Field label="Mode of Payment *" error={error.paymentMode}>
+              <ModernSelect
+                name="paymentMode"
+                value={formData.paymentMode}
+                onChange={handleChange}
+                placeholder="Select mode of payment"
+                options={[
+                  { value: "", label: "Select mode of payment" },
+                  ...paymentModeOptions
+                ]}
+              />
+            </Field>
+
             {partnerlist?.length > 0 && (
               <Field label="Associate With">
-                <select
+                <ModernSelect
                   name="partner"
                   value={formData.partner}
                   onChange={handleChange}
-                  style={{ ...base, cursor: "pointer" }}
-                  onFocus={focusOn}
-                  onBlur={focusOff}
-                >
-                  <option value="">Select partner</option>
-                  {partnerlist.map((p) => (
-                    <option key={p._id} value={p._id}>
-                      {p?.partner || p?.partnerName}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="Select partner"
+                  options={[
+                    { value: "", label: "Select partner" },
+                    ...partnerlist.map((partner) => ({
+                      value: partner._id,
+                      label: partner?.partner || partner?.partnerName
+                    }))
+                  ]}
+                />
               </Field>
             )}
 
@@ -1008,11 +1208,11 @@ export function CollectionupdateModal({
                 value={formData.bankRemark}
                 onChange={handleChange}
                 placeholder="Enter bank remarks or notes..."
-                rows={4}
+                rows={2}
                 style={{
                   ...base,
                   resize: "vertical",
-                  minHeight: 80,
+                  minHeight: 48,
                   lineHeight: 1.5
                 }}
                 onFocus={focusOn}
@@ -1023,9 +1223,9 @@ export function CollectionupdateModal({
             <div
               style={{
                 marginTop: "auto",
-                display: "flex",
-                flexDirection: "column",
-                gap: 6
+                display: "grid",
+                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                gap: 5
               }}
             >
               <SummaryChip
@@ -1074,6 +1274,7 @@ export function CollectionupdateModal({
 
           {/* COL 3 — Payment Table */}
           <div
+            className="collection-payment-panel"
             style={{
               background: "#fff",
               borderRadius: 12,
@@ -1081,7 +1282,8 @@ export function CollectionupdateModal({
               padding: "13px",
               display: "flex",
               flexDirection: "column",
-              overflow: "hidden"
+              overflow: "hidden",
+              minWidth: 0
             }}
           >
             <div style={{ marginBottom: 8 }}>
@@ -1274,7 +1476,7 @@ export function CollectionupdateModal({
             alignItems: "center",
             justifyContent: "flex-end",
             gap: 10,
-            padding: "10px 16px",
+            padding: "8px 14px",
             borderTop: "1px solid #e2e8f0",
             background: "#f8fafc"
           }}

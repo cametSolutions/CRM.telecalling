@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo, useRef, useLayoutEffect } from "react"
 import { useLocation } from "react-router-dom"
 import { createPortal } from "react-dom"
 import { useSelector } from "react-redux"
-import { useDispatch } from "react-redux"
 import { parsePhoneNumberFromString } from "libphonenumber-js/mobile"
 import { Country, State } from "country-state-city"
 import BarLoader from "react-spinners/BarLoader"
@@ -16,13 +15,13 @@ import api from "../../api/api"
 import { useNavigate } from "react-router-dom"
 import Breadcrumb from "../../components/common/Breadcrumb"
 import { Loader } from "lucide-react"
-import { setsliceselectedBranch } from "../../../slices/companyBranchSlice"
+import * as XLSX from "xlsx"
 import FullScreenLoader from "../../components/common/FullScreenLoader"
 // import { parse } from "path"
 // ─────────────────────────────────────────────────────────────────────────────
 // DropdownPortal — keeps dropdown aligned on scroll/resize
 // ─────────────────────────────────────────────────────────────────────────────
-function DropdownPortal({ anchorEl, children }) {
+function DropdownPortal({ anchorEl, children, matchWidth = false }) {
   const [coords, setCoords] = useState(null)
 
   const reposition = () => {
@@ -67,7 +66,8 @@ function DropdownPortal({ anchorEl, children }) {
         position: "absolute",
         top: coords.top,
         left: coords.left,
-        minWidth: Math.max(coords.width, 220),
+        width: matchWidth ? coords.width : undefined,
+        minWidth: matchWidth ? coords.width : Math.max(coords.width, 220),
         zIndex: 9999
       }}
     >
@@ -135,7 +135,6 @@ function LicenseDropdown({
       document.removeEventListener("touchstart", handlePointerDown)
     }
   }, [dropdownId])
-  console.log(customerTableData)
   const filtered = (customerTableData || []).filter((lic) => {
     const q = String(search || "")
       .toLowerCase()
@@ -678,6 +677,676 @@ function ProductDropdown({
     </div>
   )
 } //third
+
+const createBulkProductRow = () => ({
+  id: `bulk-product-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+  productId: "",
+  license: "",
+  amount: "",
+  tax: ""
+})
+
+const createBulkCustomerRow = () => ({
+  id: `bulk-customer-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+  customerId: "",
+  customerName: "",
+  mobile: "",
+  email: "",
+  source: "",
+  partner: "",
+  products: [createBulkProductRow()]
+})
+
+const BulkLeadSelect = ({
+  className = "",
+  value,
+  options = [],
+  placeholder,
+  disabled = false,
+  onChange
+}) => {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState("")
+  const triggerRef = useRef(null)
+  const menuRef = useRef(null)
+  const selectedOption = options.find(
+    (option) => String(option.value) === String(value)
+  )
+  const visibleOptions = options.filter((option) =>
+    String(option.label || "")
+      .toLowerCase()
+      .includes(search.trim().toLowerCase())
+  )
+  const isSearchable = options.length > 8
+
+  useEffect(() => {
+    if (!open) return undefined
+
+    const closeOnOutsideClick = (event) => {
+      if (
+        !triggerRef.current?.contains(event.target) &&
+        !menuRef.current?.contains(event.target)
+      ) {
+        setOpen(false)
+      }
+    }
+
+    document.addEventListener("mousedown", closeOnOutsideClick)
+    document.addEventListener("touchstart", closeOnOutsideClick)
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick)
+      document.removeEventListener("touchstart", closeOnOutsideClick)
+    }
+  }, [open])
+
+  const chooseOption = (option) => {
+    onChange?.({ target: { value: option.value } })
+    setSearch("")
+    setOpen(false)
+  }
+
+  return (
+    <div className={`min-w-0 ${className}`}>
+      <button
+        ref={triggerRef}
+        type="button"
+        disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => !disabled && setOpen((current) => !current)}
+        className={`flex h-7 w-full items-center gap-1.5 rounded-md border px-2 text-left text-[11px] font-medium outline-none transition ${
+          open
+            ? "border-[#1B2A4A] bg-white ring-2 ring-[#1B2A4A]/10"
+            : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white"
+        } disabled:cursor-not-allowed disabled:opacity-60`}
+      >
+        <span className={`min-w-0 flex-1 truncate ${selectedOption ? "text-slate-700" : "text-slate-400"}`}>
+          {selectedOption?.label || placeholder}
+        </span>
+        <svg
+          viewBox="0 0 20 20"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          className={`h-3 w-3 shrink-0 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
+        >
+          <path d="m5 7.5 5 5 5-5" />
+        </svg>
+      </button>
+
+      {open && (
+        <DropdownPortal anchorEl={triggerRef.current} matchWidth>
+          <div
+            ref={menuRef}
+            role="listbox"
+            className="overflow-hidden rounded-lg border border-slate-200 bg-white p-1 shadow-xl ring-1 ring-slate-950/5"
+          >
+            {isSearchable && (
+              <div className="border-b border-slate-100 p-1 pb-2">
+                <input
+                  autoFocus
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search..."
+                  className="h-7 w-full rounded-md border border-slate-200 bg-slate-50 px-2 text-[11px] text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#1B2A4A] focus:bg-white"
+                />
+              </div>
+            )}
+            <div className="max-h-56 overflow-y-auto py-0.5">
+              {selectedOption && placeholder && (
+                <button
+                  type="button"
+                  onClick={() => chooseOption({ value: "" })}
+                  className="flex w-full items-center rounded-md px-2 py-1.5 text-left text-[11px] text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                >
+                  Clear selection
+                </button>
+              )}
+              {visibleOptions.length ? (
+                visibleOptions.map((option) => {
+                  const isSelected = String(option.value) === String(value)
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      role="option"
+                      aria-selected={isSelected}
+                      onClick={() => chooseOption(option)}
+                      className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[11px] transition ${
+                        isSelected
+                          ? "bg-blue-50 font-semibold text-[#1B2A4A]"
+                          : "text-slate-700 hover:bg-slate-100"
+                      }`}
+                    >
+                      <span className="min-w-0 flex-1 truncate">{option.label}</span>
+                      {isSelected && <span className="text-xs text-[#1B2A4A]">✓</span>}
+                    </button>
+                  )
+                })
+              ) : (
+                <p className="px-2 py-3 text-center text-[11px] text-slate-400">No matches found</p>
+              )}
+            </div>
+          </div>
+        </DropdownPortal>
+      )}
+    </div>
+  )
+}
+
+const BulkLeadWorkspace = ({
+  customers,
+  setCustomers,
+  expandedCustomerIds,
+  setExpandedCustomerIds,
+  productOptions = [],
+  customerOptions = [],
+  partners = [],
+  commonValues,
+  setCommonValues,
+  isMarketingStaff,
+  selectedBranch,
+  branches = [],
+  onBranchChange,
+  onCreate,
+  submitting,
+  isReadOnly
+}) => {
+  const updateCustomer = (customerId, field, value) => {
+    setCustomers((current) =>
+      current.map((customer) =>
+        customer.id === customerId ? { ...customer, [field]: value } : customer
+      )
+    )
+  }
+
+  const selectBulkCustomer = (customerId, selectedCustomerId) => {
+    const selectedCustomer = customerOptions.find(
+      (customer) => String(customer.value) === String(selectedCustomerId)
+    )
+    setCustomers((current) =>
+      current.map((customer) =>
+        customer.id === customerId
+          ? {
+              ...customer,
+              customerId: selectedCustomerId,
+              customerName: selectedCustomer?.label || "",
+              mobile: selectedCustomer?.mobile || "",
+              email: selectedCustomer?.email || ""
+            }
+          : customer
+      )
+    )
+  }
+
+  const updateProduct = (customerId, productId, field, value) => {
+    setCustomers((current) =>
+      current.map((customer) =>
+        customer.id === customerId
+          ? {
+              ...customer,
+              products: customer.products.map((product) =>
+                product.id === productId ? { ...product, [field]: value } : product
+              )
+            }
+          : customer
+      )
+    )
+  }
+
+  const selectBulkProduct = (customerId, productId, selectedProductId) => {
+    const selectedProduct = productOptions.find(
+      (option) => String(option.value) === String(selectedProductId)
+    )
+
+    setCustomers((current) => {
+      const isInitialProductSelection = !current.some((customer) =>
+        customer.products.some((product) => product.productId)
+      )
+      const productValues = {
+        productId: selectedProductId,
+        amount: selectedProduct ? String(selectedProduct.amount) : "",
+        tax: selectedProduct ? String(selectedProduct.tax) : ""
+      }
+
+      return current.map((customer) => {
+        if (isInitialProductSelection) {
+          return {
+            ...customer,
+            products: customer.products.map((product, index) =>
+              index === 0 ? { ...product, ...productValues } : product
+            )
+          }
+        }
+
+        return customer.id === customerId
+          ? {
+              ...customer,
+              products: customer.products.map((product) =>
+                product.id === productId ? { ...product, ...productValues } : product
+              )
+            }
+          : customer
+      })
+    })
+  }
+
+  const addCustomer = () => {
+    setCustomers((current) => {
+      if (current.length >= 100) return current
+
+      const initiallySelectedProduct = current
+        .flatMap((customer) => customer.products || [])
+        .find((product) => product.productId)
+      const nextCustomer = createBulkCustomerRow()
+
+      if (initiallySelectedProduct) {
+        nextCustomer.products = [
+          {
+            ...createBulkProductRow(),
+            productId: initiallySelectedProduct.productId,
+            amount: initiallySelectedProduct.amount,
+            tax: initiallySelectedProduct.tax
+          }
+        ]
+      }
+
+      return [...current, nextCustomer]
+    })
+  }
+
+  const removeCustomer = (customerId) => {
+    if (customers.length === 1) return
+    setCustomers((current) => current.filter((customer) => customer.id !== customerId))
+  }
+
+  const addProduct = (customerId) => {
+    setCustomers((current) =>
+      current.map((customer) =>
+        customer.id === customerId
+          ? { ...customer, products: [...customer.products, createBulkProductRow()] }
+          : customer
+      )
+    )
+  }
+
+  const removeProduct = (customerId, productId) => {
+    setCustomers((current) =>
+      current.map((customer) => {
+        if (customer.id !== customerId || customer.products.length === 1) return customer
+        return {
+          ...customer,
+          products: customer.products.filter((product) => product.id !== productId)
+        }
+      })
+    )
+  }
+
+  const bulkCustomerOptions = customerOptions.map((option) => ({
+    value: option.value,
+    label: `${option.label}${option.mobile ? ` - ${option.mobile}` : ""}`
+  }))
+  const duplicateProductSelections = useMemo(() => {
+    const selections = new Map()
+
+    customers.forEach((customer) => {
+      const customerProducts = customer.products || []
+      customerProducts.forEach((product) => {
+        if (!customer.customerId || !product.productId) return
+        const key = `${customer.customerId}:${product.productId}`
+        const current = selections.get(key) || {
+          customerName: customer.customerName || "Selected customer",
+          productName:
+            productOptions.find((option) => String(option.value) === String(product.productId))?.label ||
+            "selected product",
+          count: 0
+        }
+        selections.set(key, { ...current, count: current.count + 1 })
+      })
+    })
+
+    return [...selections.values()].filter((selection) => selection.count > 1)
+  }, [customers, productOptions])
+  const invalidMobileCustomers = customers.filter((customer) => {
+    const mobile = String(customer.mobile || "")
+      .replace(/^\+?91/, "")
+      .replace(/\D/g, "")
+    return (customer.customerId || customer.mobile) && mobile.length !== 10
+  })
+
+  return (
+    <section className="space-y-3 bg-slate-50 p-3 md:p-4">
+      <div className="flex justify-end">
+        <select
+          value={selectedBranch || ""}
+          disabled={isReadOnly}
+          onChange={(event) => onBranchChange?.(event.target.value)}
+          className="h-8 min-w-[150px] rounded-md border border-gray-300 bg-[#1B2A4A] px-3 text-xs font-semibold text-white outline-none transition hover:bg-[#243660] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {branches.map((branch) => (
+            <option key={branch._id} value={branch._id}>
+              {branch.branchName}
+            </option>
+          ))}
+        </select>
+      </div>
+      <datalist id="bulk-lead-product-options">
+        {productOptions.map((product) => (
+          <option key={product.value} value={product.label} />
+        ))}
+      </datalist>
+      <div className="space-y-2">
+        {customers.map((customer, customerIndex) => {
+          const mobile = String(customer.mobile || "")
+            .replace(/^\+?91/, "")
+            .replace(/\D/g, "")
+          const isMobileInvalid = Boolean(customer.customerId || customer.mobile) && mobile.length !== 10
+
+          return (
+          <article key={customer.id} className="grid grid-cols-[minmax(0,1.65fr)_minmax(90px,.8fr)_minmax(0,1.5fr)_minmax(0,.9fr)_minmax(60px,.55fr)_minmax(45px,.45fr)_minmax(60px,.55fr)_auto] items-center gap-1.5 rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
+            <div className="contents">
+              <div className="flex min-w-0 items-center gap-1.5">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#1B2A4A] text-[11px] font-bold text-white">{customerIndex + 1}</span>
+                <BulkLeadSelect className="flex-1" value={customer.customerId} options={bulkCustomerOptions} placeholder="Select customer" disabled={isReadOnly} onChange={(event) => selectBulkCustomer(customer.id, event.target.value)} />
+              </div>
+              <input
+                value={customer.mobile || ""}
+                disabled={isReadOnly}
+                inputMode="numeric"
+                aria-invalid={isMobileInvalid}
+                onChange={(event) => updateCustomer(customer.id, "mobile", event.target.value)}
+                placeholder="Mobile number"
+                className={`h-7 min-w-0 rounded-md border bg-slate-50 px-2 text-[11px] font-medium text-slate-600 outline-none placeholder:text-slate-400 focus:bg-white focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60 ${
+                  isMobileInvalid
+                    ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+                    : "border-slate-200 focus:border-[#1B2A4A] focus:ring-[#1B2A4A]/10"
+                }`}
+              />
+            </div>
+            <div className="contents">
+              {customer.products.map((product) => {
+                const amount = Number(product.amount || 0)
+                const tax = Number(product.tax || 0)
+                const netAmount = amount + (amount * tax) / 100
+                return (
+                  <div key={product.id} className="contents">
+                    <BulkLeadSelect value={product.productId} options={productOptions} placeholder="Product / Service" disabled={isReadOnly} onChange={(event) => selectBulkProduct(customer.id, product.id, event.target.value)} />
+                    <input value={product.license} disabled={isReadOnly} onChange={(event) => updateProduct(customer.id, product.id, "license", event.target.value)} placeholder="License No." className="h-7 min-w-0 rounded border border-slate-200 px-2 text-[11px] outline-none focus:border-[#1B2A4A]" />
+                    <input type="number" min="0" value={product.amount} disabled={isReadOnly} onWheel={(event) => event.currentTarget.blur()} onChange={(event) => updateProduct(customer.id, product.id, "amount", event.target.value)} placeholder="Amount" className="h-7 min-w-0 rounded border border-slate-200 px-2 text-right text-[11px] outline-none focus:border-[#1B2A4A] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
+                    <input type="number" min="0" value={product.tax} disabled={isReadOnly} onWheel={(event) => event.currentTarget.blur()} onChange={(event) => updateProduct(customer.id, product.id, "tax", event.target.value)} placeholder="Tax %" className="h-7 min-w-0 rounded border border-slate-200 px-2 text-right text-[11px] outline-none focus:border-[#1B2A4A] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
+                    <div className="flex h-7 min-w-0 items-center justify-end rounded border border-slate-100 bg-slate-50 px-2 text-[11px] font-semibold text-slate-700">₹{netAmount.toFixed(2)}</div>
+                    <div className="flex h-7 items-center gap-0.5">
+                      <button type="button" disabled={isReadOnly || customers.length === 1} onClick={() => removeCustomer(customer.id)} className="h-7 rounded px-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-40">Remove</button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </article>
+          )
+        })}
+        <div className="flex justify-end pt-0.5">
+          <button
+            type="button"
+            title="Add customer"
+            aria-label="Add customer"
+            disabled={isReadOnly || customers.length >= 100}
+            onClick={addCustomer}
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-[#1B2A4A] bg-white text-base font-bold text-[#1B2A4A] transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            +
+          </button>
+        </div>
+        {duplicateProductSelections.map((selection) => (
+          <p
+            key={`${selection.customerName}-${selection.productName}`}
+            className="rounded-md border border-red-100 bg-red-50 px-2 py-1.5 text-[11px] font-medium text-red-600"
+          >
+            {selection.customerName} is selected {selection.count} times with {selection.productName}. Change the customer or product in one row.
+          </p>
+        ))}
+        {invalidMobileCustomers.map((customer) => (
+          <p
+            key={`invalid-mobile-${customer.id}`}
+            className="rounded-md border border-red-100 bg-red-50 px-2 py-1.5 text-[11px] font-medium text-red-600"
+          >
+            {customer.customerName || "Selected customer"} must have a valid 10-digit mobile number.
+          </p>
+        ))}
+      </div>
+      <div className={`grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm ${isMarketingStaff ? "md:grid-cols-[minmax(0,1fr)_minmax(340px,.62fr)_auto]" : "md:grid-cols-[minmax(0,1fr)_auto]"} md:items-end`}>
+        <div className="min-w-0">
+          <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-slate-500">Common Remark</label>
+          <textarea value={commonValues.remark} disabled={isReadOnly} onChange={(event) => setCommonValues((current) => ({ ...current, remark: event.target.value }))} rows={2} placeholder="Remark for all selected leads..." className="h-[60px] w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#1B2A4A] focus:bg-white focus:ring-2 focus:ring-[#1B2A4A]/10" />
+        </div>
+        {isMarketingStaff && <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2">
+          <div className="min-w-0">
+            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-slate-500">Allocation</label>
+            <BulkLeadSelect
+              value={commonValues.selfAllocation}
+              options={[
+                { value: "false", label: "Allocate To Other" },
+                { value: "true", label: "Self Allocate" }
+              ]}
+              disabled={isReadOnly}
+              onChange={(event) => setCommonValues((current) => ({ ...current, selfAllocation: event.target.value }))}
+            />
+          </div>
+          {commonValues.selfAllocation === "true" && (
+            <div className="min-w-0">
+              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-slate-500">Due Date</label>
+              <input type="date" value={commonValues.dueDate} disabled={isReadOnly} onChange={(event) => setCommonValues((current) => ({ ...current, dueDate: event.target.value }))} className="h-7 w-full rounded-md border border-slate-200 bg-slate-50 px-2 text-xs text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:bg-white focus:ring-2 focus:ring-[#1B2A4A]/10" />
+            </div>
+          )}
+        </div>}
+        <button type="button" disabled={isReadOnly || submitting} onClick={() => onCreate({ customers, commonValues })} className="h-8 whitespace-nowrap rounded-md bg-[#1B2A4A] px-4 text-xs font-bold text-white shadow-sm transition hover:bg-[#243660] focus:outline-none focus:ring-2 focus:ring-[#1B2A4A]/20 disabled:cursor-not-allowed disabled:opacity-50">
+          {submitting ? "Creating..." : `Create ${customers.length} Lead${customers.length === 1 ? "" : "s"}`}
+        </button>
+      </div>
+      <div className="hidden">
+        <table className="min-w-[920px] w-full table-fixed text-xs">
+          <thead className="bg-[#1B2A4A] text-white">
+            <tr>
+              <th className="w-10 px-1.5 py-2 text-center">#</th>
+              <th className="w-[22%] px-2 py-2 text-left">Customer</th>
+              <th className="w-[10%] px-2 py-2 text-left">Source</th>
+              <th className="w-[13%] px-2 py-2 text-left">Associate with</th>
+              <th className="w-[18%] px-2 py-2 text-left">Product / Service</th>
+              <th className="w-[11%] px-2 py-2 text-left">License No.</th>
+              <th className="w-[8%] px-2 py-2 text-right">Amount</th>
+              <th className="w-[6%] px-2 py-2 text-right">Tax %</th>
+              <th className="w-[8%] px-2 py-2 text-right">Net Amt</th>
+              <th className="w-[6%] px-2 py-2 text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {customers.flatMap((customer, customerIndex) =>
+              customer.products.map((product, productIndex) => {
+                const amount = Number(product.amount || 0)
+                const tax = Number(product.tax || 0)
+                const netAmount = amount + (amount * tax) / 100
+                const isFirstProduct = productIndex === 0
+                return (
+                  <tr key={product.id} className="border-t border-slate-200 align-top">
+                    {isFirstProduct && (
+                      <td rowSpan={customer.products.length} className="px-1.5 py-2 text-center font-bold text-slate-500">
+                        {customerIndex + 1}
+                      </td>
+                    )}
+                    {isFirstProduct && (
+                      <td rowSpan={customer.products.length} className="p-1.5">
+                        <select value={customer.customerId} disabled={isReadOnly} onChange={(event) => selectBulkCustomer(customer.id, event.target.value)} className="h-7 w-full rounded border border-slate-200 bg-white px-1.5 text-[11px] outline-none focus:border-[#1B2A4A]">
+                          <option value="">Select customer</option>
+                          {customerOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}{option.mobile ? ` - ${option.mobile}` : ""}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                    )}
+                    {isFirstProduct && (
+                      <td rowSpan={customer.products.length} className="p-1.5">
+                        <select value={customer.source} disabled={isReadOnly} onChange={(event) => updateCustomer(customer.id, "source", event.target.value)} className="h-7 w-full rounded border border-slate-200 bg-white px-1.5 text-[11px] outline-none focus:border-[#1B2A4A]">
+                          <option value="">Select</option><option value="whatsapp">WhatsApp</option><option value="instagram">Instagram</option><option value="facebook">Facebook</option><option value="Direct">Direct</option><option value="justDial">Just Dial</option>
+                        </select>
+                      </td>
+                    )}
+                    {isFirstProduct && (
+                      <td rowSpan={customer.products.length} className="p-1.5">
+                        <select value={customer.partner} disabled={isReadOnly} onChange={(event) => updateCustomer(customer.id, "partner", event.target.value)} className="h-7 w-full rounded border border-slate-200 bg-white px-1.5 text-[11px] outline-none focus:border-[#1B2A4A]">
+                          <option value="">Select</option>{partners.map((partner) => <option key={partner._id} value={partner._id}>{partner.partner}</option>)}
+                        </select>
+                      </td>
+                    )}
+                    <td className="p-1.5"><input list="bulk-lead-product-options" value={product.product} disabled={isReadOnly} onChange={(event) => updateProduct(customer.id, product.id, "product", event.target.value)} placeholder="Search / Select Product" className="h-7 w-full rounded border border-slate-200 px-2 text-[11px] outline-none focus:border-[#1B2A4A]" /></td>
+                    <td className="p-1.5"><input value={product.license} disabled={isReadOnly} onChange={(event) => updateProduct(customer.id, product.id, "license", event.target.value)} placeholder="License number" className="h-7 w-full rounded border border-slate-200 px-2 text-[11px] outline-none focus:border-[#1B2A4A]" /></td>
+                    <td className="p-1.5"><input type="number" min="0" value={product.amount} disabled={isReadOnly} onChange={(event) => updateProduct(customer.id, product.id, "amount", event.target.value)} placeholder="0.00" className="h-7 w-full rounded border border-slate-200 px-1.5 text-right text-[11px] outline-none focus:border-[#1B2A4A]" /></td>
+                    <td className="p-1.5"><input type="number" min="0" value={product.tax} disabled={isReadOnly} onChange={(event) => updateProduct(customer.id, product.id, "tax", event.target.value)} placeholder="Tax" className="h-7 w-full rounded border border-slate-200 px-1.5 text-right text-[11px] outline-none focus:border-[#1B2A4A]" /></td>
+                    <td className="px-1.5 py-2 text-right font-semibold text-slate-700">{netAmount.toFixed(2)}</td>
+                    <td className="p-1 text-center">
+                      <div className="flex justify-center gap-0.5">
+                        {isFirstProduct && <button type="button" disabled={isReadOnly} onClick={() => addProduct(customer.id)} title="Add product" className="rounded px-1.5 py-1 text-[#1B2A4A] hover:bg-blue-50 disabled:opacity-40">+</button>}
+                        <button type="button" disabled={isReadOnly || customer.products.length === 1} onClick={() => removeProduct(customer.id, product.id)} title="Remove product" className="rounded px-1.5 py-1 text-red-600 hover:bg-red-50 disabled:opacity-40">⌫</button>
+                        {isFirstProduct && <button type="button" disabled={isReadOnly || customers.length === 1} onClick={() => removeCustomer(customer.id)} title="Remove customer" className="rounded px-1.5 py-1 text-red-600 hover:bg-red-50 disabled:opacity-40">×</button>}
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="hidden">
+        {customers.map((customer, customerIndex) => {
+          const expanded = expandedCustomerIds[customer.id] !== false
+          const productCount = customer.products.filter((product) => product.product).length
+          return (
+            <article key={customer.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+              <div className="flex items-center gap-2 bg-slate-50 px-3 py-2">
+                <button
+                  type="button"
+                  onClick={() => setExpandedCustomerIds((current) => ({ ...current, [customer.id]: !expanded }))}
+                  className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                >
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#1B2A4A] text-[11px] font-bold text-white">
+                    {customerIndex + 1}
+                  </span>
+                  <span className="truncate text-xs font-bold text-slate-700">
+                    {customer.customerName || "New customer"}
+                  </span>
+                  <span className="hidden text-[11px] text-slate-400 sm:inline">
+                    {customer.mobile || "No mobile"} · {productCount} product{productCount === 1 ? "" : "s"}
+                  </span>
+                  <span className="ml-auto text-slate-500">{expanded ? "⌃" : "⌄"}</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={isReadOnly || customers.length === 1}
+                  onClick={() => removeCustomer(customer.id)}
+                  className="rounded px-2 py-1 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Remove
+                </button>
+              </div>
+
+              {expanded && (
+                <div className="space-y-3 p-3">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-5">
+                    <input
+                      value={customer.customerName}
+                      disabled={isReadOnly}
+                      onChange={(event) => updateCustomer(customer.id, "customerName", event.target.value)}
+                      placeholder="Customer name *"
+                      className="h-9 rounded border border-slate-300 bg-white px-2.5 text-xs outline-none focus:border-[#1B2A4A] xl:col-span-1"
+                    />
+                    <input
+                      value={customer.mobile}
+                      disabled={isReadOnly}
+                      onChange={(event) => updateCustomer(customer.id, "mobile", event.target.value)}
+                      placeholder="Mobile *"
+                      inputMode="numeric"
+                      className="h-9 rounded border border-slate-300 bg-white px-2.5 text-xs outline-none focus:border-[#1B2A4A]"
+                    />
+                    <input
+                      value={customer.email}
+                      disabled={isReadOnly}
+                      onChange={(event) => updateCustomer(customer.id, "email", event.target.value)}
+                      placeholder="Email"
+                      className="h-9 rounded border border-slate-300 bg-white px-2.5 text-xs outline-none focus:border-[#1B2A4A]"
+                    />
+                    <select
+                      value={customer.source}
+                      disabled={isReadOnly}
+                      onChange={(event) => updateCustomer(customer.id, "source", event.target.value)}
+                      className="h-9 rounded border border-slate-300 bg-white px-2.5 text-xs outline-none focus:border-[#1B2A4A]"
+                    >
+                      <option value="">Source *</option>
+                      <option value="whatsapp">WhatsApp</option>
+                      <option value="instagram">Instagram</option>
+                      <option value="facebook">Facebook</option>
+                      <option value="Direct">Direct</option>
+                      <option value="justDial">Just Dial</option>
+                    </select>
+                    <select
+                      value={customer.partner}
+                      disabled={isReadOnly}
+                      onChange={(event) => updateCustomer(customer.id, "partner", event.target.value)}
+                      className="h-9 rounded border border-slate-300 bg-white px-2.5 text-xs outline-none focus:border-[#1B2A4A]"
+                    >
+                      <option value="">Associate with</option>
+                      {partners.map((partner) => (
+                        <option key={partner._id} value={partner._id}>{partner.partner}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="overflow-x-auto rounded-lg border border-slate-200">
+                    <table className="min-w-[720px] w-full table-fixed text-xs">
+                      <thead className="bg-[#1B2A4A] text-white">
+                        <tr>
+                          <th className="w-[30%] px-2 py-2 text-left">Product / Service</th>
+                          <th className="w-[20%] px-2 py-2 text-left">License No.</th>
+                          <th className="w-[16%] px-2 py-2 text-right">Amount</th>
+                          <th className="w-[12%] px-2 py-2 text-right">Tax %</th>
+                          <th className="w-[16%] px-2 py-2 text-right">Net Amt</th>
+                          <th className="w-[6%] px-2 py-2 text-center">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {customer.products.map((product) => {
+                          const amount = Number(product.amount || 0)
+                          const tax = Number(product.tax || 0)
+                          const netAmount = amount + (amount * tax) / 100
+                          return (
+                            <tr key={product.id} className="border-t border-slate-200">
+                              <td className="p-1.5"><input list="bulk-lead-product-options" value={product.product} disabled={isReadOnly} onChange={(event) => updateProduct(customer.id, product.id, "product", event.target.value)} placeholder="Search / Select Product" className="h-8 w-full rounded border border-slate-200 px-2 text-xs outline-none focus:border-[#1B2A4A]" /></td>
+                              <td className="p-1.5"><input value={product.license} disabled={isReadOnly} onChange={(event) => updateProduct(customer.id, product.id, "license", event.target.value)} placeholder="License number" className="h-8 w-full rounded border border-slate-200 px-2 text-xs outline-none focus:border-[#1B2A4A]" /></td>
+                              <td className="p-1.5"><input type="number" min="0" value={product.amount} disabled={isReadOnly} onChange={(event) => updateProduct(customer.id, product.id, "amount", event.target.value)} placeholder="0.00" className="h-8 w-full rounded border border-slate-200 px-2 text-right text-xs outline-none focus:border-[#1B2A4A]" /></td>
+                              <td className="p-1.5"><input type="number" min="0" value={product.tax} disabled={isReadOnly} onChange={(event) => updateProduct(customer.id, product.id, "tax", event.target.value)} placeholder="Tax" className="h-8 w-full rounded border border-slate-200 px-2 text-right text-xs outline-none focus:border-[#1B2A4A]" /></td>
+                              <td className="p-1.5 text-right font-semibold text-slate-700">{netAmount.toFixed(2)}</td>
+                              <td className="p-1.5 text-center"><button type="button" disabled={isReadOnly || customer.products.length === 1} onClick={() => removeProduct(customer.id, product.id)} className="rounded px-2 py-1 text-red-600 hover:bg-red-50 disabled:opacity-40">⌫</button></td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <button type="button" disabled={isReadOnly} onClick={() => addProduct(customer.id)} className="rounded-md border border-[#1B2A4A] px-2.5 py-1.5 text-xs font-semibold text-[#1B2A4A] transition hover:bg-blue-50 disabled:opacity-50">+ Add product</button>
+                    <span className="text-xs font-bold text-slate-700">Customer total: ₹{customer.products.reduce((total, product) => total + Number(product.amount || 0) * (1 + Number(product.tax || 0) / 100), 0).toFixed(2)}</span>
+                  </div>
+                </div>
+              )}
+            </article>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
 // ─────────────────────────────────────────────────────────────────────────────
 // LeadMaster
 // ─────────────────────────────────────────────────────────────────────────────
@@ -733,7 +1402,6 @@ const LeadMaster = ({
     reset: resetModal,
     watch
   } = useForm()
-  const dispatch = useDispatch()
   const loggeduserBranch = useSelector(
     (branch) => branch.companyBranch.loggeduserbranches
   )
@@ -801,6 +1469,18 @@ const LeadMaster = ({
     useState(isReadOnly)
   const [selectedState, setSelectedState] = useState(null)
   const [selectedleadlist, setSelectedLeadList] = useState([])
+  const [leadCreationMode, setLeadCreationMode] = useState("single")
+  const [bulkLeadCustomers, setBulkLeadCustomers] = useState(() => [
+    createBulkCustomerRow(),
+    createBulkCustomerRow(),
+    createBulkCustomerRow()
+  ])
+  const [expandedBulkCustomerIds, setExpandedBulkCustomerIds] = useState({})
+  const [bulkCommonValues, setBulkCommonValues] = useState({
+    remark: "",
+    selfAllocation: "false",
+    dueDate: ""
+  })
   const hasPrimaryProductInLead = selectedleadlist.some(
     (lead) =>
       String(lead?.productorservicetype || "").toLowerCase() ===
@@ -819,7 +1499,6 @@ const LeadMaster = ({
     []
   )
   const [customerTableData, setcustomerTableData] = useState([])
-  console.log(customerTableData)
   const [validateError, setValidateError] = useState({})
   const [loggeduser, setloggedUser] = useState(null)
   const [allstaff, setallStaffs] = useState([])
@@ -881,6 +1560,29 @@ const LeadMaster = ({
   console.log(productData)
   const filter = productData?.filter(
     (item) => item.productName === "MARG ERP NANO"
+  )
+  const bulkProductOptions = useMemo(
+    () =>
+      (leadList || [])
+        .map((item) => {
+          const branchId = Array.isArray(selectedBranch)
+            ? selectedBranch[0]
+            : selectedBranch
+          const branchSelection = item?.selected?.find(
+            (selection) =>
+              String(selection?.branch_id?._id || selection?.branch_id) ===
+              String(branchId)
+          )
+
+          return {
+            value: item?._id,
+            label: item?.productName || item?.serviceName,
+            amount: Number(item?.productPrice || 0),
+            tax: Number(branchSelection?.hsn_id?.onValue?.igstRate || 0)
+          }
+        })
+        .filter((item) => item.value && item.label),
+    [leadList, selectedBranch]
   )
   console.log(filter)
   const { data: tasks } = UseFetch("lead/getallTask")
@@ -995,9 +1697,9 @@ const LeadMaster = ({
   } = UseFetch(
     loggeduser &&
       selectedBranch &&
-      `/customer/getallCustomer?branchSelected=${selectedBranch}`
+      `/customer/getallCustomer?branchSelected=${selectedBranch}`,
+    { cacheTime: 5 * 60 * 1000 }
   )
-  console.log(customerData)
   // Track timers for each row index
   const debounceTimersRef = useRef({})
   console.log(selectedleadlist)
@@ -1012,6 +1714,12 @@ const LeadMaster = ({
 
   const canSelfAllocate =
     loggeduser?.department?.code === "DEPARTMENT3" || console.log(loggeduser)
+  const isMarketingStaff =
+    String(loggeduser?.role || "").toLowerCase() === "staff" &&
+    (loggeduser?.department?.code === "DEPARTMENT3" ||
+      String(loggeduser?.department?.department || "")
+        .toLowerCase()
+        .includes("marketing"))
   useEffect(() => {
     console.log("jjjj")
     setSelectedBranch(selectedcompanyBranch)
@@ -1587,7 +2295,6 @@ const LeadMaster = ({
 
     setcustomerTableData(unique)
   }, [originalCustomerTableData, temporaryCustomerTableData])
-  console.log(customerData)
   useEffect(() => {
     if (customerData && customerData.length && selectedBranch) {
       const options = customerData.map((item) => {
@@ -2386,7 +3093,6 @@ const LeadMaster = ({
     setValueModal("city", option?.city)
     setValueModal("country", option?.country)
 
-    console.log(allcustomer)
     const matchedCustomer = allcustomer?.find((item) => {
       return item?._id === option?.value
     })
@@ -3107,6 +3813,123 @@ const LeadMaster = ({
         taxAmount: roundAmount(netAmount - productPrice)
       }
     })
+  }
+
+  const handleBulkBranchChange = (branchId) => {
+    if (!branchId || String(branchId) === String(selectedBranch)) return
+
+    setSelectedBranch(branchId)
+    setValueMain("leadBranch", branchId)
+    setDuplicateWarning("")
+    setCustomerOptions([])
+    setLeadList([])
+    setBulkLeadCustomers([
+      createBulkCustomerRow(),
+      createBulkCustomerRow(),
+      createBulkCustomerRow()
+    ])
+    setBulkCommonValues({ remark: "", selfAllocation: "false", dueDate: "" })
+  }
+
+  const downloadBulkSkippedLeadReport = (skippedRows = []) => {
+    if (!skippedRows.length) return
+
+    const reportRows = skippedRows.map((row) => ({
+      "Bulk Row": row.row || "",
+      Customer: row.customerName || "",
+      "Mobile Number": row.mobile || "",
+      "Product / Service": row.productName || "",
+      Reason: row.reason || "Lead was not created"
+    }))
+    const worksheet = XLSX.utils.json_to_sheet(reportRows)
+    worksheet["!cols"] = [
+      { wch: 10 },
+      { wch: 28 },
+      { wch: 18 },
+      { wch: 32 },
+      { wch: 58 }
+    ]
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Not Created")
+    XLSX.writeFile(workbook, "Bulk_Leads_Not_Created.xlsx")
+  }
+
+  const handleBulkLeadCreate = async ({ customers, commonValues }) => {
+    if (!isMarketingStaff) {
+      toast.error("Bulk lead creation is available only to Marketing staff")
+      return
+    }
+
+    const branchId = Array.isArray(selectedBranch)
+      ? selectedBranch[0]
+      : selectedBranch
+    const leads = customers
+      .filter((customer) =>
+        customer.customerId ||
+        customer.mobile ||
+        (customer.products || []).some((product) => product.productId)
+      )
+      .map((customer) => ({
+        customerId: customer.customerId,
+        mobile: String(customer.mobile || "").replace(/^\+?91/, "").replace(/\D/g, ""),
+        source: "Direct",
+        products: (customer.products || []).map((product) => ({
+          productId: product.productId,
+          productName: bulkProductOptions.find(
+            (option) => String(option.value) === String(product.productId)
+          )?.label || "",
+          license: product.license,
+          amount: product.amount,
+          tax: product.tax
+        }))
+      }))
+
+    if (!branchId || !leads.length) {
+      toast.warning("Select at least one customer and product for bulk lead creation.")
+      return
+    }
+
+    const selfAllocation = isMarketingStaff && commonValues.selfAllocation === "true"
+    if (selfAllocation && !commonValues.dueDate) {
+      toast.warning("Select a due date for self allocation.")
+      return
+    }
+
+    setsubmitLoading(true)
+    try {
+      const response = await api.post("/lead/bulkLeadRegister", {
+        leadBranch: branchId,
+        leads,
+        remark: commonValues.remark,
+        selfAllocation,
+        dueDate: selfAllocation ? commonValues.dueDate : null
+      })
+      toast.success(response.data?.message || "Bulk leads created successfully")
+      if (response.data?.skipped?.length) {
+        toast.warning(`${response.data.skipped.length} row(s) were skipped.`, {
+          autoClose: 5000
+        })
+        downloadBulkSkippedLeadReport(response.data.skipped)
+      }
+      setBulkLeadCustomers([
+        createBulkCustomerRow(),
+        createBulkCustomerRow(),
+        createBulkCustomerRow()
+      ])
+      setBulkCommonValues({ remark: "", selfAllocation: "false", dueDate: "" })
+    } catch (error) {
+      const skippedRows = error.response?.data?.skipped || []
+      if (skippedRows.length) {
+        downloadBulkSkippedLeadReport(skippedRows)
+        toast.warning(`No lead was created. Downloaded a report for ${skippedRows.length} skipped row(s).`, {
+          autoClose: 5000
+        })
+      } else {
+        toast.error(error.response?.data?.message || "Unable to create bulk leads")
+      }
+    } finally {
+      setsubmitLoading(false)
+    }
   }
 
   const onSubmit = async (data) => {
@@ -3948,7 +4771,11 @@ const LeadMaster = ({
 
       <div className="flex-1 min-h-0 overflow-y-auto p-3">
         <div
-          className="mx-auto w-full max-w-4xl rounded bg-white shadow-xl"
+          className={`mx-auto w-full rounded bg-white shadow-xl ${
+            process === "Registration" && !Data && isMarketingStaff && leadCreationMode === "bulk"
+              ? "max-w-[1500px]"
+              : "max-w-4xl"
+          }`}
           style={{
             opacity:
               productLoading || usersLoading || customerLoading ? 0.2 : 1,
@@ -3981,6 +4808,32 @@ const LeadMaster = ({
                 <div className="text-sm font-bold px-4 py-1 rounded border-2 text-red-600 border-red-500 bg-white">
                   {process === "Registration" ? "New Lead" : "Edit Lead"}
                 </div>
+                {process === "Registration" && !Data && isMarketingStaff && (
+                  <div className="inline-flex rounded-lg border border-slate-200 bg-slate-100 p-0.5 text-xs font-semibold">
+                    <button
+                      type="button"
+                      onClick={() => setLeadCreationMode("single")}
+                      className={`rounded-md px-3 py-1.5 transition ${
+                        leadCreationMode === "single"
+                          ? "bg-[#1B2A4A] text-white shadow-sm"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      Single lead
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLeadCreationMode("bulk")}
+                      className={`rounded-md px-3 py-1.5 transition ${
+                        leadCreationMode === "bulk"
+                          ? "bg-[#1B2A4A] text-white shadow-sm"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      Bulk leads
+                    </button>
+                  </div>
+                )}
                 {/* <button
 type="button"
 onClick={handledownloadexcel}
@@ -3989,7 +4842,34 @@ convertexcel
 </button> */}
               </div>
 
-              <div className="p-3 md:p-4 space-y-3">
+              {process === "Registration" && !Data && isMarketingStaff && leadCreationMode === "bulk" && (
+                <BulkLeadWorkspace
+                  customers={bulkLeadCustomers}
+                  setCustomers={setBulkLeadCustomers}
+                  expandedCustomerIds={expandedBulkCustomerIds}
+                  setExpandedCustomerIds={setExpandedBulkCustomerIds}
+                  productOptions={bulkProductOptions}
+                  customerOptions={customerOptions}
+                  partners={partner}
+                  commonValues={bulkCommonValues}
+                  setCommonValues={setBulkCommonValues}
+                  isMarketingStaff={isMarketingStaff}
+                  selectedBranch={selectedBranch}
+                  branches={companybranches}
+                  onBranchChange={handleBulkBranchChange}
+                  onCreate={handleBulkLeadCreate}
+                  submitting={submitLoading}
+                  isReadOnly={isReadOnly}
+                />
+              )}
+
+              <div
+                className={
+                  process === "Registration" && !Data && isMarketingStaff && leadCreationMode === "bulk"
+                    ? "hidden"
+                    : "p-3 md:p-4 space-y-3"
+                }
+              >
                 <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1.8fr)_auto] gap-3">
                   <div className="flex flex-col">
                     <label className="block text-xs font-semibold text-gray-600 mb-1">

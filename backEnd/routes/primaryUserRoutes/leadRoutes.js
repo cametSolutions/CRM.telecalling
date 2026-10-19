@@ -2,6 +2,7 @@ import express from "express";
 import authMiddleware from "../../middleware/authMiddleware.js";
 import {
   LeadRegister,
+  BulkLeadRegister,
   BulkCreateAdditionalServiceLeads,
   GetAllservices,
   GetallLead,
@@ -34,6 +35,7 @@ import {
   GetcollectionLeads,
   UpdateCollection,
   UpdatereceivedAmount,
+  RejectCollectionPayment,
   UpdatepaymentVerification,
   fixLeadVerifiedField,
   ChecktodeleteTask,
@@ -113,9 +115,11 @@ router.post("/leadReallocation", authMiddleware, updateReallocation);
 router.post("/leadAllocationtask", authMiddleware, UpdateOrleadallocationTask);
 router.post("/setdemolead", authMiddleware, SetDemoallocation);
 router.post("/leadRegister", authMiddleware, LeadRegister);
+router.post("/bulkLeadRegister", authMiddleware, BulkLeadRegister);
 router.post("/bulkAdditionalServiceLeads", authMiddleware, BulkCreateAdditionalServiceLeads);
 router.post("/collectionUpdate", authMiddleware, UpdateCollection);
 router.post("/updatereceivedAmount", authMiddleware, UpdatereceivedAmount);
+router.post("/rejectCollectionPayment", authMiddleware, RejectCollectionPayment);
 router.post("/taskRegistration", authMiddleware, TaskRegistration);
 router.post("/taskSubmission", authMiddleware, UpdateLeadTask);
 router.post("/taskRejection",authMiddleware,RejectTask)
