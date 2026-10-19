@@ -1963,10 +1963,6 @@ export const BulkLeadRegister = async (req, res) => {
       leads.flatMap((lead) => (lead?.products || []).map((product) => String(product?.productId || "")))
         .filter(isValidObjectId)
     )]
-    if (!customerIds.length || !productIds.length) {
-      return res.status(400).json({ message: "Every bulk row must contain a customer and product" })
-    }
-
     const [customers, products, leadTask, allocationTask, followupTask] = await Promise.all([
       Customer.find({ _id: { $in: customerIds } }).lean(),
       Product.find({ _id: { $in: productIds }, status: { $ne: "Inactive" } }).lean(),
@@ -1982,13 +1978,59 @@ export const BulkLeadRegister = async (req, res) => {
     const productById = new Map(products.map((product) => [String(product._id), product]))
     const invalidRows = []
     const normalizedLeads = []
+    const getProductNames = (rowProducts = []) =>
+      rowProducts
+        .map((rowProduct) => {
+          const product = productById.get(String(rowProduct?.productId))
+          return product?.shortName || product?.productName || rowProduct?.productName || ""
+        })
+        .filter(Boolean)
+        .join(", ")
+    const createSkippedRow = ({ row, customer, mobile, rowProducts, productName, reason }) => ({
+      row,
+      customerName: customer?.customerName || "Unknown customer",
+      mobile: mobile || "",
+      productName: productName || getProductNames(rowProducts),
+      reason
+    })
 
     for (let index = 0; index < leads.length; index += 1) {
       const row = leads[index] || {}
       const customer = customerById.get(String(row.customerId))
       const rowProducts = Array.isArray(row.products) ? row.products : []
-      if (!customer || !row.source || !rowProducts.length) {
-        invalidRows.push({ row: index + 1, reason: "Customer, source, and product are required" })
+      const rowMobile = String(row.mobile || customer?.mobile || "")
+        .replace(/^\+?91/, "")
+        .replace(/\D/g, "")
+      if (!customer || !row.source || rowMobile.length !== 10 || !rowProducts.length) {
+        invalidRows.push(createSkippedRow({
+          row: index + 1,
+          customer,
+          mobile: rowMobile,
+          rowProducts,
+          reason: "Customer, valid mobile number, source, and product are required"
+        }))
+        continue
+      }
+
+      // Use the same active-customer name and mobile duplicate check as normal
+      // lead entry, while allowing the currently selected customer itself.
+      const duplicateCustomer = await Customer.findOne({
+        mobile: rowMobile,
+        customerName: {
+          $regex: `^${String(customer.customerName || "").trim()}$`,
+          $options: "i"
+        },
+        isActive: { $ne: "Deactive" },
+        _id: { $ne: customer._id }
+      }).select("_id").lean()
+      if (duplicateCustomer) {
+        invalidRows.push(createSkippedRow({
+          row: index + 1,
+          customer,
+          mobile: rowMobile,
+          rowProducts,
+          reason: "An active customer already exists with the same name and mobile number"
+        }))
         continue
       }
 
@@ -2031,11 +2073,19 @@ export const BulkLeadRegister = async (req, res) => {
       }
 
       if (invalidProduct) {
-        invalidRows.push({ row: index + 1, reason: "Select active products available in the chosen branch and enter valid amounts" })
+        invalidRows.push(createSkippedRow({
+          row: index + 1,
+          customer,
+          mobile: rowMobile,
+          rowProducts,
+          reason: "Select active products available in the chosen branch and enter valid amounts"
+        }))
         continue
       }
       normalizedLeads.push({
+        row: index + 1,
         customer,
+        mobile: rowMobile,
         partner: isValidObjectId(row.partner) ? row.partner : null,
         source: String(row.source).trim(),
         taxableAmount: Number(taxableAmount.toFixed(2)),
@@ -2051,7 +2101,10 @@ export const BulkLeadRegister = async (req, res) => {
 
     const existingLeads = await LeadMaster.find({
       customerName: { $in: normalizedLeads.map((lead) => lead.customer._id) },
-      "leadFor.productorServiceId": { $in: productIds }
+      "leadFor.productorServiceId": { $in: productIds },
+      // A confirmed lead may be registered again for the same customer/product.
+      // Only an unconfirmed lead blocks the bulk creation row.
+      leadConfirmed: { $ne: true }
     }).select("customerName leadFor.productorServiceId").lean()
     const existingPairs = new Set(
       existingLeads.flatMap((lead) =>
@@ -2059,10 +2112,25 @@ export const BulkLeadRegister = async (req, res) => {
       )
     )
     const seenPairs = new Set()
-    const eligibleLeads = normalizedLeads.filter((lead, index) => {
+    const eligibleLeads = normalizedLeads.filter((lead) => {
       const pairs = lead.leadFor.map((item) => `${lead.customer._id}:${item.productorServiceId}`)
-      if (pairs.some((pair) => existingPairs.has(pair) || seenPairs.has(pair))) {
-        invalidRows.push({ row: index + 1, reason: "A lead already exists for this customer and product" })
+      const duplicateItems = lead.leadFor
+        .filter((item) => {
+          const pair = `${lead.customer._id}:${item.productorServiceId}`
+          return existingPairs.has(pair) || seenPairs.has(pair)
+        })
+      const duplicateProducts = duplicateItems
+        .map((item) => item.productorServiceName)
+        .filter(Boolean)
+        .join(", ")
+      if (duplicateItems.length) {
+        invalidRows.push(createSkippedRow({
+          row: lead.row,
+          customer: lead.customer,
+          mobile: lead.mobile,
+          productName: duplicateProducts || duplicateItems.map((item) => String(item.productorServiceId)).join(", "),
+          reason: "A lead already exists for this customer and product"
+        }))
         return false
       }
       pairs.forEach((pair) => seenPairs.add(pair))
@@ -2110,7 +2178,7 @@ export const BulkLeadRegister = async (req, res) => {
             leadId,
             leadDate,
             customerName: lead.customer._id,
-            mobile: lead.customer.mobile || "",
+            mobile: lead.mobile,
             phone: lead.customer.landline || "",
             email: lead.customer.email || "",
             location: lead.customer.city || lead.customer.address1 || "",
@@ -16017,7 +16085,7 @@ export const UpdateResearchAndDevelopmentTask = async (req, res) => {
     const codingAndQcTaskId = "689c23493e94902039b97743";
     const validStatuses = ["Pending", "In Progress", "Hold", "Completed"];
 
-    if (!isValidObjectId(leadDocId) || !["start", "end", "status"].includes(action)) {
+    if (!isValidObjectId(leadDocId) || !["start", "end", "status", "reject"].includes(action)) {
       return res.status(400).json({ success: false, message: "Invalid task update" });
     }
 
@@ -16032,6 +16100,30 @@ export const UpdateResearchAndDevelopmentTask = async (req, res) => {
     const lead = await LeadMaster.findById(leadDocId);
     if (!lead) {
       return res.status(404).json({ success: false, message: "Lead was not found" });
+    }
+
+    if (action === "reject") {
+      if (String(lead.allocationType) !== codingAndQcTaskId) {
+        return res.status(400).json({ success: false, message: "Coding & QC is not the active allocation" });
+      }
+
+      const lastActivityLog = lead.activityLog?.at(-1);
+      if (String(lastActivityLog?.taskId) === codingAndQcTaskId) {
+        lead.activityLog.pop();
+      }
+
+      const restoredActivityLog = lead.activityLog?.at(-1);
+      lead.allocationType = restoredActivityLog?.taskId || null;
+      await lead.save();
+
+      return res.status(200).json({
+        success: true,
+        message: "Coding & QC task rejected and previous allocation restored",
+        data: {
+          allocationType: lead.allocationType,
+          rejected: true
+        }
+      });
     }
 
     const allocationLog = [...lead.activityLog]
