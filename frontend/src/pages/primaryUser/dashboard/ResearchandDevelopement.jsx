@@ -618,7 +618,7 @@ export default function ResearchandDevelopement() {
                 ) : filteredWorkItems.length === 0 ? (
                   <tr><td colSpan="11" className="px-5 py-10 text-center text-sm text-slate-500">No {activeStatusFilter.toLowerCase()} leads found.</td></tr>
                 ) : (
-                  filteredWorkItems.map((item) => <WorkRow key={item.leadDocId} item={item} showAllocationColumns={showAllocationColumns} canOperate={String(item.assignedDeveloperId) === String(loggedUser?._id)} isActive={Boolean(item.taskStartedAt && !item.taskEndedAt)} onAllocate={openAllocation} onUpdate={openUpdate} onStart={startTask} onEnd={openEndTask} onReject={rejectTask} onDescription={(work) => { setDescriptionWork(work); setModal("description") }} onTimeline={(work) => { setTimelineWork(work); setModal("timeline") }} />)
+                  filteredWorkItems.map((item) => <WorkRow key={item.leadDocId} item={item} showAllocationColumns={showAllocationColumns} canOperate={String(item.assignedDeveloperId) === String(loggedUser?._id)} isActive={Boolean(item.taskStartedAt && !item.taskEndedAt)} onAllocate={openAllocation} onUpdate={openUpdate} onStart={startTask} onEnd={openEndTask} onReject={rejectTask} onDescription={(work) => { setDescriptionWork(work); setModal("description") }} onTimeline={openTimeline} />)
                 )}
               </tbody>
             </table>
@@ -627,7 +627,7 @@ export default function ResearchandDevelopement() {
             {isLoading && <p className="p-5 text-center text-sm text-slate-500">Loading R&D leads...</p>}
             {!isLoading && loadError && <p className="p-5 text-center text-sm text-rose-600">{loadError}</p>}
             {!isLoading && !loadError && filteredWorkItems.length === 0 && <p className="p-5 text-center text-sm text-slate-500">No {activeStatusFilter.toLowerCase()} leads found.</p>}
-            {!isLoading && !loadError && filteredWorkItems.map((item) => <WorkCard key={item.leadDocId} item={item} canOperate={String(item.assignedDeveloperId) === String(loggedUser?._id)} isActive={Boolean(item.taskStartedAt && !item.taskEndedAt)} onAllocate={openAllocation} onUpdate={openUpdate} onStart={startTask} onEnd={openEndTask} onReject={rejectTask} onDescription={(work) => { setDescriptionWork(work); setModal("description") }} onTimeline={(work) => { setTimelineWork(work); setModal("timeline") }} />)}
+            {!isLoading && !loadError && filteredWorkItems.map((item) => <WorkCard key={item.leadDocId} item={item} canOperate={String(item.assignedDeveloperId) === String(loggedUser?._id)} isActive={Boolean(item.taskStartedAt && !item.taskEndedAt)} onAllocate={openAllocation} onUpdate={openUpdate} onStart={startTask} onEnd={openEndTask} onReject={rejectTask} onDescription={(work) => { setDescriptionWork(work); setModal("description") }} onTimeline={openTimeline} />)}
           </div>
         </section>
       </div>
