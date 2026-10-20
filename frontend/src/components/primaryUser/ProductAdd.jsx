@@ -144,6 +144,7 @@ const ProductAdd = ({
       //   }
       // ])
       console.log(selected)
+console.log("selected")
       Object.keys(selected).forEach((key) => {
         if (key === "brandName") {
           setValue(key, selected?.brand_id?._id)
