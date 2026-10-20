@@ -852,6 +852,7 @@ const BulkLeadWorkspace = ({
   submitting,
   isReadOnly
 }) => {
+  const [isReviewOpen, setIsReviewOpen] = useState(false)
   const updateCustomer = (customerId, field, value) => {
     setCustomers((current) =>
       current.map((customer) =>
@@ -1007,6 +1008,37 @@ const BulkLeadWorkspace = ({
 
     return [...selections.values()].filter((selection) => selection.count > 1)
   }, [customers, productOptions])
+  const duplicateProductKeys = useMemo(() => {
+    const counts = new Map()
+    customers.forEach((customer) => {
+      ;(customer.products || []).forEach((product) => {
+        if (!customer.customerId || !product.productId) return
+        const key = `${customer.customerId}:${product.productId}`
+        counts.set(key, (counts.get(key) || 0) + 1)
+      })
+    })
+    return new Set([...counts.entries()].filter(([, count]) => count > 1).map(([key]) => key))
+  }, [customers])
+  const reviewRows = useMemo(() => customers.flatMap((customer, customerIndex) => {
+    const mobile = String(customer.mobile || "").replace(/^\+?91/, "").replace(/\D/g, "")
+    return (customer.products || [])
+      .filter((product) => customer.customerId || customer.mobile || product.productId)
+      .map((product, productIndex) => {
+        const issues = []
+        if (!customer.customerId) issues.push("Customer is required")
+        if (!product.productId) issues.push("Product is required")
+        if ((customer.customerId || customer.mobile) && mobile.length !== 10) issues.push("Valid 10-digit mobile is required")
+        return {
+          id: `${customer.id}:${product.id}`,
+          label: `Row ${customerIndex + 1}${productIndex ? ` · Product ${productIndex + 1}` : ""}`,
+          customerName: customer.customerName || "Customer not selected",
+          productName: productOptions.find((option) => String(option.value) === String(product.productId))?.label || "Product not selected",
+          duplicate: duplicateProductKeys.has(`${customer.customerId}:${product.productId}`),
+          issues
+        }
+      })
+  }), [customers, duplicateProductKeys, productOptions])
+  const hasBlockingReviewIssue = reviewRows.some((row) => row.issues.length > 0)
   const invalidMobileCustomers = customers.filter((customer) => {
     const mobile = String(customer.mobile || "")
       .replace(/^\+?91/, "")
@@ -1041,13 +1073,17 @@ const BulkLeadWorkspace = ({
             .replace(/^\+?91/, "")
             .replace(/\D/g, "")
           const isMobileInvalid = Boolean(customer.customerId || customer.mobile) && mobile.length !== 10
+          const hasDuplicateProduct = (customer.products || []).some((product) =>
+            duplicateProductKeys.has(`${customer.customerId}:${product.productId}`)
+          )
 
           return (
-          <article key={customer.id} className="grid grid-cols-[minmax(0,1.65fr)_minmax(90px,.8fr)_minmax(0,1.5fr)_minmax(0,.9fr)_minmax(60px,.55fr)_minmax(45px,.45fr)_minmax(60px,.55fr)_auto] items-center gap-1.5 rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
+          <article key={customer.id} className={`grid grid-cols-[minmax(0,1.65fr)_minmax(90px,.8fr)_minmax(0,1.5fr)_minmax(0,.9fr)_minmax(60px,.55fr)_minmax(45px,.45fr)_minmax(60px,.55fr)_auto] items-center gap-1.5 rounded-lg border bg-white p-2 shadow-sm ${hasDuplicateProduct ? "border-amber-300 bg-amber-50/30" : "border-slate-200"}`}>
             <div className="contents">
               <div className="flex min-w-0 items-center gap-1.5">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#1B2A4A] text-[11px] font-bold text-white">{customerIndex + 1}</span>
                 <BulkLeadSelect className="flex-1" value={customer.customerId} options={bulkCustomerOptions} placeholder="Select customer" disabled={isReadOnly} onChange={(event) => selectBulkCustomer(customer.id, event.target.value)} />
+                {hasDuplicateProduct && <span title="Duplicate customer-product row. It will still be created after review." className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-amber-500 text-[11px] font-bold text-white">!</span>}
               </div>
               <input
                 value={customer.mobile || ""}
@@ -1070,7 +1106,7 @@ const BulkLeadWorkspace = ({
                 const netAmount = amount + (amount * tax) / 100
                 return (
                   <div key={product.id} className="contents">
-                    <BulkLeadSelect value={product.productId} options={productOptions} placeholder="Product / Service" disabled={isReadOnly} onChange={(event) => selectBulkProduct(customer.id, product.id, event.target.value)} />
+                    <div className={duplicateProductKeys.has(`${customer.customerId}:${product.productId}`) ? "rounded-md ring-1 ring-amber-400" : ""}><BulkLeadSelect value={product.productId} options={productOptions} placeholder="Product / Service" disabled={isReadOnly} onChange={(event) => selectBulkProduct(customer.id, product.id, event.target.value)} /></div>
                     <input value={product.license} disabled={isReadOnly} onChange={(event) => updateProduct(customer.id, product.id, "license", event.target.value)} placeholder="License No." className="h-7 min-w-0 rounded border border-slate-200 px-2 text-[11px] outline-none focus:border-[#1B2A4A]" />
                     <input type="number" min="0" value={product.amount} disabled={isReadOnly} onWheel={(event) => event.currentTarget.blur()} onChange={(event) => updateProduct(customer.id, product.id, "amount", event.target.value)} placeholder="Amount" className="h-7 min-w-0 rounded border border-slate-200 px-2 text-right text-[11px] outline-none focus:border-[#1B2A4A] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
                     <input type="number" min="0" value={product.tax} disabled={isReadOnly} onWheel={(event) => event.currentTarget.blur()} onChange={(event) => updateProduct(customer.id, product.id, "tax", event.target.value)} placeholder="Tax %" className="h-7 min-w-0 rounded border border-slate-200 px-2 text-right text-[11px] outline-none focus:border-[#1B2A4A] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
@@ -1102,7 +1138,7 @@ const BulkLeadWorkspace = ({
             key={`${selection.customerName}-${selection.productName}`}
             className="rounded-md border border-red-100 bg-red-50 px-2 py-1.5 text-[11px] font-medium text-red-600"
           >
-            {selection.customerName} is selected {selection.count} times with {selection.productName}. Change the customer or product in one row.
+            {selection.customerName} is selected {selection.count} times with {selection.productName}. Duplicate leads are allowed and will be highlighted during review.
           </p>
         ))}
         {invalidMobileCustomers.map((customer) => (
@@ -1139,8 +1175,8 @@ const BulkLeadWorkspace = ({
             </div>
           )}
         </div>}
-        <button type="button" disabled={isReadOnly || submitting} onClick={() => onCreate({ customers, commonValues })} className="h-8 whitespace-nowrap rounded-md bg-[#1B2A4A] px-4 text-xs font-bold text-white shadow-sm transition hover:bg-[#243660] focus:outline-none focus:ring-2 focus:ring-[#1B2A4A]/20 disabled:cursor-not-allowed disabled:opacity-50">
-          {submitting ? "Creating..." : `Create ${customers.length} Lead${customers.length === 1 ? "" : "s"}`}
+        <button type="button" disabled={isReadOnly || submitting || !reviewRows.length || (isReviewOpen && hasBlockingReviewIssue)} onClick={() => { if (isReviewOpen) { setIsReviewOpen(false); onCreate({ customers, commonValues }) } else { setIsReviewOpen(true) } }} className="h-8 whitespace-nowrap rounded-md bg-[#1B2A4A] px-4 text-xs font-bold text-white shadow-sm transition hover:bg-[#243660] focus:outline-none focus:ring-2 focus:ring-[#1B2A4A]/20 disabled:cursor-not-allowed disabled:opacity-50">
+          {submitting ? "Creating..." : isReviewOpen ? `Create ${reviewRows.length} Lead${reviewRows.length === 1 ? "" : "s"}` : `Review ${reviewRows.length} Lead${reviewRows.length === 1 ? "" : "s"}`}
         </button>
       </div>
       <div className="hidden">
