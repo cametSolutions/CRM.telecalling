@@ -2041,8 +2041,14 @@ const LeadMaster = ({
           String(item?.productorservicetype || "").toLowerCase() ===
           "primaryproduct"
       )
-      const originalValueOrFallback = (originalValue, fallbackValue) =>
-        Number(originalValue) > 0 ? originalValue : fallbackValue
+      // `productPrice`, `hsn`, and `netAmount` are the amounts saved on the
+      // lead. The `actual*` fields preserve the Product Master values from
+      // when the row was selected, so they must only be used for legacy leads
+      // that do not have a saved lead value.
+      const savedLeadValueOrFallback = (leadValue, fallbackValue) =>
+        leadValue !== undefined && leadValue !== null && leadValue !== ""
+          ? leadValue
+          : fallbackValue
 
       const leadData = sourceLeadItems.map((item) => {
         const itemType = String(
@@ -2103,18 +2109,18 @@ const LeadMaster = ({
           itemType: item?.productorServicemodel,
           productPrice: hideAdditionalServiceCharge
             ? 0
-            : originalValueOrFallback(
-                item?.actualproductPrice,
-                item?.productPrice
+            : savedLeadValueOrFallback(
+                item?.productPrice,
+                item?.actualproductPrice
               ),
           actualproductPrice: item?.actualproductPrice,
           hsn: hideAdditionalServiceCharge
             ? 0
-            : originalValueOrFallback(item?.actualHsn, item?.hsn),
+            : savedLeadValueOrFallback(item?.hsn, item?.actualHsn),
           actualHsn: item?.actualHsn,
           netAmount: hideAdditionalServiceCharge
             ? 0
-            : originalValueOrFallback(item?.actualNetAmount, item?.netAmount),
+            : savedLeadValueOrFallback(item?.netAmount, item?.actualNetAmount),
           actualNetAmount: item?.actualNetAmount,
           price: item?.price,
           company_id: item?.company_id,
