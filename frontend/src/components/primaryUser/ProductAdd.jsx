@@ -146,15 +146,16 @@ const ProductAdd = ({
       console.log(selected)
       Object.keys(selected).forEach((key) => {
         if (key === "brandName") {
-          setValue(key, selected?.brand_id)
+          setValue(key, selected?.brand_id?._id)
         } else if (key === "categoryName") {
-          setValue(key, selected?.category_id)
+          setValue(key, selected?.category_id?._id)
         } else if (key === "hsnName") {
           setValue(key, selected?.hsn_id?._id)
         } else if (key === "companyName") {
-          setSelectedCompany(selected?.company_id)
-          setValue(key, selected?.company_id)
+          setSelectedCompany(selected?.company_id?._id)
+          setValue(key, selected?.company_id?._id)
         } else if (key === "branchName") {
+console.log(selected?.branch_id)
           setValue(key, selected?.branch_id)
           setselectedCompanyBranch(selected?.branch_id)
         }

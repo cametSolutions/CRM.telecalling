@@ -2099,46 +2099,10 @@ export const BulkLeadRegister = async (req, res) => {
       return res.status(400).json({ message: "No valid bulk lead rows were found", skipped: invalidRows })
     }
 
-    const existingLeads = await LeadMaster.find({
-      customerName: { $in: normalizedLeads.map((lead) => lead.customer._id) },
-      "leadFor.productorServiceId": { $in: productIds },
-      // A confirmed lead may be registered again for the same customer/product.
-      // Only an unconfirmed lead blocks the bulk creation row.
-      leadConfirmed: { $ne: true }
-    }).select("customerName leadFor.productorServiceId").lean()
-    const existingPairs = new Set(
-      existingLeads.flatMap((lead) =>
-        (lead.leadFor || []).map((item) => `${lead.customerName}:${item.productorServiceId}`)
-      )
-    )
-    const seenPairs = new Set()
-    const eligibleLeads = normalizedLeads.filter((lead) => {
-      const pairs = lead.leadFor.map((item) => `${lead.customer._id}:${item.productorServiceId}`)
-      const duplicateItems = lead.leadFor
-        .filter((item) => {
-          const pair = `${lead.customer._id}:${item.productorServiceId}`
-          return existingPairs.has(pair) || seenPairs.has(pair)
-        })
-      const duplicateProducts = duplicateItems
-        .map((item) => item.productorServiceName)
-        .filter(Boolean)
-        .join(", ")
-      if (duplicateItems.length) {
-        invalidRows.push(createSkippedRow({
-          row: lead.row,
-          customer: lead.customer,
-          mobile: lead.mobile,
-          productName: duplicateProducts || duplicateItems.map((item) => String(item.productorServiceId)).join(", "),
-          reason: "A lead already exists for this customer and product"
-        }))
-        return false
-      }
-      pairs.forEach((pair) => seenPairs.add(pair))
-      return true
-    })
-    if (!eligibleLeads.length) {
-      return res.status(409).json({ message: "All submitted bulk leads already exist", skipped: invalidRows })
-    }
+    // Bulk entry intentionally permits repeated customer/product rows. The
+    // client highlights them during review, but each submitted row represents
+    // an independent lead and must be persisted.
+    const eligibleLeads = normalizedLeads
 
     const session = await mongoose.startSession()
     try {
