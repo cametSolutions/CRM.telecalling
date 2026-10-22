@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom"
 import React from "react"
 import { toast } from "react-toastify"
 import { PropagateLoader } from "react-spinners"
+import { FaSpinner } from "react-icons/fa"
 import SkeletonTable from "../../../components/loader/SkeletonTable"
 import { useNavigate, useParams } from "react-router-dom"
 import BarLoader from "react-spinners/BarLoader"
@@ -65,7 +66,6 @@ const ReallocationTable = () => {
   const [validatetypeError, setValidatetypeError] = useState({})
   const [loggedUserBranches, setLoggeduserBranches] = useState([])
   const [selectedCompanyBranch, setSelectedCompanyBranch] = useState(null)
-  const [showFullName, setShowFullName] = useState(false)
   const [showFullEmail, setShowFullEmail] = useState(false)
   const [approvedToggleStatus, setapprovedToggleStatus] = useState(false)
   const [submitLoading, setsubmitLoading] = useState(false)
@@ -75,6 +75,10 @@ const ReallocationTable = () => {
   const [loggedUser, setLoggedUser] = useState(null)
   const [selectedItem, setSelectedItem] = useState(null)
   const [tableData, setTableData] = useState([])
+  const [lostLead, setLostLead] = useState(null)
+  const [lostRemarks, setLostRemarks] = useState("")
+  const [lostError, setLostError] = useState("")
+  const [lostSubmitting, setLostSubmitting] = useState(false)
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
   const now = new Date()
@@ -419,6 +423,118 @@ const ReallocationTable = () => {
     refreshHook()
     setTableData([])
   }
+  const openLostLead = (lead) => {
+    setLostLead(lead)
+    setLostRemarks("")
+    setLostError("")
+  }
+
+  const closeLostLead = () => {
+    if (lostSubmitting) return
+    setLostLead(null)
+    setLostRemarks("")
+    setLostError("")
+  }
+
+  const submitLostLead = async () => {
+    const remarks = lostRemarks.trim()
+    if (!remarks) {
+      setLostError("Remarks are required when marking a lead as lost")
+      return
+    }
+    if (!lostLead?._id || !loggedUser?._id) return
+
+    try {
+      setLostSubmitting(true)
+      const response = await api.put(
+        `/lead/followupDateUpdate?selectedleaddocId=${lostLead._id}&loggeduserid=${loggedUser._id}`,
+        {
+          formData: {
+            followUpDate: new Date().toISOString().split("T")[0],
+            nextfollowUpDate: "",
+            followupType: "lost",
+            Remarks: remarks
+          },
+          collectionupdatedata: {}
+        }
+      )
+
+      toast.success(response.data?.message || "Lead marked as lost")
+      setTableData((previous) =>
+        previous.filter((lead) => String(lead?._id) !== String(lostLead._id))
+      )
+      setLostLead(null)
+      setLostRemarks("")
+      setLostError("")
+      refreshHook()
+    } catch (error) {
+      setLostError(
+        error?.response?.data?.message || "Unable to mark this lead as lost"
+      )
+    } finally {
+      setLostSubmitting(false)
+    }
+  }
+  const openAllocationModal = (item) => {
+    const isCodingAndQc =
+      selectedAllocationType[item._id] === CODING_AND_QC_TASK_ID
+    if (
+      !isCodingAndQc &&
+      !Object.prototype.hasOwnProperty.call(selectedAllocates, item._id)
+    ) {
+      setValidateError((prev) => ({
+        ...prev,
+        [item._id]: "Allocate to Someone"
+      }))
+      return
+    }
+    if (!Object.prototype.hasOwnProperty.call(selectedAllocationType, item._id)) {
+      setValidatetypeError((prev) => ({
+        ...prev,
+        [item._id]: "Please select a type"
+      }))
+      return
+    }
+
+    setselectedLeadId(item.leadId)
+    setShowmodal(true)
+    setSelectedItem(item)
+    setsubmitError({ submissionerror: "" })
+    setFormData({
+      allocationDate: new Date().toISOString().slice(0, 10),
+      allocationTime: new Date().toTimeString().slice(0, 5),
+      allocatedTo: "",
+      priority: "Medium",
+      expectedCompletionDate: "",
+      taskTitle: "",
+      allocationDescription: ""
+    })
+  }
+  const openLeadClosing = (item) => {
+    const breadcrumb = [
+      { label: "Lead", path: "", state: "" },
+      {
+        label: "Re Allocation List",
+        path:
+          loggedUser?.role === "Admin"
+            ? "/admin/transaction/lead/leadReallocation"
+            : "/staff/transaction/lead/leadReallocation"
+      },
+      { label: "Lead Closed", path: "" }
+    ]
+    navigate(
+      loggedUser?.role === "Admin"
+        ? "/admin/transaction/lead/leadClosed"
+        : "/staff/transaction/lead/leadClosed",
+      {
+        state: {
+          leadId: item._id,
+          breadcrumb,
+          closingOrigin: "reallocation"
+        }
+      }
+    )
+  }
   const handleMoreClick = (id, name) => {
     const Datas = targetData?.userWiseResults
     console.log(id)
@@ -596,17 +712,30 @@ const ReallocationTable = () => {
               color="#4A90E2" // Change color as needed
             />
           )}
-          <div className="flex flex-col flex-1 bg-[#ADD8E6] min-h-0">
-            <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3 ">
-              <h2 className="text-lg font-bold ml-5 mt-3">ReAllocation List</h2>
-              <div className="flex justify-end  ml-auto gap-6 items-center">
+          <div className="flex min-h-0 flex-1 flex-col bg-slate-50">
+            <div className="mx-3 mb-4 mt-3 flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm md:mx-5">
+              <div>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
+                    <History size={18} />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold tracking-tight text-slate-900">Reallocation List</h2>
+                    <p className="text-xs text-slate-500">Assign and manage follow-up leads.</p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="hidden rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 sm:inline-flex">
+                  {tableData.length} lead{tableData.length === 1 ? "" : "s"}
+                </span>
                 <button
                   onClick={() =>
                     loggedUser.role === "Admin"
                       ? navigate("/admin/transaction/lead")
                       : navigate("/staff/transaction/lead")
                   }
-                  className="bg-black text-white py-1 px-3 rounded-lg shadow-lg hover:bg-gray-600"
+                  className="rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
                 >
                   New Lead
                 </button>
@@ -614,38 +743,41 @@ const ReallocationTable = () => {
             </div>
 
             {/* Responsive Table Container */}
-            <div className=" overflow-auto rounded-lg text-center overflow-y-auto border  shadow-xl mx-3 md:mx-5 mb-3 bg-white">
-              <table className="w-full text-sm">
-                <thead className=" whitespace-nowrap bg-blue-600 text-white sticky top-0 z-30">
+            <div className="mx-3 mb-3 overflow-auto rounded-2xl border border-slate-200 bg-white text-center shadow-sm md:mx-5">
+              <table className="w-full min-w-[1320px] text-sm">
+                <thead className="sticky top-0 z-30 whitespace-nowrap bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 text-white shadow-sm">
                   <tr>
-                    <th className="border border-r-0 border-t-0 border-gray-400 px-4 ">
-                      SNO.
+                    <th className="w-14 px-3 py-3 text-[10px] font-bold uppercase tracking-wider text-blue-100">
+                      S.No.
                     </th>
-                    <th className="border border-r-0 border-t-0 border-gray-400 px-4 ">
+                    <th className="min-w-52 px-3 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-blue-100">
                       Name
                     </th>
-                    <th className="border border-r-0 border-t-0 border-l-0 border-gray-400  px-4 max-w-[200px] min-w-[200px]">
-                      Mobile
+                    <th className="min-w-32 px-3 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-blue-100">
+                      Contact
                     </th>
-                    <th className="border border-r-0 border-l-0 border-t-0 border-gray-400 px-4 ">
-                      Phone
-                    </th>
-                    <th className="border border-r-0 border-l-0 border-t-0 border-gray-400 px-4 ">
+                    <th className="min-w-56 px-3 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-blue-100">
                       Email
                     </th>
-                    <th className="border  border-l-0 border-t-0 border-gray-400 px-4  min-w-[100px]">
-                      Lead Id
+                    <th className="min-w-28 px-3 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-blue-100">
+                      Lead ID
                     </th>
                     {/* <th className="border  border-l-0 border-t-0 border-gray-400 px-4  min-w-[100px]">
                       Description
                     </th> */}
-                    <th className="border border-t-0   border-blue-500 px-4 ">
+                    <th className="min-w-44 px-3 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-blue-100">
+                      Assigned to
+                    </th>
+                    <th className="min-w-24 px-3 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-blue-100">
+                      Follow-ups
+                    </th>
+                    <th className="min-w-40 px-3 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-blue-100">
                       Allocation Type
                     </th>
-                    <th className="border border-t-0 border-gray-400 px-4  min-w-[100px]">
+                    <th className="min-w-40 px-3 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-blue-100">
                       Action
                     </th>
-                    <th className="border border-t-0 border-gray-400 px-4 py-2">
+                    <th className="min-w-28 px-3 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-blue-100">
                       Net Amount
                     </th>
                   </tr>
@@ -654,58 +786,199 @@ const ReallocationTable = () => {
                   {tableData && tableData.length > 0 ? (
                     tableData.map((item, index) => (
                       <React.Fragment key={item._id}>
-                        <tr className="bg-white  border border-gray-400 border-b-0">
-                          <td className="  px-4 "></td>
-                          <td
-                            onClick={() => setShowFullName(!showFullName)}
-                            className={`px-4 cursor-pointer overflow-hidden border border-r-0 border-b-0 border-gray-400 ${
-                              showFullName
-                                ? "whitespace-normal max-h-[3em]" // ≈2 lines of text (1.5em line-height)
-                                : "truncate whitespace-nowrap max-w-[120px]"
-                            }`}
-                            style={{ lineHeight: "1.5em" }} // fine-tune as needed
-                          >
-                            {item?.customerName?.customerName}
+                        <tr className="group border-b border-slate-100 bg-white transition-colors hover:bg-blue-50/40">
+                          <td className="px-3 py-3 text-xs font-semibold text-slate-400">
+                            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[11px] text-slate-600 group-hover:bg-blue-100 group-hover:text-blue-700">
+                              {index + 1}
+                            </span>
                           </td>
-                          <td className="  px-4 ">{item?.mobile}</td>
-                          <td className="px-4 ">{item?.landline}</td>
-                          <td className="px-4 ">{item?.email}</td>
-                          <td className=" px-4 ">{item?.leadId}</td>
-                          {/* <td className=" px-4 border border-b-0 border-gray-400 "></td> */}
-                          <td className="border border-b-0 border-gray-400 px-4 "></td>
-
-                          <td className="border border-b-0 border-gray-400 px-1  text-blue-400 min-w-[50px] hover:text-blue-500 hover:cursor-pointer font-semibold">
-                            <button
-                              onClick={() =>
-                                loggedUser.role === "Admin"
-                                  ? navigate(
-                                      "/admin/transaction/lead/leadEdit",
-                                      {
-                                        state: {
-                                          leadId: item._id,
-                                          isReadOnly: false
-                                        }
-                                      }
-                                    )
-                                  : navigate(
-                                      "/staff/transaction/lead/leadEdit",
-                                      {
-                                        state: {
-                                          leadId: item._id,
-                                          isReadOnly: false
-                                        }
-                                      }
-                                    )
-                              }
-                              className="text-blue-400 hover:text-blue-500 font-semibold cursor-pointer"
+                          <td className="px-3 py-3 text-left">
+                            <div className="flex items-center gap-2.5">
+                              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 text-xs font-bold text-blue-700">
+                                {(item?.customerName?.customerName || "-").charAt(0).toUpperCase()}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="max-w-44 truncate text-xs font-bold text-slate-800" title={item?.customerName?.customerName || ""}>
+                                  {item?.customerName?.customerName || "-"}
+                                </p>
+                                <p className="mt-0.5 max-w-44 truncate text-[10px] text-slate-500" title={item?.leadBy?.name || ""}>
+                                  Lead by {item?.leadBy?.name || "-"}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 text-left">
+                            <div className="space-y-0.5 text-xs font-medium text-slate-700">
+                              <span className="flex items-center gap-1.5 whitespace-nowrap"><Phone size={12} className="text-blue-500" />{item?.mobile || "-"}</span>
+                              <span className="flex items-center gap-1.5 whitespace-nowrap text-[10px] text-slate-500"><Phone size={11} />{item?.phone || "-"}</span>
+                            </div>
+                          </td>
+                          <td className="px-3 py-3 text-left">
+                            <span className="inline-flex max-w-52 items-center gap-1.5 text-xs text-slate-600">
+                              <Mail size={13} className="shrink-0 text-slate-400" />
+                              <span className="truncate" title={item?.email || ""}>{item?.email || "-"}</span>
+                            </span>
+                          </td>
+                          <td className="px-3 py-3 text-left">
+                            <p className="w-fit rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] font-bold text-slate-700">{item?.leadId || "-"}</p>
+                            <p className="mt-1 inline-flex items-center gap-1 text-[10px] text-slate-500">
+                              <Calendar size={11} />
+                              {item?.leadDate ? new Date(item.leadDate).toLocaleDateString() : "-"}
+                            </p>
+                          </td>
+                          <td className="px-3 py-2">
+                            <Select
+                              options={allocationOptions}
+                              value={selectedAllocates[item._id] || null}
+                              onChange={(selectedOption) => {
+                                setSelectedAllocates((prev) => ({ ...prev, [item._id]: selectedOption }))
+                                handleSelectedAllocates(item, selectedOption.value)
+                                setValidateError((prev) => ({ ...prev, [item._id]: "" }))
+                              }}
+                              placeholder="Select staff"
+                              className="w-40 text-xs"
+                              styles={{ control: (base) => ({ ...base, minHeight: "30px", borderColor: validateError[item._id] ? "#f87171" : "#cbd5e1", boxShadow: "none", cursor: "pointer" }), valueContainer: (base) => ({ ...base, padding: "0 7px" }), indicatorsContainer: (base) => ({ ...base, height: "30px" }), menuPortal: (base) => ({ ...base, zIndex: 120 }) }}
+                              menuPlacement="auto"
+                              menuPortalTarget={document.body}
+                              menuShouldScrollIntoView={false}
+                            />
+                            {validateError[item._id] && <p className="mt-1 text-[10px] text-red-500">{validateError[item._id]}</p>}
+                          </td>
+                          <td className="px-3 py-2 text-left">
+                            <p className="font-semibold text-slate-700">{item?.activityLog?.length || 0}</p>
+                            <p className="max-w-24 truncate text-[10px] text-slate-500" title={item?.lasttask?.taskName || ""}>{item?.lasttask?.taskName || "-"}</p>
+                          </td>
+                          <td className="px-3 py-2">
+                            <select
+                              value={selectedAllocationType[item._id] || ""}
+                              disabled={Boolean(item.firstStageFollowupReallocation)}
+                              onChange={(e) => {
+                                const selectedtask = tasks.find((task) => task._id === e.target.value)
+                                setselectedAllocationType((prev) => ({ ...prev, [item._id]: e.target.value }))
+                                setselectedallocatiotypeNames((prev) => ({ ...prev, [item._id]: selectedtask }))
+                                setselectedType(selectedtask?.taskName)
+                                setValidatetypeError((prev) => ({ ...prev, [item._id]: "" }))
+                              }}
+                              className="h-8 w-full rounded-md border border-slate-300 bg-white px-2 text-xs font-medium text-slate-700 outline-none focus:border-blue-500 disabled:cursor-not-allowed disabled:bg-slate-100"
                             >
-                              View / Modify
-                            </button>
+                              <option value="">Select type</option>
+                              {tasks?.filter((task) => String(task.taskName || "").trim().toLowerCase() !== "followup").map((task) => (
+                                <option key={task._id} value={task._id}>{task?.taskName}</option>
+                              ))}
+                            </select>
+                            {validatetypeError[item._id] && <p className="mt-1 text-[10px] text-red-500">{validatetypeError[item._id]}</p>}
                           </td>
-                          <td className="border border-b-0 border-gray-400 px-4 "></td>
+
+                          <td className="px-3 py-2 text-left">
+                            <div className="grid grid-cols-2 gap-1">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  navigate(
+                                    loggedUser.role === "Admin"
+                                      ? "/admin/transaction/lead/leadEdit"
+                                      : "/staff/transaction/lead/leadEdit",
+                                    { state: { leadId: item._id, isReadOnly: false } }
+                                  )
+                                }
+                                className="inline-flex items-center justify-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-1.5 py-1 text-[10px] font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100"
+                              >
+                                <Eye size={11} />
+                                View
+                              </button>
+                              <button type="button" onClick={() => openAllocationModal(item)} className="rounded-md border border-amber-200 bg-amber-50 px-1.5 py-1 text-[10px] font-semibold text-amber-700 transition hover:bg-amber-100">
+                                Allocate
+                              </button>
+                              <button type="button" onClick={() => openLostLead(item)} className="rounded-md border border-rose-200 bg-rose-50 px-1.5 py-1 text-[10px] font-semibold text-rose-600 transition hover:bg-rose-100">
+                                Lost
+                              </button>
+                              <button type="button" onClick={() => openLeadClosing(item)} className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-1 text-[10px] font-semibold text-slate-600 transition hover:bg-slate-100">
+                                Close
+                              </button>
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700">
+                              <IndianRupee size={12} />
+                              {Number(item?.netAmount || 0).toLocaleString("en-IN")}
+                            </span>
+                          </td>
                         </tr>
 
-                        <tr className=" font-semibold bg-gray-100">
+                        <tr className="hidden bg-slate-100 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                          <td className="border-y border-slate-200 px-3 py-1.5">{index + 1}</td>
+                          <td className="border-y border-slate-200 px-3 py-1.5 text-left">Lead by</td>
+                          <td className="border-y border-slate-200 px-3 py-1.5 text-left">Assigned to</td>
+                          <td className="border-y border-slate-200 px-3 py-1.5 text-left">Assigned by</td>
+                          <td className="border-y border-slate-200 px-3 py-1.5 text-left">Follow-ups</td>
+                          <td className="border-y border-slate-200 px-3 py-1.5 text-left">Lead date</td>
+                          <td className="border-y border-slate-200 px-2 py-1">
+                            <select
+                              value={selectedAllocationType[item._id] || ""}
+                              disabled={Boolean(item.firstStageFollowupReallocation)}
+                              onChange={(e) => {
+                                const selectedtask = tasks.find((task) => task._id === e.target.value)
+                                setselectedAllocationType((prev) => ({ ...prev, [item._id]: e.target.value }))
+                                setselectedallocatiotypeNames((prev) => ({ ...prev, [item._id]: selectedtask }))
+                                setselectedType(selectedtask?.taskName)
+                                setValidatetypeError((prev) => ({ ...prev, [item._id]: "" }))
+                              }}
+                              className="h-7 w-full rounded-md border border-slate-300 bg-white px-2 text-[11px] font-medium normal-case text-slate-700 outline-none focus:border-blue-500 disabled:cursor-not-allowed disabled:bg-slate-100"
+                            >
+                              <option value="">Select type</option>
+                              {tasks?.filter((task) => String(task.taskName || "").trim().toLowerCase() !== "followup").map((task) => (
+                                <option key={task._id} value={task._id}>{task?.taskName}</option>
+                              ))}
+                            </select>
+                            {validatetypeError[item._id] && <p className="mt-1 normal-case text-red-500">{validatetypeError[item._id]}</p>}
+                          </td>
+                          <td className="border-y border-slate-200 px-2 py-1">
+                            <div className="flex justify-center gap-1">
+                              <button type="button" onClick={() => openAllocationModal(item)} className="rounded-md bg-amber-500 px-2 py-1 text-[10px] font-semibold normal-case text-white transition hover:bg-amber-600">Allocate</button>
+                              <button type="button" onClick={() => openLostLead(item)} className="rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-[10px] font-semibold normal-case text-rose-600 transition hover:bg-rose-100">Lost</button>
+                            </div>
+                          </td>
+                          <td className="border-y border-slate-200" />
+                        </tr>
+                        <tr className="hidden border-b-4 border-slate-200 bg-white text-xs text-slate-700">
+                          <td className="px-3 py-2" />
+                          <td className="px-3 py-2 text-left font-semibold">{item?.leadBy?.name || "-"}</td>
+                          <td className="px-3 py-2 text-left">
+                            <Select
+                              options={allocationOptions}
+                              value={selectedAllocates[item._id] || null}
+                              onChange={(selectedOption) => {
+                                setSelectedAllocates((prev) => ({ ...prev, [item._id]: selectedOption }))
+                                handleSelectedAllocates(item, selectedOption.value)
+                                setValidateError((prev) => ({ ...prev, [item._id]: "" }))
+                              }}
+                              placeholder="Select staff"
+                              className="w-40 text-xs"
+                              styles={{ control: (base) => ({ ...base, minHeight: "30px", borderColor: validateError[item._id] ? "#f87171" : "#cbd5e1", boxShadow: "none", cursor: "pointer" }), valueContainer: (base) => ({ ...base, padding: "0 7px" }), indicatorsContainer: (base) => ({ ...base, height: "30px" }), menuPortal: (base) => ({ ...base, zIndex: 120 }) }}
+                              menuPlacement="auto"
+                              menuPortalTarget={document.body}
+                              menuShouldScrollIntoView={false}
+                            />
+                            {validateError[item._id] && <p className="mt-1 text-[10px] text-red-500">{validateError[item._id]}</p>}
+                          </td>
+                          <td className="px-3 py-2 text-left">{item?.allocatedBy?.name || "-"}</td>
+                          <td className="px-3 py-2 text-left">{item?.activityLog?.length || 0}</td>
+                          <td className="px-3 py-2 text-left">{item?.leadDate ? new Date(item.leadDate).toLocaleDateString() : "-"}</td>
+                          <td className="px-3 py-2" />
+                          <td className="px-3 py-2">
+                            <button type="button" onClick={() => openLeadClosing(item)} className="rounded-md border border-slate-300 bg-slate-50 px-2 py-1 text-[10px] font-semibold text-slate-700 transition hover:bg-slate-100">Close</button>
+                          </td>
+                          <td className="px-3 py-2" />
+                        </tr>
+                        <tr className="hidden border-b-4 border-slate-100 bg-blue-50/50 text-xs text-slate-600">
+                          <td className="px-4 py-1.5" />
+                          <td className="px-3 py-1.5 text-left font-semibold text-slate-700" colSpan={5}>
+                            {item?.submittedUser?.name || "-"} <span className="mx-1 text-slate-300">•</span> {item?.lasttask?.taskName || "-"} <span className="mx-1 text-slate-300">•</span> {item?.activityLog?.[item.activityLog.length - 1]?.remarks || "No remarks"}
+                          </td>
+                          <td className="px-3 py-1.5" colSpan={3} />
+                        </tr>
+
+                        <tr className="hidden font-semibold bg-gray-100">
                           <td className=" px-4 border border-b-0 border-t-0 border-r-0 border-gray-400 ">
                             {index + 1}
                           </td>
@@ -780,7 +1053,7 @@ const ReallocationTable = () => {
                             )}
                           </td>
                           <td
-                            className=" border border-t-0 border-b-0 border-gray-400 px-4  text-red-500 hover:cursor-pointer bg-white"
+                            className="border border-t-0 border-b-0 border-gray-400 bg-white px-2 py-1 text-center"
                             onClick={() => {
                               const isCodingAndQc =
                                 selectedAllocationType[item._id] ===
@@ -825,7 +1098,9 @@ const ReallocationTable = () => {
                               })
                             }}
                           >
-                            Allocate
+                            <span className="inline-flex min-w-[96px] items-center justify-center rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700 transition hover:border-amber-300 hover:bg-amber-100">
+                              Allocate
+                            </span>
                           </td>
                           <td className=" border border-t-0 border-b-0 border-gray-400 px-4 bg-white ">
                             {" "}
@@ -833,12 +1108,16 @@ const ReallocationTable = () => {
                           </td>
                         </tr>
 
-                        <tr className="bg-white">
-                          <td className="border border-t-0 border-r-0 border-b-0 border-gray-400 px-4 py-0.5 "></td>
-                          <td className="border border-t-0 border-r-0 border-b-0 border-gray-400 px-4 py-0.5 ">
-                            {item?.leadBy?.name}
+                        <tr className="hidden bg-white">
+                          <td className="border border-t-0 border-r-0 border-b-0 border-gray-400 px-2 py-1 text-xs font-semibold text-slate-600">
+                            {index + 1}
                           </td>
-                          <td className="border border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 ">
+                          <td className="border border-t-0 border-r-0 border-b-0 border-gray-400 px-2 py-1 text-left text-xs text-slate-700">
+                            <span className="block text-[10px] font-semibold uppercase text-slate-400">Lead by</span>
+                            <span className="block truncate">{item?.leadBy?.name || "-"}</span>
+                          </td>
+                          <td className="border border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-2 py-1">
+                            <span className="mb-1 block text-left text-[10px] font-semibold uppercase text-slate-400">Assigned to</span>
                             <div className="text-center">
                               <div className="inline-block">
                                 <Select
@@ -858,12 +1137,12 @@ const ReallocationTable = () => {
                                       [item._id]: ""
                                     }))
                                   }}
-                                  className="w-44 focus:outline-red-500"
+                                  className="w-40 focus:outline-red-500"
                                   styles={{
                                     control: (base) => ({
                                       ...base,
-                                      minHeight: "32px", // control height
-                                      height: "32px",
+                                      minHeight: "28px",
+                                      height: "28px",
                                       boxShadow: "none", // removes blue glow
                                       borderColor: "red",
                                       cursor: "pointer",
@@ -886,7 +1165,7 @@ const ReallocationTable = () => {
                                     }),
                                     indicatorsContainer: (base) => ({
                                       ...base,
-                                      height: "30px"
+                                      height: "28px"
                                     }),
                                     menu: (provided) => ({
                                       ...provided,
@@ -913,69 +1192,82 @@ const ReallocationTable = () => {
                               </div>
                             </div>
                           </td>
-                          <td className="border  border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5"></td>
-                          <td className="border  border-t-0 border-r-0 border-l-0 border-b-0  border-gray-400  px-4 py-0.5 "></td>
-                          <td className="border  border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 ">
-                            {new Date(item?.leadDate).toLocaleDateString()}
+                          <td className="border border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-2 py-1 text-left text-xs text-slate-700">
+                            <span className="block text-[10px] font-semibold uppercase text-slate-400">Assigned by</span>
+                            <span className="block truncate">{item?.allocatedBy?.name || "-"}</span>
+                          </td>
+                          <td className="border border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-2 py-1 text-left text-xs text-slate-700">
+                            <span className="block text-[10px] font-semibold uppercase text-slate-400">Follow-ups</span>
+                            <span>{item?.activityLog?.length || 0}</span>
+                          </td>
+                          <td className="border border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-2 py-1 text-left text-xs text-slate-700">
+                            <span className="block text-[10px] font-semibold uppercase text-slate-400">Lead date</span>
+                            <span>{item?.leadDate ? new Date(item.leadDate).toLocaleDateString() : "-"}</span>
                           </td>
                           {/* <td className="border  border-t-0 border-r-0 border-b-0 border-gray-400 px-4 py-0.5 "></td> */}
                           <td className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5 "></td>
-                          <td
-                            className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5 text-red-400 hover:text-red-500 hover:cursor-pointer font-semibold"
-                            // onClick={() => {
-                            //   setIsclosed(true)
-
-                            //   setselectedData(item)
-                            // }}
-                          >
-                            <button
-                              onClick={() => {
-                                console.log("hhh")
-                                const breadcrumb = [
-                                  { label: "Lead", path: "", state: "" },
-                                  {
-                                    label: "Re Allocation List",
-                                    path:
-                                      loggedUser?.role === "Admin"
-                                        ? "/admin/transaction/lead/leadReallocation"
-                                        : "/staff/transaction/lead/leadReallocation"
-                                    // state: {
-                                    //   dates,
-                                    //   ownLead,
-                                    //   selecteduserBranch
-                                    // }
-                                  },
-                                  { label: "Lead Closed", path: "" }
-                                ]
-                                loggedUser.role === "Admin"
-                                  ? navigate(
-                                      "/admin/transaction/lead/leadClosed",
-                                      {
-                                        state: {
-                                          leadId: item._id,
-                                          breadcrumb,
-                                          closingOrigin: "reallocation"
+                          <td className="border border-t-0 border-b-0 border-gray-400 px-2 py-2 text-center">
+                            <div className="flex flex-col items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => openAllocationModal(item)}
+                                className="inline-flex min-w-[96px] items-center justify-center rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700 transition hover:border-amber-300 hover:bg-amber-100"
+                              >
+                                Allocate
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => openLostLead(item)}
+                                className="inline-flex min-w-[96px] items-center justify-center rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-600 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-700"
+                              >
+                                Lost
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  console.log("hhh")
+                                  const breadcrumb = [
+                                    { label: "Lead", path: "", state: "" },
+                                    {
+                                      label: "Re Allocation List",
+                                      path:
+                                        loggedUser?.role === "Admin"
+                                          ? "/admin/transaction/lead/leadReallocation"
+                                          : "/staff/transaction/lead/leadReallocation"
+                                    },
+                                    { label: "Lead Closed", path: "" }
+                                  ]
+                                  loggedUser.role === "Admin"
+                                    ? navigate(
+                                        "/admin/transaction/lead/leadClosed",
+                                        {
+                                          state: {
+                                            leadId: item._id,
+                                            breadcrumb,
+                                            closingOrigin: "reallocation"
+                                          }
                                         }
-                                      }
-                                    )
-                                  : navigate(
-                                      "/staff/transaction/lead/leadClosed",
-                                      {
-                                        state: {
-                                          leadId: item._id,
-                                          breadcrumb,
-                                          closingOrigin: "reallocation"
+                                      )
+                                    : navigate(
+                                        "/staff/transaction/lead/leadClosed",
+                                        {
+                                          state: {
+                                            leadId: item._id,
+                                            breadcrumb,
+                                            closingOrigin: "reallocation"
+                                          }
                                         }
-                                      }
-                                    )
-                              }}
-                            >
-                              Closed
-                            </button>
+                                      )
+                                }}
+                                className="inline-flex min-w-[96px] items-center justify-center rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-100 hover:text-slate-800"
+                              >
+                                Closed
+                              </button>
+                            </div>
                           </td>
                           <td className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5"></td>
                         </tr>
-                        <tr className="bg-gray-100">
+                        <tr className="hidden bg-gray-100">
                           <td className="border border-l-1 border-t-0 border-gray-400 "></td>
                           <td
                             colSpan={5}
@@ -1108,6 +1400,75 @@ const ReallocationTable = () => {
                     <div className="sticky bottom-0 z-10 flex shrink-0 justify-end gap-3 border-t border-slate-100 bg-white px-5 py-4">
                       <button type="button" onClick={() => { setShowmodal(false); setsubmitError({ submissionerror: "" }) }} className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
                       <button type="button" disabled={submitLoading} onClick={handleSubmit} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">{isCodingAndQcModal ? "Allocate task" : "Submit"}</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {lostLead && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
+                  <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+                    <div className="flex items-start justify-between border-b border-slate-100 px-5 py-4">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-rose-600">
+                          Lead outcome
+                        </p>
+                        <h2 className="mt-1 text-lg font-bold text-slate-900">
+                          Mark lead as lost
+                        </h2>
+                        <p className="mt-1 text-sm text-slate-500">
+                          {lostLead?.customerName?.customerName || "Lead"} · {lostLead?.leadId || "-"}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={closeLostLead}
+                        disabled={lostSubmitting}
+                        className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed"
+                        aria-label="Close lost lead dialog"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+
+                    <div className="space-y-4 p-5">
+                      <div className="rounded-xl border border-rose-100 bg-rose-50 px-3 py-2.5 text-sm text-rose-700">
+                        This action uses the same lost-lead workflow as Lead Follow-Up and removes the lead from the active reallocation list.
+                      </div>
+                      <label className="block text-sm font-semibold text-slate-700">
+                        Remarks <span className="text-rose-600">*</span>
+                        <textarea
+                          rows={4}
+                          value={lostRemarks}
+                          onChange={(event) => {
+                            setLostRemarks(event.target.value)
+                            if (lostError) setLostError("")
+                          }}
+                          placeholder="Explain why this lead is lost..."
+                          disabled={lostSubmitting}
+                          className="mt-2 w-full resize-none rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal text-slate-700 outline-none transition focus:border-rose-400 focus:ring-4 focus:ring-rose-100 disabled:bg-slate-50"
+                        />
+                      </label>
+                      {lostError && <p className="text-sm text-rose-600">{lostError}</p>}
+                    </div>
+
+                    <div className="flex justify-end gap-3 border-t border-slate-100 px-5 py-4">
+                      <button
+                        type="button"
+                        onClick={closeLostLead}
+                        disabled={lostSubmitting}
+                        className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={submitLostLead}
+                        disabled={lostSubmitting}
+                        className="flex min-w-28 items-center justify-center gap-2 rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {lostSubmitting && <FaSpinner className="h-4 w-4 animate-spin" />}
+                        Mark as lost
+                      </button>
                     </div>
                   </div>
                 </div>

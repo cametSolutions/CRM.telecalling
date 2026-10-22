@@ -5,7 +5,13 @@ import { useDispatch } from "react-redux"
 import { useNavigate } from "react-router-dom"
 import { FaSpinner } from "react-icons/fa"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons"
+import {
+  faArrowRight,
+  faEye,
+  faEyeSlash,
+  faLock,
+  faUser
+} from "@fortawesome/free-solid-svg-icons"
 import { toast } from "react-toastify"
 import { setLocalStorageItem } from "../../../helper/localstorage"
 import { loginSuccess } from "../../../../slices/authSlice.js"
@@ -164,85 +170,163 @@ const Login = () => {
   }
 
   return (
-    <div
-      className="flex items-center justify-center min-h-screen bg-cover bg-center"
-      style={{ backgroundImage: "url('/background.jpg')" }}
-    >
-      <div className=" w-[350px] md:w-[400px] p-8 space-y-6 bg-white shadow-md rounded-lg">
-        <h2 className="text-2xl font-bold text-center">Login</h2>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="mb-4">
-            <label
-              htmlFor="emailOrMobile"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Email or Mobile
-            </label>
-            <input
-              type="text"
-              id="emailOrMobile"
-              {...register("emailOrMobile", {
-                required: "Email or mobile number is required",
-                validate: (value) => {
-                  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-                  const isValidMobile = /^[0-9]{10}$/.test(value)
-                  if (!isValidEmail && !isValidMobile) {
-                    return "Invalid email or mobile number"
-                  }
-                }
-              })}
-              className="w-full px-3 py-2 mt-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              autoComplete="off"
-            />
-            {errors.emailOrMobile && (
-              <p className="mt-2 text-sm text-red-600">
-                {errors.emailOrMobile.message}
-              </p>
-            )}
-          </div>
+    <main className="min-h-screen bg-slate-100 p-4 sm:p-6 lg:p-10">
+      <section className="mx-auto flex min-h-[calc(100vh-2rem)] max-w-6xl overflow-hidden rounded-3xl bg-white shadow-2xl shadow-slate-900/10 sm:min-h-[680px] lg:min-h-[calc(100vh-5rem)]">
+        <div
+          className="relative hidden w-[55%] overflow-hidden bg-slate-900 bg-cover bg-center lg:block"
+          style={{ backgroundImage: "url('/background.jpg')" }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-950/95 via-indigo-950/80 to-blue-700/65" />
+          <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-cyan-400/20 blur-3xl" />
+          <div className="absolute -bottom-24 -left-12 h-80 w-80 rounded-full bg-indigo-400/20 blur-3xl" />
 
-          <div className="mb-4 relative">
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Password
-            </label>
-            <div className="relative">
-              <input
-                type={passwordVisible ? "text" : "password"}
-                id="password"
-                {...register("password", { required: "Password is required" })}
-                className="w-full px-3 py-2 mt-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 pr-10"
-              />
-              <span
-                className="absolute inset-y-0 right-0 flex items-center px-2 cursor-pointer"
-                onClick={() => setPasswordVisible(!passwordVisible)}
-              >
-                <FontAwesomeIcon icon={passwordVisible ? faEyeSlash : faEye} />
-              </span>
+          <div className="relative flex h-full flex-col justify-between p-12 text-white">
+            <div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 text-lg font-bold backdrop-blur">
+                C
+              </div>
+              <p className="mt-12 text-sm font-semibold uppercase tracking-[0.24em] text-cyan-200">
+                CRM Workspace
+              </p>
+              <h1 className="mt-4 max-w-md text-4xl font-semibold leading-tight">
+                Keep every customer relationship moving forward.
+              </h1>
+              <p className="mt-5 max-w-md text-base leading-7 text-slate-200">
+                Manage leads, teams, and customer activity from one secure,
+                focused workspace.
+              </p>
             </div>
-            {errors.password && (
-              <p className="mt-2 text-sm text-red-600">
-                {errors.password.message}
-              </p>
-            )}
-          </div>
 
-          <button
-            type="submit"
-            className="w-full flex items-center justify-center  px-4 py-2 font-semibold text-white bg-indigo-500 rounded-md hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            {/* {loading ? "Loading..." : "Login"} */}
-            {loading ? (
-              <FaSpinner className="animate-spin h-5 w-5  text-white " />
-            ) : (
-              "Login"
-            )}
-          </button>
-        </form>
-      </div>
-    </div>
+            <div className="border-t border-white/20 pt-6 text-sm text-slate-200">
+              Secure access for your team
+            </div>
+          </div>
+        </div>
+
+        <div className="flex w-full items-center justify-center bg-white px-6 py-12 sm:px-12 lg:w-[45%] lg:px-14">
+          <div className="w-full max-w-sm">
+            <div className="mb-10">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-lg font-bold text-white shadow-lg shadow-indigo-200 lg:hidden">
+                C
+              </div>
+              <p className="mt-6 text-sm font-semibold uppercase tracking-[0.18em] text-indigo-600">
+                Welcome back
+              </p>
+              <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
+                Sign in to your account
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-slate-500">
+                Enter your details to continue to your CRM workspace.
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+              <div>
+                <label
+                  htmlFor="emailOrMobile"
+                  className="mb-2 block text-sm font-semibold text-slate-700"
+                >
+                  Email or mobile number
+                </label>
+                <div className="relative">
+                  <FontAwesomeIcon
+                    icon={faUser}
+                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                  <input
+                    type="text"
+                    id="emailOrMobile"
+                    placeholder="name@company.com or 9876543210"
+                    {...register("emailOrMobile", {
+                      required: "Email or mobile number is required",
+                      validate: (value) => {
+                        const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+                        const isValidMobile = /^[0-9]{10}$/.test(value)
+                        if (!isValidEmail && !isValidMobile) {
+                          return "Enter a valid email address or 10-digit mobile number"
+                        }
+                      }
+                    })}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100"
+                    autoComplete="username"
+                  />
+                </div>
+                {errors.emailOrMobile && (
+                  <p className="mt-2 text-sm text-red-600">
+                    {errors.emailOrMobile.message}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="password"
+                  className="mb-2 block text-sm font-semibold text-slate-700"
+                >
+                  Password
+                </label>
+                <div className="relative">
+                  <FontAwesomeIcon
+                    icon={faLock}
+                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                  <input
+                    type={passwordVisible ? "text" : "password"}
+                    id="password"
+                    placeholder="Enter your password"
+                    {...register("password", { required: "Password is required" })}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-12 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100"
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 transition hover:text-indigo-600 focus:outline-none"
+                    onClick={() => setPasswordVisible(!passwordVisible)}
+                    aria-label={passwordVisible ? "Hide password" : "Show password"}
+                  >
+                    <FontAwesomeIcon icon={passwordVisible ? faEyeSlash : faEye} />
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="mt-2 text-sm text-red-600">
+                    {errors.password.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => navigate("/forgot-password")}
+                  className="text-sm font-semibold text-indigo-600 transition hover:text-indigo-800 hover:underline"
+                >
+                  Forgot password?
+                </button>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 font-semibold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {loading ? (
+                  <FaSpinner className="h-5 w-5 animate-spin" />
+                ) : (
+                  <>
+                    Sign in
+                    <FontAwesomeIcon icon={faArrowRight} className="text-sm" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            <p className="mt-8 text-center text-xs text-slate-400">
+              Protected workspace · Authorized users only
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
   )
 }
 

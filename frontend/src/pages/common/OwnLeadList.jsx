@@ -492,36 +492,36 @@ console.log(item?.mobile)
                     log?.taskTo === "followup"
                 )
                 console.log(hasOpenTaskForLoggedUser)
+              
+                console.log(item)
                 // const isReadOnly = item?.leadConfirmed
                 //   ? true
                 //   : item?.leadLost
-                //   ? true
-                //   : item?.reallocatedTo
-                //   ? (loggedUser?.role === "Admin" || loggedUser?.role === "Manager")
-                //       ? false
-                //       : !hasOpenTaskForLoggedUser
-                //   : item?.activityLog?.some(
-                //       (log) =>
-                //         log?.followupClosed === false &&
-                //         log?.taskallocatedTo &&
-                //         log?.taskTo === "followup"
-                //     )
-                //   ? true
-                //   : item?.leadBy?._id !== loggedUser?._id;
-                console.log(item)
-                const isReadOnly = item?.leadConfirmed
-                  ? true
-                  : item?.leadLost
-                    ? true
-                    : item?.reallocatedTo
-                      ? loggedUser?.role === "Admin" ||
-                        loggedUser?.role === "Manager"
-                        ? false
-                        : !hasOpenTaskForLoggedUser // if hasOpenTaskForLoggedUser === true → readonly false
-                      : hasFollowupTaskForLoggedUser
-                        ? false // non-reallocated + followup assigned to user → readonly false
-                        : item?.leadBy?._id !== loggedUser?._id
-
+                //     ? true
+                //     : item?.reallocatedTo
+                //       ? loggedUser?.role === "Admin" ||
+                //         loggedUser?.role === "Manager"
+                //         ? false
+                //         : !hasOpenTaskForLoggedUser // if hasOpenTaskForLoggedUser === true → readonly false
+                //       : hasFollowupTaskForLoggedUser
+                //         ? false // non-reallocated + followup assigned to user → readonly false
+                //         : item?.leadBy?._id !== loggedUser?._id
+const isReadOnly = item?.leadConfirmed
+  ? true
+  : item?.leadLost
+    ? true
+    : item?.reallocatedTo
+      ? loggedUser?.role === "Admin" || loggedUser?.role === "Manager"
+        ? false
+        : !hasOpenTaskForLoggedUser
+      : !hasFollowupTaskForLoggedUser;
+console.log(item?.leadLost)
+console.log(item?.leadConfirmed)
+console.log(item?.reallocatedTo)
+console.log(hasOpenTaskForLoggedUser)
+console.log(hasFollowupTaskForLoggedUser)
+console.log(loggedUser?._id)
+console.log(item?.leadBy?._id)
                 console.log(isReadOnly)
 
                 loggedUser.role === "Admin"
