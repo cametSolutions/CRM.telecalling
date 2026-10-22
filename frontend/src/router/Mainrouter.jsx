@@ -4,6 +4,8 @@ import { Routes, Route } from "react-router-dom"
 //import Home from "../pages/Home"
 
 import Login from "../pages/primaryUser/authentication/Login.jsx"
+import ForgotPassword from "../pages/primaryUser/authentication/ForgotPassword.jsx"
+import ResetPassword from "../pages/primaryUser/authentication/ResetPassword.jsx"
 //import Register from "../pages/primaryUser/authentication/Register.jsx"
 import mastersRoutes from "./CrmRoutes/childRoutes/mastersRoutes.js"
 import reportsRoutes from "./CrmRoutes/childRoutes/reportsRoutes.js"
@@ -45,6 +47,8 @@ const Mainrouter = ({ selectedYear, selectedPeriod }) => {
       <Routes>
         <Route path="/" element={<Login />} />
 <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/change-password" element={<ChangePassword />} />
         {/* <Route path="/admin/productlist" element={<ProductList />} /> */}
         {/* <Route path="/admin/home" element={<CallregistrationList />} /> */}

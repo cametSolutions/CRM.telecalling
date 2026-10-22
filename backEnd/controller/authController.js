@@ -6212,10 +6212,12 @@ const { Staff, Admin } = models
 // import Misspunch from "../model/primaryUser/missPunchSchema.js"
 import Misspunch from "../model/primaryUser/misspunchingSchema.js"
 import bcrypt from "bcrypt"
+import crypto from "crypto"
 import CompensatoryLeave from "../model/primaryUser/compensatoryLeaveSchema.js"
 import generateToken from "../utils/generateToken.js"
 import LeaveRequest from "../model/primaryUser/leaveRequestSchema.js"
 import CallRegistration from "../model/secondaryUser/CallRegistrationSchema.js"
+import { sendPasswordResetEmail } from "../helper/passwordResetEmail.js"
 
 
 const LEAVE_CATEGORY_MAP = {
@@ -7568,6 +7570,149 @@ export const Login = async (req, res) => {
     })
   }
 }
+const PASSWORD_RESET_MESSAGE =
+  "If an account matches that email address, a six-digit reset code has been sent."
+const PASSWORD_RESET_TTL_MS = 15 * 60 * 1000
+const PASSWORD_RESET_COOLDOWN_MS = 60 * 1000
+
+const isStrongPassword = (password) =>
+  typeof password === "string" &&
+  password.length >= 10 &&
+  password.length <= 128 &&
+  /[a-z]/.test(password) &&
+  /[A-Z]/.test(password) &&
+  /\d/.test(password)
+
+export const requestPasswordReset = async (req, res) => {
+  try {
+    const email = String(req.body?.email || "").trim().toLowerCase()
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      return res.status(200).json({ message: PASSWORD_RESET_MESSAGE })
+    }
+
+    const emailMatcher = { $regex: `^${email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, $options: "i" }
+    let user = await Admin.findOne({ email: emailMatcher }).select(
+      "+passwordResetRequestedAt"
+    )
+    if (!user) {
+      user = await Staff.findOne({ email: emailMatcher }).select(
+        "+passwordResetRequestedAt"
+      )
+    }
+
+    if (!user) {
+      return res.status(200).json({ message: PASSWORD_RESET_MESSAGE })
+    }
+
+    const now = Date.now()
+    if (
+      user.passwordResetRequestedAt &&
+      now - user.passwordResetRequestedAt.getTime() < PASSWORD_RESET_COOLDOWN_MS
+    ) {
+      return res.status(200).json({ message: PASSWORD_RESET_MESSAGE })
+    }
+
+    const otp = crypto.randomInt(0, 1_000_000).toString().padStart(6, "0")
+    user.passwordResetToken = crypto
+      .createHash("sha256")
+      .update(otp)
+      .digest("hex")
+    user.passwordResetExpires = new Date(now + PASSWORD_RESET_TTL_MS)
+    user.passwordResetRequestedAt = new Date(now)
+    user.passwordResetAttempts = 0
+    try {
+      await sendPasswordResetEmail({
+        email: user.email,
+        name: user.name,
+        otp,
+        branchId: user.selected?.[0]?.branch_id
+      })
+      await user.save({ validateBeforeSave: false })
+    } catch (mailError) {
+      console.error("Password reset email failed:", {
+        message: mailError.message,
+        code: mailError.code,
+        command: mailError.command,
+        responseCode: mailError.responseCode,
+        response: mailError.response
+      })
+    }
+
+    return res.status(200).json({ message: PASSWORD_RESET_MESSAGE })
+  } catch (error) {
+    console.error("Password reset request error:", error.message)
+    return res.status(200).json({ message: PASSWORD_RESET_MESSAGE })
+  }
+}
+
+export const resetPassword = async (req, res) => {
+  try {
+    const email = String(req.body?.email || "").trim().toLowerCase()
+    const otp = String(req.body?.otp || "").trim()
+    const newPassword = String(req.body?.newPassword || "")
+    const confirmPassword = String(req.body?.confirmPassword || "")
+
+    if (!/^\S+@\S+\.\S+$/.test(email) || !/^\d{6}$/.test(otp)) {
+      return res.status(400).json({ message: "Enter a valid email address and six-digit code." })
+    }
+    if (!isStrongPassword(newPassword)) {
+      return res.status(400).json({
+        message: "Password must be 10-128 characters and include uppercase, lowercase, and a number."
+      })
+    }
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: "Passwords do not match." })
+    }
+
+    const tokenHash = crypto.createHash("sha256").update(otp).digest("hex")
+    const emailMatcher = { $regex: `^${email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, $options: "i" }
+    const resetQuery = { email: emailMatcher, passwordResetExpires: { $gt: new Date() } }
+    let user = await Admin.findOne(resetQuery).select(
+      "+passwordResetToken +passwordResetExpires +passwordResetAttempts"
+    )
+    if (!user) {
+      user = await Staff.findOne(resetQuery).select(
+        "+passwordResetToken +passwordResetExpires +passwordResetAttempts"
+      )
+    }
+
+    if (!user || !user.passwordResetToken || user.passwordResetAttempts >= 5) {
+      return res.status(400).json({ message: "The code is invalid or has expired." })
+    }
+    const isOtpValid = crypto.timingSafeEqual(
+      Buffer.from(user.passwordResetToken),
+      Buffer.from(tokenHash)
+    )
+    if (!isOtpValid) {
+      user.passwordResetAttempts += 1
+      if (user.passwordResetAttempts >= 5) {
+        user.passwordResetToken = undefined
+        user.passwordResetExpires = undefined
+      }
+      await user.save({ validateBeforeSave: false })
+      return res.status(400).json({ message: "The code is invalid or has expired." })
+    }
+    if (await bcrypt.compare(newPassword, user.password)) {
+      return res.status(400).json({ message: "Choose a password you have not used before." })
+    }
+
+    const passwordExpiryAt = new Date()
+    passwordExpiryAt.setMonth(passwordExpiryAt.getMonth() + 2)
+    user.password = newPassword
+    user.passwordExpiryAt = passwordExpiryAt
+    user.passwordResetToken = undefined
+    user.passwordResetExpires = undefined
+    user.passwordResetRequestedAt = undefined
+    user.passwordResetAttempts = undefined
+    await user.save()
+
+    return res.status(200).json({ message: "Password reset successfully. Please sign in." })
+  } catch (error) {
+    console.error("Password reset error:", error.message)
+    return res.status(500).json({ message: "Unable to reset password. Please request a new link." })
+  }
+}
+
 export const changePassword = async (req, res) => {
   try {
     const { userId, currentPassword, newPassword, confirmPassword } = req.body

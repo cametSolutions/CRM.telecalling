@@ -6331,12 +6331,19 @@ export const UpdateLeadRegister = async (req, res) => {
         throw Object.assign(new Error("Lead not found"), { statusCode: 404 });
       }
 
-      const activePendingTask = (matchedDoc.activityLog || []).find(
-        (log) =>
+      const activePendingTask = (matchedDoc.activityLog || []).find((log) => {
+        const taskName = String(log?.taskTo || "").trim().toLowerCase();
+        const isFollowupAssignedToCurrentUser =
+          taskName === "followup" &&
+          String(log?.taskallocatedTo || "") === String(req.owner?.userId || "");
+
+        return (
           log?.taskClosed === false &&
           log?.allocationChanged !== true &&
-          log?.taskTo !== "followup"
-      );
+          taskName.length > 0 &&
+          !isFollowupAssignedToCurrentUser
+        );
+      });
 
       if (activePendingTask) {
         throw Object.assign(
@@ -9669,6 +9676,7 @@ export const GetallReallocatedLead = async (req, res) => {
         activityLog: 1,
         leadId: 1,
         leadDate: 1,
+        netAmount: 1,
         mobile: 1,
         phone: 1,
         email: 1,
