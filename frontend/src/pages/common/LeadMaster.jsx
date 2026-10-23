@@ -449,11 +449,18 @@ function ProductDropdown({
     console.log(prod)
     const previousProductKey = item?.productorServiceName || ""
 
+    const selectedBranchId = String(
+      selectedBranch?._id || selectedBranch || ""
+    )
     const branchdata = (prod?.selected || [])
-      .filter((entry) => entry.branch_id === selectedBranch)
+      .filter(
+        (entry) =>
+          String(entry?.branch_id?._id || entry?.branch_id || "") ===
+          selectedBranchId
+      )
       .map((entry) => ({
-        company_id: entry.company_id,
-        branch_id: entry.branch_id
+        company_id: entry?.company_id?._id || entry?.company_id || "",
+        branch_id: entry?.branch_id?._id || entry?.branch_id || ""
       }))
 
     if (
@@ -515,7 +522,9 @@ function ProductDropdown({
     }
 
     const filteredbranch = prod?.selected?.filter(
-      (entry) => entry.branch_id === selectedBranch
+      (entry) =>
+        String(entry?.branch_id?._id || entry?.branch_id || "") ===
+        selectedBranchId
     )
 
     const igstRate = filteredbranch?.[0]?.hsn_id?.onValue?.igstRate
@@ -1522,6 +1531,7 @@ const LeadMaster = ({
       String(lead?.productorservicetype || "").toLowerCase() ===
       "primaryproduct"
   )
+  const isClosingFlow = process === "closing" || from === "closedlead"
   console.log(selectedleadlist)
   const [selectedCustomer, setSelectedCustomer] = useState(null)
   const [selectedLicense, setSelectedLicense] = useState(null)
@@ -5491,9 +5501,7 @@ convertexcel
                                 </button>
                               </div>
                             </td>
-                            {(process === "closing" ||
-                              process === "edit" ||
-                              from === "closedlead") &&
+                            {isClosingFlow &&
                               !isEnhancedService && (
                                 <td className="border border-gray-300 px-1 py-1 text-center">
                                   <div className="relative inline-block group">
@@ -5626,6 +5634,7 @@ convertexcel
                           {...registerMain(field)}
                           onFocus={(e) => {
                             if (
+                              isClosingFlow &&
                               field === "discamnt" &&
                               !hasPrimaryProductInLead
                             ) {
