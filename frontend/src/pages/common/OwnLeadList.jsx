@@ -510,15 +510,30 @@ console.log(item?.mobile)
                 //       : hasFollowupTaskForLoggedUser
                 //         ? false // non-reallocated + followup assigned to user → readonly false
                 //         : item?.leadBy?._id !== loggedUser?._id
-const isReadOnly = item?.leadConfirmed
+// const isReadOnly = item?.leadConfirmed
+//   ? true
+//   : item?.leadLost
+//     ? true
+//     : item?.reallocatedTo
+//       ? loggedUser?.role === "Admin" || loggedUser?.role === "Manager"
+//         ? false
+//         : !hasOpenTaskForLoggedUser
+//       : !hasFollowupTaskForLoggedUser;
+
+
+
+const isLeadOwner =
+  item?.leadBy?._id?.toString() === loggedUser?._id?.toString();
+
+const isReadOnly = item?.leadConfirmed || item?.leadLost
   ? true
-  : item?.leadLost
-    ? true
-    : item?.reallocatedTo
-      ? loggedUser?.role === "Admin" || loggedUser?.role === "Manager"
-        ? false
-        : !hasOpenTaskForLoggedUser
-      : !hasFollowupTaskForLoggedUser;
+  : item?.reallocatedTo
+    ? loggedUser?.role === "Admin" || loggedUser?.role === "Manager"
+      ? false
+      : !hasOpenTaskForLoggedUser
+    : hasFollowupTaskForLoggedUser
+      ? false
+      : !isLeadOwner;
 console.log(item?.leadLost)
 console.log(item?.leadConfirmed)
 console.log(item?.reallocatedTo)
