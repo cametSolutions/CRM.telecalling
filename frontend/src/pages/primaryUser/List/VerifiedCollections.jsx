@@ -31,20 +31,18 @@ import {
   ChevronRight
 } from "lucide-react"
 import { getLocalStorageItem } from "../../../helper/localstorage"
-import AdminHeader from "../../../header/AdminHeader"
-import StaffHeader from "../../../header/StaffHeader"
-import { StaticSidebar } from "../../../components/primaryUser/StaticSidebar"
-import { PerformanceModal } from "../../../components/primaryUser/PerformanceModal"
+
 import { PropagateLoader } from "react-spinners"
 import { toast } from "react-toastify"
 
 export default function VerifiedCollections() {
-const reduxselectedBranch=useSelector((branch)=>branch.companyBranch.selectedBranch)
-console.log(reduxselectedBranch)
+  const reduxselectedBranch = useSelector(
+    (branch) => branch.companyBranch.selectedBranch
+  )
+  console.log(reduxselectedBranch)
   console.log("hh")
   const [showFullName, setShowFullName] = useState(false)
-const location=useLocation()
-console.log(location.state)
+  const location = useLocation()
   const [startDate, setStartDate] = useState(location?.state?.startDate)
   const [endDate, setEndDate] = useState(location?.state?.endDate)
   const [tableData, setTableData] = useState([])
@@ -93,7 +91,6 @@ console.log(location.state)
   const navigate = useNavigate()
   const { data: companybranches } = UseFetch("/branch/getBranch")
 
-
   // const {data}=UseFetch("/lead/fix-leadverified")
   const {
     data: collectionlead,
@@ -104,19 +101,23 @@ console.log(location.state)
       loggedUser &&
       `/lead/collectionLeads?selectedBranch=${reduxselectedBranch}&verified=${verifiedLead}&isAccountant=${isdepartmentisAccountant}&loggeduserby=${loggedUser._id}`
   )
-console.log(collectionlead)
-const {
+  console.log(collectionlead)
+console.log(reduxselectedBranch)
+console.log(loggedUser)
+console.log(startDate)
+console.log(endDate)
+  const {
     data: verifiedcollectionlead,
-    loading:leadloading,
-    refreshHook:leadHook
+    loading: leadloading,
+    refreshHook: leadHook
   } = UseFetch(
     reduxselectedBranch &&
       loggedUser &&
       `/lead/verifiedcollectionLeads?selectedBranch=${reduxselectedBranch}&verified=${true}&startDate=${startDate}&endDate=${endDate}`
   )
-console.log(startDate)
-console.log(endDate)
-console.log(verifiedcollectionlead)
+  console.log(startDate)
+  console.log(endDate)
+  console.log(verifiedcollectionlead)
   const { data: branchProduct } = UseFetch(
     `/product/getallbranchProduct?branch=${reduxselectedBranch}`
   )
@@ -251,22 +252,15 @@ console.log(verifiedcollectionlead)
   }, [loggedUserBranches])
   console.log("Hh")
   useEffect(() => {
-    if (
-      verifiedcollectionlead &&
-      verifiedcollectionlead.length > 0 &&
-      partners &&
-      partners.length > 0 &&
-      loggedUser
-    ) {
-      console.log(loggedUser?.department)
-     
-        setTableData(normalizeTableData(verifiedcollectionlead))
-      
+    if (!loggedUser) return
 
+    setTableData(normalizeTableData(verifiedcollectionlead || []))
+
+    if (Array.isArray(partners)) {
       setPartner(partners)
     }
   }, [verifiedcollectionlead, partners, loggedUser])
-console.log(tableData)
+  console.log(tableData)
   const normalizeTableData = (data) => {
     if (Array.isArray(data)) {
       return [{ staffName: null, leads: data }]
@@ -733,75 +727,15 @@ console.log(tableData)
   return (
     <div className="h-full  bg-[#ADD8E6]">
       <div className="flex h-full flex-row">
-        {/* <StaticSidebar
-          handleMoreClick={handleMoreClick}
-          selectedCompanyBranch={selectedCompanyBranch}
-          setselectedCompanyBranch={setselectedCompanyBranch}
-          parenttargetData={settargetData}
-          parentperiodmode={periodMode}
-          parentyear={selectedYear}
-          setselectedPeriod={setselectedPeriod}
-        /> */}
         <div className="flex flex-1 flex-col overflow-hidden">
-          {/* <header className="flex items-center justify-between bg-[#ADD8E6]">
-            {loggedUser?.role?.toLowerCase() === "admin" ? (
-              <AdminHeader hide={true} />
-            ) : (
-              <StaffHeader hide={true} />
-            )}
-
-            <div className="flex items-center gap-1.5  pr-3 h-full">
-              <button className="rounded-full p-1.5 transition bg-slate-100">
-                <Mail size={15} strokeWidth={2.2} />
-              </button>
-              <div className="relative">
-                <button className="rounded-full p-1.5 transition bg-slate-100">
-                  <MessageSquareText size={15} strokeWidth={2.2} />
-                </button>
-                <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />
-              </div>
-              <button className="rounded-full p-1.5 transition bg-slate-100">
-                <Settings size={15} strokeWidth={2.2} />
-              </button>
-
-              <div className="relative">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setShowUserMenu((prev) => !prev)
-                  }}
-                  className="rounded-full p-1.5 transition bg-slate-100"
-                >
-                  <User size={15} strokeWidth={2.2} />
-                </button>
-
-                {showUserMenu && (
-                  <div
-                    onClick={(e) => e.stopPropagation()} 
-                    className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
-                  >
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </header> */}
-
           <div className="flex justify-start items-center p-3 md:p-5 md:pb-2 sticky top-0 z-30 gap-3">
             <h2 className="text-lg font-bold">Verified Collections</h2>
-<DateRangePicker
-                startDate={startDate}
-                endDate={endDate}
-                setStartDate={setStartDate}
-                setEndDate={setEndDate}
-              />
-              
-           
+            <DateRangePicker
+              startDate={startDate}
+              endDate={endDate}
+              setStartDate={setStartDate}
+              setEndDate={setEndDate}
+            />
           </div>
           {/* Responsive Table Container this is the newest design*/}
           <div className="h-auto overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3 bg-white">
@@ -843,13 +777,6 @@ console.log(tableData)
 
                     {/* only render table if there are leads */}
                     {loading ? <SkeletonTable /> : renderTable(leads)}
-                    {/* {leads.length > 0 ? (
-                      renderTable(leads)
-                    ) : (
-                      <div className="text-center text-gray-400 py-3 text-sm">
-                        No Lead under {staffName || "this group"}.
-                      </div>
-                    )} */}
                   </div>
                 ))
               })()}
@@ -881,7 +808,7 @@ console.log(tableData)
       {paymenthistoryModal && (
         <PaymentHistoryModal
           data={paymentHistoryList}
-showAction={false}
+          showAction={false}
           isChecked={isChecked}
           isforcefullyclosed={isforcefullyclosed}
           balanceAmount={balanceAmount}
@@ -896,52 +823,6 @@ showAction={false}
           isdepartmentisAccountant={isdepartmentisAccountant}
         />
       )}
-      <PerformanceModal
-        modalOpen={openModal}
-        splitType={targetData?.selectedMeasurementType}
-        selectedperiod={selectedPeriod}
-        allperiods={targetData?.periods}
-        onselectedPeriodChange={(val, val2) => {
-          setSelectedMonth(val2)
-          setselectedPeriod(val)
-        }}
-        onMonthChange={(val) => {
-          setacheivedProducts([])
-          setselectedDataPopup([])
-          setperiodMode(val)
-          setselecteduserName(null)
-        }}
-        onYearChange={(val) => {
-          setacheivedProducts([])
-          setselectedDataPopup([])
-          setSelectedYear(val)
-          setselecteduserName(null)
-        }}
-        productlist={productlist}
-        onClose={() => {
-          setselecteduserName(null)
-          setacheivedProducts([])
-          setOpenModal(false)
-          setActiveUserId(null)
-        }}
-        selectedMonth={periodMode}
-        selectedYear={selectedYear}
-        summary={{
-          target: selectedDatapopup?.target,
-          achieved: selectedDatapopup?.achieved,
-          balance:
-            selectedDatapopup?.achieved > selectedDatapopup?.target
-              ? 0
-              : selectedDatapopup?.balance
-        }}
-        products={achievedproducts}
-        targetData={targetData?.userWiseResults}
-        loggedUser={loggedUser}
-        selectedUser={selectedUserName}
-        category={selectedCategory}
-        handleSelectedUser={handleSelectedUser}
-        activeUserId={activeUserId}
-      />
     </div>
   )
 }

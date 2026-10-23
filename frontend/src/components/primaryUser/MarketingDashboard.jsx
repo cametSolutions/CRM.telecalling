@@ -84,6 +84,61 @@ const getBarStyle = (value, colorA, colorB) => ({
   boxShadow: `inset 1px 0 0 rgba(255,255,255,0.35), inset -1px 0 0 rgba(0,0,0,0.08), 0 3px 8px rgba(15,23,42,0.12)`
 })
 
+const SalesFunnel = ({ stages }) => {
+  const firstStageCount = Math.max(Number(stages?.[0]?.value) || 0, 1)
+
+  return (
+    <div className="rounded-xl border border-slate-200/90 bg-white p-3.5 sm:p-4" style={{ boxShadow: "0 4px 12px rgba(15,23,42,0.05), inset 0 1px 0 rgba(255,255,255,0.85)" }}>
+      <div className="mb-3">
+        <h2 className="text-base font-bold text-slate-900">Sales Funnel</h2>
+        <p className="mt-0.5 text-xs text-slate-500">Lead progression from initial contact to conversion</p>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-[minmax(160px,0.8fr)_minmax(220px,1.2fr)] sm:items-center">
+        <div className="flex min-h-[210px] flex-col items-center justify-center gap-1">
+          {stages.map((stage) => (
+            <div
+              key={stage.label}
+              className="flex h-10 items-center justify-center rounded-md text-base font-bold text-white shadow-sm"
+              style={{
+                width: `${stage.width}%`,
+                background: stage.color,
+                clipPath: "polygon(0 0, 100% 0, calc(100% - 12px) 100%, 12px 100%)"
+              }}
+            >
+              {stage.value}
+            </div>
+          ))}
+        </div>
+
+        <div className="divide-y divide-slate-100">
+          {stages.map((stage) => {
+            const percentage = Math.round((Number(stage.value || 0) / firstStageCount) * 100)
+
+            return (
+              <div key={stage.label} className="flex items-center gap-2.5 py-2 first:pt-0 last:pb-0">
+                <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: stage.dotColor }} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-slate-700">{stage.label}</p>
+                  <p className="mt-0.5 flex items-center gap-1 text-xs font-medium text-slate-500">
+                    <span>{stage.value}</span>
+                    <span>|</span>
+                    <IndianRupee className="h-3 w-3" />
+                    <span>{formatINR(stage.amount)}</span>
+                  </p>
+                </div>
+                <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                  {percentage}%
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const MarketingDashboard = () => {
   const reduxselectedBranch = useSelector(
     (branch) => branch.companyBranch.selectedBranch
@@ -677,6 +732,62 @@ const MarketingDashboard = () => {
     return `${day}-${month}-${year}`
   }
   const formatAmount = (value) => Number(value || 0).toLocaleString("en-IN") //amount shown like 12,000 with commmas
+  const funnelSummary = followup?.find(
+    (item) => String(item?.staffId) === String(user?._id)
+  )
+  const funnelNumber = (value) => Math.max(Number(value) || 0, 0)
+  const funnelStages = [
+    {
+      label: "New Leads",
+      value: funnelNumber(funnelSummary?.leadCount),
+      amount: funnelNumber(funnelSummary?.leadAmount),
+      width: 100,
+      color: "linear-gradient(135deg, #164cb8, #2563d9)",
+      dotColor: "#2563d9"
+    },
+    {
+      label: "Contacted",
+      value: funnelNumber(
+        funnelNumber(funnelSummary?.leadCount) -
+          funnelNumber(funnelSummary?.neverFollowup) -
+          funnelNumber(funnelSummary?.lost) -
+          funnelNumber(funnelSummary?.converted)
+      ),
+      amount: funnelNumber(
+        funnelNumber(funnelSummary?.leadAmount) -
+          funnelNumber(funnelSummary?.neverFollowupAmount) -
+          funnelNumber(funnelSummary?.lostAmount) -
+          funnelNumber(funnelSummary?.convertedAmount)
+      ),
+      width: 84,
+      color: "linear-gradient(135deg, #2877ea, #428ded)",
+      dotColor: "#3b82f6"
+    },
+    {
+      label: "System Study",
+      value: funnelNumber(funnelSummary?.dueToday) + funnelNumber(funnelSummary?.future),
+      amount: funnelNumber(funnelSummary?.dueTodayAmount) + funnelNumber(funnelSummary?.futureAmount),
+      width: 68,
+      color: "linear-gradient(135deg, #5da7f7, #78b9f7)",
+      dotColor: "#60a5fa"
+    },
+    {
+      label: "Lost",
+      value: funnelNumber(funnelSummary?.lost),
+      amount: funnelNumber(funnelSummary?.lostAmount),
+      width: 52,
+      color: "linear-gradient(135deg, #87c7fa, #a8d7fb)",
+      dotColor: "#93c5fd"
+    },
+    {
+      label: "Converted",
+      value: funnelNumber(funnelSummary?.converted),
+      amount: funnelNumber(funnelSummary?.convertedAmount),
+      width: 42,
+      color: "linear-gradient(135deg, #25ba72, #45ce88)",
+      dotColor: "#34c77d"
+    }
+  ]
   const handleMoreClick = (id, name) => {
     console.log("hh")
     const filteredList = branchProduct
@@ -974,10 +1085,13 @@ const MarketingDashboard = () => {
     lg:grid-cols-2       /* desktop/tablet+: two diagrams side by side */
   "
               >
-                {/* Monthly Performance */}
+                {/* Sales Funnel */}
+                <SalesFunnel stages={funnelStages} />
+
+                {/* Replaced monthly-performance chart kept out of the layout. */}
                 <div
                   className="
-      rounded-xl border border-slate-200/90 bg-white
+      hidden rounded-xl border border-slate-200/90 bg-white
       p-2.5 sm:p-3
     "
                   style={{
@@ -1125,7 +1239,7 @@ const MarketingDashboard = () => {
 
                 <div
                   className="
-    rounded-xl border border-slate-200/90 bg-white
+    order-3 rounded-xl border border-slate-200/90 bg-white lg:col-span-2
     p-2.5 sm:p-3
   "
                   style={{
@@ -1176,7 +1290,14 @@ const MarketingDashboard = () => {
         "
                       >
                         <tr>
-                          {["Staff Name", "Task Name", "Completion Date"].map(
+                          {[
+                            "Lead ID",
+                            "Party Name",
+                            "Product Name",
+                            "Staff Name",
+                            "Task Name",
+                            "Completion Date"
+                          ].map(
                             (header) => (
                               <th
                                 key={header}
@@ -1207,6 +1328,24 @@ const MarketingDashboard = () => {
                 hover:bg-slate-50
               "
                             >
+                              <td
+                                className="border-b border-slate-100 px-3 py-2 font-medium text-slate-700 [font-size:clamp(10px,1.4vw,12px)]"
+                              >
+                                {task?.leadId || "-"}
+                              </td>
+
+                              <td
+                                className="border-b border-slate-100 px-3 py-2 text-slate-700 [font-size:clamp(10px,1.4vw,12px)]"
+                              >
+                                {task?.partyName || "-"}
+                              </td>
+
+                              <td
+                                className="border-b border-slate-100 px-3 py-2 text-slate-700 [font-size:clamp(10px,1.4vw,12px)]"
+                              >
+                                {task?.productName || "-"}
+                              </td>
+
                               {/* Staff Name */}
                               <td
                                 className="
@@ -1218,7 +1357,7 @@ const MarketingDashboard = () => {
                               >
                                 <div className="flex items-center gap-2">
                                   <span className="font-medium">
-                                    {task?.staffName.toUpperCase()}
+                                    {task?.staffName?.toUpperCase() || "N/A"}
                                   </span>
                                 </div>
                               </td>
@@ -1261,7 +1400,7 @@ const MarketingDashboard = () => {
                         ) : (
                           <tr>
                             <td
-                              colSpan="3"
+                              colSpan="6"
                               className="
                 py-8
                 text-center
@@ -1277,7 +1416,9 @@ const MarketingDashboard = () => {
                     </table>
                   </div>
                 </div>
-                <CollectionDetails collections={todaysCollection} />
+                <div className="order-2">
+                  <CollectionDetails collections={todaysCollection} />
+                </div>
               </div>
             </section>
           </main>

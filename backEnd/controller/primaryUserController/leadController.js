@@ -3833,6 +3833,8 @@ export const getBranchwiseMarketingPendingTasks = async (req, res) => {
     // Only populate the static ref here — taskId works fine as-is
     const leads = await LeadMaster.find({ leadBranch: branchId })
       .populate("activityLog.taskId")
+      .populate("customerName", "customerName")
+      .populate("leadFor.productorServiceId", "productName serviceName shortName")
       .lean(); // lean() is fine since we're manually attaching taskallocatedTo below
 
     // 1. Collect all taskallocatedTo ids, grouped by their model
@@ -3879,6 +3881,18 @@ export const getBranchwiseMarketingPendingTasks = async (req, res) => {
             : null;
 
           pendingTasks.push({
+            leadId: lead.leadId || "-",
+            partyName: lead.customerName?.customerName || "-",
+            productName: (lead.leadFor || [])
+              .map(
+                (item) =>
+                  item?.productorServiceName ||
+                  item?.productorServiceId?.shortName ||
+                  item?.productorServiceId?.productName ||
+                  item?.productorServiceId?.serviceName
+              )
+              .filter(Boolean)
+              .join(", ") || "-",
             staffName:
               allocatedUser?.staffName ||
               allocatedUser?.name ||
@@ -13773,12 +13787,7 @@ export const getverifiedCollectionLeads = async (req, res) => {
     const { selectedBranch, isAccountant, loggeduserby, verified, startDate, endDate } = req.query;
     const verifiedBool = verified === "true";
     const accountantMode = isAccountant === "true";
-    // const fromDate = startDate ? new Date(startDate) : null;
-    // const toDate = endDate ? new Date(endDate) : null;
 
-    // if (toDate) {
-    //   toDate.setHours(23, 59, 59, 999);
-    // }
     const fromDate = new Date(startDate);
     fromDate.setHours(0, 0, 0, 0);
 
@@ -13911,21 +13920,7 @@ export const getverifiedCollectionLeads = async (req, res) => {
           })
         );
 
-        // let filteredPaymentHistory = paymentHistoryWithIndex;
-
-        // if (accountantMode) {
-        //   filteredPaymentHistory = filteredPaymentHistory.filter(
-        //     (history) => history?.paymentVerified === verifiedBool
-        //   );
-        // } else {
-        //   filteredPaymentHistory = filteredPaymentHistory.filter((history) => {
-        //     const receivedByMatch = loggeduserby
-        //       ? String(history?.receivedBy) === String(loggeduserby)
-        //       : true;
-
-        //     return receivedByMatch;
-        //   });
-        // }
+      
         let filteredPaymentHistory = paymentHistoryWithIndex;
         if (verifiedBool) {
           filteredPaymentHistory = filteredPaymentHistory.filter((history) => {

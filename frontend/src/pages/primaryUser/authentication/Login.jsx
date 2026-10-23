@@ -102,31 +102,26 @@ const Login = () => {
             toast.warn(passwordExpiryWarning)
           }
 
-          if (User.role === "Admin") {
-            navigate("/admin/dashboard")
-          } else {
-            switch (User.department?.code) {
-              case "DEPARTMENT1":
-                navigate("/staff/dashboard")
-                break
+          const dashboardBase = User.role === "Admin" ? "/admin" : "/staff"
 
-              case "DEPARTMENT2":
-                navigate("/staff/dashboard")
-                break
+          switch (User.department?.code) {
+            case "DEPARTMENT1":
+            case "DEPARTMENT2":
+              navigate(`${dashboardBase}/dashboard`)
+              break
 
-              case "DEPARTMENT3":
-                navigate("/staff/reports/markettingdashboard")
-                break
-              case "DEPARTMENT4":
-                navigate("/staff/support&department")
-                break
-              case "DEPARTMENT5":
-                navigate("/staff/reports/researchandDevelopment")
-                break
+            case "DEPARTMENT3":
+              navigate(`${dashboardBase}/reports/markettingdashboard`)
+              break
+            case "DEPARTMENT4":
+              navigate(`${dashboardBase}/support&department`)
+              break
+            case "DEPARTMENT5":
+              navigate(`${dashboardBase}/reports/researchandDevelopment`)
+              break
 
-              default:
-                navigate("/staff/dashboard")
-            }
+            default:
+              navigate(`${dashboardBase}/dashboard`)
           }
         }
       }
@@ -170,8 +165,8 @@ const Login = () => {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 p-4 sm:p-6 lg:p-10">
-      <section className="mx-auto flex min-h-[calc(100vh-2rem)] max-w-6xl overflow-hidden rounded-3xl bg-white shadow-2xl shadow-slate-900/10 sm:min-h-[680px] lg:min-h-[calc(100vh-5rem)]">
+    <main className="h-dvh overflow-hidden bg-slate-100 p-0 sm:p-4 lg:p-6">
+      <section className="mx-auto flex h-full max-w-6xl overflow-hidden bg-white shadow-2xl shadow-slate-900/10 sm:rounded-3xl">
         <div
           className="relative hidden w-[55%] overflow-hidden bg-slate-900 bg-cover bg-center lg:block"
           style={{ backgroundImage: "url('/background.jpg')" }}
@@ -203,7 +198,7 @@ const Login = () => {
           </div>
         </div>
 
-        <div className="flex w-full items-center justify-center bg-white px-6 py-12 sm:px-12 lg:w-[45%] lg:px-14">
+        <div className="flex min-h-0 w-full items-center justify-center bg-white px-6 py-6 sm:px-12 sm:py-8 lg:w-[45%] lg:px-14">
           <div className="w-full max-w-sm">
             <div className="mb-10">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-lg font-bold text-white shadow-lg shadow-indigo-200 lg:hidden">

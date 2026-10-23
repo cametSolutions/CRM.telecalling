@@ -1572,6 +1572,21 @@ onpasswordClick,
     })
   }
 
+  const defaultDashboardPath = (() => {
+    switch (user?.department?.code) {
+      case "DEPARTMENT3":
+        return "/admin/reports/markettingdashboard"
+      case "DEPARTMENT4":
+        return "/admin/support&department"
+      case "DEPARTMENT5":
+        return "/admin/reports/researchandDevelopment"
+      case "DEPARTMENT1":
+      case "DEPARTMENT2":
+      default:
+        return "/admin/dashBoard"
+    }
+  })()
+
   const dashboardLinks = [
     { to: "/admin/dashBoard", label: "Primary Dashboard" },
     { to: "/admin/reports/markettingdashboard", label: "Marketing Dashboard" },
@@ -1844,7 +1859,7 @@ onpasswordClick,
             {!sidebarHasProfile && (
               <button
                 type="button"
-                onClick={() => handleSafeNavigate("/admin/dashBoard")}
+                onClick={() => handleSafeNavigate(defaultDashboardPath)}
                 className="flex items-center gap-2.5"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-sky-400 to-blue-600 text-lg font-bold text-white shadow-[0_6px_18px_rgba(56,189,248,0.35)]">
@@ -1868,7 +1883,7 @@ onpasswordClick,
               <div className="relative flex items-center" onMouseEnter={() => setDashboardMenuOpen(true)} onMouseLeave={() => setDashboardMenuOpen(false)}>
                 <button
                   type="button"
-                  onClick={() => handleSafeNavigate("/admin/dashBoard")}
+                  onClick={() => handleSafeNavigate(defaultDashboardPath)}
                   className={`rounded-l-full px-4 py-1 pr-2 text-[14px] font-semibold transition ${dashboardLinks.some((item) => isPathActive(item.to)) ? "bg-[#0F3A68] text-sky-300" : "text-slate-300 hover:bg-white/5 hover:text-white"}`}
                 >
                   Dashboard
@@ -2102,7 +2117,7 @@ onpasswordClick,
 
             <div className="p-3">
               <div className="mb-2 overflow-hidden rounded-2xl border border-white/10 bg-[#162033]">
-                <button type="button" onClick={() => handleSafeNavigate("/admin/dashBoard")} className={`block w-full px-4 py-3 text-left text-[14px] font-medium ${dashboardLinks.some((item) => isPathActive(item.to)) ? "bg-[#243145] text-white" : "text-slate-200 hover:bg-[#1E293B]"}`}>Dashboard</button>
+                <button type="button" onClick={() => handleSafeNavigate(defaultDashboardPath)} className={`block w-full px-4 py-3 text-left text-[14px] font-medium ${dashboardLinks.some((item) => isPathActive(item.to)) ? "bg-[#243145] text-white" : "text-slate-200 hover:bg-[#1E293B]"}`}>Dashboard</button>
                 <button type="button" onClick={() => setMobileMenu(mobileMenu === "Dashboards" ? null : "Dashboards")} className="flex w-full items-center justify-between border-t border-white/10 px-4 py-2.5 text-left text-xs font-semibold text-sky-300"><span>Switch dashboard</span>{mobileMenu === "Dashboards" ? <FiChevronDown size={16} /> : <FiChevronRight size={16} />}</button>
                 {mobileMenu === "Dashboards" && <div className="border-t border-white/10 px-2 py-1">{additionalDashboardLinks.map((dashboard) => <button key={dashboard.to} type="button" onClick={() => handleSafeNavigate(dashboard.to)} className={`block w-full rounded-xl px-3 py-2.5 text-left text-[13px] font-medium transition ${isPathActive(dashboard.to) ? "bg-[#243145] text-white" : "text-slate-200 hover:bg-[#1E293B]"}`}>{dashboard.label}</button>)}</div>}
               </div>
