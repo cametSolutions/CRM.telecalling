@@ -84,7 +84,7 @@ const MyDatePicker = ({
       type="button"
       onClick={view ? undefined : onClick}
       disabled={view}
-      className={`flex h-10 w-full items-center gap-2 rounded-lg border px-3 text-left text-sm shadow-sm transition ${
+      className={`flex ${compact ? "h-8 gap-1.5 px-2 text-xs" : "h-10 gap-2 px-3 text-sm"} w-full items-center rounded-lg border text-left shadow-sm transition ${
         view
           ? "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-500"
           : "border-slate-300 bg-white text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-100"
@@ -111,8 +111,8 @@ const MyDatePicker = ({
         inlineOnMobile ? "flex-row items-end" : "flex-col sm:flex-row sm:items-end"
       } ${fullWidth ? "w-full" : ""}`}
     >
-      <label className={`${pickerWidth} flex flex-col gap-1`}>
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+      <label className={`${pickerWidth} flex flex-col ${compact ? "gap-0.5" : "gap-1"}`}>
+        <span className={`${compact ? "text-[9px]" : "text-[10px]"} font-semibold uppercase tracking-wide text-slate-500`}>
           Start date
         </span>
         <DatePicker
@@ -127,8 +127,8 @@ const MyDatePicker = ({
           disabled={view}
         />
       </label>
-      <label className={`${pickerWidth} flex flex-col gap-1`}>
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+      <label className={`${pickerWidth} flex flex-col ${compact ? "gap-0.5" : "gap-1"}`}>
+        <span className={`${compact ? "text-[9px]" : "text-[10px]"} font-semibold uppercase tracking-wide text-slate-500`}>
           End date
         </span>
         <DatePicker

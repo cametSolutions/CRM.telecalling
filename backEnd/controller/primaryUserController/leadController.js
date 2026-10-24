@@ -2049,8 +2049,43 @@ export const BulkLeadRegister = async (req, res) => {
           invalidProduct = true
           break
         }
-        const itemTaxAmount = Number(((amount * taxRate) / 100).toFixed(2))
-        const itemNetAmount = Number((amount + itemTaxAmount).toFixed(2))
+        // Bulk lead amounts are whole rupees; calculate the tax from the
+        // rounded total so the saved taxable, tax, and net values reconcile.
+        const itemNetAmount = Math.round(amount + (amount * taxRate) / 100 + Number.EPSILON)
+        const itemTaxAmount = Number((itemNetAmount - amount).toFixed(2))
+        const isAdditionalService =
+          String(product?.productorservicetype || "").toLowerCase() ===
+          "additionalservice"
+        const enteredLicense = String(rowProduct?.license || "").trim()
+        const additionalServiceTaggedData =
+          isAdditionalService && enteredLicense
+            ? [
+                {
+                  licensenumber: enteredLicense,
+                  nextDue: "",
+                  productAmount: itemNetAmount,
+                  taxexclusiveAmount: amount,
+                  taxinclusiveamount: itemNetAmount,
+                  hsn: taxRate,
+                  originalHsn: taxRate,
+                  leadAmount: amount,
+                  totalleadAmount: itemNetAmount,
+                  leadTax: taxRate,
+                  nextDueTax: taxRate
+                }
+              ]
+            : []
+        const additionalServiceLicenseNumbers =
+          isAdditionalService && enteredLicense
+            ? [
+                {
+                  licenseNumber: enteredLicense,
+                  productorServiceId: product._id,
+                  productorServiceName: product.shortName || product.productName || "",
+                  sourceIndex: 0
+                }
+              ]
+            : []
         taxableAmount += amount
         taxAmount += itemTaxAmount
         leadFor.push({
@@ -2060,15 +2095,19 @@ export const BulkLeadRegister = async (req, res) => {
           productorservicetype: product.productorservicetype,
           company_id: productBranch.company_id,
           branch_id: leadBranch,
-          licenseNumber: rowProduct?.license || null,
+          licenseNumber: isAdditionalService ? null : rowProduct?.license || null,
           productPrice: amount,
           taxAmount: itemTaxAmount,
           netAmount: itemNetAmount,
           actualproductPrice: amount,
           actualNetAmount: itemNetAmount,
-          hsn: productBranch.hsnName || 0,
-          actualHsn: productBranch.hsnName || 0,
-          licenseNumbers: []
+          // The bulk form tax is populated from the branch HSN's IGST rate.
+          // `hsnName` is a display field and may be empty, which previously
+          // caused the lead's saved HSN rate to fall back to 0.
+          hsn: taxRate,
+          actualHsn: taxRate,
+          licenseNumbers: additionalServiceLicenseNumbers,
+          taggeddata: additionalServiceTaggedData
         })
       }
 
@@ -2090,7 +2129,7 @@ export const BulkLeadRegister = async (req, res) => {
         source: String(row.source).trim(),
         taxableAmount: Number(taxableAmount.toFixed(2)),
         taxAmount: Number(taxAmount.toFixed(2)),
-        netAmount: Number((taxableAmount + taxAmount).toFixed(2)),
+        netAmount: leadFor.reduce((total, product) => total + product.netAmount, 0),
         leadFor
       })
     }

@@ -757,10 +757,10 @@ console.log(item?.leadBy?._id)
 
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
             <Breadcrumb items={Breadcrumblist} />
-            <div className="m-4 shrink-0 rounded-xl border border-slate-200 bg-white/70 px-4 py-3 shadow-sm">
-              <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-                <div className="flex min-w-0 flex-wrap items-center gap-3">
-                  <h2 className="shrink-0 text-lg font-bold tracking-tight text-slate-800">
+            <div className="m-2 shrink-0 rounded-lg border border-slate-200 bg-white/70 px-3 py-2 shadow-sm md:m-3">
+              <div className="flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <h2 className="shrink-0 text-base font-bold tracking-tight text-slate-800">
                     {ownLead ? "Own Lead" : "All Lead"}
                   </h2>
 
@@ -785,10 +785,10 @@ console.log(item?.leadBy?._id)
                   )}
                 </div>
 
-                <div className="flex flex-wrap items-center justify-start gap-3 xl:justify-end">
+                <div className="flex flex-wrap items-center justify-start gap-2 xl:justify-end">
                   {dates.startDate && (
-                    <div className="min-w-[240px]">
-                      <MyDatePicker setDates={setDates} dates={dates} />
+                    <div className="min-w-[208px]">
+                      <MyDatePicker setDates={setDates} dates={dates} compact />
                     </div>
                   )}
 
@@ -798,7 +798,7 @@ console.log(item?.leadBy?._id)
                         ? navigate("/admin/transaction/lead")
                         : navigate("/staff/transaction/lead")
                     }
-                    className="inline-flex h-10 items-center justify-center rounded-lg bg-slate-900 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700"
+                    className="inline-flex h-8 items-center justify-center rounded-md bg-slate-900 px-3 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-700"
                   >
                     New Lead
                   </button>
