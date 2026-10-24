@@ -3028,7 +3028,7 @@ const LeadMaster = ({
         if (term === "nextDueAmount") {
           const updatedtax = row?.nextDueTax > 0 ? Number(hsn / 100) * value : 0
           updatedRow.nextDueAmount = value === "" ? "" : Number(value)
-          updatedRow.totalnextDueAmount = Number(value) + updatedtax
+          updatedRow.totalnextDueAmount = Math.round(Number(value) + updatedtax)
           return updatedRow
         }
 
@@ -3088,13 +3088,13 @@ const LeadMaster = ({
             updatedRow.nextDueTax = 0
             updatedRow.totalnextDueAmount = Math.max(
               0,
-              Number((currentTotalNextDueAmount - taxAmount).toFixed(2))
+              Math.round(currentTotalNextDueAmount - taxAmount)
             )
           } else {
             const taxAmount = (originalHsn / 100) * currentNextDueAmount
             updatedRow.nextDueTax = originalHsn
-            updatedRow.totalnextDueAmount = Number(
-              (currentNextDueAmount + taxAmount).toFixed(2)
+            updatedRow.totalnextDueAmount = Math.round(
+              currentNextDueAmount + taxAmount
             )
           }
 
@@ -4627,8 +4627,8 @@ const LeadMaster = ({
                   )
                 : 0
             const nextDueTax = configuredTax || inferredTax || masterTaxRate
-            const calculatedTotalNextDueAmount = Number(
-              (nextDueAmount * (1 + nextDueTax / 100)).toFixed(2)
+            const calculatedTotalNextDueAmount = Math.round(
+              nextDueAmount * (1 + nextDueTax / 100)
             )
             const taxexclusiveAmount = Number(
               getFirstLeadValue(
