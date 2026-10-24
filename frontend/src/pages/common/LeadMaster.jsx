@@ -695,6 +695,14 @@ const createBulkProductRow = () => ({
   tax: ""
 })
 
+// Bulk leads are saved in whole rupees. Keep the calculated amount shown in
+// every bulk layout consistent with the value persisted by the API.
+const calculateBulkNetAmount = (amount, tax) => {
+  const price = Number(amount) || 0
+  const taxRate = Number(tax) || 0
+  return Math.round(price + (price * taxRate) / 100 + Number.EPSILON)
+}
+
 const createBulkCustomerRow = () => ({
   id: `bulk-customer-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   customerId: "",
@@ -1110,16 +1118,14 @@ const BulkLeadWorkspace = ({
             </div>
             <div className="contents">
               {customer.products.map((product) => {
-                const amount = Number(product.amount || 0)
-                const tax = Number(product.tax || 0)
-                const netAmount = amount + (amount * tax) / 100
+                const netAmount = calculateBulkNetAmount(product.amount, product.tax)
                 return (
                   <div key={product.id} className="contents">
                     <div className={duplicateProductKeys.has(`${customer.customerId}:${product.productId}`) ? "rounded-md ring-1 ring-amber-400" : ""}><BulkLeadSelect value={product.productId} options={productOptions} placeholder="Product / Service" disabled={isReadOnly} onChange={(event) => selectBulkProduct(customer.id, product.id, event.target.value)} /></div>
                     <input value={product.license} disabled={isReadOnly} onChange={(event) => updateProduct(customer.id, product.id, "license", event.target.value)} placeholder="License No." className="h-7 min-w-0 rounded border border-slate-200 px-2 text-[11px] outline-none focus:border-[#1B2A4A]" />
                     <input type="number" min="0" value={product.amount} disabled={isReadOnly} onWheel={(event) => event.currentTarget.blur()} onChange={(event) => updateProduct(customer.id, product.id, "amount", event.target.value)} placeholder="Amount" className="h-7 min-w-0 rounded border border-slate-200 px-2 text-right text-[11px] outline-none focus:border-[#1B2A4A] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
                     <input type="number" min="0" value={product.tax} disabled={isReadOnly} onWheel={(event) => event.currentTarget.blur()} onChange={(event) => updateProduct(customer.id, product.id, "tax", event.target.value)} placeholder="Tax %" className="h-7 min-w-0 rounded border border-slate-200 px-2 text-right text-[11px] outline-none focus:border-[#1B2A4A] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
-                    <div className="flex h-7 min-w-0 items-center justify-end rounded border border-slate-100 bg-slate-50 px-2 text-[11px] font-semibold text-slate-700">₹{netAmount.toFixed(2)}</div>
+                    <div className="flex h-7 min-w-0 items-center justify-end rounded border border-slate-100 bg-slate-50 px-2 text-[11px] font-semibold text-slate-700">₹{netAmount}</div>
                     <div className="flex h-7 items-center gap-0.5">
                       <button type="button" disabled={isReadOnly || customers.length === 1} onClick={() => removeCustomer(customer.id)} className="h-7 rounded px-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-40">Remove</button>
                     </div>
@@ -1207,9 +1213,7 @@ const BulkLeadWorkspace = ({
           <tbody>
             {customers.flatMap((customer, customerIndex) =>
               customer.products.map((product, productIndex) => {
-                const amount = Number(product.amount || 0)
-                const tax = Number(product.tax || 0)
-                const netAmount = amount + (amount * tax) / 100
+                const netAmount = calculateBulkNetAmount(product.amount, product.tax)
                 const isFirstProduct = productIndex === 0
                 return (
                   <tr key={product.id} className="border-t border-slate-200 align-top">
@@ -1248,7 +1252,7 @@ const BulkLeadWorkspace = ({
                     <td className="p-1.5"><input value={product.license} disabled={isReadOnly} onChange={(event) => updateProduct(customer.id, product.id, "license", event.target.value)} placeholder="License number" className="h-7 w-full rounded border border-slate-200 px-2 text-[11px] outline-none focus:border-[#1B2A4A]" /></td>
                     <td className="p-1.5"><input type="number" min="0" value={product.amount} disabled={isReadOnly} onChange={(event) => updateProduct(customer.id, product.id, "amount", event.target.value)} placeholder="0.00" className="h-7 w-full rounded border border-slate-200 px-1.5 text-right text-[11px] outline-none focus:border-[#1B2A4A]" /></td>
                     <td className="p-1.5"><input type="number" min="0" value={product.tax} disabled={isReadOnly} onChange={(event) => updateProduct(customer.id, product.id, "tax", event.target.value)} placeholder="Tax" className="h-7 w-full rounded border border-slate-200 px-1.5 text-right text-[11px] outline-none focus:border-[#1B2A4A]" /></td>
-                    <td className="px-1.5 py-2 text-right font-semibold text-slate-700">{netAmount.toFixed(2)}</td>
+                    <td className="px-1.5 py-2 text-right font-semibold text-slate-700">{netAmount}</td>
                     <td className="p-1 text-center">
                       <div className="flex justify-center gap-0.5">
                         {isFirstProduct && <button type="button" disabled={isReadOnly} onClick={() => addProduct(customer.id)} title="Add product" className="rounded px-1.5 py-1 text-[#1B2A4A] hover:bg-blue-50 disabled:opacity-40">+</button>}
@@ -1362,16 +1366,14 @@ const BulkLeadWorkspace = ({
                       </thead>
                       <tbody>
                         {customer.products.map((product) => {
-                          const amount = Number(product.amount || 0)
-                          const tax = Number(product.tax || 0)
-                          const netAmount = amount + (amount * tax) / 100
+                          const netAmount = calculateBulkNetAmount(product.amount, product.tax)
                           return (
                             <tr key={product.id} className="border-t border-slate-200">
                               <td className="p-1.5"><input list="bulk-lead-product-options" value={product.product} disabled={isReadOnly} onChange={(event) => updateProduct(customer.id, product.id, "product", event.target.value)} placeholder="Search / Select Product" className="h-8 w-full rounded border border-slate-200 px-2 text-xs outline-none focus:border-[#1B2A4A]" /></td>
                               <td className="p-1.5"><input value={product.license} disabled={isReadOnly} onChange={(event) => updateProduct(customer.id, product.id, "license", event.target.value)} placeholder="License number" className="h-8 w-full rounded border border-slate-200 px-2 text-xs outline-none focus:border-[#1B2A4A]" /></td>
                               <td className="p-1.5"><input type="number" min="0" value={product.amount} disabled={isReadOnly} onChange={(event) => updateProduct(customer.id, product.id, "amount", event.target.value)} placeholder="0.00" className="h-8 w-full rounded border border-slate-200 px-2 text-right text-xs outline-none focus:border-[#1B2A4A]" /></td>
                               <td className="p-1.5"><input type="number" min="0" value={product.tax} disabled={isReadOnly} onChange={(event) => updateProduct(customer.id, product.id, "tax", event.target.value)} placeholder="Tax" className="h-8 w-full rounded border border-slate-200 px-2 text-right text-xs outline-none focus:border-[#1B2A4A]" /></td>
-                              <td className="p-1.5 text-right font-semibold text-slate-700">{netAmount.toFixed(2)}</td>
+                              <td className="p-1.5 text-right font-semibold text-slate-700">{netAmount}</td>
                               <td className="p-1.5 text-center"><button type="button" disabled={isReadOnly || customer.products.length === 1} onClick={() => removeProduct(customer.id, product.id)} className="rounded px-2 py-1 text-red-600 hover:bg-red-50 disabled:opacity-40">⌫</button></td>
                             </tr>
                           )
@@ -1381,7 +1383,7 @@ const BulkLeadWorkspace = ({
                   </div>
                   <div className="flex items-center justify-between">
                     <button type="button" disabled={isReadOnly} onClick={() => addProduct(customer.id)} className="rounded-md border border-[#1B2A4A] px-2.5 py-1.5 text-xs font-semibold text-[#1B2A4A] transition hover:bg-blue-50 disabled:opacity-50">+ Add product</button>
-                    <span className="text-xs font-bold text-slate-700">Customer total: ₹{customer.products.reduce((total, product) => total + Number(product.amount || 0) * (1 + Number(product.tax || 0) / 100), 0).toFixed(2)}</span>
+                    <span className="text-xs font-bold text-slate-700">Customer total: ₹{customer.products.reduce((total, product) => total + calculateBulkNetAmount(product.amount, product.tax), 0)}</span>
                   </div>
                 </div>
               )}
