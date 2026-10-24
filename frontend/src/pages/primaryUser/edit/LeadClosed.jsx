@@ -44,6 +44,19 @@ function LeadClosed() {
   const navigate = useNavigate()
 
   const location = useLocation()
+  const closingContextKey = `lead-closing-context:${location.pathname}`
+  const closingDraftKey = `lead-closing-draft:${location.pathname}`
+  const storedClosingContext = (() => {
+    try {
+      const stored = sessionStorage.getItem(closingContextKey)
+      return stored ? JSON.parse(stored) : null
+    } catch {
+      return null
+    }
+  })()
+  const closingContext = location.state?.leadId
+    ? location.state
+    : storedClosingContext
   const {
     leadId,
     isReadOnly,
@@ -51,9 +64,9 @@ function LeadClosed() {
     closingOrigin,
     followupActivityLogId,
     closingActivityLogId
-  } = location.state || {}
+  } = closingContext || {}
   console.log(isReadOnly)
-  console.log(location?.state)
+  console.log(closingContext)
   const nav = [
     { label: "Lead", path: "" },
     {
@@ -61,15 +74,67 @@ function LeadClosed() {
       path: ""
     }
   ]
-  const Breadcrumblist = location?.state ? location?.state?.breadcrumb : nav
+  const Breadcrumblist = closingContext?.breadcrumb || nav
   console.log(Breadcrumblist)
   const userData = getLocalStorageItem("user")
+
+  useEffect(() => {
+    if (!location.state?.leadId) return
+
+    try {
+      sessionStorage.setItem(closingContextKey, JSON.stringify(location.state))
+    } catch {
+      // The lead can still be loaded from router state when browser storage
+      // is unavailable.
+    }
+  }, [closingContextKey, location.state])
+
+  const clearClosingContext = () => {
+    try {
+      sessionStorage.removeItem(closingContextKey)
+    } catch {
+      // Nothing to clear when browser storage is unavailable.
+    }
+  }
+
+  const getClosingDraft = () => {
+    try {
+      const stored = sessionStorage.getItem(closingDraftKey)
+      return stored ? JSON.parse(stored) : null
+    } catch {
+      return null
+    }
+  }
+
+  const saveClosingDraft = (draft) => {
+    try {
+      sessionStorage.setItem(closingDraftKey, JSON.stringify(draft))
+    } catch {
+      // Draft recovery is optional when browser storage is unavailable.
+    }
+  }
+
+  const clearClosingDraft = () => {
+    try {
+      sessionStorage.removeItem(closingDraftKey)
+    } catch {
+      // Nothing to clear when browser storage is unavailable.
+    }
+  }
+
+  const storedClosingDraft = getClosingDraft()
+  const closingDraft =
+    storedClosingDraft && String(storedClosingDraft.leadId) === String(leadId)
+      ? storedClosingDraft
+      : null
 
   const isFollowupClosing =
     closingOrigin === "followup" &&
     Boolean(leadId && followupActivityLogId && closingActivityLogId)
 
   const returnToFollowup = () => {
+    clearClosingContext()
+    clearClosingDraft()
     navigate(
       userData?.role === "Admin"
         ? "/admin/transaction/lead/leadFollowUp"
@@ -114,7 +179,8 @@ function LeadClosed() {
       !closingCompletedRef.current &&
       !recoveryCompletedRef.current &&
       !recoveryInProgress,
-    onBlock: setLeaveWarning
+    onBlock: setLeaveWarning,
+    warnBeforeUnload: false
   })
 
   useEffect(() => {
@@ -155,6 +221,8 @@ function LeadClosed() {
 
   useEffect(() => {
     if (closingCompleted) {
+      clearClosingContext()
+      clearClosingDraft()
       const basePath =
         userData?.role === "Admin"
           ? "/admin/transaction/lead"
@@ -520,7 +588,10 @@ console.log(response.data.data[0].leadBranch)
               isReadOnly={closingCompleted}
               Breadcrumblist={Breadcrumblist}
               selectedcompanyBranch={selectedleadbranch}
-              onClosingValidationFailure={handleClosingFailure}
+              closingDraft={closingDraft}
+              onClosingDraftChange={(draft) =>
+                saveClosingDraft({ ...draft, leadId })
+              }
             />
           </div>
         </div>

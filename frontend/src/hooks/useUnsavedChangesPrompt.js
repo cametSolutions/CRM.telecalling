@@ -93,7 +93,8 @@ import { useEffect, useRef } from "react"
 
 const useUnsavedChangesPrompt = ({
   when,
-  onBlock
+  onBlock,
+  warnBeforeUnload = true
 }) => {
   const isBlockingRef = useRef(false)
 
@@ -124,14 +125,18 @@ const useUnsavedChangesPrompt = ({
     }
 
     window.history.pushState(null, "", window.location.href)
-    window.addEventListener("beforeunload", handleBeforeUnload)
+    if (warnBeforeUnload) {
+      window.addEventListener("beforeunload", handleBeforeUnload)
+    }
     window.addEventListener("popstate", handlePopState)
 
     return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload)
+      if (warnBeforeUnload) {
+        window.removeEventListener("beforeunload", handleBeforeUnload)
+      }
       window.removeEventListener("popstate", handlePopState)
     }
-  }, [when, onBlock])
+  }, [when, onBlock, warnBeforeUnload])
 }
 
 export default useUnsavedChangesPrompt

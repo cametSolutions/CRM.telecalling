@@ -99,7 +99,26 @@ function LicenseDropdown({
   const inputRef = useRef(null)
   const dropdownId = `license-dropdown-${index}`
 
-  const selectedLicenses = isMulti ? item?.licenseNumbers || [] : []
+  // Older closing records can keep the tag licence under `licensenumber`
+  // while the dropdown uses `licenseNumber`. Normalise both sources so a
+  // saved tag remains available and checked after a page refresh.
+  const selectedLicenses = isMulti
+    ? [...(item?.licenseNumbers || []), ...(item?.taggeddata || [])]
+        .map((license) => ({
+          ...license,
+          licenseNumber: license?.licenseNumber ?? license?.licensenumber
+        }))
+        .filter(
+          (license, licenseIndex, licenses) =>
+            String(license?.licenseNumber || "").trim() &&
+            licenseIndex ===
+              licenses.findIndex(
+                (candidate) =>
+                  String(candidate?.licenseNumber || "") ===
+                  String(license?.licenseNumber || "")
+              )
+        )
+    : []
 
   const multiDisplayValue = selectedLicenses.length
     ? String(selectedLicenses[0]?.licenseNumber ?? "")
@@ -135,7 +154,30 @@ function LicenseDropdown({
       document.removeEventListener("touchstart", handlePointerDown)
     }
   }, [dropdownId])
-  const filtered = (customerTableData || []).filter((lic) => {
+  // Include restored selected licences as dropdown options. The customer
+  // option list can load after the lead, and otherwise the restored licence
+  // value appears in the input but is absent from the menu.
+  const licenseOptions = [
+    ...(customerTableData || []),
+    ...selectedLicenses.map((license) => ({
+      ...license,
+      productName:
+        license?.productName ||
+        license?.productorServiceName ||
+        item?.productorServiceName || ""
+    }))
+  ].filter(
+    (license, licenseIndex, licenses) =>
+      String(license?.licenseNumber ?? license?.licensenumber ?? "").trim() &&
+      licenseIndex ===
+        licenses.findIndex(
+          (candidate) =>
+            String(candidate?.licenseNumber ?? candidate?.licensenumber ?? "") ===
+            String(license?.licenseNumber ?? license?.licensenumber ?? "")
+        )
+  )
+
+  const filtered = licenseOptions.filter((lic) => {
     const q = String(search || "")
       .toLowerCase()
       .trim()
@@ -256,7 +298,7 @@ function LicenseDropdown({
                     lic?.productName || lic?.productorServiceName || ""
 
                   const alreadyAdded = isMulti
-                    ? (item?.licenseNumbers || []).some(
+                    ? selectedLicenses.some(
                         (x) => String(x?.licenseNumber) === valStr
                       )
                     : false
@@ -1406,14 +1448,15 @@ const LeadMaster = ({
   handleleadData,
   handleEditData,
   handleclosingData,
-  onClosingValidationFailure,
   loadingState,
   setLoadingState,
   editloadingState,
   seteditLoadingState,
   showmessage,
   showpopupMessage,
-  selectedcompanyBranch
+  selectedcompanyBranch,
+  closingDraft = null,
+  onClosingDraftChange
 }) => {
   console.log(process)
   console.log(Breadcrumblist)
@@ -1431,6 +1474,7 @@ const LeadMaster = ({
     watch: watchMain,
     control: controlMain,
     reset: resetMain,
+    getValues: getValuesMain,
 
     clearErrors: clearMainerrors,
     formState: { errors: errorsMain }
@@ -1591,6 +1635,8 @@ const LeadMaster = ({
   // the discount is not applied to those totals a second time.
   const existingLeadTotalsRef = useRef(null)
   const isHydratingExistingLeadRef = useRef(false)
+  const closingDraftRestoredRef = useRef(false)
+  const closingDraftSaveReadyRef = useRef(false)
   console.log(mobileValue)
   console.log(customerNameValue)
   console.log(customerIdValue)
@@ -2327,6 +2373,98 @@ const LeadMaster = ({
     }
   }, [customerOptions, Data, from])
 
+  // A lead-closing page can safely be refreshed. Restore the in-progress
+  // inputs only after the normal saved-lead hydration is complete, so the
+  // supporting customer/product data still comes from the server.
+  useEffect(() => {
+    if (
+      process !== "closing" ||
+      closingDraftRestoredRef.current ||
+      !closingDraft ||
+      !Data?.length ||
+      !customerOptions?.length ||
+      !loggeduser
+    ) {
+      return
+    }
+
+    if (closingDraft.formValues && typeof closingDraft.formValues === "object") {
+      resetMain({ ...getValuesMain(), ...closingDraft.formValues })
+    }
+
+    if (Array.isArray(closingDraft.selectedleadlist)) {
+      setSelectedLeadList(closingDraft.selectedleadlist)
+    }
+
+    closingDraftRestoredRef.current = true
+  }, [
+    closingDraft,
+    customerOptions,
+    Data,
+    getValuesMain,
+    loggeduser,
+    process,
+    resetMain
+  ])
+
+  useEffect(() => {
+    if (
+      process === "closing" &&
+      !closingDraftRestoredRef.current &&
+      Data?.length &&
+      customerOptions?.length &&
+      loggeduser
+    ) {
+      // No previous draft exists, so the freshly hydrated saved lead becomes
+      // the starting point for a new refresh-safe draft.
+      closingDraftRestoredRef.current = true
+    }
+  }, [customerOptions, Data, loggeduser, process])
+
+  // Keep a session-only snapshot while closing. It is intentionally not sent
+  // to the server and disappears once the lead is successfully closed.
+  useEffect(() => {
+    if (
+      process !== "closing" ||
+      !onClosingDraftChange ||
+      !closingDraftRestoredRef.current
+    ) {
+      return
+    }
+
+    if (!closingDraftSaveReadyRef.current) {
+      closingDraftSaveReadyRef.current = true
+      return
+    }
+
+    onClosingDraftChange({
+      formValues: getValuesMain(),
+      selectedleadlist
+    })
+  }, [
+    getValuesMain,
+    onClosingDraftChange,
+    process,
+    selectedleadlist
+  ])
+
+  useEffect(() => {
+    if (
+      process !== "closing" ||
+      !onClosingDraftChange ||
+      !closingDraftRestoredRef.current ||
+      !closingDraftSaveReadyRef.current
+    ) {
+      return undefined
+    }
+
+    const subscription = watchMain((formValues) => {
+      onClosingDraftChange({ formValues, selectedleadlist })
+    })
+
+    return () => subscription.unsubscribe()
+  }, [onClosingDraftChange, process, selectedleadlist, watchMain])
+
   useEffect(() => {
     if (customerData && customerData.length > 0) {
       setallcustomer(customerData)
@@ -3023,7 +3161,9 @@ const LeadMaster = ({
           const updatedtax = row?.leadTax > 0 ? Number(hsn / 100) * value : 0
           updatedRow.taxexclusiveAmount = value === "" ? "" : Number(value)
           const discount = Number(row?.discountAmount ?? 0)
-          updatedRow.taxinclusiveamount = Number(value) + updatedtax - discount
+          updatedRow.taxinclusiveamount = Math.round(
+            Math.max(Number(value) + updatedtax - discount, 0)
+          )
           return updatedRow
         }
 
@@ -3040,8 +3180,9 @@ const LeadMaster = ({
           console.log(discountValue)
           console.log(currentTotalLeadAmount)
 
-          const updatedTotal =
+          const updatedTotal = Math.round(
             currentLeadAmount + Number(row?.leadTax / 100) * currentLeadAmount
+          )
           if (discountValue > updatedTotal) {
             toast.warning(
               "Discount amount cannot be greater than the total amount."
@@ -3050,8 +3191,9 @@ const LeadMaster = ({
           }
           console.log(updatedTotal)
           updatedRow.discountAmount = discountValue
-          updatedRow.taxinclusiveamount =
-            value === "" ? updatedTotal : updatedTotal - discountValue
+          updatedRow.taxinclusiveamount = Math.round(
+            Math.max(updatedTotal - discountValue, 0)
+          )
           return updatedRow
         }
 
@@ -3075,8 +3217,9 @@ const LeadMaster = ({
 
             const discount = Number(row?.discountAmount ?? 0)
 
-            updatedRow.taxinclusiveamount =
-              Number((currentLeadAmount + taxAmount).toFixed(2)) - discount
+            updatedRow.taxinclusiveamount = Math.round(
+              Math.max(currentLeadAmount + taxAmount - discount, 0)
+            )
           }
 
           return updatedRow
@@ -3776,7 +3919,7 @@ const LeadMaster = ({
           (tag, tagIndex) => {
             const taxable = roundAmount(tag?.taxexclusiveAmount)
             const taxRate = Number(tag?.leadTax || 0)
-            const undiscountedNetAmount = roundAmount(
+            const undiscountedNetAmount = Math.round(
               taxable + (taxable * taxRate) / 100
             )
             const netAmount = roundAmount(
@@ -3798,7 +3941,7 @@ const LeadMaster = ({
               ? roundAmount(Math.min(discount, gross) - appliedDiscount)
               : roundAmount((Math.min(discount, gross) * entry.netAmount) / gross)
           appliedDiscount = roundAmount(appliedDiscount + tagDiscount)
-          const netAmount = roundAmount(Math.max(entry.netAmount - tagDiscount, 0))
+          const netAmount = Math.round(Math.max(entry.netAmount - tagDiscount, 0))
           const taxable = roundAmount(
             entry.netAmount > 0 ? (entry.taxable * netAmount) / entry.netAmount : 0
           )
@@ -4077,11 +4220,11 @@ const LeadMaster = ({
         const validationMessage = validateSelectedLeadList(selectedleadlist)
         console.log(validationMessage)
         if (validationMessage) {
-          if (onClosingValidationFailure) {
-            await onClosingValidationFailure(validationMessage)
-          } else {
-            toast.warning(validationMessage)
-          }
+          // Missing data in any product/service detail popup is a normal
+          // client-side validation error. Keep the lead in the closing page
+          // and tell the user exactly what to complete; do not reverse the
+          // follow-up unless the completed close request itself fails.
+          toast.warning(validationMessage)
           return
         }
 
@@ -4645,16 +4788,16 @@ const LeadMaster = ({
               "hsn",
               "actualHsn"
             )
-            const existingTaxinclusiveAmount = Number(
+            const existingTaxinclusiveAmount = Math.round(Number(
               getFirstLeadValue(
                 "taxinclusiveamount",
                 "totalleadAmount",
                 "netAmount",
                 "actualNetAmount"
               ) ?? 0
-            )
-            const calculatedTaxinclusiveAmount = Number(
-              (taxexclusiveAmount * (1 + leadTax / 100)).toFixed(2)
+            ))
+            const calculatedTaxinclusiveAmount = Math.round(
+              taxexclusiveAmount * (1 + leadTax / 100)
             )
             return {
               licensenumber: lic?.licenseNumber || "",
