@@ -51,9 +51,7 @@ const LeadFollowUp = () => {
   const reduxselectedBranch = useSelector(
     (branch) => branch.companyBranch.selectedBranch
   )
-  console.log(reduxselectedBranch)
   const safeState = location?.state || {}
-  console.log(location?.state)
   const nav = [
     { label: "Lead", path: "" },
     { label: "Lead follow-up", path: "" }
@@ -62,13 +60,10 @@ const LeadFollowUp = () => {
     ? location?.state?.breadcrumb
     : nav
 
-  console.log(Breadcrumblist)
   const checkedownfollowup = safeState?.ownfollowp //its from
-  console.log(checkedownfollowup)
-  console.log(safeState)
+
 
   const [selectedLeadId, setSelectedLeadId] = useState(null)
-  console.log(selectedLeadId)
   const [demoerror, setDemoError] = useState({
     selectStaff: "",
     allocationDate: "",
@@ -80,10 +75,8 @@ const LeadFollowUp = () => {
   const [selectedDatapopup, setselectedDataPopup] = useState({})
   const now = new Date()
   const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
-  console.log(selectedYear)
   const [periodMode, setperiodMode] = useState("all")
   const [targetData, settargetData] = useState([])
-  console.log(targetData)
   const [openModal, setOpenModal] = useState(false)
   const [productlist, setproductList] = useState([])
   const [achievedproducts, setacheivedProducts] = useState([])
@@ -2649,8 +2642,7 @@ const LeadFollowUp = () => {
         )
       : false
     const isleadclosed = item?.leadConfirmed
-    console.log(isleadclosed)
-    console.log(item.activityLog)
+
     // const customerName = item?.customerName?.customerName.toUpperCase()
     // const shouldShowTooltipCustomer = customerName.length > 20
     // const shouldShowTooltipEmail = item?.email.length > 5
