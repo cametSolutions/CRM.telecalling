@@ -2519,9 +2519,50 @@ console.log(licenses)
   useEffect(() => {
     if (customerData && customerData.length && selectedBranch) {
       const options = customerData.map((item) => {
-        const matchingSelected = item.selected?.find(
-          (sel) => sel.branch_id === selectedBranch
+        const branchProducts = (item.selected || []).filter(
+          (sel) =>
+            String(sel?.branch_id?._id || sel?.branch_id || "") ===
+            String(selectedBranch || "")
         )
+        const licenseDetails = branchProducts
+          .flatMap((sel) => {
+            const productName =
+              sel?.productName ||
+              sel?.productorServiceName ||
+              sel?.product_id?.productName ||
+              sel?.product_id?.serviceName ||
+              "Unknown product"
+            const licenses = [
+              sel?.licensenumber,
+              ...(sel?.licenseNumbers || []).map(
+                (license) => license?.licenseNumber
+              ),
+              ...(sel?.taggeddata || []).map(
+                (tag) => tag?.licensenumber ?? tag?.licenseNumber
+              )
+            ]
+
+            return licenses
+              .filter(
+                (license) =>
+                  license !== null &&
+                  license !== undefined &&
+                  String(license).trim() !== ""
+              )
+              .map((license) => ({
+                licenseNumber: String(license),
+                productName
+              }))
+          })
+          .filter(
+            (detail, detailIndex, details) =>
+              detailIndex ===
+              details.findIndex(
+                (candidate) =>
+                  candidate.productName === detail.productName &&
+                  candidate.licenseNumber === detail.licenseNumber
+              )
+          )
         console.log(item?.partner)
         console.log(item?.country)
         if (item?.country) {
@@ -2532,7 +2573,18 @@ console.log(licenses)
           label: item?.customerName,
           address: item?.address1,
           mobile: item?.mobile || "",
-          license: matchingSelected?.licensenumber || "",
+          license: licenseDetails[0]?.licenseNumber || "",
+          licenseDetails,
+          searchText: [
+            item?.customerName,
+            item?.mobile,
+            ...licenseDetails.flatMap((detail) => [
+              detail.productName,
+              detail.licenseNumber
+            ])
+          ]
+            .filter(Boolean)
+            .join(" "),
           email: item?.email,
           phone: item?.landline,
           partner: item?.partner,
@@ -3503,7 +3555,14 @@ console.log(licenses)
     const searchValue = inputValue.toLowerCase()
     const label = option.label ? String(option.label).toLowerCase() : ""
     const mobile = option.data?.mobile ? option.data?.mobile.toLowerCase() : ""
-    return label.includes(searchValue) || mobile.includes(searchValue)
+    const customerProducts = option.data?.searchText
+      ? String(option.data.searchText).toLowerCase()
+      : ""
+    return (
+      label.includes(searchValue) ||
+      mobile.includes(searchValue) ||
+      customerProducts.includes(searchValue)
+    )
   }
 
   const calculateTotalAmount = () => {
@@ -5106,6 +5165,9 @@ convertexcel
                         <Select
                           options={customerOptions}
                           isDisabled={isReadOnly}
+                          isSearchable
+                          placeholder="Search customer, mobile, product or license..."
+                          noOptionsMessage={() => "No matching customer found"}
                           value={
                             customerOptions.length > 0
                               ? (customerOptions.find(
@@ -5113,11 +5175,50 @@ convertexcel
                                 ) ?? null)
                               : null
                           }
-                          getOptionLabel={(o) =>
-                            `${o.label}-(${o.mobile})-(${o.license})`
-                          }
+                          getOptionLabel={(o) => o.label}
                           getOptionValue={(o) => o._id}
                           filterOption={customFilter}
+                          formatOptionLabel={(option, { context }) =>
+                            context === "menu" ? (
+                              <div className="py-1.5">
+                                <div className="flex items-center justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <p className="truncate font-semibold text-slate-800">
+                                      {option.label}
+                                    </p>
+                                    <p className="mt-0.5 text-[11px] font-medium text-slate-500">
+                                      {option.mobile || "No mobile number"}
+                                    </p>
+                                  </div>
+                                  <span className="shrink-0 rounded-full bg-blue-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-blue-700">
+                                    {option.licenseDetails?.length || 0} license{option.licenseDetails?.length === 1 ? "" : "s"}
+                                  </span>
+                                </div>
+                                {option.licenseDetails?.length ? (
+                                  <div className="mt-2 flex flex-wrap gap-1.5">
+                                    {option.licenseDetails.map((detail) => (
+                                      <span
+                                        key={`${detail.productName}-${detail.licenseNumber}`}
+                                        className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-medium text-slate-600"
+                                      >
+                                        <span className="text-slate-500">{detail.productName}</span>
+                                        <span className="mx-1 text-slate-300">•</span>
+                                        <span className="font-semibold text-slate-700">{detail.licenseNumber}</span>
+                                      </span>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="mt-1 text-[11px] text-slate-400">
+                                    No licenses for this branch
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              `${option.label}${
+                                option.mobile ? ` - ${option.mobile}` : ""
+                              }`
+                            )
+                          }
                           {...registerMain("customerName", {
                             required: "Customer is Required"
                           })}
@@ -5144,18 +5245,76 @@ convertexcel
                           styles={{
                             control: (base, state) => ({
                               ...base,
-                              backgroundColor: "#EEF2F8",
-                              borderColor: "#D1D5DB",
-                              minHeight: 34,
+                              minHeight: 44,
+                              borderRadius: 10,
+                              borderColor: state.isFocused ? "#1B2A4A" : "#CBD5E1",
+                              backgroundColor: state.isDisabled ? "#F1F5F9" : "#FFFFFF",
+                              boxShadow: state.isFocused
+                                ? "0 0 0 3px rgba(27, 42, 74, 0.12)"
+                                : "0 1px 2px rgba(15, 23, 42, 0.05)",
+                              "&:hover": {
+                                borderColor: "#1B2A4A"
+                              },
                               cursor: state.isDisabled
                                 ? "not-allowed"
                                 : "pointer",
-                              opacity: state.isDisabled ? 1 : 1
+                              opacity: state.isDisabled ? 0.7 : 1
+                            }),
+                            valueContainer: (base) => ({
+                              ...base,
+                              padding: "2px 12px"
+                            }),
+                            placeholder: (base) => ({
+                              ...base,
+                              color: "#94A3B8",
+                              fontSize: 13
+                            }),
+                            singleValue: (base) => ({
+                              ...base,
+                              color: "#1E293B",
+                              fontSize: 13,
+                              fontWeight: 600
+                            }),
+                            input: (base) => ({
+                              ...base,
+                              color: "#1E293B",
+                              fontSize: 13
+                            }),
+                            indicatorSeparator: () => ({ display: "none" }),
+                            dropdownIndicator: (base, state) => ({
+                              ...base,
+                              color: state.isFocused ? "#1B2A4A" : "#64748B",
+                              padding: 9,
+                              "&:hover": { color: "#1B2A4A" }
+                            }),
+                            menu: (base) => ({
+                              ...base,
+                              marginTop: 8,
+                              overflow: "hidden",
+                              borderRadius: 12,
+                              border: "1px solid #E2E8F0",
+                              boxShadow: "0 16px 36px rgba(15, 23, 42, 0.16)"
                             }),
                             menuList: (base) => ({
                               ...base,
-                              maxHeight: 200
-                            })
+                              maxHeight: 280,
+                              padding: 6
+                            }),
+                            option: (base, state) => ({
+                              ...base,
+                              marginBottom: 3,
+                              borderRadius: 9,
+                              padding: "8px 10px",
+                              color: "#1E293B",
+                              backgroundColor: state.isSelected
+                                ? "#DBEAFE"
+                                : state.isFocused
+                                  ? "#F1F5F9"
+                                  : "#FFFFFF",
+                              cursor: "pointer",
+                              ":active": { backgroundColor: "#DBEAFE" }
+                            }),
+                            menuPortal: (base) => ({ ...base, zIndex: 9999 })
                           }}
                           menuPortalTarget={document.body}
                           menuShouldScrollIntoView={false}
