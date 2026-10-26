@@ -10288,11 +10288,56 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
       return res.status(404).json({ message: "Lead not found" });
     }
 
-    // Selecting "Close Lead" only moves the user to the final Lead Closing
-    // form. Do not write a temporary Follow-Up history entry here; the
-    // completed close transaction writes Follow-Up Closed and Lead Closing
-    // entries together in the correct order.
+    // Selecting "Close Lead" moves the user to the final Lead Closing form.
+    // The Follow-Up history remains untouched until that final close succeeds,
+    // but a collection entered in this form must be saved before navigating
+    // away so it is not lost.
     if (isFollowupAndLeadClosed) {
+      const collectionEntries = Array.isArray(collectionupdatedata?.paymentEntries)
+        ? collectionupdatedata.paymentEntries.map((entry) => ({
+          productorServiceId: entry?.productorServiceId || null,
+          productorServicemodel: entry?.productorServicemodel || "Product",
+          netAmount: Number(entry?.netAmount || 0),
+          receivedAmount: Number(entry?.receivedAmount || 0),
+          balanceAmount: Number(entry?.balanceAmount || 0)
+        }))
+        : [];
+      const collectionAmount = Number(
+        collectionupdatedata?.totalReceivedAmount ?? 0
+      );
+
+      if (collectionEntries.length > 0 || collectionAmount > 0) {
+        const safeCollectionAmount = Number.isFinite(collectionAmount)
+          ? collectionAmount
+          : 0;
+        const updatedTotalPaidAmount = Number(
+          Number(existingLead.totalPaidAmount || 0) + safeCollectionAmount
+        );
+        const updatedBalanceAmount = Math.max(
+          Number(existingLead.netAmount || 0) - updatedTotalPaidAmount,
+          0
+        );
+
+        existingLead.paymentHistory.push({
+          paymentDate: new Date(),
+          receivedAmount: safeCollectionAmount,
+          paymentVerified: false,
+          paymentEntries: collectionEntries,
+          receivedBy: collectionupdatedata?.receivedBy || null,
+          receivedModel: collectionupdatedata?.receivedModel || null,
+          bankRemarks:
+            collectionupdatedata?.bankRemark ?? formData?.bankRemarks ?? "",
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        existingLead.totalPaidAmount = updatedTotalPaidAmount;
+        existingLead.balanceAmount = updatedBalanceAmount;
+        if (updatedBalanceAmount <= 0) {
+          existingLead.paymentVerified = true;
+        }
+        await existingLead.save();
+      }
+
       return res.status(200).json({
         message: "Continue to close the lead.",
         data: existingLead
