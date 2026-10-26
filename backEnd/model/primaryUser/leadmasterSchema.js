@@ -1056,6 +1056,12 @@ leadSchema.index({
 });
 leadSchema.index({ leadBranch: 1, "activityLog.taskTo": 1, "activityLog.followupClosed": 1 });
 leadSchema.index({ leadBranch: 1, "paymentHistory.paymentVerified": 1 });
+// Used by the verified collections date-range query.
+leadSchema.index({
+  leadBranch: 1,
+  "paymentHistory.paymentVerified": 1,
+  "paymentHistory.verifiedAt": -1,
+});
 leadSchema.index({ leadBy: 1, leadByModel: 1 });
 leadSchema.index({ customerName: 1 });
 leadSchema.index({ partner: 1 });

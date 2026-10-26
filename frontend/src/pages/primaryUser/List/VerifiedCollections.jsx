@@ -94,7 +94,6 @@ export default function VerifiedCollections() {
   // const {data}=UseFetch("/lead/fix-leadverified")
   const {
     data: collectionlead,
-    loading,
     refreshHook
   } = UseFetch(
     reduxselectedBranch &&
@@ -118,6 +117,8 @@ console.log(endDate)
   console.log(startDate)
   console.log(endDate)
   console.log(verifiedcollectionlead)
+  const isVerifiedCollectionsLoading =
+    !loggedUser || !reduxselectedBranch || leadloading
   const { data: branchProduct } = UseFetch(
     `/product/getallbranchProduct?branch=${reduxselectedBranch}`
   )
@@ -710,7 +711,7 @@ console.log(endDate)
           ) : (
             <tr>
               <td colSpan={9} className="text-center text-gray-500 py-6">
-                {loading ? (
+                {isVerifiedCollectionsLoading ? (
                   <div className="flex justify-center">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
                   </div>
@@ -753,7 +754,7 @@ console.log(endDate)
                   )
                 console.log(hasLeads)
                 if (!hasLeads || currentData.length === 0) {
-                  return loading ? (
+                  return isVerifiedCollectionsLoading ? (
                     <div className="flex justify-center py-6">
                       <PropagateLoader color="#3b82f6" size={10} />
                     </div>
@@ -776,7 +777,11 @@ console.log(endDate)
                     )}
 
                     {/* only render table if there are leads */}
-                    {loading ? <SkeletonTable /> : renderTable(leads)}
+                    {isVerifiedCollectionsLoading ? (
+                      <SkeletonTable />
+                    ) : (
+                      renderTable(leads)
+                    )}
                   </div>
                 ))
               })()}

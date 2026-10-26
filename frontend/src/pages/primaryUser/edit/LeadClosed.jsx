@@ -37,23 +37,34 @@ function LeadClosed() {
   const [closedloader, setclosedLoader] = useState(false)
   const [closingFailure, setClosingFailure] = useState(null)
   const [leaveWarning, setLeaveWarning] = useState(null)
-  const [recoveryInProgress, setRecoveryInProgress] = useState(false)
   const [closingCompleted, setClosingCompleted] = useState(false)
-  const recoveryCompletedRef = useRef(false)
   const closingCompletedRef = useRef(false)
   const navigate = useNavigate()
 
   const location = useLocation()
+  const closingContextKey = `lead-closing-context:${location.pathname}`
+  const closingDraftKey = `lead-closing-draft:${location.pathname}`
+  const storedClosingContext = (() => {
+    try {
+      const stored = sessionStorage.getItem(closingContextKey)
+      return stored ? JSON.parse(stored) : null
+    } catch {
+      return null
+    }
+  })()
+  const closingContext = location.state?.leadId
+    ? location.state
+    : storedClosingContext
   const {
     leadId,
     isReadOnly,
     refreshKey,
     closingOrigin,
-    followupActivityLogId,
-    closingActivityLogId
-  } = location.state || {}
+    closingRemark,
+    closingFollowUpDate
+  } = closingContext || {}
   console.log(isReadOnly)
-  console.log(location?.state)
+  console.log(closingContext)
   const nav = [
     { label: "Lead", path: "" },
     {
@@ -61,15 +72,67 @@ function LeadClosed() {
       path: ""
     }
   ]
-  const Breadcrumblist = location?.state ? location?.state?.breadcrumb : nav
+  const Breadcrumblist = closingContext?.breadcrumb || nav
   console.log(Breadcrumblist)
   const userData = getLocalStorageItem("user")
 
+  useEffect(() => {
+    if (!location.state?.leadId) return
+
+    try {
+      sessionStorage.setItem(closingContextKey, JSON.stringify(location.state))
+    } catch {
+      // The lead can still be loaded from router state when browser storage
+      // is unavailable.
+    }
+  }, [closingContextKey, location.state])
+
+  const clearClosingContext = () => {
+    try {
+      sessionStorage.removeItem(closingContextKey)
+    } catch {
+      // Nothing to clear when browser storage is unavailable.
+    }
+  }
+
+  const getClosingDraft = () => {
+    try {
+      const stored = sessionStorage.getItem(closingDraftKey)
+      return stored ? JSON.parse(stored) : null
+    } catch {
+      return null
+    }
+  }
+
+  const saveClosingDraft = (draft) => {
+    try {
+      sessionStorage.setItem(closingDraftKey, JSON.stringify(draft))
+    } catch {
+      // Draft recovery is optional when browser storage is unavailable.
+    }
+  }
+
+  const clearClosingDraft = () => {
+    try {
+      sessionStorage.removeItem(closingDraftKey)
+    } catch {
+      // Nothing to clear when browser storage is unavailable.
+    }
+  }
+
+  const storedClosingDraft = getClosingDraft()
+  const closingDraft =
+    storedClosingDraft && String(storedClosingDraft.leadId) === String(leadId)
+      ? storedClosingDraft
+      : null
+
   const isFollowupClosing =
     closingOrigin === "followup" &&
-    Boolean(leadId && followupActivityLogId && closingActivityLogId)
+    Boolean(leadId)
 
   const returnToFollowup = () => {
+    clearClosingContext()
+    clearClosingDraft()
     navigate(
       userData?.role === "Admin"
         ? "/admin/transaction/lead/leadFollowUp"
@@ -78,52 +141,20 @@ function LeadClosed() {
     )
   }
 
-  const recoverFollowup = async () => {
-    if (!isFollowupClosing || recoveryCompletedRef.current) {
-      return { success: true, message: "The follow-up is already reopened" }
-    }
-
-    setRecoveryInProgress(true)
-    try {
-      const response = await api.put(
-        `/lead/reopenFollowupAfterClosingFailure?leadId=${leadId}`,
-        { followupActivityLogId, closingActivityLogId }
-      )
-      recoveryCompletedRef.current = true
-      return {
-        success: true,
-        message: response.data?.message || "The follow-up has been reopened"
-      }
-    } catch (recoveryError) {
-      return {
-        success: false,
-        message:
-          recoveryError?.response?.data?.message ||
-          recoveryError?.message ||
-          "Unable to reopen the follow-up"
-      }
-    } finally {
-      setRecoveryInProgress(false)
-    }
-  }
-
   useUnsavedChangesPrompt({
     when:
       isFollowupClosing &&
       !closingCompleted &&
-      !closingCompletedRef.current &&
-      !recoveryCompletedRef.current &&
-      !recoveryInProgress,
-    onBlock: setLeaveWarning
+      !closingCompletedRef.current,
+    onBlock: setLeaveWarning,
+    warnBeforeUnload: true
   })
 
   useEffect(() => {
     const shouldGuardNavigation =
       isFollowupClosing &&
       !closingCompleted &&
-      !closingCompletedRef.current &&
-      !recoveryCompletedRef.current &&
-      !recoveryInProgress
+      !closingCompletedRef.current
 
     if (!shouldGuardNavigation) return undefined
 
@@ -151,10 +182,12 @@ function LeadClosed() {
 
     document.addEventListener("click", blockLinkNavigation, true)
     return () => document.removeEventListener("click", blockLinkNavigation, true)
-  }, [isFollowupClosing, recoveryInProgress, closingCompleted])
+  }, [isFollowupClosing, closingCompleted])
 
   useEffect(() => {
     if (closingCompleted) {
+      clearClosingContext()
+      clearClosingDraft()
       const basePath =
         userData?.role === "Admin"
           ? "/admin/transaction/lead"
@@ -175,21 +208,10 @@ function LeadClosed() {
 
   const handleClosingFailure = async (reason) => {
     setclosedLoader(false)
-
-    let message = reason || "The lead was not closed"
-    let shouldReturnToFollowup = false
-
-    if (isFollowupClosing) {
-      const recovery = await recoverFollowup()
-      if (recovery.success) {
-        message = `${message}. ${recovery.message}`
-        shouldReturnToFollowup = true
-      } else {
-        message = `${message}. Follow-up recovery failed: ${recovery.message}`
-      }
-    }
-
-    setClosingFailure({ message, shouldReturnToFollowup })
+    setClosingFailure({
+      message: reason || "The lead was not closed",
+      shouldReturnToFollowup: false
+    })
   }
 
   const handleClosingFailureOk = () => {
@@ -206,17 +228,7 @@ function LeadClosed() {
     setLeaveWarning(null)
   }
 
-  const handleReturnToFollowup = async () => {
-    const recovery = await recoverFollowup()
-    if (!recovery.success) {
-      setLeaveWarning(null)
-      setClosingFailure({
-        message: `Lead closing is incomplete. Follow-up recovery failed: ${recovery.message}`,
-        shouldReturnToFollowup: false
-      })
-      return
-    }
-
+  const handleReturnToFollowup = () => {
     leaveWarning?.stay?.()
     setLeaveWarning(null)
     returnToFollowup()
@@ -429,7 +441,15 @@ console.log(response.data.data[0].leadBranch)
         data,
         leadData,
         userId,
-        role
+        role,
+        closingContext:
+          closingOrigin === "followup"
+            ? {
+                origin: "followup",
+                remark: closingRemark,
+                followUpDate: closingFollowUpDate
+              }
+            : undefined
       })
       if (response.status === 200 && response.data?.lead?.leadClosed === true) {
         closingCompletedRef.current = true
@@ -458,16 +478,15 @@ console.log(response.data.data[0].leadBranch)
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
             <h2 className="text-lg font-semibold text-slate-800">
-              Lead closing is incomplete
+              Lead is not closed
             </h2>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              The lead will return to Follow-Up. Please resolve the closing error and close the lead again.
+              The lead is still available in Follow-Up. Return there and start Lead Closing again when you are ready.
             </p>
             <div className="mt-6 flex justify-end gap-3">
               <button
                 type="button"
                 onClick={handleStayOnLeadClosing}
-                disabled={recoveryInProgress}
                 className="rounded-md border border-slate-300 px-5 py-2 text-sm font-semibold text-slate-700"
               >
                 Stay on Lead Closing
@@ -475,10 +494,9 @@ console.log(response.data.data[0].leadBranch)
               <button
                 type="button"
                 onClick={handleReturnToFollowup}
-                disabled={recoveryInProgress}
-                className="rounded-md bg-[#1B2A4A] px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                className="rounded-md bg-[#1B2A4A] px-5 py-2 text-sm font-semibold text-white"
               >
-                {recoveryInProgress ? "Returning..." : "Return to Follow-Up"}
+                Return to Follow-Up
               </button>
             </div>
           </div>
@@ -520,7 +538,11 @@ console.log(response.data.data[0].leadBranch)
               isReadOnly={closingCompleted}
               Breadcrumblist={Breadcrumblist}
               selectedcompanyBranch={selectedleadbranch}
-              onClosingValidationFailure={handleClosingFailure}
+              closingDraft={closingDraft}
+              initialClosingRemark={closingRemark}
+              onClosingDraftChange={(draft) =>
+                saveClosingDraft({ ...draft, leadId })
+              }
             />
           </div>
         </div>

@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { ensureIndexes } from "../model/auth/authSchema.js";
+import LeadMaster from "../model/primaryUser/leadmasterSchema.js";
 
 const connectDB = async () => {
     try {
@@ -12,7 +13,10 @@ console.log(process.env.MONGO_URI)
         // await CallRegistration.syncIndexes()
         // console.log("Indexes are now created/updated")
         // // Create indexes after successful connection
-        await ensureIndexes()
+        await Promise.all([
+            ensureIndexes(),
+            LeadMaster.createIndexes()
+        ])
 
     } catch (error) {
         console.log(`Mongo Connection failed ${error.message}`)

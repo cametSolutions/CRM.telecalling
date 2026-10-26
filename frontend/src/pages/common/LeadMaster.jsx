@@ -99,7 +99,26 @@ function LicenseDropdown({
   const inputRef = useRef(null)
   const dropdownId = `license-dropdown-${index}`
 
-  const selectedLicenses = isMulti ? item?.licenseNumbers || [] : []
+  // Older closing records can keep the tag licence under `licensenumber`
+  // while the dropdown uses `licenseNumber`. Normalise both sources so a
+  // saved tag remains available and checked after a page refresh.
+  const selectedLicenses = isMulti
+    ? [...(item?.licenseNumbers || []), ...(item?.taggeddata || [])]
+        .map((license) => ({
+          ...license,
+          licenseNumber: license?.licenseNumber ?? license?.licensenumber
+        }))
+        .filter(
+          (license, licenseIndex, licenses) =>
+            String(license?.licenseNumber || "").trim() &&
+            licenseIndex ===
+              licenses.findIndex(
+                (candidate) =>
+                  String(candidate?.licenseNumber || "") ===
+                  String(license?.licenseNumber || "")
+              )
+        )
+    : []
 
   const multiDisplayValue = selectedLicenses.length
     ? String(selectedLicenses[0]?.licenseNumber ?? "")
@@ -135,7 +154,30 @@ function LicenseDropdown({
       document.removeEventListener("touchstart", handlePointerDown)
     }
   }, [dropdownId])
-  const filtered = (customerTableData || []).filter((lic) => {
+  // Include restored selected licences as dropdown options. The customer
+  // option list can load after the lead, and otherwise the restored licence
+  // value appears in the input but is absent from the menu.
+  const licenseOptions = [
+    ...(customerTableData || []),
+    ...selectedLicenses.map((license) => ({
+      ...license,
+      productName:
+        license?.productName ||
+        license?.productorServiceName ||
+        item?.productorServiceName || ""
+    }))
+  ].filter(
+    (license, licenseIndex, licenses) =>
+      String(license?.licenseNumber ?? license?.licensenumber ?? "").trim() &&
+      licenseIndex ===
+        licenses.findIndex(
+          (candidate) =>
+            String(candidate?.licenseNumber ?? candidate?.licensenumber ?? "") ===
+            String(license?.licenseNumber ?? license?.licensenumber ?? "")
+        )
+  )
+
+  const filtered = licenseOptions.filter((lic) => {
     const q = String(search || "")
       .toLowerCase()
       .trim()
@@ -256,7 +298,7 @@ function LicenseDropdown({
                     lic?.productName || lic?.productorServiceName || ""
 
                   const alreadyAdded = isMulti
-                    ? (item?.licenseNumbers || []).some(
+                    ? selectedLicenses.some(
                         (x) => String(x?.licenseNumber) === valStr
                       )
                     : false
@@ -633,6 +675,7 @@ function ProductDropdown({
         onChange={handleInputChange}
         onClick={() => !isReadOnly && setOpen(true)}
         placeholder="Search / Select Product"
+        title={search}
         className={`w-full px-2 py-1 border border-gray-200 rounded text-xs bg-[#EEF2F8] outline-none ${
           isReadOnly ? "cursor-not-allowed opacity-70" : "cursor-text"
         }`}
@@ -1343,7 +1386,7 @@ const BulkLeadWorkspace = ({
                       value={customer.partner}
                       disabled={isReadOnly}
                       onChange={(event) => updateCustomer(customer.id, "partner", event.target.value)}
-                      className="h-9 rounded border border-slate-300 bg-white px-2.5 text-xs outline-none focus:border-[#1B2A4A]"
+                      className="hidden"
                     >
                       <option value="">Associate with</option>
                       {partners.map((partner) => (
@@ -1406,14 +1449,16 @@ const LeadMaster = ({
   handleleadData,
   handleEditData,
   handleclosingData,
-  onClosingValidationFailure,
   loadingState,
   setLoadingState,
   editloadingState,
   seteditLoadingState,
   showmessage,
   showpopupMessage,
-  selectedcompanyBranch
+  selectedcompanyBranch,
+  closingDraft = null,
+  initialClosingRemark = "",
+  onClosingDraftChange
 }) => {
   console.log(process)
   console.log(Breadcrumblist)
@@ -1431,6 +1476,7 @@ const LeadMaster = ({
     watch: watchMain,
     control: controlMain,
     reset: resetMain,
+    getValues: getValuesMain,
 
     clearErrors: clearMainerrors,
     formState: { errors: errorsMain }
@@ -1456,7 +1502,12 @@ const LeadMaster = ({
   const [productOrserviceSelections, setProductorServiceSelections] = useState(
     {}
   )
-  const mobileRegister = registerMain("mobile")
+  const mobileRegister = registerMain("mobile", {
+    validate: (value) =>
+      process !== "closing" || String(value || "").trim()
+        ? true
+        : "Mobile number is required to close the lead"
+  })
   const today = new Date().toISOString().split("T")[0]
   console.log(Data?.[0]?.customerName)
   console.log(Data?.[0]?.customerName?._id)
@@ -1591,6 +1642,8 @@ const LeadMaster = ({
   // the discount is not applied to those totals a second time.
   const existingLeadTotalsRef = useRef(null)
   const isHydratingExistingLeadRef = useRef(false)
+  const closingDraftRestoredRef = useRef(false)
+  const closingDraftSaveReadyRef = useRef(false)
   console.log(mobileValue)
   console.log(customerNameValue)
   console.log(customerIdValue)
@@ -2327,6 +2380,109 @@ const LeadMaster = ({
     }
   }, [customerOptions, Data, from])
 
+  // A lead-closing page can safely be refreshed. Restore the in-progress
+  // inputs only after the normal saved-lead hydration is complete, so the
+  // supporting customer/product data still comes from the server.
+  useEffect(() => {
+    if (
+      process !== "closing" ||
+      closingDraftRestoredRef.current ||
+      !closingDraft ||
+      !Data?.length ||
+      !customerOptions?.length ||
+      !loggeduser
+    ) {
+      return
+    }
+
+    if (closingDraft.formValues && typeof closingDraft.formValues === "object") {
+      resetMain({ ...getValuesMain(), ...closingDraft.formValues })
+    }
+
+    if (Array.isArray(closingDraft.selectedleadlist)) {
+      setSelectedLeadList(closingDraft.selectedleadlist)
+    }
+
+    closingDraftRestoredRef.current = true
+  }, [
+    closingDraft,
+    customerOptions,
+    Data,
+    getValuesMain,
+    loggeduser,
+    process,
+    resetMain
+  ])
+
+  useEffect(() => {
+    if (
+      process === "closing" &&
+      initialClosingRemark &&
+      !closingDraft &&
+      Data?.length
+    ) {
+      setValueMain("remark", initialClosingRemark)
+    }
+  }, [closingDraft, Data, initialClosingRemark, process, setValueMain])
+
+  useEffect(() => {
+    if (
+      process === "closing" &&
+      !closingDraftRestoredRef.current &&
+      Data?.length &&
+      customerOptions?.length &&
+      loggeduser
+    ) {
+      // No previous draft exists, so the freshly hydrated saved lead becomes
+      // the starting point for a new refresh-safe draft.
+      closingDraftRestoredRef.current = true
+    }
+  }, [customerOptions, Data, loggeduser, process])
+
+  // Keep a session-only snapshot while closing. It is intentionally not sent
+  // to the server and disappears once the lead is successfully closed.
+  useEffect(() => {
+    if (
+      process !== "closing" ||
+      !onClosingDraftChange ||
+      !closingDraftRestoredRef.current
+    ) {
+      return
+    }
+
+    if (!closingDraftSaveReadyRef.current) {
+      closingDraftSaveReadyRef.current = true
+      return
+    }
+
+    onClosingDraftChange({
+      formValues: getValuesMain(),
+      selectedleadlist
+    })
+  }, [
+    getValuesMain,
+    onClosingDraftChange,
+    process,
+    selectedleadlist
+  ])
+
+  useEffect(() => {
+    if (
+      process !== "closing" ||
+      !onClosingDraftChange ||
+      !closingDraftRestoredRef.current ||
+      !closingDraftSaveReadyRef.current
+    ) {
+      return undefined
+    }
+
+    const subscription = watchMain((formValues) => {
+      onClosingDraftChange({ formValues, selectedleadlist })
+    })
+
+    return () => subscription.unsubscribe()
+  }, [onClosingDraftChange, process, selectedleadlist, watchMain])
+
   useEffect(() => {
     if (customerData && customerData.length > 0) {
       setallcustomer(customerData)
@@ -3023,7 +3179,9 @@ const LeadMaster = ({
           const updatedtax = row?.leadTax > 0 ? Number(hsn / 100) * value : 0
           updatedRow.taxexclusiveAmount = value === "" ? "" : Number(value)
           const discount = Number(row?.discountAmount ?? 0)
-          updatedRow.taxinclusiveamount = Number(value) + updatedtax - discount
+          updatedRow.taxinclusiveamount = Math.round(
+            Math.max(Number(value) + updatedtax - discount, 0)
+          )
           return updatedRow
         }
 
@@ -3040,8 +3198,9 @@ const LeadMaster = ({
           console.log(discountValue)
           console.log(currentTotalLeadAmount)
 
-          const updatedTotal =
+          const updatedTotal = Math.round(
             currentLeadAmount + Number(row?.leadTax / 100) * currentLeadAmount
+          )
           if (discountValue > updatedTotal) {
             toast.warning(
               "Discount amount cannot be greater than the total amount."
@@ -3050,8 +3209,9 @@ const LeadMaster = ({
           }
           console.log(updatedTotal)
           updatedRow.discountAmount = discountValue
-          updatedRow.taxinclusiveamount =
-            value === "" ? updatedTotal : updatedTotal - discountValue
+          updatedRow.taxinclusiveamount = Math.round(
+            Math.max(updatedTotal - discountValue, 0)
+          )
           return updatedRow
         }
 
@@ -3075,8 +3235,9 @@ const LeadMaster = ({
 
             const discount = Number(row?.discountAmount ?? 0)
 
-            updatedRow.taxinclusiveamount =
-              Number((currentLeadAmount + taxAmount).toFixed(2)) - discount
+            updatedRow.taxinclusiveamount = Math.round(
+              Math.max(currentLeadAmount + taxAmount - discount, 0)
+            )
           }
 
           return updatedRow
@@ -3776,7 +3937,7 @@ const LeadMaster = ({
           (tag, tagIndex) => {
             const taxable = roundAmount(tag?.taxexclusiveAmount)
             const taxRate = Number(tag?.leadTax || 0)
-            const undiscountedNetAmount = roundAmount(
+            const undiscountedNetAmount = Math.round(
               taxable + (taxable * taxRate) / 100
             )
             const netAmount = roundAmount(
@@ -3798,7 +3959,7 @@ const LeadMaster = ({
               ? roundAmount(Math.min(discount, gross) - appliedDiscount)
               : roundAmount((Math.min(discount, gross) * entry.netAmount) / gross)
           appliedDiscount = roundAmount(appliedDiscount + tagDiscount)
-          const netAmount = roundAmount(Math.max(entry.netAmount - tagDiscount, 0))
+          const netAmount = Math.round(Math.max(entry.netAmount - tagDiscount, 0))
           const taxable = roundAmount(
             entry.netAmount > 0 ? (entry.taxable * netAmount) / entry.netAmount : 0
           )
@@ -4077,11 +4238,11 @@ const LeadMaster = ({
         const validationMessage = validateSelectedLeadList(selectedleadlist)
         console.log(validationMessage)
         if (validationMessage) {
-          if (onClosingValidationFailure) {
-            await onClosingValidationFailure(validationMessage)
-          } else {
-            toast.warning(validationMessage)
-          }
+          // Missing data in any product/service detail popup is a normal
+          // client-side validation error. Keep the lead in the closing page
+          // and tell the user exactly what to complete; do not reverse the
+          // follow-up unless the completed close request itself fails.
+          toast.warning(validationMessage)
           return
         }
 
@@ -4645,16 +4806,16 @@ const LeadMaster = ({
               "hsn",
               "actualHsn"
             )
-            const existingTaxinclusiveAmount = Number(
+            const existingTaxinclusiveAmount = Math.round(Number(
               getFirstLeadValue(
                 "taxinclusiveamount",
                 "totalleadAmount",
                 "netAmount",
                 "actualNetAmount"
               ) ?? 0
-            )
-            const calculatedTaxinclusiveAmount = Number(
-              (taxexclusiveAmount * (1 + leadTax / 100)).toFixed(2)
+            ))
+            const calculatedTaxinclusiveAmount = Math.round(
+              taxexclusiveAmount * (1 + leadTax / 100)
             )
             return {
               licensenumber: lic?.licenseNumber || "",
@@ -5114,6 +5275,11 @@ convertexcel
                         {duplicateWarning}
                       </p>
                     )}
+                    {errorsMain.mobile && (
+                      <p className="mt-1 text-xs font-medium text-red-500">
+                        {errorsMain.mobile.message}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">
@@ -5139,14 +5305,12 @@ convertexcel
                       </p>
                     )}
                   </div>
-                  <div>
+                  <div className="hidden">
                     <label className="block text-xs font-semibold text-gray-600 mb-1">
                       Associate with
                     </label>
                     <select
-                      {...registerMain("partner", {
-                        required: "Partnership is Required"
-                      })}
+                      {...registerMain("partner")}
                       disabled={isReadOnly}
                       className={`w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8] ${
                         isReadOnly
@@ -5217,11 +5381,11 @@ convertexcel
                 <div className="border border-gray-300 rounded">
                   <table className="w-full border-collapse text-xs table-fixed">
                     <colgroup>
-                      <col style={{ width: "22%" }} />
-                      <col style={{ width: "22%" }} />
-                      <col style={{ width: "15%" }} />
-                      <col style={{ width: "12%" }} />
-                      <col style={{ width: "15%" }} />
+                      <col style={{ width: "27%" }} />
+                      <col style={{ width: "20%" }} />
+                      <col style={{ width: "14%" }} />
+                      <col style={{ width: "11%" }} />
+                      <col style={{ width: "14%" }} />
                       <col style={{ width: "7%" }} />
                       {(process === "closing" || process === "edit") &&
                         hasRowsWithDetails && (
@@ -5481,7 +5645,7 @@ convertexcel
                                     console.log("jjjjj")
                                     handleDeletetableData(item, index)
                                   }}
-                                  className={`h-6 w-6 rounded-full flex items-center justify-center text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors ${
+                                  className={`h-7 w-7 rounded-md border border-red-200 bg-red-50 flex items-center justify-center text-red-600 shadow-sm transition-colors hover:border-red-300 hover:bg-red-100 hover:text-red-700 ${
                                     isReadOnly
                                       ? "cursor-not-allowed opacity-30"
                                       : ""
@@ -5490,7 +5654,7 @@ convertexcel
                                 >
                                   <svg
                                     xmlns="http://www.w3.org/2000/svg"
-                                    className="h-3.5 w-3.5"
+                                    className="h-4 w-4"
                                     fill="none"
                                     viewBox="0 0 24 24"
                                     stroke="currentColor"
@@ -6931,7 +7095,7 @@ convertexcel
                       </p>
 
                       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                        <div>
+                      <div className="hidden">
                           <label className="mb-1 block text-[11px] font-semibold text-slate-600">
                             Partnership Type
                           </label>

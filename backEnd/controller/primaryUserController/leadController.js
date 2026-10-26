@@ -5187,7 +5187,7 @@ export const Leadclosing = async (req, res) => {
   };
 
   try {
-    const { data, leadData, userId, role } = req.body;
+    const { data, leadData, userId, role, closingContext } = req.body;
     const { docID } = req.query;
 
     if (!docID) {
@@ -5208,6 +5208,12 @@ export const Leadclosing = async (req, res) => {
       return res.status(400).json({ message: "Customer id is required" });
     }
 
+    if (!String(data?.mobile || "").trim()) {
+      return res.status(400).json({
+        message: "Mobile number is required to close the lead"
+      });
+    }
+
     const objectId = new mongoose.Types.ObjectId(docID);
     let responsePayload = null;
 
@@ -5216,9 +5222,8 @@ export const Leadclosing = async (req, res) => {
       if (!matchedDoc) {
         throw new Error("Lead not found");
       }
-      // `leadClosed` is set during the Follow-Up handoff before the final
-      // Lead Closing form is submitted. `leadConfirmed` means final closing
-      // already succeeded and is therefore the replay guard.
+      // `leadConfirmed` is set only after this final Lead Closing submission
+      // succeeds, so it is the replay guard for a completed close.
       if (matchedDoc.leadConfirmed === true) {
         throw Object.assign(new Error("This lead is already closed"), {
           statusCode: 409
@@ -5510,6 +5515,44 @@ export const Leadclosing = async (req, res) => {
 
       const taskName = await Task.findOne({ taskName: "Lead Closing" }).lean();
 
+      const closeActiveFollowup = closingContext?.origin === "followup";
+      const hasActiveFollowup = matchedDoc.activityLog.some(
+        (log) =>
+          log?.taskTo === "followup" &&
+          log?.reallocatedTo === false &&
+          log?.taskClosed === false &&
+          log?.followupClosed === false
+      );
+
+      if (closeActiveFollowup && !hasActiveFollowup) {
+        throw Object.assign(
+          new Error("An active Follow-Up could not be found for this lead"),
+          { statusCode: 409 }
+        );
+      }
+
+      const followupClosingTask = closeActiveFollowup
+        ? await Task.findOne({ taskName: "Follow-Up Closing" }).lean()
+        : null;
+      const requestedFollowUpDate = new Date(closingContext?.followUpDate);
+      const followupSubmissionDate = Number.isNaN(requestedFollowUpDate.getTime())
+        ? new Date()
+        : requestedFollowUpDate;
+      const followupClosedEntry = closeActiveFollowup
+        ? {
+            submissionDate: followupSubmissionDate,
+            submittedUser: userId,
+            submissiondoneByModel: role === "Admin" ? "Admin" : "Staff",
+            remarks: normalizeString(closingContext?.remark) || data?.remark || "",
+            taskBy: followupClosingTask?._id || null,
+            taskDescription: "Follow-Up Closed",
+            taskClosed: true,
+            followupClosed: true,
+            reallocatedTo: false,
+            taskfromFollowup: false,
+          }
+        : null;
+
       const activityLogEntry = {
         submissionDate: new Date(),
         submittedUser: userId,
@@ -5536,14 +5579,38 @@ export const Leadclosing = async (req, res) => {
         paymentHistory: updatedPaymentHistory,
       };
 
-      const updatedLead = await LeadMaster.findByIdAndUpdate(
-        objectId,
-        {
-          $push: { activityLog: activityLogEntry },
-          $set: leadUpdatePayload,
-        },
-        { new: true, runValidators: true, session }
-      );
+      if (closeActiveFollowup) {
+        leadUpdatePayload.followupClosed = true;
+        leadUpdatePayload.reallocatedTo = false;
+      }
+
+      // Do not combine `$push: { activityLog }` with `$set` updates to an
+      // activityLog array element. MongoDB treats that as two competing
+      // writes to the same path. Update the already-transactional document
+      // in memory, then save it once instead.
+      if (closeActiveFollowup) {
+        matchedDoc.activityLog.forEach((log) => {
+          if (
+            log?.taskTo === "followup" &&
+            log?.reallocatedTo === false &&
+            log?.taskClosed === false &&
+            log?.followupClosed === false
+          ) {
+            log.taskClosed = true;
+            log.followupClosed = true;
+            log.reallocatedTo = false;
+          }
+        });
+      }
+
+      matchedDoc.set(leadUpdatePayload);
+      if (followupClosedEntry) {
+        // Keep the audit history in business order: Follow-Up Closed before
+        // the Lead Closing entry that completes the same transaction.
+        matchedDoc.activityLog.push(followupClosedEntry);
+      }
+      matchedDoc.activityLog.push(activityLogEntry);
+      const updatedLead = await matchedDoc.save({ session });
 
       if (!updatedLead) {
         throw new Error("Lead update failed");
@@ -10209,6 +10276,17 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
       return res.status(404).json({ message: "Lead not found" });
     }
 
+    // Selecting "Close Lead" only moves the user to the final Lead Closing
+    // form. Do not write a temporary Follow-Up history entry here; the
+    // completed close transaction writes Follow-Up Closed and Lead Closing
+    // entries together in the correct order.
+    if (isFollowupAndLeadClosed) {
+      return res.status(200).json({
+        message: "Continue to close the lead.",
+        data: existingLead
+      });
+    }
+
     const codingAndQcTaskId = "689c23493e94902039b97743";
     const productIds = (existingLead.leadFor || [])
       .filter((item) => item.productorServicemodel === "Product" && item.productorServiceId)
@@ -10233,18 +10311,16 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
       formData.followupType === "closed" &&
       (!hasProductFirstStage || !isCodingAndQcFirstStage);
 
-    // 2) Close previous open followup if lead closed
-    if (
-      formData.followupType === "closed" ||
-      isFollowupAndLeadClosed
-    ) {
+    // 2) Close the active Follow-Up only for a completed Follow-Up close.
+    // Choosing "Close Lead" merely records the remark and opens the final
+    // Lead Closing form; users can safely leave that page without losing the
+    // active Follow-Up assignment.
+    if (formData.followupType === "closed") {
       await LeadMaster.updateOne(
         { _id: selectedleaddocId },
         {
           $set: {
-            "activityLog.$[elem].reallocatedTo": isFollowupAndLeadClosed
-              ? false
-              : shouldReallocateToFirstStage,
+            "activityLog.$[elem].reallocatedTo": shouldReallocateToFirstStage,
             "activityLog.$[elem].taskClosed": true,
             "activityLog.$[elem].followupClosed": true
           }
@@ -10270,9 +10346,8 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
         taskName: "Follow-Up Closing"
       }).lean();
     } else if (isFollowupAndLeadClosed) {
-      allocationTask = await Task.findOne({ taskName: "Follow-Up Closing" }).lean()
-    }
-    else if (formData.followupType === "lost") {
+      allocationTask = await Task.findOne({ taskName: "Followup" }).lean()
+    } else if (formData.followupType === "lost") {
       allocationTask = await Task.findOne({
         taskName: "Lost"
       })
@@ -10289,28 +10364,23 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
       submittedUser: loggeduserid,
       submissiondoneByModel: followedByModel,
       taskBy: allocationTask?._id || null,
-      nextFollowUpDate: isFollowupAndLeadClosed
-        ? null
-        : formData?.nextfollowUpDate,
+      nextFollowUpDate: formData?.nextfollowUpDate || null,
       remarks: formData.Remarks,
       taskfromFollowup: false
     };
 
     if (
-      formData.followupType === "closed" ||
-      isFollowupAndLeadClosed
+      formData.followupType === "closed"
     ) {
       activityEntry.taskClosed = true;
       activityEntry.followupClosed = true;
-      activityEntry.reallocatedTo = isFollowupAndLeadClosed
-        ? false
-        : shouldReallocateToFirstStage;
+      activityEntry.reallocatedTo = shouldReallocateToFirstStage;
     } else if (formData.followupType === "lost") {
       activityEntry.taskClosed = true;
     }
 
     if (isFollowupAndLeadClosed) {
-      activityEntry.taskDescription = "Follow-up Closed - Lead Closing";
+      activityEntry.taskDescription = "Lead closing started";
     }
 
     // 4) Payment handling
@@ -10381,15 +10451,13 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
         totalPaidAmount: updatedTotalPaid,
         balanceAmount: updatedBalance,
         followupClosed:
-          formData?.followupType === "closed" || isFollowupAndLeadClosed
+          formData?.followupType === "closed"
       }
     };
 
     // lead closed
-    if (formData.followupType === "closed" || isFollowupAndLeadClosed) {
-      updateDoc.$set.reallocatedTo = isFollowupAndLeadClosed
-        ? false
-        : shouldReallocateToFirstStage
+    if (formData.followupType === "closed") {
+      updateDoc.$set.reallocatedTo = shouldReallocateToFirstStage
       if (formData.followupType === "closed" && isCodingAndQcFirstStage) {
         updateDoc.$set.allocationType = followupFirstStage
       }
@@ -10436,7 +10504,7 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
       message: formData.followupType === "lost"
         ? "Lead losted"
         : isFollowupAndLeadClosed
-          ? "Follow-up closed. Continue to close the lead."
+          ? "Remarks saved. Continue to close the lead."
           : formData.followupType === "closed"
             ? "Followup Closed"
             : "Next follow up updated",
@@ -13827,16 +13895,42 @@ export const getverifiedCollectionLeads = async (req, res) => {
     const verifiedBool = verified === "true";
     const accountantMode = isAccountant === "true";
 
+    if (!mongoose.Types.ObjectId.isValid(selectedBranch)) {
+      return res.status(400).json({ message: "Invalid branch id" });
+    }
+
     const fromDate = new Date(startDate);
     fromDate.setHours(0, 0, 0, 0);
 
     const toDate = new Date(endDate);
     toDate.setHours(23, 59, 59, 999);
+
+    if (Number.isNaN(fromDate.getTime()) || Number.isNaN(toDate.getTime())) {
+      return res.status(400).json({ message: "Invalid collection date range" });
+    }
+
+    // Keep the expensive activity-log work limited to leads that have a
+    // verified payment in the requested date range. This matches the index
+    // declared on LeadMaster and avoids scanning every lead in the branch.
+    const collectionMatch = {
+      leadBranch: new mongoose.Types.ObjectId(selectedBranch),
+      activityLog: {
+        $elemMatch: { taskTo: "followup", followupClosed: true },
+      },
+    };
+
+    if (verifiedBool) {
+      collectionMatch.paymentHistory = {
+        $elemMatch: {
+          paymentVerified: true,
+          verifiedAt: { $gte: fromDate, $lte: toDate },
+        },
+      };
+    }
+
     const matchedCollectionlead = await LeadMaster.aggregate([
       {
-        $match: {
-          leadBranch: new mongoose.Types.ObjectId(selectedBranch),
-        },
+        $match: collectionMatch,
       },
       {
         $addFields: {
