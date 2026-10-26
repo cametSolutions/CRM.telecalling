@@ -22,7 +22,9 @@ import {
   Eye,
   IndianRupee,
   ChevronDown,
-  BellRing
+  BellRing,
+  Search,
+  X
 } from "lucide-react"
 
 import AdminHeader from "../../header/AdminHeader"
@@ -67,6 +69,7 @@ export default function OwnLeadList() {
   const [historyList, setHistoryList] = useState([])
   const [openRow, setOpenRow] = useState(null)
   const [activeUserId, setActiveUserId] = useState(null)
+  const [leadSearch, setLeadSearch] = useState("")
 
   const nav = [
     { label: "Lead", path: "" },
@@ -413,7 +416,9 @@ console.log(item?.mobile)
             setOpenRow((prev) => (prev === item._id ? null : item._id))
           }
           className={`cursor-pointer border transition-colors ${
-            item?.leadConfirmed
+            item?.leadLost
+              ? "border-red-300 bg-red-100 hover:bg-red-200 [&>td]:border-red-200 [&>td]:bg-red-100 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-red-600"
+              : item?.leadConfirmed
               ? "border-emerald-400 bg-emerald-100 hover:bg-emerald-200 [&>td]:border-emerald-300 [&>td]:bg-emerald-100 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-emerald-600"
               : "border-gray-200 bg-white hover:bg-blue-50"
           }`}
@@ -629,7 +634,35 @@ console.log(item?.leadBy?._id)
       return total + (Number.isFinite(amount) ? amount : 0)
     }, 0)
 
-  const totalNetAmount = tableData.reduce(
+  const normalizedLeadSearch = leadSearch.trim().toLowerCase()
+  const visibleTableData = normalizedLeadSearch
+    ? tableData
+        .map((group) => ({
+          ...group,
+          leads: (group?.leads || []).filter((lead) => {
+            const customerName =
+              lead?.customerName?.customerName || lead?.customerName || ""
+            const productNames = (lead?.leadFor || []).map((product) =>
+              [
+                product?.productorServiceName,
+                product?.productorServiceId?.shortName,
+                product?.productorServiceId?.productName,
+                product?.productorServiceId?.serviceName,
+                product?.productName
+              ]
+                .filter(Boolean)
+                .join(" ")
+            )
+
+            return [customerName, ...productNames].some((value) =>
+              String(value).toLowerCase().includes(normalizedLeadSearch)
+            )
+          })
+        }))
+        .filter((group) => group.leads.length > 0)
+    : tableData
+
+  const totalNetAmount = visibleTableData.reduce(
     (total, group) => total + getNetAmountTotal(group?.leads),
     0
   )
@@ -699,8 +732,8 @@ console.log(item?.leadBy?._id)
   )
 
   const hasLeads =
-    Array.isArray(tableData) &&
-    tableData.some(
+    Array.isArray(visibleTableData) &&
+    visibleTableData.some(
       (group) => Array.isArray(group.leads) && group.leads.length > 0
     )
   return (
@@ -758,7 +791,7 @@ console.log(item?.leadBy?._id)
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
             <Breadcrumb items={Breadcrumblist} />
             <div className="m-2 shrink-0 rounded-lg border border-slate-200 bg-white/70 px-3 py-2 shadow-sm md:m-3">
-              <div className="flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
+              <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <h2 className="shrink-0 text-base font-bold tracking-tight text-slate-800">
                     {ownLead ? "Own Lead" : "All Lead"}
@@ -785,10 +818,35 @@ console.log(item?.leadBy?._id)
                   )}
                 </div>
 
-                <div className="flex flex-wrap items-center justify-start gap-2 xl:justify-end">
+                <div className="flex w-full flex-wrap items-end gap-2 lg:w-auto lg:flex-nowrap lg:justify-end">
+                  <div className="relative w-full sm:w-52 lg:w-48 xl:w-52">
+                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="search"
+                      value={leadSearch}
+                      onChange={(event) => setLeadSearch(event.target.value)}
+                      placeholder="Search customer or product"
+                      className="h-8 w-full rounded-md border border-slate-200 bg-white py-1 pl-8 pr-8 text-xs text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                    />
+                    {leadSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setLeadSearch("")}
+                        aria-label="Clear lead search"
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
                   {dates.startDate && (
-                    <div className="min-w-[208px]">
-                      <MyDatePicker setDates={setDates} dates={dates} compact />
+                    <div className="w-full sm:w-[22rem]">
+                      <MyDatePicker
+                        setDates={setDates}
+                        dates={dates}
+                        compact
+                        inlineOnMobile
+                      />
                     </div>
                   )}
 
@@ -798,7 +856,7 @@ console.log(item?.leadBy?._id)
                         ? navigate("/admin/transaction/lead")
                         : navigate("/staff/transaction/lead")
                     }
-                    className="inline-flex h-8 items-center justify-center rounded-md bg-slate-900 px-3 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-700"
+                    className="inline-flex h-8 shrink-0 items-center justify-center rounded-md bg-slate-900 px-3 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-700"
                   >
                     New Lead
                   </button>
@@ -830,7 +888,7 @@ console.log(item?.leadBy?._id)
                     </div>
                   </div>
                   <div className="min-h-0 flex-1 overflow-auto">
-                    {renderTable(tableData)}
+                    {renderTable(visibleTableData)}
                   </div>
                 </>
               )}

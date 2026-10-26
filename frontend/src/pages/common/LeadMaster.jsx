@@ -675,6 +675,7 @@ function ProductDropdown({
         onChange={handleInputChange}
         onClick={() => !isReadOnly && setOpen(true)}
         placeholder="Search / Select Product"
+        title={search}
         className={`w-full px-2 py-1 border border-gray-200 rounded text-xs bg-[#EEF2F8] outline-none ${
           isReadOnly ? "cursor-not-allowed opacity-70" : "cursor-text"
         }`}
@@ -1385,7 +1386,7 @@ const BulkLeadWorkspace = ({
                       value={customer.partner}
                       disabled={isReadOnly}
                       onChange={(event) => updateCustomer(customer.id, "partner", event.target.value)}
-                      className="h-9 rounded border border-slate-300 bg-white px-2.5 text-xs outline-none focus:border-[#1B2A4A]"
+                      className="hidden"
                     >
                       <option value="">Associate with</option>
                       {partners.map((partner) => (
@@ -1456,6 +1457,7 @@ const LeadMaster = ({
   showpopupMessage,
   selectedcompanyBranch,
   closingDraft = null,
+  initialClosingRemark = "",
   onClosingDraftChange
 }) => {
   console.log(process)
@@ -1500,7 +1502,12 @@ const LeadMaster = ({
   const [productOrserviceSelections, setProductorServiceSelections] = useState(
     {}
   )
-  const mobileRegister = registerMain("mobile")
+  const mobileRegister = registerMain("mobile", {
+    validate: (value) =>
+      process !== "closing" || String(value || "").trim()
+        ? true
+        : "Mobile number is required to close the lead"
+  })
   const today = new Date().toISOString().split("T")[0]
   console.log(Data?.[0]?.customerName)
   console.log(Data?.[0]?.customerName?._id)
@@ -2406,6 +2413,17 @@ const LeadMaster = ({
     process,
     resetMain
   ])
+
+  useEffect(() => {
+    if (
+      process === "closing" &&
+      initialClosingRemark &&
+      !closingDraft &&
+      Data?.length
+    ) {
+      setValueMain("remark", initialClosingRemark)
+    }
+  }, [closingDraft, Data, initialClosingRemark, process, setValueMain])
 
   useEffect(() => {
     if (
@@ -5257,6 +5275,11 @@ convertexcel
                         {duplicateWarning}
                       </p>
                     )}
+                    {errorsMain.mobile && (
+                      <p className="mt-1 text-xs font-medium text-red-500">
+                        {errorsMain.mobile.message}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">
@@ -5282,14 +5305,12 @@ convertexcel
                       </p>
                     )}
                   </div>
-                  <div>
+                  <div className="hidden">
                     <label className="block text-xs font-semibold text-gray-600 mb-1">
                       Associate with
                     </label>
                     <select
-                      {...registerMain("partner", {
-                        required: "Partnership is Required"
-                      })}
+                      {...registerMain("partner")}
                       disabled={isReadOnly}
                       className={`w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8] ${
                         isReadOnly
@@ -5360,11 +5381,11 @@ convertexcel
                 <div className="border border-gray-300 rounded">
                   <table className="w-full border-collapse text-xs table-fixed">
                     <colgroup>
-                      <col style={{ width: "22%" }} />
-                      <col style={{ width: "22%" }} />
-                      <col style={{ width: "15%" }} />
-                      <col style={{ width: "12%" }} />
-                      <col style={{ width: "15%" }} />
+                      <col style={{ width: "27%" }} />
+                      <col style={{ width: "20%" }} />
+                      <col style={{ width: "14%" }} />
+                      <col style={{ width: "11%" }} />
+                      <col style={{ width: "14%" }} />
                       <col style={{ width: "7%" }} />
                       {(process === "closing" || process === "edit") &&
                         hasRowsWithDetails && (
@@ -5624,7 +5645,7 @@ convertexcel
                                     console.log("jjjjj")
                                     handleDeletetableData(item, index)
                                   }}
-                                  className={`h-6 w-6 rounded-full flex items-center justify-center text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors ${
+                                  className={`h-7 w-7 rounded-md border border-red-200 bg-red-50 flex items-center justify-center text-red-600 shadow-sm transition-colors hover:border-red-300 hover:bg-red-100 hover:text-red-700 ${
                                     isReadOnly
                                       ? "cursor-not-allowed opacity-30"
                                       : ""
@@ -5633,7 +5654,7 @@ convertexcel
                                 >
                                   <svg
                                     xmlns="http://www.w3.org/2000/svg"
-                                    className="h-3.5 w-3.5"
+                                    className="h-4 w-4"
                                     fill="none"
                                     viewBox="0 0 24 24"
                                     stroke="currentColor"
@@ -7074,7 +7095,7 @@ convertexcel
                       </p>
 
                       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                        <div>
+                      <div className="hidden">
                           <label className="mb-1 block text-[11px] font-semibold text-slate-600">
                             Partnership Type
                           </label>

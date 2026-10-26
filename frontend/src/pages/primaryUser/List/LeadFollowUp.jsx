@@ -30,7 +30,8 @@ import {
   History,
   ChevronDown,
   ChevronRight,
-  X
+  X,
+  Search
 } from "lucide-react"
 import BarLoader from "react-spinners/BarLoader"
 import AdminHeader from "../../../header/AdminHeader"
@@ -168,6 +169,7 @@ const LeadFollowUp = () => {
   const [loggedUserBranches, setloggedUserBranches] = useState([])
   const [followupDateLoader, setfollowupDateLoader] = useState(false)
   const [input, setInput] = useState("")
+  const [followupSearch, setFollowupSearch] = useState("")
   const [showFullRemarks, setShowFullRemarks] = useState("")
   const [errors, setErrors] = useState({})
   const [demosubmitError, setDemofollowersubmitError] = useState({})
@@ -2505,12 +2507,6 @@ const LeadFollowUp = () => {
         setfollowupDateLoader(false)
 
         if (shouldOpenLeadClosing) {
-          const activityLog = response?.data?.data?.activityLog || []
-          const followupActivityLogId = [...activityLog]
-            .reverse()
-            .find((log) => log?.taskTo === "followup")?._id
-          const closingActivityLogId = activityLog[activityLog.length - 1]?._id
-
           navigate(
             loggedUser?.role === "Admin"
               ? "/admin/transaction/lead/leadClosed"
@@ -2519,8 +2515,8 @@ const LeadFollowUp = () => {
               state: {
                 leadId: leadDocumentId,
                 closingOrigin: "followup",
-                followupActivityLogId,
-                closingActivityLogId
+                closingRemark: formData.Remarks,
+                closingFollowUpDate: formData.followUpDate
               }
             }
           )
@@ -3018,9 +3014,38 @@ const LeadFollowUp = () => {
   )
   const currentData = statusAllocated ? allocatedLeads : tableData
 
+  const normalizedFollowupSearch = followupSearch.trim().toLowerCase()
+  const visibleData = normalizedFollowupSearch
+    ? (currentData || [])
+        .map((group) => ({
+          ...group,
+          leads: (group?.leads || []).filter((lead) => {
+            const customerName =
+              lead?.customerName?.customerName ||
+              lead?.customerName?.name ||
+              lead?.customerName ||
+              ""
+            const productNames = (lead?.leadFor || []).map(
+              (product) =>
+                product?.productorServiceName ||
+                product?.productorServiceId?.shortName ||
+                product?.productorServiceId?.productName ||
+                product?.productorServiceId?.serviceName ||
+                product?.productName ||
+                ""
+            )
+
+            return [customerName, ...productNames].some((value) =>
+              String(value).toLowerCase().includes(normalizedFollowupSearch)
+            )
+          })
+        }))
+        .filter((group) => group.leads.length > 0)
+    : currentData
+
   const hasLeads = () => {
-    if (!Array.isArray(currentData) || currentData.length === 0) return false
-    return currentData.some(
+    if (!Array.isArray(visibleData) || visibleData.length === 0) return false
+    return visibleData.some(
       (group) => Array.isArray(group?.leads) && group.leads.length > 0
     )
   }
@@ -3037,16 +3062,41 @@ const LeadFollowUp = () => {
           )}
           <div className="flex flex-col flex-1 bg-[#ADD8E6] min-h-0">
             <Breadcrumb items={Breadcrumblist} />
-            <div className="flex justify-between">
-              <h2 className="text-lg font-bold mx-4">Lead Follow Up</h2>
+            <div className="flex flex-col gap-3 px-4 py-1 md:flex-row md:items-end">
+              <h2 className="shrink-0 whitespace-nowrap text-lg font-bold text-slate-900">
+                Lead Follow Up
+              </h2>
 
-              <div className="grid grid-cols-2 md:flex md:flex-nowrap md:gap-6 gap-3 md:items-center w-full md:w-auto mx-4">
+              <div className="flex flex-1 flex-wrap items-end justify-end gap-3">
+                <div className="relative w-full sm:w-52 lg:w-56">
+                  <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="search"
+                    value={followupSearch}
+                    onChange={(event) => setFollowupSearch(event.target.value)}
+                    placeholder="Search customer or product..."
+                    className="h-8 w-full rounded-lg border border-slate-200 bg-white py-1.5 pl-8 pr-8 text-xs text-slate-700 shadow-sm outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                  />
+                  {followupSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setFollowupSearch("")}
+                      className="absolute right-1.5 top-1/2 grid h-5 w-5 -translate-y-1/2 place-items-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                      title="Clear search"
+                      aria-label="Clear search"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
                 {dates.startDate && (
-                  <div className="w-full ">
+                  <div className="w-full sm:w-auto">
                     <MyDatePicker
                       setDates={setDates}
                       dates={dates}
                       view={!!safeState.staffId || !!safeState?.viewdate}
+                      compact
+                      inlineOnMobile
                     />
                   </div>
                 )}
@@ -3176,7 +3226,7 @@ const LeadFollowUp = () => {
                   </div>
                 )}
 
-                <div className="flex justify-end">
+                <div className="flex shrink-0 justify-end">
                   <button
                     onClick={() =>
                       loggedUser?.role === "Admin"
@@ -3206,9 +3256,15 @@ const LeadFollowUp = () => {
               {loading ? (
                 <SkeletonTable rows={7} />
               ) : hasLeads() ? (
-                renderTable(currentData)
+                renderTable(visibleData)
               ) : (
-                <NoDataAvailable />
+                <NoDataAvailable
+                  message={
+                    normalizedFollowupSearch
+                      ? "No matching customer or product found"
+                      : undefined
+                  }
+                />
               )}
             </div> */}
             <div className="relative min-h-0 overflow-auto rounded-lg bg-white mx-2 mb-3 shadow-xl md:mx-3">
@@ -3235,9 +3291,15 @@ const LeadFollowUp = () => {
                   </button>
                 </div>
               ) : hasLeads() ? (
-                renderTable(currentData)
+                renderTable(visibleData)
               ) : (
-                <NoDataAvailable />
+                <NoDataAvailable
+                  message={
+                    normalizedFollowupSearch
+                      ? "No matching customer or product found"
+                      : undefined
+                  }
+                />
               )}
 
               {/* Background refresh overlay: old data remains visible */}
