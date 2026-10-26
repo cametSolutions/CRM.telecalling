@@ -1594,6 +1594,7 @@ const LeadMaster = ({
   const [isLicenseOpen, setIslicenseOpen] = useState(false)
   const [branches, setBranches] = useState([])
   const [originalCustomerTableData, setOriginalCustomerTableData] = useState([])
+console.log(originalCustomerTableData)
   const [temporaryCustomerTableData, setTemporaryCustomerTableData] = useState(
     []
   )
@@ -1632,6 +1633,7 @@ const LeadMaster = ({
   const customerIdValue = watchModal("customerid")
   const customerMainIdValule = watchMain("customerid")
   const [isTradeOpen, setIsTradeOpen] = useState(false)
+  const [tradeSearch, setTradeSearch] = useState("")
   const discountAmount = watchMain("discamnt")
   const tradeDropdownRef = useRef(null)
   const isFirstRender = useRef(true)
@@ -1789,6 +1791,10 @@ const LeadMaster = ({
     "NGOs / Non-Profit Organizations",
     "Government Organizations"
   ]
+
+  const filteredSoftwareTrades = softwareTrades.filter((trade) =>
+    trade.toLowerCase().includes(tradeSearch.trim().toLowerCase())
+  )
 
   const { data: alluser, loading: usersLoading } = UseFetch("/auth/getallUsers")
   const {
@@ -2194,19 +2200,24 @@ const LeadMaster = ({
         }
       })
       console.log(leadData)
-      const fetchedLicenses = leadData.flatMap((item, index) => {
+      const fetchedLicenses = leadData.flatMap((item) => {
         const licenses = item?.licenseNumbers?.length
           ? item.licenseNumbers
           : item?.licenseNumber
             ? [{ licenseNumber: item.licenseNumber }]
             : []
-
+console.log(licenses)
         return licenses.map((license, licenseIndex) => ({
           licenseNumber: license?.licenseNumber,
           productName: item.productorServiceName,
           productorServiceName: item.productorServiceName,
           productorServiceId: item.productorServiceId,
-          sourceIndex: license?.sourceIndex ?? `${index}-${licenseIndex}`
+          // `sourceIndex` is persisted as a Number.  The composite value
+          // (`0-0`, `1-0`, …) was only a UI identifier and caused lead
+          // closing to fail when it reached MongoDB.
+          sourceIndex: Number.isFinite(Number(license?.sourceIndex))
+            ? Number(license.sourceIndex)
+            : licenseIndex
         }))
       })
 
@@ -6104,24 +6115,32 @@ convertexcel
                                 Software Trade
                               </label>
 
-                              <button
-                                type="button"
-                                onClick={() => setIsTradeOpen((prev) => !prev)}
-                                className="flex h-10 w-full items-center justify-between rounded-lg border border-slate-300 bg-white px-3 text-left text-sm text-slate-700 shadow-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
-                              >
-                                <span
-                                  className={
-                                    detailsForm.softwareTrade
-                                      ? "text-slate-800"
-                                      : "text-slate-400"
+                              <div className="relative">
+                                <input
+                                  type="search"
+                                  value={
+                                    isTradeOpen
+                                      ? tradeSearch
+                                      : detailsForm.softwareTrade
                                   }
-                                >
-                                  {detailsForm.softwareTrade ||
-                                    "Select Software Trade"}
-                                </span>
-
+                                  onFocus={() => {
+                                    if (!isTradeOpen) {
+                                      setTradeSearch("")
+                                      setIsTradeOpen(true)
+                                    }
+                                  }}
+                                  onChange={(event) => {
+                                    setTradeSearch(event.target.value)
+                                    setIsTradeOpen(true)
+                                  }}
+                                  placeholder="Search software trade..."
+                                  aria-label="Search software trades"
+                                  aria-expanded={isTradeOpen}
+                                  aria-haspopup="listbox"
+                                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 pr-10 text-sm text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/10"
+                                />
                                 <svg
-                                  className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${
+                                  className={`pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 transition-transform ${
                                     isTradeOpen ? "rotate-180" : ""
                                   }`}
                                   viewBox="0 0 20 20"
@@ -6135,7 +6154,7 @@ convertexcel
                                     strokeLinejoin="round"
                                   />
                                 </svg>
-                              </button>
+                              </div>
 
                               {isTradeOpen && (
                                 <div className="absolute z-30 mt-1.5 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
@@ -6147,6 +6166,7 @@ convertexcel
                                           ...prev,
                                           softwareTrade: ""
                                         }))
+                                        setTradeSearch("")
                                         setIsTradeOpen(false)
                                       }}
                                       className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition ${
@@ -6158,15 +6178,16 @@ convertexcel
                                       <span>Select Software Trade</span>
                                     </button>
 
-                                    {softwareTrades.map((trade, index) => (
+                                    {filteredSoftwareTrades.map((trade) => (
                                       <button
-                                        key={index}
+                                        key={trade}
                                         type="button"
                                         onClick={() => {
                                           setDetailsForm((prev) => ({
                                             ...prev,
                                             softwareTrade: trade
                                           }))
+                                          setTradeSearch("")
                                           setIsTradeOpen(false)
                                         }}
                                         className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition ${
@@ -6194,6 +6215,12 @@ convertexcel
                                         )}
                                       </button>
                                     ))}
+
+                                    {filteredSoftwareTrades.length === 0 && (
+                                      <p className="px-3 py-5 text-center text-sm text-slate-500">
+                                        No software trade found.
+                                      </p>
+                                    )}
                                   </div>
                                 </div>
                               )}

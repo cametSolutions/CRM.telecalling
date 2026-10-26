@@ -5063,6 +5063,18 @@ export const Leadclosing = async (req, res) => {
     return Number.isFinite(n) ? n : null;
   };
 
+  // `sourceIndex` is a numeric schema field.  Older browser sessions may
+  // still submit a UI row key such as "0-0"; ignore that non-numeric key
+  // instead of allowing Mongoose to reject the whole lead closing.
+  const normalizeSourceIndex = (value) => {
+    if (value === null || value === undefined || value === "") {
+      return undefined;
+    }
+
+    const n = Number(value);
+    return Number.isFinite(n) ? n : undefined;
+  };
+
   const buildCustomerTaggedDataForAdditionalOnly = (taggeddata = []) => {
     return (Array.isArray(taggeddata) ? taggeddata : []).map((tag) => {
       const totalNextDueAmount = round2(
@@ -5129,7 +5141,7 @@ export const Leadclosing = async (req, res) => {
         licenseNumber: normalizeLicenseNumberValue(license?.licenseNumber),
         productorServiceId: license?.productorServiceId || null,
         productorServiceName: license?.productorServiceName || "",
-        sourceIndex: license?.sourceIndex,
+        sourceIndex: normalizeSourceIndex(license?.sourceIndex),
       };
 
       const exists = merged.some(
@@ -5367,7 +5379,7 @@ export const Leadclosing = async (req, res) => {
                 licenseNumber: normalizeLicenseNumberValue(license?.licenseNumber),
                 productorServiceId: license?.productorServiceId || null,
                 productorServiceName: license?.productorServiceName || "",
-                sourceIndex: license?.sourceIndex,
+                sourceIndex: normalizeSourceIndex(license?.sourceIndex),
               }))
               : [],
             taggeddata: enhancedService
@@ -5447,7 +5459,7 @@ export const Leadclosing = async (req, res) => {
                 licenseNumber: normalizeLicenseNumberValue(license?.licenseNumber),
                 productorServiceId: license?.productorServiceId || null,
                 productorServiceName: license?.productorServiceName || "",
-                sourceIndex: license?.sourceIndex,
+                sourceIndex: normalizeSourceIndex(license?.sourceIndex),
               }))
               : [],
             taggeddata: normalizedTaggedData,
