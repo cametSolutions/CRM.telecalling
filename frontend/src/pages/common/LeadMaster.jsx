@@ -4403,33 +4403,12 @@ console.log(licenses)
           .filter((tag) => tag.licensenumber !== "")
       : []
     console.log(detailsForm)
-    const totaltaxexclusiveAmount = detailsForm?.taggeddata.reduce(
-      (sum, item) => {
-        const amount = Number(item.taxexclusiveAmount) || 0 // safely handle invalid/empty
-        return sum + amount
-      },
-      0
-    )
     const totaldiscount = cleanedTaggedData.reduce((sum, item) => {
       const amount = Number(item?.discountAmount) || 0
 
       return sum + amount
     }, 0)
     console.log(cleanedTaggedData)
-    const totaltaxinclusiveAmount = cleanedTaggedData.reduce((sum, item) => {
-      const amount = Number(item?.taxinclusiveamount) || 0
-      return sum + amount
-    }, 0)
-    console.log(totaltaxinclusiveAmount)
-    const taxamount =
-      (Number(detailsForm?.taggeddata[0]?.leadTax) / 100) *
-      totaltaxexclusiveAmount
-    const updatedNetAmount = Math.round(
-      Number(totaltaxexclusiveAmount) + taxamount
-    )
-    console.log(taxamount)
-    console.log(totaltaxexclusiveAmount)
-    console.log(updatedNetAmount)
     console.log(selectedleadlist)
     console.log(detailsForm)
     setSelectedLeadList((prev) =>
@@ -4438,26 +4417,10 @@ console.log(licenses)
 
         if (itemType === "additionalservice") {
           const hasTaggedLicenses = cleanedTaggedData.length > 0
-          const isAdditionalOnly = !prev.some(
-            (lead) =>
-              String(lead?.productorservicetype || "").toLowerCase() ===
-              "primaryproduct"
-          )
-          const savedLeadTax = Number(
-            cleanedTaggedData[0]?.leadTax ?? row?.hsn ?? 0
-          ) || 0
 
           return {
             ...row,
             applicationDate: detailsForm.applicationDate,
-            productPrice: hasPrimaryProductInLead
-              ? row?.productPrice
-              : totaltaxexclusiveAmount,
-            hsn:
-              isAdditionalOnly && hasTaggedLicenses ? savedLeadTax : row?.hsn,
-            netAmount: hasPrimaryProductInLead
-              ? row?.netAmount
-              : updatedNetAmount,
             noofusers: detailsForm.noofusers,
 
             amount: detailsForm.amount,
@@ -4643,7 +4606,23 @@ console.log(licenses)
     console.log(leadList)
     const productId = item.productorServiceId
     if (item?.productorservicetype === "Additionalservice") {
-      if (!item?.licenseNumbers?.length) {
+      // A saved additional service can carry its selected licence either in
+      // `licenseNumbers` (newer records) or `taggeddata` (older/existing
+      // records). The dropdown already renders both as checked, so the
+      // details popup must accept both as a valid tag as well.
+      const hasTaggedLicense = [
+        ...(Array.isArray(item?.licenseNumbers) ? item.licenseNumbers : []),
+        ...(Array.isArray(item?.taggeddata) ? item.taggeddata : [])
+      ].some((license) => {
+        const licenseNumber = license?.licenseNumber ?? license?.licensenumber
+        return (
+          licenseNumber !== null &&
+          licenseNumber !== undefined &&
+          String(licenseNumber).trim() !== ""
+        )
+      })
+
+      if (!hasTaggedLicense) {
         setunselectedtaggedlicense((prev) => ({
           ...prev,
           [productId]: "Please tag any of the license"
@@ -5557,8 +5536,7 @@ convertexcel
                       <col style={{ width: "11%" }} />
                       <col style={{ width: "14%" }} />
                       <col style={{ width: "7%" }} />
-                      {(process === "closing" || process === "edit") &&
-                        hasRowsWithDetails && (
+                      {isClosingFlow && hasRowsWithDetails && (
                         <col style={{ width: "7%" }} />
                       )}
                     </colgroup>
@@ -5588,10 +5566,7 @@ convertexcel
                         >
                           Action
                         </th>
-                        {(process === "closing" ||
-                          process === "edit" ||
-                          from === "closedlead") &&
-                          hasRowsWithDetails && (
+                        {isClosingFlow && hasRowsWithDetails && (
                           <th
                             rowSpan={2}
                             className="border border-blue-900 px-2 py-2 text-center text-xs"
@@ -5625,11 +5600,13 @@ convertexcel
                             itemType === "enhancedservice")
                         console.log("jjj")
                         console.log(showLicenseDropdown)
-                        const isAmountLocked =
-                          isReadOnly || isRowPriceLocked(item)
+                        // Table prices are the original product-master prices.
+                        // Tagged-license amounts are stored only in the Details popup,
+                        // so choosing a license can never overwrite this table value.
+                        const isAmountLocked = true
                         console.log(isAmountLocked)
                         console.log(isReadOnly)
-                        const isTaxLocked = isReadOnly || isRowPriceLocked(item)
+                        const isTaxLocked = isReadOnly
                         console.log(isReadOnly)
                         console.log(isAmountLocked)
                         const a = isRowPriceLocked(item)
@@ -6618,6 +6595,7 @@ convertexcel
                                                       tag?.taxexclusiveAmount ||
                                                       ""
                                                     }
+                                                    readOnly
                                                     onWheel={(e) =>
                                                       e.currentTarget.blur()
                                                     }
@@ -6633,16 +6611,7 @@ convertexcel
                                                         e.preventDefault()
                                                       }
                                                     }}
-                                                    onChange={(e) => {
-                                                      handleTaggedDueChange(
-                                                        rowIndex,
-                                                        e.target.value,
-                                                        "taxexclusiveAmount",
-                                                        tag?.originalHsn,
-                                                        detailsForm?.productType
-                                                      )
-                                                    }}
-                                                    className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                                    className="h-7 w-full cursor-not-allowed rounded-md border border-slate-200 bg-slate-100 px-1.5 text-right text-[11px] text-slate-500 outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                                   />
                                                   <p className="truncate text-right text-[12px] text-slate-600">
                                                     {Number(
@@ -6697,6 +6666,7 @@ convertexcel
                                                   value={
                                                     tag?.discountAmount || ""
                                                   }
+                                                    readOnly
                                                   onWheel={(e) =>
                                                     e.currentTarget.blur()
                                                   }
@@ -6712,16 +6682,7 @@ convertexcel
                                                       e.preventDefault()
                                                     }
                                                   }}
-                                                  onChange={(e) => {
-                                                    handleTaggedDueChange(
-                                                      rowIndex,
-                                                      e.target.value,
-                                                      "discountAmount",
-                                                      null,
-                                                      detailsForm?.productType
-                                                    )
-                                                  }}
-                                                  className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                                  className="h-7 w-full cursor-not-allowed rounded-md border border-slate-200 bg-slate-100 px-1.5 text-right text-[11px] text-slate-500 outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                                 />
                                               </td>
                                             </>
