@@ -2594,6 +2594,7 @@ const LeadFollowUp = () => {
     setPaymentUpdatedInSession(false)
     setcollectionupdateData({})
   }
+console.log("hhh")
   console.log(formData?.followupType)
   // MODIFIED: Reset payment session flag when closing follow-up modal
   const handleCloseFollowupModal = () => {
