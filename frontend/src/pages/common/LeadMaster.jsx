@@ -2112,6 +2112,61 @@ console.log(originalCustomerTableData)
           String(item?.productorservicetype || "").toLowerCase() ===
           "primaryproduct"
       )
+      const savedLeadDiscount = Number(Data[0]?.discountAmount || 0)
+      const shouldRestoreDiscountedRows =
+        (process === "edit" || process === "closing") &&
+        savedLeadDiscount > 0
+      const isHiddenAdditionalCharge = (item) =>
+        isClosedLeadEdit &&
+        hasPrimaryProduct &&
+        String(item?.productorservicetype || "").toLowerCase() ===
+          "additionalservice"
+      const visibleLeadItems = sourceLeadItems
+        .map((item, index) => ({ item, index }))
+        .filter(({ item }) => !isHiddenAdditionalCharge(item))
+      const savedVisibleNetAmount = visibleLeadItems.reduce(
+        (sum, { item }) => sum + (Number(item?.netAmount) || 0),
+        0
+      )
+      // Edited leads persist line values after the lead discount is applied.
+      // Rebuild their pre-discount table values proportionally so the table
+      // total is the saved total plus the displayed lead discount.
+      const restoredTableValues = new Map()
+      if (shouldRestoreDiscountedRows && savedVisibleNetAmount > 0) {
+        let restoredNetTotal = 0
+
+        visibleLeadItems.forEach(({ item, index }, visibleIndex) => {
+          const savedNetAmount = Number(item?.netAmount) || 0
+          const isLastVisibleItem =
+            visibleIndex === visibleLeadItems.length - 1
+          const restoredNetAmount = isLastVisibleItem
+            ? Number(
+                (
+                  savedVisibleNetAmount +
+                  savedLeadDiscount -
+                  restoredNetTotal
+                ).toFixed(2)
+              )
+            : Number(
+                (
+                  savedNetAmount +
+                  (savedNetAmount / savedVisibleNetAmount) *
+                    savedLeadDiscount
+                ).toFixed(2)
+              )
+          const taxRate = Number(item?.hsn ?? item?.actualHsn ?? 0)
+          const restoredProductPrice =
+            taxRate > 0
+              ? Number((restoredNetAmount / (1 + taxRate / 100)).toFixed(2))
+              : restoredNetAmount
+
+          restoredNetTotal += restoredNetAmount
+          restoredTableValues.set(index, {
+            productPrice: restoredProductPrice,
+            netAmount: restoredNetAmount
+          })
+        })
+      }
       // `productPrice`, `hsn`, and `netAmount` are the amounts saved on the
       // lead. The `actual*` fields preserve the Product Master values from
       // when the row was selected, so they must only be used for legacy leads
@@ -2121,13 +2176,9 @@ console.log(originalCustomerTableData)
           ? leadValue
           : fallbackValue
 
-      const leadData = sourceLeadItems.map((item) => {
-        const itemType = String(
-          item?.productorservicetype || ""
-        ).toLowerCase()
-        const isAdditionalService = itemType === "additionalservice"
-        const hideAdditionalServiceCharge =
-          isClosedLeadEdit && hasPrimaryProduct && isAdditionalService
+      const leadData = sourceLeadItems.map((item, itemIndex) => {
+        const hideAdditionalServiceCharge = isHiddenAdditionalCharge(item)
+        const restoredValues = restoredTableValues.get(itemIndex)
         const leadTaggedData = Array.isArray(item?.taggeddata)
           ? item.taggeddata
           : []
@@ -2180,10 +2231,11 @@ console.log(originalCustomerTableData)
           itemType: item?.productorServicemodel,
           productPrice: hideAdditionalServiceCharge
             ? 0
-            : savedLeadValueOrFallback(
+            : (restoredValues?.productPrice ??
+              savedLeadValueOrFallback(
                 item?.productPrice,
                 item?.actualproductPrice
-              ),
+              )),
           actualproductPrice: item?.actualproductPrice,
           hsn: hideAdditionalServiceCharge
             ? 0
@@ -2191,7 +2243,8 @@ console.log(originalCustomerTableData)
           actualHsn: item?.actualHsn,
           netAmount: hideAdditionalServiceCharge
             ? 0
-            : savedLeadValueOrFallback(item?.netAmount, item?.actualNetAmount),
+            : (restoredValues?.netAmount ??
+              savedLeadValueOrFallback(item?.netAmount, item?.actualNetAmount)),
           actualNetAmount: item?.actualNetAmount,
           price: item?.price,
           company_id: item?.company_id,
@@ -2518,14 +2571,30 @@ console.log(licenses)
   }, [originalCustomerTableData, temporaryCustomerTableData])
   useEffect(() => {
     if (customerData && customerData.length && selectedBranch) {
-      const options = customerData.map((item) => {
+      const options = customerData.flatMap((item) => {
         const branchProducts = (item.selected || []).filter(
           (sel) =>
             String(sel?.branch_id?._id || sel?.branch_id || "") ===
             String(selectedBranch || "")
         )
-        const licenseDetails = branchProducts
-          .flatMap((sel) => {
+        const customerFields = {
+          value: item?._id,
+          label: item?.customerName,
+          address: item?.address1,
+          mobile: item?.mobile || "",
+          email: item?.email,
+          phone: item?.landline,
+          partner: item?.partner,
+          country: item?.country,
+          state: item?.state,
+          registrationType: item?.registrationType,
+          city: item?.city,
+          pincode: item?.pincode,
+          contactPerson: item?.contactPerson,
+          selected: item?.selected
+        }
+
+        const productOptions = branchProducts.flatMap((sel, productIndex) => {
             const productName =
               sel?.productName ||
               sel?.productorServiceName ||
@@ -2542,7 +2611,7 @@ console.log(licenses)
               )
             ]
 
-            return licenses
+            const licenseDetails = licenses
               .filter(
                 (license) =>
                   license !== null &&
@@ -2553,60 +2622,66 @@ console.log(licenses)
                 licenseNumber: String(license),
                 productName
               }))
-          })
-          .filter(
-            (detail, detailIndex, details) =>
-              detailIndex ===
-              details.findIndex(
-                (candidate) =>
-                  candidate.productName === detail.productName &&
-                  candidate.licenseNumber === detail.licenseNumber
+              .filter(
+                (detail, detailIndex, details) =>
+                  detailIndex ===
+                  details.findIndex(
+                    (candidate) =>
+                      candidate.licenseNumber === detail.licenseNumber
+                  )
               )
-          )
-        console.log(item?.partner)
-        console.log(item?.country)
-        if (item?.country) {
-          console.log(item?.country)
-        }
-        return {
-          value: item?._id,
-          label: item?.customerName,
-          address: item?.address1,
-          mobile: item?.mobile || "",
-          license: licenseDetails[0]?.licenseNumber || "",
-          licenseDetails,
-          searchText: [
-            item?.customerName,
-            item?.mobile,
-            ...licenseDetails.flatMap((detail) => [
-              detail.productName,
-              detail.licenseNumber
-            ])
-          ]
-            .filter(Boolean)
-            .join(" "),
-          email: item?.email,
-          phone: item?.landline,
-          partner: item?.partner,
-          country: item?.country,
-          state: item?.state,
-          registrationType: item?.registrationType,
-          city: item?.city,
-          pincode: item?.pincode,
-          contactPerson: item?.contactPerson,
-          selected: item?.selected
-        }
+
+            const rows = licenseDetails.length
+              ? licenseDetails
+              : [{ licenseNumber: "", productName }]
+
+            return rows.map((detail, licenseIndex) => ({
+              ...customerFields,
+              optionId: `${item?._id}-${sel?._id || sel?.product_id || productIndex}-${detail.licenseNumber || "no-license"}-${licenseIndex}`,
+              license: detail.licenseNumber,
+              productName: detail.productName,
+              searchText: [
+                item?.customerName,
+                item?.mobile,
+                detail.productName,
+                detail.licenseNumber
+              ]
+                .filter(Boolean)
+                .join(" ")
+                .toLowerCase()
+            }))
+          })
+
+        // A customer without products at this branch can still be selected
+        // when creating a new lead.
+        return productOptions.length
+          ? productOptions
+          : [
+              {
+                ...customerFields,
+                optionId: `${item?._id}-no-product`,
+                license: "",
+                productName: "",
+                searchText: [item?.customerName, item?.mobile]
+                  .filter(Boolean)
+                  .join(" ")
+                  .toLowerCase()
+              }
+            ]
       })
       setCustomerOptions(options)
     }
-  }, [customerData])
+  }, [customerData, selectedBranch])
 
   useEffect(() => {
     console.log("hhh")
     if (selectedCustomer) {
       console.log(selectedCustomer)
       setValueMain("mobile", selectedCustomer.mobile)
-      setValueMain("phone", selectedCustomer.landline)
+      setValueMain(
+        "phone",
+        selectedCustomer.phone || selectedCustomer.landline || ""
+      )
       setValueMain("email", selectedCustomer.email)
       setValueMain(
         "partner",
@@ -3551,8 +3626,11 @@ console.log(licenses)
     )
   }
   const customFilter = (option, inputValue) => {
-    if (!inputValue) return true
-    const searchValue = inputValue.toLowerCase()
+    const searchValue = String(inputValue || "").trim().toLowerCase()
+    // Keep the full compact list available on opening. This is friendlier for
+    // users who prefer browsing, while the simplified option layout avoids
+    // the expensive multi-license rendering used previously.
+    if (!searchValue) return true
     const label = option.label ? String(option.label).toLowerCase() : ""
     const mobile = option.data?.mobile ? option.data?.mobile.toLowerCase() : ""
     const customerProducts = option.data?.searchText
@@ -4403,33 +4481,12 @@ console.log(licenses)
           .filter((tag) => tag.licensenumber !== "")
       : []
     console.log(detailsForm)
-    const totaltaxexclusiveAmount = detailsForm?.taggeddata.reduce(
-      (sum, item) => {
-        const amount = Number(item.taxexclusiveAmount) || 0 // safely handle invalid/empty
-        return sum + amount
-      },
-      0
-    )
     const totaldiscount = cleanedTaggedData.reduce((sum, item) => {
       const amount = Number(item?.discountAmount) || 0
 
       return sum + amount
     }, 0)
     console.log(cleanedTaggedData)
-    const totaltaxinclusiveAmount = cleanedTaggedData.reduce((sum, item) => {
-      const amount = Number(item?.taxinclusiveamount) || 0
-      return sum + amount
-    }, 0)
-    console.log(totaltaxinclusiveAmount)
-    const taxamount =
-      (Number(detailsForm?.taggeddata[0]?.leadTax) / 100) *
-      totaltaxexclusiveAmount
-    const updatedNetAmount = Math.round(
-      Number(totaltaxexclusiveAmount) + taxamount
-    )
-    console.log(taxamount)
-    console.log(totaltaxexclusiveAmount)
-    console.log(updatedNetAmount)
     console.log(selectedleadlist)
     console.log(detailsForm)
     setSelectedLeadList((prev) =>
@@ -4438,26 +4495,10 @@ console.log(licenses)
 
         if (itemType === "additionalservice") {
           const hasTaggedLicenses = cleanedTaggedData.length > 0
-          const isAdditionalOnly = !prev.some(
-            (lead) =>
-              String(lead?.productorservicetype || "").toLowerCase() ===
-              "primaryproduct"
-          )
-          const savedLeadTax = Number(
-            cleanedTaggedData[0]?.leadTax ?? row?.hsn ?? 0
-          ) || 0
 
           return {
             ...row,
             applicationDate: detailsForm.applicationDate,
-            productPrice: hasPrimaryProductInLead
-              ? row?.productPrice
-              : totaltaxexclusiveAmount,
-            hsn:
-              isAdditionalOnly && hasTaggedLicenses ? savedLeadTax : row?.hsn,
-            netAmount: hasPrimaryProductInLead
-              ? row?.netAmount
-              : updatedNetAmount,
             noofusers: detailsForm.noofusers,
 
             amount: detailsForm.amount,
@@ -4643,7 +4684,23 @@ console.log(licenses)
     console.log(leadList)
     const productId = item.productorServiceId
     if (item?.productorservicetype === "Additionalservice") {
-      if (!item?.licenseNumbers?.length) {
+      // A saved additional service can carry its selected licence either in
+      // `licenseNumbers` (newer records) or `taggeddata` (older/existing
+      // records). The dropdown already renders both as checked, so the
+      // details popup must accept both as a valid tag as well.
+      const hasTaggedLicense = [
+        ...(Array.isArray(item?.licenseNumbers) ? item.licenseNumbers : []),
+        ...(Array.isArray(item?.taggeddata) ? item.taggeddata : [])
+      ].some((license) => {
+        const licenseNumber = license?.licenseNumber ?? license?.licensenumber
+        return (
+          licenseNumber !== null &&
+          licenseNumber !== undefined &&
+          String(licenseNumber).trim() !== ""
+        )
+      })
+
+      if (!hasTaggedLicense) {
         setunselectedtaggedlicense((prev) => ({
           ...prev,
           [productId]: "Please tag any of the license"
@@ -5176,42 +5233,23 @@ convertexcel
                               : null
                           }
                           getOptionLabel={(o) => o.label}
-                          getOptionValue={(o) => o._id}
+                          getOptionValue={(o) => o.optionId}
                           filterOption={customFilter}
                           formatOptionLabel={(option, { context }) =>
                             context === "menu" ? (
-                              <div className="py-1.5">
-                                <div className="flex items-center justify-between gap-3">
-                                  <div className="min-w-0">
-                                    <p className="truncate font-semibold text-slate-800">
-                                      {option.label}
-                                    </p>
-                                    <p className="mt-0.5 text-[11px] font-medium text-slate-500">
-                                      {option.mobile || "No mobile number"}
-                                    </p>
-                                  </div>
-                                  <span className="shrink-0 rounded-full bg-blue-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-blue-700">
-                                    {option.licenseDetails?.length || 0} license{option.licenseDetails?.length === 1 ? "" : "s"}
-                                  </span>
-                                </div>
-                                {option.licenseDetails?.length ? (
-                                  <div className="mt-2 flex flex-wrap gap-1.5">
-                                    {option.licenseDetails.map((detail) => (
-                                      <span
-                                        key={`${detail.productName}-${detail.licenseNumber}`}
-                                        className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-medium text-slate-600"
-                                      >
-                                        <span className="text-slate-500">{detail.productName}</span>
-                                        <span className="mx-1 text-slate-300">•</span>
-                                        <span className="font-semibold text-slate-700">{detail.licenseNumber}</span>
-                                      </span>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <p className="mt-1 text-[11px] text-slate-400">
-                                    No licenses for this branch
+                              <div className="flex min-w-0 items-center justify-between gap-3 py-0.5">
+                                <div className="min-w-0">
+                                  <p className="truncate font-semibold text-slate-800">
+                                    {option.label}
                                   </p>
-                                )}
+                                  <p className="truncate text-[11px] text-slate-500">
+                                    {option.mobile || "No mobile"}
+                                    {option.productName && ` · ${option.productName}`}
+                                  </p>
+                                </div>
+                                <span className="shrink-0 rounded-md bg-blue-50 px-2 py-1 text-[10px] font-semibold text-blue-700">
+                                  {option.license || "No license"}
+                                </span>
                               </div>
                             ) : (
                               `${option.label}${
@@ -5245,8 +5283,8 @@ convertexcel
                           styles={{
                             control: (base, state) => ({
                               ...base,
-                              minHeight: 44,
-                              borderRadius: 10,
+                              minHeight: 38,
+                              borderRadius: 8,
                               borderColor: state.isFocused ? "#1B2A4A" : "#CBD5E1",
                               backgroundColor: state.isDisabled ? "#F1F5F9" : "#FFFFFF",
                               boxShadow: state.isFocused
@@ -5262,7 +5300,7 @@ convertexcel
                             }),
                             valueContainer: (base) => ({
                               ...base,
-                              padding: "2px 12px"
+                              padding: "0 10px"
                             }),
                             placeholder: (base) => ({
                               ...base,
@@ -5284,7 +5322,7 @@ convertexcel
                             dropdownIndicator: (base, state) => ({
                               ...base,
                               color: state.isFocused ? "#1B2A4A" : "#64748B",
-                              padding: 9,
+                              padding: 7,
                               "&:hover": { color: "#1B2A4A" }
                             }),
                             menu: (base) => ({
@@ -5297,14 +5335,14 @@ convertexcel
                             }),
                             menuList: (base) => ({
                               ...base,
-                              maxHeight: 280,
-                              padding: 6
+                              maxHeight: 240,
+                              padding: 4
                             }),
                             option: (base, state) => ({
                               ...base,
-                              marginBottom: 3,
-                              borderRadius: 9,
-                              padding: "8px 10px",
+                              marginBottom: 2,
+                              borderRadius: 7,
+                              padding: "7px 9px",
                               color: "#1E293B",
                               backgroundColor: state.isSelected
                                 ? "#DBEAFE"
@@ -5384,7 +5422,7 @@ convertexcel
                           leadId: ""
                         })
                       }}
-                      className={`border border-gray-300 rounded px-3 py-[6px] text-sm bg-[#1B2A4A] hover:bg-[#243660] text-white outline-none min-w-[140px]  ${isReadOnly ? "cursor-not-allowed" : "cursor-pointer "}`}
+                      className={`h-[38px] min-w-[140px] rounded border border-gray-300 bg-[#1B2A4A] px-3 text-sm text-white outline-none hover:bg-[#243660] ${isReadOnly ? "cursor-not-allowed" : "cursor-pointer"}`}
                     >
                       {companybranches?.map((b, i) => (
                         <option key={i} value={b._id}>
@@ -5557,8 +5595,7 @@ convertexcel
                       <col style={{ width: "11%" }} />
                       <col style={{ width: "14%" }} />
                       <col style={{ width: "7%" }} />
-                      {(process === "closing" || process === "edit") &&
-                        hasRowsWithDetails && (
+                      {isClosingFlow && hasRowsWithDetails && (
                         <col style={{ width: "7%" }} />
                       )}
                     </colgroup>
@@ -5588,10 +5625,7 @@ convertexcel
                         >
                           Action
                         </th>
-                        {(process === "closing" ||
-                          process === "edit" ||
-                          from === "closedlead") &&
-                          hasRowsWithDetails && (
+                        {isClosingFlow && hasRowsWithDetails && (
                           <th
                             rowSpan={2}
                             className="border border-blue-900 px-2 py-2 text-center text-xs"
@@ -5625,11 +5659,12 @@ convertexcel
                             itemType === "enhancedservice")
                         console.log("jjj")
                         console.log(showLicenseDropdown)
-                        const isAmountLocked =
-                          isReadOnly || isRowPriceLocked(item)
+                        // Amount and tax can be adjusted in editable lead flows.
+                        // Read-only views remain protected.
+                        const isAmountLocked = isReadOnly
                         console.log(isAmountLocked)
                         console.log(isReadOnly)
-                        const isTaxLocked = isReadOnly || isRowPriceLocked(item)
+                        const isTaxLocked = isReadOnly
                         console.log(isReadOnly)
                         console.log(isAmountLocked)
                         const a = isRowPriceLocked(item)
@@ -6618,6 +6653,7 @@ convertexcel
                                                       tag?.taxexclusiveAmount ||
                                                       ""
                                                     }
+                                                    readOnly
                                                     onWheel={(e) =>
                                                       e.currentTarget.blur()
                                                     }
@@ -6633,16 +6669,7 @@ convertexcel
                                                         e.preventDefault()
                                                       }
                                                     }}
-                                                    onChange={(e) => {
-                                                      handleTaggedDueChange(
-                                                        rowIndex,
-                                                        e.target.value,
-                                                        "taxexclusiveAmount",
-                                                        tag?.originalHsn,
-                                                        detailsForm?.productType
-                                                      )
-                                                    }}
-                                                    className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                                    className="h-7 w-full cursor-not-allowed rounded-md border border-slate-200 bg-slate-100 px-1.5 text-right text-[11px] text-slate-500 outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                                   />
                                                   <p className="truncate text-right text-[12px] text-slate-600">
                                                     {Number(
@@ -6697,6 +6724,7 @@ convertexcel
                                                   value={
                                                     tag?.discountAmount || ""
                                                   }
+                                                    readOnly
                                                   onWheel={(e) =>
                                                     e.currentTarget.blur()
                                                   }
@@ -6712,16 +6740,7 @@ convertexcel
                                                       e.preventDefault()
                                                     }
                                                   }}
-                                                  onChange={(e) => {
-                                                    handleTaggedDueChange(
-                                                      rowIndex,
-                                                      e.target.value,
-                                                      "discountAmount",
-                                                      null,
-                                                      detailsForm?.productType
-                                                    )
-                                                  }}
-                                                  className="h-7 w-full rounded-md border border-slate-200 bg-white px-1.5 text-right text-[11px] text-slate-700 outline-none transition focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A]/10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                                  className="h-7 w-full cursor-not-allowed rounded-md border border-slate-200 bg-slate-100 px-1.5 text-right text-[11px] text-slate-500 outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                                 />
                                               </td>
                                             </>
