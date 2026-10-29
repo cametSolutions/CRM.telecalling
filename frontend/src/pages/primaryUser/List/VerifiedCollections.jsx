@@ -141,13 +141,17 @@ console.log(endDate)
     if (!selectedCollectionFilter) return tableData || []
 
     const groupedLeads = new Map()
-    const addLead = (label, lead) => {
+    const groupAmounts = new Map()
+    const addLead = (label, lead, amount = 0) => {
       const group = groupedLeads.get(label) || []
       const leadKey = lead?._id || lead?.leadId
       if (!group.some((item) => String(item?._id || item?.leadId) === String(leadKey))) {
         group.push(lead)
       }
       groupedLeads.set(label, group)
+      if (selectedCollectionFilter.value === "staff") {
+        groupAmounts.set(label, (groupAmounts.get(label) || 0) + Number(amount || 0))
+      }
     }
 
     ;(tableData || []).forEach((group) => {
@@ -156,37 +160,45 @@ console.log(endDate)
           (payment) => payment?.paymentVerified === true
         )
 
+        if (selectedCollectionFilter.value === "product") {
+          if (!verifiedPayments.length) return
+
+          const primaryProduct =
+            (lead?.leadFor || []).find(
+              (item) => String(item?.productorservicetype || "").toLowerCase() === "primaryproduct"
+            ) || lead?.leadFor?.[0]
+          const productName =
+            primaryProduct?.productorServiceId?.shortName ||
+            primaryProduct?.productorServiceId?.productName ||
+            primaryProduct?.productorServiceId?.name ||
+            primaryProduct?.productorServiceId?.title ||
+            primaryProduct?.productorServiceName ||
+            "Unassigned product"
+
+          addLead(productName, lead)
+          return
+        }
+
         verifiedPayments.forEach((payment) => {
           if (selectedCollectionFilter.value === "staff") {
             const staffName =
               payment?.receivedBy?.name || payment?.receivedBy?.staffName || "Unassigned staff"
-            addLead(staffName, lead)
-            return
+            addLead(staffName, lead, payment?.receivedAmount)
           }
-
-          const paymentEntries = payment?.paymentEntries || []
-          if (!paymentEntries.length) {
-            addLead("Unassigned product", lead)
-            return
-          }
-
-          paymentEntries.forEach((entry) => {
-            const productName =
-              entry?.productorServiceId?.shortName ||
-              entry?.productorServiceId?.productName ||
-              entry?.productorServiceId?.name ||
-              entry?.productorServiceId?.title ||
-              entry?.productorServiceName ||
-              "Unassigned product"
-            addLead(productName, lead)
-          })
         })
       })
     })
 
     return [...groupedLeads.entries()]
       .sort(([firstName], [secondName]) => firstName.localeCompare(secondName))
-      .map(([staffName, leads]) => ({ staffName, leads }))
+      .map(([staffName, leads]) => ({
+        staffName,
+        leads,
+        totalAmount:
+          selectedCollectionFilter.value === "staff"
+            ? groupAmounts.get(staffName) || 0
+            : null
+      }))
   }, [forcefullyclosedLeads, isforcefullyclosed, selectedCollectionFilter, tableData])
   const { data: branchProduct } = UseFetch(
     `/product/getallbranchProduct?branch=${reduxselectedBranch}`
@@ -749,7 +761,7 @@ console.log(endDate)
         </thead>
         <tbody>
           {groupedData ? (
-            groupedData.map(({ staffName, leads }, groupIndex) => (
+            groupedData.map(({ staffName, leads, totalAmount }, groupIndex) => (
               <React.Fragment key={staffName || `group-${groupIndex}`}>
                 {staffName && (
                   <tr>
@@ -759,9 +771,16 @@ console.log(endDate)
                           <span className="h-2 w-2 rounded-full bg-blue-500" />
                           <span className="text-sm font-semibold text-slate-800">{staffName}</span>
                         </div>
-                        <span className="rounded-full border border-blue-100 bg-white px-2.5 py-0.5 text-xs font-semibold text-blue-700 shadow-sm">
-                          {leads?.length || 0} Leads
-                        </span>
+                        <div className="flex items-center gap-2">
+                          {Number.isFinite(totalAmount) && (
+                            <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 shadow-sm">
+                              ₹ {Number(totalAmount).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                          )}
+                          <span className="rounded-full border border-blue-100 bg-white px-2.5 py-0.5 text-xs font-semibold text-blue-700 shadow-sm">
+                            {leads?.length || 0} Leads
+                          </span>
+                        </div>
                       </div>
                     </td>
                   </tr>
