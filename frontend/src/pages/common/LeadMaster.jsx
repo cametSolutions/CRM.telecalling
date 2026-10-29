@@ -814,13 +814,13 @@ const BulkLeadSelect = ({
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => !disabled && setOpen((current) => !current)}
-        className={`flex h-7 w-full items-center gap-1.5 rounded-md border px-2 text-left text-[11px] font-medium outline-none transition ${
+        className={`flex min-h-7 w-full items-center gap-1.5 rounded-md border px-2 py-1 text-left text-[11px] font-medium outline-none transition ${
           open
             ? "border-[#1B2A4A] bg-white ring-2 ring-[#1B2A4A]/10"
             : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white"
         } disabled:cursor-not-allowed disabled:opacity-60`}
       >
-        <span className={`min-w-0 flex-1 truncate ${selectedOption ? "text-slate-700" : "text-slate-400"}`}>
+        <span className={`min-w-0 flex-1 break-words leading-tight ${selectedOption ? "text-slate-700" : "text-slate-400"}`}>
           {selectedOption?.label || placeholder}
         </span>
         <svg
@@ -828,7 +828,7 @@ const BulkLeadSelect = ({
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
-          className={`h-3 w-3 shrink-0 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
+          className={`mt-0.5 h-3 w-3 shrink-0 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
         >
           <path d="m5 7.5 5 5 5-5" />
         </svg>
@@ -867,7 +867,7 @@ const BulkLeadSelect = ({
                   const isSelected = String(option.value) === String(value)
                   return (
                     <button
-                      key={option.value}
+                      key={option.optionId || option.value}
                       type="button"
                       role="option"
                       aria-selected={isSelected}
@@ -878,7 +878,7 @@ const BulkLeadSelect = ({
                           : "text-slate-700 hover:bg-slate-100"
                       }`}
                     >
-                      <span className="min-w-0 flex-1 truncate">{option.label}</span>
+                      <span className="min-w-0 flex-1 break-words leading-tight">{option.label}</span>
                       {isSelected && <span className="text-xs text-[#1B2A4A]">✓</span>}
                     </button>
                   )
@@ -1045,7 +1045,11 @@ const BulkLeadWorkspace = ({
 
   const bulkCustomerOptions = customerOptions.map((option) => ({
     value: option.value,
-    label: `${option.label}${option.mobile ? ` - ${option.mobile}` : ""}`
+    optionId: option.optionId,
+    license: option.license,
+    label: `${option.label}${option.mobile ? ` - ${option.mobile}` : ""}${
+      option.license ? ` - License: ${option.license}` : ""
+    }`
   }))
   const duplicateProductSelections = useMemo(() => {
     const selections = new Map()
@@ -1269,9 +1273,9 @@ const BulkLeadWorkspace = ({
                       <td rowSpan={customer.products.length} className="p-1.5">
                         <select value={customer.customerId} disabled={isReadOnly} onChange={(event) => selectBulkCustomer(customer.id, event.target.value)} className="h-7 w-full rounded border border-slate-200 bg-white px-1.5 text-[11px] outline-none focus:border-[#1B2A4A]">
                           <option value="">Select customer</option>
-                          {customerOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}{option.mobile ? ` - ${option.mobile}` : ""}
+                          {bulkCustomerOptions.map((option) => (
+                            <option key={option.optionId || option.value} value={option.value}>
+                              {option.label}
                             </option>
                           ))}
                         </select>
