@@ -292,6 +292,7 @@
 //   );
 // }
 import { useState, useRef, useEffect, useLayoutEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { CalendarDays, ChevronLeft, ChevronRight, X } from "lucide-react";
 
 const DAY_MS = 86400000;
@@ -622,7 +623,7 @@ export default function DateRangePicker({
         )}
       </button>
 
-      {open && (
+      {open && typeof document !== "undefined" && createPortal(
         <div
           ref={panelRef}
           style={{
@@ -657,7 +658,8 @@ export default function DateRangePicker({
               minDate={minDate}
             />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

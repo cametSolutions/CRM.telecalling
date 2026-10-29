@@ -4011,6 +4011,79 @@ export const getTodayVerifiedCollection = async (req, res) => {
     });
   }
 };
+
+export const getTodayVerifiedCollectionDetails = async (req, res) => {
+  try {
+    const { selectedBranch } = req.query;
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+    const match = {
+      paymentHistory: { $elemMatch: { paymentVerified: true, verifiedAt: { $gte: start, $lte: end } } },
+    };
+    if (selectedBranch) {
+      if (!mongoose.Types.ObjectId.isValid(selectedBranch)) return res.status(400).json({ message: "Invalid branch" });
+      match.leadBranch = new mongoose.Types.ObjectId(selectedBranch);
+    }
+    const leads = await LeadMaster.aggregate([
+      { $match: match },
+      {
+        $project: {
+          paymentHistory: {
+            $filter: {
+              input: "$paymentHistory",
+              as: "p",
+              cond: {
+                $and: [
+                  { $eq: ["$$p.paymentVerified", true] },
+                  { $gte: ["$$p.verifiedAt", start] },
+                  { $lte: ["$$p.verifiedAt", end] },
+                ],
+              },
+            },
+          },
+        },
+      },
+    ]);
+    const dateWise = new Map(), staffWise = new Map(), productWise = new Map();
+    const add = (map, key, amount, extra = {}) => {
+      const row = map.get(key) || { ...extra, amount: 0, count: 0 };
+      row.amount += Number(amount || 0); row.count += 1; map.set(key, row);
+    };
+    for (const lead of leads) for (const payment of lead.paymentHistory || []) {
+      const date = new Date(payment.verifiedAt).toISOString().slice(0, 10);
+      add(dateWise, date, payment.receivedAmount, { label: date });
+      const staffId = String(payment.receivedBy || "");
+      add(staffWise, staffId, payment.receivedAmount, { staffId });
+      for (const entry of payment.paymentEntries || []) {
+        const productId = String(entry.productorServiceId || "");
+        add(productWise, productId, entry.receivedAmount, { productId });
+      }
+    }
+    const staffIds = uniqueIds([...staffWise.values()].map((row) => row.staffId));
+    const productIds = uniqueIds([...productWise.values()].map((row) => row.productId));
+    const [staff, admins, products, services] = await Promise.all([
+      staffIds.length ? Staff.find({ _id: { $in: staffIds } }).select("name").lean() : [],
+      staffIds.length ? Admin.find({ _id: { $in: staffIds } }).select("name").lean() : [],
+      productIds.length ? Product.find({ _id: { $in: productIds } }).select("productName shortName").lean() : [],
+      productIds.length ? Service.find({ _id: { $in: productIds } }).select("serviceName").lean() : [],
+    ]);
+    const staffNames = new Map([...staff, ...admins].map((row) => [String(row._id), row.name]));
+    const productNames = new Map(products.map((row) => [String(row._id), row.shortName || row.productName]));
+    services.forEach((row) => productNames.set(String(row._id), row.serviceName));
+    const asRows = (map, getLabel) => [...map.values()].map((row) => ({ label: getLabel(row), amount: Number(row.amount.toFixed(2)), count: row.count })).sort((a, b) => b.amount - a.amount);
+    return res.status(200).json({ success: true, data: {
+      dateWise: asRows(dateWise, (row) => row.label),
+      staffWise: asRows(staffWise, (row) => staffNames.get(row.staffId) || "Unassigned staff"),
+      productWise: asRows(productWise, (row) => productNames.get(row.productId) || "Unassigned product"),
+    } });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Unable to load collection details" });
+  }
+};
+
 export const Getallsalesfunnels = async (req, res) => {
   try {
     const { startDate, endDate, selectedBranch } = req.query;
