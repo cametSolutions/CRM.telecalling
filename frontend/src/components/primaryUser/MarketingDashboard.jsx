@@ -84,22 +84,32 @@ const getBarStyle = (value, colorA, colorB) => ({
   boxShadow: `inset 1px 0 0 rgba(255,255,255,0.35), inset -1px 0 0 rgba(0,0,0,0.08), 0 3px 8px rgba(15,23,42,0.12)`
 })
 
-const SalesFunnel = ({ stages }) => {
+const SalesFunnel = ({ stages, onStageClick }) => {
   const firstStageCount = Math.max(Number(stages?.[0]?.value) || 0, 1)
 
   return (
     <div className="rounded-xl border border-slate-200/90 bg-white p-3.5 sm:p-4" style={{ boxShadow: "0 4px 12px rgba(15,23,42,0.05), inset 0 1px 0 rgba(255,255,255,0.85)" }}>
       <div className="mb-3">
         <h2 className="text-base font-bold text-slate-900">Sales Funnel</h2>
-        <p className="mt-0.5 text-xs text-slate-500">Lead progression from initial contact to conversion</p>
+        <p className="mt-0.5 text-xs text-slate-500">Current month lead progression from initial contact to conversion</p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-[minmax(160px,0.8fr)_minmax(220px,1.2fr)] sm:items-center">
         <div className="flex min-h-[210px] flex-col items-center justify-center gap-1">
-          {stages.map((stage) => (
+          {stages.map((stage) => {
+            const isClickable = stage.value > 0 && ["New Leads", "Contacted"].includes(stage.label)
+            return (
             <div
               key={stage.label}
-              className="flex h-10 items-center justify-center rounded-md text-base font-bold text-white shadow-sm"
+              role={isClickable ? "button" : undefined}
+              tabIndex={isClickable ? 0 : undefined}
+              onClick={() => isClickable && onStageClick?.(stage)}
+              onKeyDown={(event) => {
+                if (isClickable && (event.key === "Enter" || event.key === " ")) onStageClick?.(stage)
+              }}
+              className={`flex h-10 items-center justify-center rounded-md text-base font-bold text-white shadow-sm ${
+                isClickable ? "cursor-pointer transition-transform hover:-translate-y-0.5 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" : "cursor-default"
+              }`}
               style={{
                 width: `${stage.width}%`,
                 background: stage.color,
@@ -108,15 +118,28 @@ const SalesFunnel = ({ stages }) => {
             >
               {stage.value}
             </div>
-          ))}
+            )
+          })}
         </div>
 
         <div className="divide-y divide-slate-100">
           {stages.map((stage) => {
             const percentage = Math.round((Number(stage.value || 0) / firstStageCount) * 100)
+            const isClickable = stage.value > 0 && ["New Leads", "Contacted"].includes(stage.label)
 
             return (
-              <div key={stage.label} className="flex items-center gap-2.5 py-2 first:pt-0 last:pb-0">
+              <div
+                key={stage.label}
+                role={isClickable ? "button" : undefined}
+                tabIndex={isClickable ? 0 : undefined}
+                onClick={() => isClickable && onStageClick?.(stage)}
+                onKeyDown={(event) => {
+                  if (isClickable && (event.key === "Enter" || event.key === " ")) onStageClick?.(stage)
+                }}
+                className={`flex items-center gap-2.5 py-2 first:pt-0 last:pb-0 ${
+                  isClickable ? "cursor-pointer rounded-md transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400" : ""
+                }`}
+              >
                 <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: stage.dotColor }} />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-slate-700">{stage.label}</p>
@@ -189,6 +212,9 @@ const MarketingDashboard = () => {
   const defaultEndDate = `${year}-${String(month + 1).padStart(2, "0")}-${String(
     now.getDate()
   ).padStart(2, "0")}`
+  const salesFunnelEndDate = `${year}-${String(month + 1).padStart(2, "0")}-${String(
+    new Date(year, month + 1, 0).getDate()
+  ).padStart(2, "0")}`
 
   console.log(defaultEndDate) // e.g. "2026-07-25"
   console.log(date)
@@ -198,6 +224,10 @@ const MarketingDashboard = () => {
   console.log(end)
   const { data: followup } = UseFetch(
     `/lead/getfollowupsummaryReport?branchId=${reduxselectedBranch}&startDate=${start}&endDate=${end}`
+  )
+  const { data: salesFunnelData } = UseFetch(
+    reduxselectedBranch &&
+      `/lead/getsalesfunnels?startDate=${defaultStartDate}&endDate=${salesFunnelEndDate}&selectedBranch=${reduxselectedBranch}`
   )
   const { data: collectiondata, loading: collectionloader } = UseFetch(
     selectedBranch &&
@@ -732,62 +762,44 @@ const MarketingDashboard = () => {
     return `${day}-${month}-${year}`
   }
   const formatAmount = (value) => Number(value || 0).toLocaleString("en-IN") //amount shown like 12,000 with commmas
-  const funnelSummary = followup?.find(
-    (item) => String(item?.staffId) === String(user?._id)
-  )
   const funnelNumber = (value) => Math.max(Number(value) || 0, 0)
+  const salesFunnelStageMap = (salesFunnelData || []).reduce((stages, stage) => {
+    stages[stage?.stage] = stage
+    return stages
+  }, {})
   const funnelStages = [
-    {
-      label: "New Leads",
-      value: funnelNumber(funnelSummary?.leadCount),
-      amount: funnelNumber(funnelSummary?.leadAmount),
-      width: 100,
-      color: "linear-gradient(135deg, #164cb8, #2563d9)",
-      dotColor: "#2563d9"
-    },
-    {
-      label: "Contacted",
-      value: funnelNumber(
-        funnelNumber(funnelSummary?.leadCount) -
-          funnelNumber(funnelSummary?.neverFollowup) -
-          funnelNumber(funnelSummary?.lost) -
-          funnelNumber(funnelSummary?.converted)
-      ),
-      amount: funnelNumber(
-        funnelNumber(funnelSummary?.leadAmount) -
-          funnelNumber(funnelSummary?.neverFollowupAmount) -
-          funnelNumber(funnelSummary?.lostAmount) -
-          funnelNumber(funnelSummary?.convertedAmount)
-      ),
-      width: 84,
-      color: "linear-gradient(135deg, #2877ea, #428ded)",
-      dotColor: "#3b82f6"
-    },
-    {
-      label: "System Study",
-      value: funnelNumber(funnelSummary?.dueToday) + funnelNumber(funnelSummary?.future),
-      amount: funnelNumber(funnelSummary?.dueTodayAmount) + funnelNumber(funnelSummary?.futureAmount),
-      width: 68,
-      color: "linear-gradient(135deg, #5da7f7, #78b9f7)",
-      dotColor: "#60a5fa"
-    },
-    {
-      label: "Lost",
-      value: funnelNumber(funnelSummary?.lost),
-      amount: funnelNumber(funnelSummary?.lostAmount),
-      width: 52,
-      color: "linear-gradient(135deg, #87c7fa, #a8d7fb)",
-      dotColor: "#93c5fd"
-    },
-    {
-      label: "Converted",
-      value: funnelNumber(funnelSummary?.converted),
-      amount: funnelNumber(funnelSummary?.convertedAmount),
-      width: 42,
-      color: "linear-gradient(135deg, #25ba72, #45ce88)",
-      dotColor: "#34c77d"
+    ["New Leads", 100, "linear-gradient(135deg, #164cb8, #2563d9)", "#2563d9"],
+    ["Contacted", 84, "linear-gradient(135deg, #2877ea, #428ded)", "#3b82f6"],
+    ["System Study", 68, "linear-gradient(135deg, #5da7f7, #78b9f7)", "#60a5fa"],
+    ["Lost", 52, "linear-gradient(135deg, #87c7fa, #a8d7fb)", "#93c5fd"],
+    ["Converted", 42, "linear-gradient(135deg, #25ba72, #45ce88)", "#34c77d"]
+  ].map(([label, width, color, dotColor]) => ({
+    label,
+    value: funnelNumber(salesFunnelStageMap[label]?.count),
+    amount: funnelNumber(salesFunnelStageMap[label]?.value),
+    width,
+    color,
+    dotColor
+  }))
+  const handleSalesFunnelStageClick = (stage) => {
+    if (stage?.value <= 0) return
+
+    if (stage.label === "New Leads") {
+      navigate("/admin/transaction/lead/ownedLeadlist", {
+        state: {
+          role: "Admin",
+          dates: {
+            startDate: defaultStartDate,
+            endDate: salesFunnelEndDate
+          }
+        }
+      })
+    } else if (stage.label === "Contacted") {
+      navigate("/admin/transaction/lead/leadFollowUp", {
+        state: { pending: true }
+      })
     }
-  ]
+  }
   const handleMoreClick = (id, name) => {
     console.log("hh")
     const filteredList = branchProduct
@@ -1086,7 +1098,7 @@ const MarketingDashboard = () => {
   "
               >
                 {/* Sales Funnel */}
-                <SalesFunnel stages={funnelStages} />
+                <SalesFunnel stages={funnelStages} onStageClick={handleSalesFunnelStageClick} />
 
                 {/* Replaced monthly-performance chart kept out of the layout. */}
                 <div

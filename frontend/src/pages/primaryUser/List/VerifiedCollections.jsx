@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useMemo, useState } from "react"
 import UseFetch from "../../../hooks/useFetch"
 import { useSelector } from "react-redux"
 import { useNavigate } from "react-router-dom"
@@ -10,11 +10,11 @@ import api from "../../../api/api"
 import SkeletonTable from "../../../components/loader/SkeletonTable"
 import DatePeriod from "../../../components/common/DatePeriod"
 import DateRangePicker from "../../../components/common/Daterangepicker"
+import Select from "react-select"
 
 import {
   Eye,
   Phone,
-  Mail,
   Settings,
   MessageSquareText,
   User,
@@ -45,6 +45,7 @@ export default function VerifiedCollections() {
   const location = useLocation()
   const [startDate, setStartDate] = useState(location?.state?.startDate)
   const [endDate, setEndDate] = useState(location?.state?.endDate)
+  const [selectedCollectionFilter, setSelectedCollectionFilter] = useState(null)
   const [tableData, setTableData] = useState([])
   console.log(tableData)
   console.log(tableData)
@@ -119,6 +120,74 @@ console.log(endDate)
   console.log(verifiedcollectionlead)
   const isVerifiedCollectionsLoading =
     !loggedUser || !reduxselectedBranch || leadloading
+  const totalVerifiedCollection = useMemo(
+    () =>
+      (verifiedcollectionlead || []).reduce(
+        (total, lead) =>
+          total +
+          (lead?.paymentHistory || [])
+            .filter((payment) => payment?.paymentVerified === true)
+            .reduce((amount, payment) => amount + Number(payment?.receivedAmount || 0), 0),
+        0
+      ),
+    [verifiedcollectionlead]
+  )
+  const collectionFilterOptions = [
+    { value: "staff", label: "Staff-wise" },
+    { value: "product", label: "Product-wise" }
+  ]
+  const filteredTableData = useMemo(() => {
+    if (isforcefullyclosed) return forcefullyclosedLeads
+    if (!selectedCollectionFilter) return tableData || []
+
+    const groupedLeads = new Map()
+    const addLead = (label, lead) => {
+      const group = groupedLeads.get(label) || []
+      const leadKey = lead?._id || lead?.leadId
+      if (!group.some((item) => String(item?._id || item?.leadId) === String(leadKey))) {
+        group.push(lead)
+      }
+      groupedLeads.set(label, group)
+    }
+
+    ;(tableData || []).forEach((group) => {
+      ;(group.leads || []).forEach((lead) => {
+        const verifiedPayments = (lead?.paymentHistory || []).filter(
+          (payment) => payment?.paymentVerified === true
+        )
+
+        verifiedPayments.forEach((payment) => {
+          if (selectedCollectionFilter.value === "staff") {
+            const staffName =
+              payment?.receivedBy?.name || payment?.receivedBy?.staffName || "Unassigned staff"
+            addLead(staffName, lead)
+            return
+          }
+
+          const paymentEntries = payment?.paymentEntries || []
+          if (!paymentEntries.length) {
+            addLead("Unassigned product", lead)
+            return
+          }
+
+          paymentEntries.forEach((entry) => {
+            const productName =
+              entry?.productorServiceId?.shortName ||
+              entry?.productorServiceId?.productName ||
+              entry?.productorServiceId?.name ||
+              entry?.productorServiceId?.title ||
+              entry?.productorServiceName ||
+              "Unassigned product"
+            addLead(productName, lead)
+          })
+        })
+      })
+    })
+
+    return [...groupedLeads.entries()]
+      .sort(([firstName], [secondName]) => firstName.localeCompare(secondName))
+      .map(([staffName, leads]) => ({ staffName, leads }))
+  }, [forcefullyclosedLeads, isforcefullyclosed, selectedCollectionFilter, tableData])
   const { data: branchProduct } = UseFetch(
     `/product/getallbranchProduct?branch=${reduxselectedBranch}`
   )
@@ -446,7 +515,7 @@ console.log(endDate)
     }
   }
   console.log(forcefullyclosedLeads)
-  const renderTable = (data) => {
+  const renderTable = (data, groupedData = null) => {
     const LeadRow = ({ item, index }) => {
       console.log(item)
       const [open, setOpen] = useState(false)
@@ -460,7 +529,6 @@ console.log(endDate)
         : "-"
       const customerName = item?.customerName?.customerName.toUpperCase()
       const shouldShowTooltipCustomer = customerName.length > 20
-      const shouldShowTooltipEmail = item?.email.length > 5
       return (
         <>
           {/* ── Main row ── */}
@@ -597,12 +665,6 @@ console.log(endDate)
                 </td>
                 <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
                   <div className="flex items-center gap-1">
-                    <Mail className="w-3.5 h-3.5" />
-                    <span>Email</span>
-                  </div>
-                </td>
-                <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
-                  <div className="flex items-center gap-1">
                     <Phone className="w-3.5 h-3.5" />
                     <span>ProductName</span>
                   </div>
@@ -631,24 +693,6 @@ console.log(endDate)
                 </td>
                 <td className="px-3 py-1.5 border border-gray-300  text-gray-700">
                   {item?.leadId}
-                </td>
-                <td className="px-3 py-2  text-gray-700 text-sm border border-gray-300 whitespace-nowrap">
-                  <div className="relative group w-[100px]">
-                    <span
-                      tabIndex={0}
-                      className="block truncate cursor-pointer"
-                      aria-label={item?.email}
-                    >
-                      {item?.email}
-                    </span>
-
-                    {shouldShowTooltipEmail && (
-                      <div className="pointer-events-none absolute left-0 top-full z-50 mt-2 w-max max-w-xs rounded-xl bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-xl ring-1 ring-white/10 transition-all duration-200 translate-y-1 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
-                        {item?.email}
-                        <div className="absolute -top-1 left-4 h-2 w-2 rotate-45 bg-gray-900"></div>
-                      </div>
-                    )}
-                  </div>
                 </td>
                 <td className="px-3 py-1.5 border border-gray-300 text-blue-500 font-medium">
                   {item?.leadFor[0]?.prodproductorServiceId?.shortName ||
@@ -704,7 +748,30 @@ console.log(endDate)
           </tr>
         </thead>
         <tbody>
-          {data?.length > 0 ? (
+          {groupedData ? (
+            groupedData.map(({ staffName, leads }, groupIndex) => (
+              <React.Fragment key={staffName || `group-${groupIndex}`}>
+                {staffName && (
+                  <tr>
+                    <td colSpan={8} className="border border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50/70 px-4 py-2.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <span className="h-2 w-2 rounded-full bg-blue-500" />
+                          <span className="text-sm font-semibold text-slate-800">{staffName}</span>
+                        </div>
+                        <span className="rounded-full border border-blue-100 bg-white px-2.5 py-0.5 text-xs font-semibold text-blue-700 shadow-sm">
+                          {leads?.length || 0} Leads
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                {(leads || []).map((item, index) => (
+                  <LeadRow key={`${item._id ?? item.leadId ?? index}-${groupIndex}`} item={item} index={index} />
+                ))}
+              </React.Fragment>
+            ))
+          ) : data?.length > 0 ? (
             data.map((item, index) => (
               <LeadRow key={item._id ?? index} item={item} index={index} />
             ))
@@ -726,25 +793,71 @@ console.log(endDate)
     )
   }
   return (
-    <div className="h-full  bg-[#ADD8E6]">
-      <div className="flex h-full flex-row">
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <div className="flex justify-start items-center p-3 md:p-5 md:pb-2 sticky top-0 z-30 gap-3">
-            <h2 className="text-lg font-bold">Verified Collections</h2>
-            <DateRangePicker
-              startDate={startDate}
-              endDate={endDate}
-              setStartDate={setStartDate}
-              setEndDate={setEndDate}
-            />
+    <div className="h-full min-h-0 bg-[#ADD8E6]">
+      <div className="flex h-full min-h-0 flex-row">
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="z-50 mx-3 mt-3 shrink-0 rounded-xl border border-white/80 bg-white/95 px-4 py-3 shadow-[0_8px_22px_rgba(15,23,42,0.08)] backdrop-blur md:px-5">
+            <div className="grid gap-3 xl:grid-cols-[minmax(300px,1fr)_290px_280px] xl:items-end">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-sm">
+                  <IndianRupee className="h-[18px] w-[18px]" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-bold tracking-tight text-slate-900">Verified Collections</h2>
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">
+                      <span className="font-medium text-emerald-700">Total</span>
+                      ₹ {totalVerifiedCollection.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <p className="mt-0.5 truncate text-xs text-slate-500">Verified payments for the selected date range. Group the lead list by staff or product.</p>
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">Collection Date</label>
+                <DateRangePicker
+                  startDate={startDate}
+                  endDate={endDate}
+                  setStartDate={setStartDate}
+                  setEndDate={setEndDate}
+                  showLabel={false}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">Group Collection Leads By</label>
+                <Select
+                  isClearable
+                  isSearchable
+                  options={collectionFilterOptions}
+                  value={selectedCollectionFilter}
+                  onChange={setSelectedCollectionFilter}
+                  placeholder="Select report view"
+                  className="text-xs"
+                  menuPortalTarget={document.body}
+                  menuPosition="fixed"
+                  noOptionsMessage={() => "No report view available"}
+                  styles={{
+                    control: (base, state) => ({
+                      ...base,
+                      minHeight: 38,
+                      borderColor: state.isFocused ? "#2563eb" : "#cbd5e1",
+                      boxShadow: state.isFocused ? "0 0 0 1px #2563eb" : "none",
+                      borderRadius: 8,
+                      cursor: "pointer",
+                      ":hover": { borderColor: "#2563eb" }
+                    }),
+                    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                    menu: (base) => ({ ...base, borderRadius: 8, overflow: "hidden" })
+                  }}
+                />
+              </div>
+            </div>
           </div>
           {/* Responsive Table Container this is the newest design*/}
-          <div className="h-auto overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3 bg-white">
+          <div className="mx-3 mt-4 min-h-0 flex-1 overflow-x-auto overflow-y-auto rounded-2xl bg-transparent pb-4">
             <>
               {(() => {
-                const currentData = isforcefullyclosed
-                  ? forcefullyclosedLeads
-                  : tableData
+                const currentData = filteredTableData
                 console.log(currentData)
                 const hasLeads =
                   Array.isArray(currentData) &&
@@ -755,35 +868,22 @@ console.log(endDate)
                 console.log(hasLeads)
                 if (!hasLeads || currentData.length === 0) {
                   return isVerifiedCollectionsLoading ? (
-                    <div className="flex justify-center py-6">
+                    <div className="flex min-h-48 items-center justify-center rounded-2xl border border-white/80 bg-white/90 py-8 shadow-sm">
                       <PropagateLoader color="#3b82f6" size={10} />
                     </div>
                   ) : (
-                    <div className="text-center text-gray-500 py-6">
-                      No Data Available
+                    <div className="rounded-2xl border border-dashed border-slate-300 bg-white/80 px-6 py-12 text-center shadow-sm">
+                      <p className="text-sm font-semibold text-slate-700">No verified collections found</p>
+                      <p className="mt-1 text-xs text-slate-500">Try changing the date range or clearing the report view.</p>
                     </div>
                   )
                 }
 
-                return currentData.map(({ staffName, leads }, index) => (
-                  <div key={staffName || `group-${index}`} className="mb-6">
-                    {staffName && (
-                      <h3 className="text-base font-semibold text-gray-800 mb-2">
-                        {staffName}{" "}
-                        <span className="text-sm text-gray-500">
-                          ({leads?.length || 0} Leads)
-                        </span>
-                      </h3>
-                    )}
-
-                    {/* only render table if there are leads */}
-                    {isVerifiedCollectionsLoading ? (
-                      <SkeletonTable />
-                    ) : (
-                      renderTable(leads)
-                    )}
+                return (
+                  <div className="mb-4 overflow-hidden rounded-2xl border border-white/80 bg-white shadow-[0_8px_22px_rgba(15,23,42,0.08)]">
+                    {isVerifiedCollectionsLoading ? <SkeletonTable /> : renderTable([], currentData)}
                   </div>
-                ))
+                )
               })()}
             </>
           </div>
