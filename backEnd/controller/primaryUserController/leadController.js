@@ -4090,21 +4090,34 @@ export const Getallsalesfunnels = async (req, res) => {
 
     const start = new Date(startDate);
     const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
     const branchObjectId = new mongoose.Types.ObjectId(selectedBranch)
 
     // 1️⃣ Aggregation Pipeline
     const result = await LeadMaster.aggregate([
+      // Keep the original activity count before unwinding the array. A new
+      // lead is a lead created in the selected period with exactly one log.
+      {
+        $addFields: {
+          activityLogCount: { $size: { $ifNull: ["$activityLog", []] } },
+        },
+      },
       // Unwind activityLog
-      { $unwind: "$activityLog" },
+      { $unwind: { path: "$activityLog", preserveNullAndEmptyArrays: true } },
 
       // Filter by date range
       {
         $match: {
-          "activityLog.submissionDate": {
-            $gte: start,
-            $lte: end
-          },
-          leadBranch: branchObjectId
+          leadBranch: branchObjectId,
+          $or: [
+            {
+              activityLogCount: 1,
+              leadDate: { $gte: start, $lte: end }
+            },
+            {
+              "activityLog.submissionDate": { $gte: start, $lte: end }
+            }
+          ]
         }
       },
 
@@ -4114,6 +4127,16 @@ export const Getallsalesfunnels = async (req, res) => {
           stage: {
             $switch: {
               branches: [
+                {
+                  case: {
+                    $and: [
+                      { $eq: ["$activityLogCount", 1] },
+                      { $gte: ["$leadDate", start] },
+                      { $lte: ["$leadDate", end] }
+                    ]
+                  },
+                  then: "New Leads"
+                },
                 {
                   case: {
                     $and: [
@@ -4136,7 +4159,7 @@ export const Getallsalesfunnels = async (req, res) => {
                   then: "Converted"
                 }
               ],
-              default: "New Leads"
+              default: "Uncategorized"
             }
           }
         }
@@ -15521,7 +15544,7 @@ export const GetallproductwiseReport = async (req, res) => {
 };
 export const GetownLeadList = async (req, res) => {
   try {
-    const { userId, selectedBranch, role, ownlead, startDate, endDate } = req.query;
+    const { userId, selectedBranch, role, ownlead, startDate, endDate, newLeadOnly } = req.query;
     if (
       !mongoose.Types.ObjectId.isValid(userId) ||
       !mongoose.Types.ObjectId.isValid(selectedBranch)
@@ -15550,6 +15573,12 @@ export const GetownLeadList = async (req, res) => {
       query.leadDate = {
         $gte: parsedStart,
         $lt: parsedEnd,
+      }
+    }
+
+    if (newLeadOnly === "true") {
+      query.$expr = {
+        $eq: [{ $size: { $ifNull: ["$activityLog", []] } }, 1]
       }
     }
     const matchedLead = await LeadMaster.find(query)
