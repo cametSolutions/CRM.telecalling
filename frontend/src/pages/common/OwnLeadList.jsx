@@ -107,7 +107,8 @@ export default function OwnLeadList() {
         dates?.startDate,
         dates?.endDate,
         ownLead,
-        location?.state?.role
+        location?.state?.role,
+        location?.state?.newLeadOnly
       ],
       queryFn: async () => {
         const res = await api.get(`/lead/ownregisteredLead`, {
@@ -119,7 +120,8 @@ export default function OwnLeadList() {
             selectedBranch: selecteduserBranch,
             ownlead: location?.state?.role ? false : ownLead,
             startDate: dates.startDate,
-            endDate: dates.endDate
+            endDate: dates.endDate,
+            newLeadOnly: location?.state?.newLeadOnly === true
           }
         })
         console.log(res.data.data)

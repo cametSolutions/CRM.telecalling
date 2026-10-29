@@ -786,13 +786,14 @@ const MarketingDashboard = () => {
     if (stage?.value <= 0) return
 
     if (stage.label === "New Leads") {
-      navigate("/admin/transaction/lead/ownedLeadlist", {
+      navigate(`/${user?.role === "Admin" ? "admin" : "staff"}/transaction/lead/ownedLeadlist`, {
         state: {
           role: "Admin",
           dates: {
             startDate: defaultStartDate,
             endDate: salesFunnelEndDate
-          }
+          },
+          newLeadOnly: true
         }
       })
     } else if (stage.label === "Contacted") {
