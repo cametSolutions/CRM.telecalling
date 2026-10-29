@@ -229,9 +229,10 @@ const MarketingDashboard = () => {
     reduxselectedBranch &&
       `/lead/getsalesfunnels?startDate=${defaultStartDate}&endDate=${salesFunnelEndDate}&selectedBranch=${reduxselectedBranch}`
   )
+  const collectionBranchId = reduxselectedBranch || selectedBranch
   const { data: collectiondata, loading: collectionloader } = UseFetch(
-    selectedBranch &&
-      `/lead/getTodayVerifiedCollection?selectedBranch=${selectedBranch}`
+    collectionBranchId &&
+      `/lead/getTodayVerifiedCollection?selectedBranch=${collectionBranchId}`
   )
   console.log(selectedBranch)
   console.log(collectiondata)
@@ -271,7 +272,7 @@ const MarketingDashboard = () => {
         startDate: new Date(),
         endDate: new Date(),
         label: "Today's Collection",
-        subtext: "Payments verified today",
+        subtext: "Payments verified today for the selected branch",
         amount: collectiondata,
         count: 6,
         icon: CalendarDays,
