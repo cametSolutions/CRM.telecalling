@@ -61,7 +61,8 @@ function LeadClosed() {
     refreshKey,
     closingOrigin,
     closingRemark,
-    closingFollowUpDate
+    closingFollowUpDate,
+    pendingCollection
   } = closingContext || {}
   console.log(isReadOnly)
   console.log(closingContext)
@@ -447,7 +448,8 @@ console.log(response.data.data[0].leadBranch)
             ? {
                 origin: "followup",
                 remark: closingRemark,
-                followUpDate: closingFollowUpDate
+                followUpDate: closingFollowUpDate,
+                pendingCollection
               }
             : undefined
       })
