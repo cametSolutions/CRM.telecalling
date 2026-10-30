@@ -97,7 +97,7 @@ const SalesFunnel = ({ stages, onStageClick }) => {
       <div className="grid gap-3 md:grid-cols-[minmax(160px,0.8fr)_minmax(220px,1.2fr)] md:items-center">
         <div className="flex min-h-[210px] flex-col items-center justify-center gap-1">
           {stages.map((stage) => {
-            const isClickable = stage.value > 0 && ["New Leads", "Contacted"].includes(stage.label)
+            const isClickable = stage.value > 0 && ["New Leads", "Contacted", "Converted"].includes(stage.label)
             return (
             <div
               key={stage.label}
@@ -125,7 +125,7 @@ const SalesFunnel = ({ stages, onStageClick }) => {
         <div className="divide-y divide-slate-100">
           {stages.map((stage) => {
             const percentage = Math.round((Number(stage.value || 0) / firstStageCount) * 100)
-            const isClickable = stage.value > 0 && ["New Leads", "Contacted"].includes(stage.label)
+            const isClickable = stage.value > 0 && ["New Leads", "Contacted", "Converted"].includes(stage.label)
 
             return (
               <div
@@ -799,6 +799,24 @@ const MarketingDashboard = () => {
     } else if (stage.label === "Contacted") {
       navigate("/admin/transaction/lead/leadFollowUp", {
         state: { pending: true }
+      })
+    } else if (stage.label === "Converted") {
+      navigate(`/${user?.role === "Admin" ? "admin" : "staff"}/transaction/lead/leadFollowUp`, {
+        state: {
+          staffId: user?._id,
+          staffRole: user?.role,
+          branchId: reduxselectedBranch,
+          viewMode: "converted",
+          header: "Converted",
+          pending: false,
+          ownlead: false,
+          istotal: true,
+          from: "salesFunnel",
+          filterRange: {
+            startDate: defaultStartDate,
+            endDate: salesFunnelEndDate
+          }
+        }
       })
     }
   }
