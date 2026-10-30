@@ -2509,7 +2509,8 @@ const LeadFollowUp = () => {
                 leadId: leadDocumentId,
                 closingOrigin: "followup",
                 closingRemark: formData.Remarks,
-                closingFollowUpDate: formData.followUpDate
+                closingFollowUpDate: formData.followUpDate,
+                pendingCollection: collectionupdatedata
               }
             }
           )
