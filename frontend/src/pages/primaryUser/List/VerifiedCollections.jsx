@@ -815,7 +815,7 @@ console.log(endDate)
     <div className="h-full min-h-0 bg-[#ADD8E6]">
       <div className="flex h-full min-h-0 flex-row">
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="z-50 mx-3 mt-3 shrink-0 rounded-xl border border-white/80 bg-white/95 px-4 py-3 shadow-[0_8px_22px_rgba(15,23,42,0.08)] backdrop-blur md:px-5">
+          <div className="z-20 mx-3 mt-3 shrink-0 rounded-xl border border-white/80 bg-white/95 px-4 py-3 shadow-[0_8px_22px_rgba(15,23,42,0.08)] backdrop-blur md:px-5">
             <div className="grid gap-3 xl:grid-cols-[minmax(300px,1fr)_290px_280px] xl:items-end">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-sm">
