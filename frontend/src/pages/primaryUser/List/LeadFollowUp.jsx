@@ -2596,6 +2596,7 @@ const LeadFollowUp = () => {
     console.log("dd")
     setcollectionUpdateModal(true)
   }
+console.log("jjj")
   const handlecloseModal = () => {
     setSelectedLeadId(null)
     setShowModal(false)
