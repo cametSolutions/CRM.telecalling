@@ -94,10 +94,10 @@ const SalesFunnel = ({ stages, onStageClick }) => {
         <p className="mt-0.5 text-xs text-slate-500">Current month lead progression from initial contact to conversion</p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-[minmax(160px,0.8fr)_minmax(220px,1.2fr)] sm:items-center">
+      <div className="grid gap-3 md:grid-cols-[minmax(160px,0.8fr)_minmax(220px,1.2fr)] md:items-center">
         <div className="flex min-h-[210px] flex-col items-center justify-center gap-1">
           {stages.map((stage) => {
-            const isClickable = stage.value > 0 && ["New Leads", "Contacted"].includes(stage.label)
+            const isClickable = stage.value > 0 && ["New Leads", "Contacted", "Converted"].includes(stage.label)
             return (
             <div
               key={stage.label}
@@ -125,7 +125,7 @@ const SalesFunnel = ({ stages, onStageClick }) => {
         <div className="divide-y divide-slate-100">
           {stages.map((stage) => {
             const percentage = Math.round((Number(stage.value || 0) / firstStageCount) * 100)
-            const isClickable = stage.value > 0 && ["New Leads", "Contacted"].includes(stage.label)
+            const isClickable = stage.value > 0 && ["New Leads", "Contacted", "Converted"].includes(stage.label)
 
             return (
               <div
@@ -800,6 +800,24 @@ const MarketingDashboard = () => {
       navigate("/admin/transaction/lead/leadFollowUp", {
         state: { pending: true }
       })
+    } else if (stage.label === "Converted") {
+      navigate(`/${user?.role === "Admin" ? "admin" : "staff"}/transaction/lead/leadFollowUp`, {
+        state: {
+          staffId: user?._id,
+          staffRole: user?.role,
+          branchId: reduxselectedBranch,
+          viewMode: "converted",
+          header: "Converted",
+          pending: false,
+          ownlead: false,
+          istotal: true,
+          from: "salesFunnel",
+          filterRange: {
+            startDate: defaultStartDate,
+            endDate: salesFunnelEndDate
+          }
+        }
+      })
     }
   }
   const handleMoreClick = (id, name) => {
@@ -912,10 +930,10 @@ const MarketingDashboard = () => {
   console.log(announcement)
   return (
     <div
-      className="h-full overflow-hidden bg-[#ADD8E6] text-slate-800"
+      className="h-full min-h-0 w-full overflow-hidden bg-[#ADD8E6] text-slate-800"
       style={appTextStyle}
     >
-      <div className="flex h-full flex-col lg:flex-row">
+      <div className="flex h-full min-h-0 min-w-0 flex-col lg:flex-row">
         {/* <Sidebar
           handleMoreClick={handleMoreClick}
           achievedPoints={achievedPoints}
@@ -931,7 +949,7 @@ const MarketingDashboard = () => {
           SkeletonTable={SkeletonTable}
           setAvatarOpen={setAvatarOpen}
         /> */}
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           {/* TOP NAVBAR */}
 
           {/* <header className="flex items-center justify-between bg-[#ADD8E6] py-0.5 ">
@@ -1040,7 +1058,7 @@ const MarketingDashboard = () => {
               notificationData={notificationData}
             />
           )}
-          <div className="px-4">
+          <div className="shrink-0 px-2 sm:px-4">
             <AnnouncementBanner
               announcementlist={announcement}
               setopenannoucementpopup={setopenannoucementpopup}
@@ -1055,16 +1073,16 @@ const MarketingDashboard = () => {
             onSuccess={() => setopenannoucementpopup(false)}
           />}
           <BirthdayGreetingPopup />
-          <main className="min-h-0 flex-1 overflow-y-auto">
-            <section className="p-3 sm:p-4 lg:p-4">
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
+          <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
+            <section className="mx-auto w-full max-w-[1800px] p-2.5 sm:p-3 lg:p-4">
+              <div className="grid grid-cols-1 gap-2.5 min-[420px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
                 {cardDisplay.slice(0, 6).map((card) => (
                   <div
                     key={card.title}
                     onClick={() =>
                       handleFollowupCellClick(card.title, card.value)
                     }
-                    className="min-w-0 cursor-pointer rounded-lg border border-slate-200/90 bg-white px-2.5 py-2 shadow-sm transition hover:shadow-md"
+                    className="min-w-0 cursor-pointer rounded-lg border border-slate-200/90 bg-white px-3 py-2.5 shadow-sm transition hover:shadow-md"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex min-w-0 items-center gap-2">
@@ -1094,7 +1112,7 @@ const MarketingDashboard = () => {
               </div>
               <div
                 className="
-    mt-4 grid gap-4
+    mt-3 grid min-w-0 gap-3 sm:mt-4 sm:gap-4
     grid-cols-1          /* mobile: stacked (one below the other) */
     lg:grid-cols-2       /* desktop/tablet+: two diagrams side by side */
   "
@@ -2039,8 +2057,8 @@ function CollectionDetails({
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-      <div className="flex items-center justify-between mb-4">
+    <div className="min-w-0 rounded-2xl border border-slate-100 bg-white p-3.5 shadow-sm sm:p-5">
+      <div className="mb-3 sm:mb-4">
         <div>
           <h3 className="text-base font-bold text-slate-900">
             Collection Details
@@ -2051,32 +2069,34 @@ function CollectionDetails({
         </div>
       </div>
 
-      <div className=" gap-4">
+      <div className="space-y-3">
         {collections.map((item) => {
           const Icon = item.icon
           const accent = ACCENTS[item.accent] || ACCENTS.teal
           return (
             <div
               key={item.key}
-              className="rounded-xl border border-slate-100 p-4 flex flex-col gap-3 hover:shadow-md hover:border-slate-200 transition-all"
+              className="rounded-xl border border-slate-100 p-3 transition-all hover:border-slate-200 hover:shadow-md sm:p-4"
             >
-              <div className="flex items-center justify-between gap-2.5">
-                <span
-                  className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${accent.icon}`}
-                >
-                  <Icon className="w-4.5 h-4.5" />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-slate-800 truncate">
-                    {item.label}
-                  </p>
-                  <p className="text-[11px] text-slate-400 truncate">
-                    {item.subtext}
-                  </p>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <span
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${accent.icon}`}
+                  >
+                    <Icon className="w-4.5 h-4.5" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-slate-800">
+                      {item.label}
+                    </p>
+                    <p className="truncate text-[11px] text-slate-400">
+                      {item.subtext}
+                    </p>
+                  </div>
                 </div>
                 <button
                   onClick={() => handleNavigate(item)}
-                  className={`group inline-flex items-center justify-between gap-2 rounded-lg px-3 py-2 font-semibold text-sm transition-colors ${accent.btn}`}
+                  className={`group inline-flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-colors sm:w-auto ${accent.btn}`}
                 >
                   <span className="inline-flex items-center gap-1 tabular-nums">
                     <IndianRupee className="w-3.5 h-3.5" />

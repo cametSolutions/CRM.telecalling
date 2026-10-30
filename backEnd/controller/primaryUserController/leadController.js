@@ -144,12 +144,28 @@ export const GetallfollowupList = async (req, res) => {
     const hasValidDates = Boolean(start && end);
     console.log("hasvalidates", hasValidDates)
     const hasFrom = Boolean(from && from !== "null" && from !== "undefined");
+    const isSalesFunnelConverted = from === "salesFunnel" && header === "Converted";
     const isNewMode = isViewMode || hasValidHeader
     const isClosedFollowupMode = pendingfollowup === "false" && !isViewMode;
 
     let query = {};
 
-    if (isViewMode) {
+    if (isSalesFunnelConverted) {
+      // The dashboard funnel is branch-wide and classifies a conversion from
+      // the activity entry itself. Keep this query identical to that rule so
+      // its drill-down cannot be restricted to the signed-in staff member or
+      // a separate leadConvertedDate value.
+      query = {
+        leadBranch: branchObjectId,
+        leadLost: false,
+        activityLog: {
+          $elemMatch: {
+            followupClosed: true,
+            submissionDate: { $gte: start, $lte: end },
+          },
+        },
+      };
+    } else if (isViewMode) {
       const baseElemMatch = {
         taskTo: "followup",
         taskallocatedTo: userObjectId,
@@ -5584,9 +5600,21 @@ export const Leadclosing = async (req, res) => {
       )
         ? pendingCollection.paymentEntries
         : [];
-      const pendingCollectionAmount = Number(
-        pendingCollection?.totalReceivedAmount ?? 0
+      const paymentEntriesTotal = pendingCollectionEntries.reduce(
+        (total, entry) => total + toNum(entry?.receivedAmount, 0),
+        0
       );
+      const requestedCollectionAmount = Number(
+        pendingCollection?.totalReceivedAmount
+      );
+      // Collection modal normally supplies totalReceivedAmount. Fall back to
+      // the entry total so a valid payment cannot be saved in history while
+      // the lead's payment summary remains unchanged.
+      const pendingCollectionAmount =
+        Number.isFinite(requestedCollectionAmount) &&
+        requestedCollectionAmount > 0
+          ? requestedCollectionAmount
+          : paymentEntriesTotal;
       const hasPendingCollection =
         pendingCollectionEntries.length > 0 || pendingCollectionAmount > 0;
       const safePendingCollectionAmount = Number.isFinite(
@@ -5728,6 +5756,7 @@ export const Leadclosing = async (req, res) => {
         taxableAmount: newTaxableAmount,
         taxAmount: newTaxAmount,
         netAmount: newNetAmount,
+        totalPaidAmount,
         balanceAmount: newBalanceAmount,
         excessPaidAmount,
         leadFor: mappedleadData,

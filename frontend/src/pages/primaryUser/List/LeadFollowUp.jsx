@@ -1834,11 +1834,20 @@ const LeadFollowUp = () => {
           setnetTotalAmount(TotalAmount(futureLeads))
           setTableData(groupedData)
         } else if (safeState?.viewMode === "converted") {
-          const today = new Date()
-          today.setHours(0, 0, 0, 0)
-
           const convertedLeads = leads.filter((lead) => {
-            // 4️⃣ Check overdue
+            if (safeState?.from === "salesFunnel") {
+              const start = new Date(dates.startDate)
+              start.setHours(0, 0, 0, 0)
+              const end = new Date(dates.endDate)
+              end.setHours(23, 59, 59, 999)
+
+              return !lead.leadLost && (lead.activityLog || []).some((log) => {
+                if (!log?.followupClosed || !log?.submissionDate) return false
+                const submittedAt = new Date(log.submissionDate)
+                return submittedAt >= start && submittedAt <= end
+              })
+            }
+
             return lead.leadConvertedDate && !lead.leadLost
           })
 
@@ -2587,6 +2596,7 @@ const LeadFollowUp = () => {
     console.log("dd")
     setcollectionUpdateModal(true)
   }
+console.log("jjj")
   const handlecloseModal = () => {
     setSelectedLeadId(null)
     setShowModal(false)
