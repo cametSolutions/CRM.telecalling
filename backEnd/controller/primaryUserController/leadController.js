@@ -5575,7 +5575,30 @@ export const Leadclosing = async (req, res) => {
         }
       );
 
-      const totalPaidAmount = round2(matchedDoc.totalPaidAmount || 0);
+      const pendingCollection =
+        closingContext?.origin === "followup"
+          ? closingContext?.pendingCollection
+          : null;
+      const pendingCollectionEntries = Array.isArray(
+        pendingCollection?.paymentEntries
+      )
+        ? pendingCollection.paymentEntries
+        : [];
+      const pendingCollectionAmount = Number(
+        pendingCollection?.totalReceivedAmount ?? 0
+      );
+      const hasPendingCollection =
+        pendingCollectionEntries.length > 0 || pendingCollectionAmount > 0;
+      const safePendingCollectionAmount = Number.isFinite(
+        pendingCollectionAmount
+      )
+        ? round2(pendingCollectionAmount)
+        : 0;
+
+      const totalPaidAmount = round2(
+        Number(matchedDoc.totalPaidAmount || 0) +
+          (hasPendingCollection ? safePendingCollectionAmount : 0)
+      );
       const rawBalanceAmount = round2(newNetAmount - totalPaidAmount);
       const newBalanceAmount = rawBalanceAmount < 0 ? 0 : rawBalanceAmount;
       const excessPaidAmount =
@@ -5620,6 +5643,30 @@ export const Leadclosing = async (req, res) => {
           paymentEntries: updatedEntries,
         };
       });
+
+      if (hasPendingCollection) {
+        updatedPaymentHistory.push({
+          paymentDate: new Date(),
+          receivedAmount: safePendingCollectionAmount,
+          paymentVerified: false,
+          paymentEntries: pendingCollectionEntries.map((entry) => ({
+            productorServiceId: entry?.productorServiceId || primaryProductId,
+            productorServicemodel:
+              entry?.productorServicemodel || primaryProductModel,
+            receivedAmount: round2(entry?.receivedAmount || 0),
+            netAmount: newNetAmount,
+            balanceAmount: Math.max(
+              round2(newNetAmount - Number(entry?.receivedAmount || 0)),
+              0
+            ),
+          })),
+          receivedBy: pendingCollection?.receivedBy || null,
+          receivedModel: pendingCollection?.receivedModel || null,
+          bankRemarks: pendingCollection?.bankRemark || "",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+      }
 
       const taskName = await Task.findOne({ taskName: "Lead Closing" }).lean();
 
@@ -10384,59 +10431,13 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
       return res.status(404).json({ message: "Lead not found" });
     }
 
-    // Selecting "Close Lead" moves the user to the final Lead Closing form.
-    // The Follow-Up history remains untouched until that final close succeeds,
-    // but a collection entered in this form must be saved before navigating
-    // away so it is not lost.
+    // Selecting "Close Lead" only opens the final Lead Closing form. Keep the
+    // collection in the client-side closing context; it is saved atomically
+    // with the final close, not while the lead remains in Follow-Up.
     if (isFollowupAndLeadClosed) {
-      const collectionEntries = Array.isArray(collectionupdatedata?.paymentEntries)
-        ? collectionupdatedata.paymentEntries.map((entry) => ({
-          productorServiceId: entry?.productorServiceId || null,
-          productorServicemodel: entry?.productorServicemodel || "Product",
-          netAmount: Number(entry?.netAmount || 0),
-          receivedAmount: Number(entry?.receivedAmount || 0),
-          balanceAmount: Number(entry?.balanceAmount || 0)
-        }))
-        : [];
-      const collectionAmount = Number(
-        collectionupdatedata?.totalReceivedAmount ?? 0
-      );
-
-      if (collectionEntries.length > 0 || collectionAmount > 0) {
-        const safeCollectionAmount = Number.isFinite(collectionAmount)
-          ? collectionAmount
-          : 0;
-        const updatedTotalPaidAmount = Number(
-          Number(existingLead.totalPaidAmount || 0) + safeCollectionAmount
-        );
-        const updatedBalanceAmount = Math.max(
-          Number(existingLead.netAmount || 0) - updatedTotalPaidAmount,
-          0
-        );
-
-        existingLead.paymentHistory.push({
-          paymentDate: new Date(),
-          receivedAmount: safeCollectionAmount,
-          paymentVerified: false,
-          paymentEntries: collectionEntries,
-          receivedBy: collectionupdatedata?.receivedBy || null,
-          receivedModel: collectionupdatedata?.receivedModel || null,
-          bankRemarks:
-            collectionupdatedata?.bankRemark ?? formData?.bankRemarks ?? "",
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
-        existingLead.totalPaidAmount = updatedTotalPaidAmount;
-        existingLead.balanceAmount = updatedBalanceAmount;
-        if (updatedBalanceAmount <= 0) {
-          existingLead.paymentVerified = true;
-        }
-        await existingLead.save();
-      }
-
       return res.status(200).json({
         message: "Continue to close the lead.",
-        data: existingLead
+        data: { _id: existingLead._id }
       });
     }
 
