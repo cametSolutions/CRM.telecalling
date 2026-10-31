@@ -2187,6 +2187,7 @@ export const gettargetResult = async (req, res) => {
     const [allTargetConfigs] = await Promise.all([
       TargetConfiguration.find({
         branch: selectedBranch,
+        year: yearNumber,
       })
         .select(`
           periodName branch startDate endDate categoryId categoryName
@@ -2197,13 +2198,36 @@ export const gettargetResult = async (req, res) => {
         .lean(),
     ]);
 
-    const allPeriods = [
-      ...new Set(
-        allTargetConfigs
-          .map((item) => String(item.periodName || "").trim())
-          .filter(Boolean)
-      ),
-    ];
+    // A target period can contain several category configurations. Keep one
+    // date range per period, then order newest first so every consumer (most
+    // importantly Incentive Report) selects the latest available period by
+    // default instead of whichever configuration MongoDB returns first.
+    const periodRanges = new Map();
+    for (const config of allTargetConfigs) {
+      const periodName = String(config.periodName || "").trim();
+      if (!periodName) continue;
+
+      const current = periodRanges.get(periodName);
+      const startDate = new Date(config.startDate);
+      const endDate = new Date(config.endDate);
+
+      if (
+        !current ||
+        endDate > current.endDate ||
+        (endDate.getTime() === current.endDate.getTime() &&
+          startDate > current.startDate)
+      ) {
+        periodRanges.set(periodName, { periodName, startDate, endDate });
+      }
+    }
+
+    const allPeriods = [...periodRanges.values()]
+      .sort(
+        (left, right) =>
+          right.endDate - left.endDate || right.startDate - left.startDate
+      )
+      .map((item) => item.periodName);
+    const latestPeriodName = allPeriods[0] || "";
 
     const selectedMonth =
       mode === "all" ? monthNumber : Number(mode);
@@ -2259,7 +2283,7 @@ export const gettargetResult = async (req, res) => {
           periods: allPeriods,
           measurementTypes: [],
           selectedMeasurementType: "",
-          selectedPeriodName: "",
+          selectedPeriodName: latestPeriodName,
           selectedMonth,
           selectedYear: yearNumber,
         },
@@ -2298,7 +2322,7 @@ export const gettargetResult = async (req, res) => {
           periods: allPeriods,
           measurementTypes: [],
           selectedMeasurementType: "",
-          selectedPeriodName: "",
+          selectedPeriodName: latestPeriodName,
           selectedMonth,
           selectedYear: yearNumber,
         },
@@ -3371,7 +3395,7 @@ const valuecheck = await LeadMaster.aggregate([
         userWiseResults,
         summary,
         periods: allPeriods,
-        selectedPeriodName: targetConfigs[0]?.periodName || "",
+        selectedPeriodName: latestPeriodName,
         measurementTypes,
         selectedMeasurementType:
           targetConfigs[0]?.measurementType || "",
@@ -3398,6 +3422,7 @@ const buildIncentiveReportData = async ({
   detailUserId = "",
   detailAllocationId = "all",
 }) => {
+  const FOLLOWUP_CLOSING_TASK_ID = "69f561f9563085eef7b0a482";
   const objects = (value) =>
     Array.isArray(value)
       ? value.filter(
@@ -3409,10 +3434,10 @@ const buildIncentiveReportData = async ({
   // The first activity represents lead creation, so the Lead incentive belongs
   // to leadBy. A submitted user or an assignment correction on that activity
   // must not move the Lead reward away from the person who generated the lead.
-  // Other allocations retain their explicit correction/submitted-user owner.
-  // taskallocatedTo is deliberately not a fallback: assignment is not proof
-  // of completion.
-  const getIncentiveOwner = (lead, activity, activityIndex) => {
+  // Lead reward belongs to the lead creator. Every other reward belongs to
+  // the user recorded on the task-completion activity, never the allocator
+  // or the task assignee by default. A manual correction still takes priority.
+  const getIncentiveOwner = (lead, activity, activityIndex, activities) => {
     if (activityIndex === 0 && lead.leadBy) {
       return {
         userId: String(lead.leadBy),
@@ -3420,10 +3445,22 @@ const buildIncentiveReportData = async ({
       };
     }
 
-    if (activity.incentiveAssignedUser) {
+    const activityTaskIds = new Set(
+      [activity.taskBy, activity.taskId].filter(Boolean).map(String)
+    );
+    const correction = objects(activities).find(
+      (entry) =>
+        entry.incentiveAssignedUser &&
+        [entry.taskBy, entry.taskId]
+          .filter(Boolean)
+          .map(String)
+          .some((taskId) => activityTaskIds.has(taskId))
+    );
+
+    if (correction?.incentiveAssignedUser) {
       return {
-        userId: String(activity.incentiveAssignedUser),
-        userModel: activity.incentiveAssignedUserModel || "Staff",
+        userId: String(correction.incentiveAssignedUser),
+        userModel: correction.incentiveAssignedUserModel || "Staff",
       };
     }
 
@@ -3656,6 +3693,31 @@ const buildIncentiveReportData = async ({
     activity.taskClosed === true ||
     activity.followupClosed === true ||
     activity.allocatedClosed === true;
+  const isTaskCompletionEvent = (activity) => {
+    const isFollowupClosing =
+      String(activity?.taskBy || "") === FOLLOWUP_CLOSING_TASK_ID;
+
+    // Follow-Up Closing has one dedicated completion task. Only that task's
+    // actual closing entry may earn the Follow-Up Closing incentive. Earlier
+    // follow-up allocation rows are never eligible for it.
+    if (isFollowupClosing) {
+      return (
+        activity?.taskClosed === true &&
+        activity?.followupClosed === true &&
+        Boolean(activity?.submittedUser)
+      );
+    }
+
+    // Other task incentives (System Study, Demo, Testing, Implementation,
+    // etc.) are paid only from the completion entry. Allocation records keep
+    // taskallocatedTo, whereas the completion entry has the actual completer
+    // in submittedUser and no taskallocatedTo.
+    return (
+      isCompleted(activity) &&
+      Boolean(activity?.submittedUser) &&
+      !activity?.taskallocatedTo
+    );
+  };
   const activityCompletedAt = (lead, activity, activityIndex) =>
     activity.taskSubmissionDate ||
     activity.submissionDate ||
@@ -3682,9 +3744,14 @@ const buildIncentiveReportData = async ({
 
     for (const config of branchConfigs) {
       const categoryId = String(config.categoryId?._id || config.categoryId);
+      // A lead may carry zero-price default/additional items from other
+      // categories. They are useful operationally, but must never create an
+      // additional incentive. Only a paid leadFor item in the configured
+      // category makes that category eligible for incentive.
       const leadHasCategory = objects(lead.leadFor).some(
         (item) =>
-          categoryMap.get(String(item.productorServiceId || "")) === categoryId
+          categoryMap.get(String(item.productorServiceId || "")) ===
+            categoryId && num(item.productPrice) > 0
       );
       if (!leadHasCategory) continue;
 
@@ -3695,20 +3762,25 @@ const buildIncentiveReportData = async ({
         ])
       );
 
+      const activities = objects(lead.activityLog);
       const awardActivity = ({ activity, activityIndex, percentageBaseAmount, eventDate, paymentKey = "quantity" }) => {
-        const owner = getIncentiveOwner(lead, activity, activityIndex);
+        if (activityIndex !== 0 && !isTaskCompletionEvent(activity)) return;
+
+        const owner = getIncentiveOwner(
+          lead,
+          activity,
+          activityIndex,
+          activities
+        );
         if (!owner) return;
         const { userId, userModel } = owner;
         const taskById = String(activity.taskBy || "");
         const taskId = String(activity.taskId || "");
-        const leadAllocationId = activityIndex === 0 ? String(lead.allocationType || "") : "";
         const allocationId = rules.has(taskById)
           ? taskById
           : rules.has(taskId)
             ? taskId
-            : rules.has(leadAllocationId)
-              ? leadAllocationId
-              : "";
+            : "";
         if (!allocationId || (activityIndex !== 0 && !isCompleted(activity))) return;
 
         const rule = rules.get(allocationId);
@@ -3726,7 +3798,6 @@ const buildIncentiveReportData = async ({
           String(config._id),
           String(lead._id),
           isPercentage ? paymentKey : "fixed",
-          userId,
           allocationId,
         ].join("-");
         if (awarded.has(rewardKey)) return;
@@ -3764,7 +3835,7 @@ const buildIncentiveReportData = async ({
           if (payment.paymentVerified !== true || !isWithinPeriod(payment.paymentDate, config)) continue;
           const paymentAmount = cappedPaymentAmounts.get(paymentIndex) || 0;
           if (paymentAmount <= 0) continue;
-          for (const [activityIndex, activity] of objects(lead.activityLog).entries()) {
+          for (const [activityIndex, activity] of activities.entries()) {
             if (!isWithinPeriod(activityCompletedAt(lead, activity, activityIndex), config)) continue;
             awardActivity({
               activity,
@@ -3781,7 +3852,7 @@ const buildIncentiveReportData = async ({
           .filter((payment) => payment.paymentVerified === true && validDate(payment.paymentDate))
           .sort((left, right) => validDate(right.paymentDate) - validDate(left.paymentDate))[0];
         if (!lastVerifiedPayment || !isWithinPeriod(lastVerifiedPayment.paymentDate, config)) continue;
-        for (const [activityIndex, activity] of objects(lead.activityLog).entries()) {
+        for (const [activityIndex, activity] of activities.entries()) {
           awardActivity({
             activity,
             activityIndex,
