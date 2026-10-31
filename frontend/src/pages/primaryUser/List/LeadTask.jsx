@@ -151,10 +151,22 @@ const LeadTask = () => {
   //     reduxselectedBranch &&
   //     `/lead/getrespectedleadTask?userid=${loggedUser._id}&branchSelected=${reduxselectedBranch}&role=${loggedUser.role}&ownTask=${ownTask}`
   // )
+  const getDateQueryValue = (value) => {
+    if (!value) return ""
+    const localDate = new Date(value)
+    localDate.setMinutes(
+      localDate.getMinutes() - localDate.getTimezoneOffset()
+    )
+    return localDate.toISOString().split("T")[0]
+  }
+
+  const taskStartDate = getDateQueryValue(dates.startDate)
+  const taskEndDate = getDateQueryValue(dates.endDate)
+
  const { data, error, loading, refreshHook } = UseFetch(
     loggedUser &&
       reduxselectedBranch &&
-      `/lead/getrespectedleadTask?userid=${loggedUser._id}&role=${loggedUser.role}&ownTask=${ownTask}&branchSelected=${reduxselectedBranch}&taskStatus=${pending ? "pending" : "cleared"}`,
+      `/lead/getrespectedleadTask?userid=${loggedUser._id}&role=${loggedUser.role}&ownTask=${ownTask}&branchSelected=${reduxselectedBranch}&taskStatus=${pending ? "pending" : "cleared"}&startDate=${taskStartDate}&endDate=${taskEndDate}`,
     { cacheTime: 30_000 }
   )
 console.log(data)
@@ -311,7 +323,7 @@ console.log(totalNetAmount)
 
       setFilteredData(Data)
     }
-  }, [data])
+  }, [data, pending, dates.startDate, dates.endDate])
   const normalizeTableData = (data) => {
     if (Array.isArray(data)) {
       return [{ staffName: null, leads: data }]

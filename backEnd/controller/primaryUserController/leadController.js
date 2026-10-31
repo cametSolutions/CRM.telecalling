@@ -145,23 +145,24 @@ export const GetallfollowupList = async (req, res) => {
     console.log("hasvalidates", hasValidDates)
     const hasFrom = Boolean(from && from !== "null" && from !== "undefined");
     const isSalesFunnelConverted = from === "salesFunnel" && header === "Converted";
+    const isDashboardAll = from === "dashboardAll";
     const isNewMode = isViewMode || hasValidHeader
     const isClosedFollowupMode = pendingfollowup === "false" && !isViewMode;
 
     let query = {};
 
     if (isSalesFunnelConverted) {
-      // The dashboard funnel is branch-wide and classifies a conversion from
-      // the activity entry itself. Keep this query identical to that rule so
-      // its drill-down cannot be restricted to the signed-in staff member or
-      // a separate leadConvertedDate value.
+      // The dashboard funnel is branch-wide. A conversion requires both a
+      // closed follow-up and a leadConvertedDate in the selected range.
+      // Keep the drill-down identical without restricting it to one staff
+      // member.
       query = {
         leadBranch: branchObjectId,
         leadLost: false,
+        leadConvertedDate: { $gte: start, $lte: end },
         activityLog: {
           $elemMatch: {
             followupClosed: true,
-            submissionDate: { $gte: start, $lte: end },
           },
         },
       };
@@ -172,10 +173,12 @@ export const GetallfollowupList = async (req, res) => {
         allocationChanged: false,
       };
 
-      query = {
-        activityLog: { $elemMatch: baseElemMatch },
-        leadBranch: branchObjectId,
-      };
+      query = isDashboardAll
+        ? { leadBranch: branchObjectId }
+        : {
+            activityLog: { $elemMatch: baseElemMatch },
+            leadBranch: branchObjectId,
+          };
 
       if (header === "Converted") {
         query.leadConvertedDate = hasValidDates
@@ -3892,6 +3895,47 @@ export const getBranchwiseMarketingPendingTasks = async (req, res) => {
       .populate("leadFor.productorServiceId", "productName serviceName shortName")
       .lean(); // lean() is fine since we're manually attaching taskallocatedTo below
 
+    // Some historical leadFor records only retain productorServiceId and do
+    // not have productorServiceName. Populate the IDs in batches as a
+    // reliable fallback, including Service records as well as Product ones.
+    const productIds = new Set();
+    const serviceIds = new Set();
+    const getReferencedId = (value) =>
+      value && typeof value === "object" && value._id ? value._id : value;
+
+    leads.forEach((lead) => {
+      (lead.leadFor || []).forEach((item) => {
+        const referencedId = getReferencedId(item.productorServiceId);
+        if (!referencedId) return;
+
+        if (item.productorServicemodel === "Service") {
+          serviceIds.add(String(referencedId));
+        } else {
+          productIds.add(String(referencedId));
+        }
+      });
+    });
+
+    const [productDocs, serviceDocs] = await Promise.all([
+      Product.find({ _id: { $in: [...productIds] } })
+        .select("productName shortName")
+        .lean(),
+      Service.find({ _id: { $in: [...serviceIds] } })
+        .select("serviceName shortName")
+        .lean()
+    ]);
+
+    const productNameById = new Map([
+      ...productDocs.map((item) => [
+        String(item._id),
+        item.shortName || item.productName || ""
+      ]),
+      ...serviceDocs.map((item) => [
+        String(item._id),
+        item.shortName || item.serviceName || ""
+      ])
+    ]);
+
     // 1. Collect all taskallocatedTo ids, grouped by their model
     const idsByModel = { Staff: new Set(), Admin: new Set() };
 
@@ -3940,11 +3984,19 @@ export const getBranchwiseMarketingPendingTasks = async (req, res) => {
             partyName: lead.customerName?.customerName || "-",
             productName: (lead.leadFor || [])
               .map(
-                (item) =>
-                  item?.productorServiceName ||
-                  item?.productorServiceId?.shortName ||
-                  item?.productorServiceId?.productName ||
-                  item?.productorServiceId?.serviceName
+                (item) => {
+                  const referencedId = getReferencedId(
+                    item?.productorServiceId
+                  );
+
+                  return (
+                    item?.productorServiceName ||
+                    item?.productorServiceId?.shortName ||
+                    item?.productorServiceId?.productName ||
+                    item?.productorServiceId?.serviceName ||
+                    productNameById.get(String(referencedId || ""))
+                  );
+                }
               )
               .filter(Boolean)
               .join(", ") || "-",
@@ -4108,17 +4160,13 @@ export const Getallsalesfunnels = async (req, res) => {
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999);
     const branchObjectId = new mongoose.Types.ObjectId(selectedBranch)
+    const systemStudyTaskId = new mongoose.Types.ObjectId(
+      "689c23613e94902039b9774b"
+    )
 
     // 1️⃣ Aggregation Pipeline
     const result = await LeadMaster.aggregate([
-      // Keep the original activity count before unwinding the array. A new
-      // lead is a lead created in the selected period with exactly one log.
-      {
-        $addFields: {
-          activityLogCount: { $size: { $ifNull: ["$activityLog", []] } },
-        },
-      },
-      // Unwind activityLog
+      // Activity-driven stages use individual log entries.
       { $unwind: { path: "$activityLog", preserveNullAndEmptyArrays: true } },
 
       // Filter by date range
@@ -4127,11 +4175,12 @@ export const Getallsalesfunnels = async (req, res) => {
           leadBranch: branchObjectId,
           $or: [
             {
-              activityLogCount: 1,
-              leadDate: { $gte: start, $lte: end }
-            },
-            {
               "activityLog.submissionDate": { $gte: start, $lte: end }
+            },
+            // Converted leads are qualified by their final conversion date,
+            // not by the date of an individual activity row.
+            {
+              leadConvertedDate: { $gte: start, $lte: end }
             }
           ]
         }
@@ -4146,34 +4195,14 @@ export const Getallsalesfunnels = async (req, res) => {
                 {
                   case: {
                     $and: [
-                      { $eq: ["$activityLogCount", 1] },
-                      { $gte: ["$leadDate", start] },
-                      { $lte: ["$leadDate", end] }
+                      { $eq: ["$activityLog.followupClosed", true] },
+                      { $ne: ["$leadConvertedDate", null] },
+                      { $gte: ["$leadConvertedDate", start] },
+                      { $lte: ["$leadConvertedDate", end] }
                     ]
                   },
-                  then: "New Leads"
-                },
-                {
-                  case: {
-                    $and: [
-                      { $eq: ["$activityLog.allocationChanged", false] },
-                      { $eq: ["$activityLog.taskTo", "followup"] }
-                    ]
-                  },
-                  then: "Contacted"
-                },
-                {
-                  case: { $eq: ["$activityLog.taskfromFollowup", true] },
-                  then: "System Study"
-                },
-                {
-                  case: { $eq: ["$leadLost", true] },
-                  then: "Lost"
-                },
-                {
-                  case: { $eq: ["$activityLog.followupClosed", true] },
                   then: "Converted"
-                }
+                },
               ],
               default: "Uncategorized"
             }
@@ -4181,12 +4210,166 @@ export const Getallsalesfunnels = async (req, res) => {
         }
       },
 
-      // Group by stage
+      // Converted represents a lead, not an activity row. A lead can have
+      // several closed Follow-Ups but must appear only once in this count.
       {
         $group: {
-          _id: "$stage",
-          count: { $sum: 1 },
-          value: { $sum: "$netAmount" }
+          _id: { stage: "$stage", leadId: "$_id" },
+          activityCount: { $sum: 1 },
+          activityValue: { $sum: "$netAmount" },
+          leadValue: { $first: "$netAmount" }
+        }
+      },
+      {
+        $group: {
+          _id: "$_id.stage",
+          count: {
+            $sum: {
+              $cond: [
+                { $eq: ["$_id.stage", "Converted"] },
+                1,
+                "$activityCount"
+              ]
+            }
+          },
+          value: {
+            $sum: {
+              $cond: [
+                { $eq: ["$_id.stage", "Converted"] },
+                "$leadValue",
+                "$activityValue"
+              ]
+            }
+          }
+        }
+      },
+      // New Leads is independent of activity history: it includes every
+      // lead created in the selected period, exactly once.
+      {
+        $unionWith: {
+          coll: LeadMaster.collection.name,
+          pipeline: [
+            {
+              $match: {
+                leadBranch: branchObjectId,
+                leadDate: { $gte: start, $lte: end }
+              }
+            },
+            {
+              $group: {
+                _id: null,
+                count: { $sum: 1 },
+                value: { $sum: "$netAmount" }
+              }
+            },
+            {
+              $project: {
+                _id: "New Leads",
+                count: 1,
+                value: 1
+              }
+            }
+          ]
+        }
+      },
+      // Contacted uses the same lead-level $elemMatch rule as the report
+      // query: any Follow-Up allocation inside the selected date range. It
+      // remains independent of Converted, so a lead may appear in both.
+      {
+        $unionWith: {
+          coll: LeadMaster.collection.name,
+          pipeline: [
+            {
+              $match: {
+                leadBranch: branchObjectId,
+                activityLog: {
+                  $elemMatch: {
+                    taskTo: "followup",
+                    submissionDate: { $gte: start, $lte: end }
+                  }
+                }
+              }
+            },
+            {
+              $group: {
+                _id: null,
+                count: { $sum: 1 },
+                value: { $sum: "$netAmount" }
+              }
+            },
+            {
+              $project: {
+                _id: "Contacted",
+                count: 1,
+                value: 1
+              }
+            }
+          ]
+        }
+      },
+      // Lost is a lead-level event. Count each lead once when its actual
+      // loss date falls inside the selected period.
+      {
+        $unionWith: {
+          coll: LeadMaster.collection.name,
+          pipeline: [
+            {
+              $match: {
+                leadBranch: branchObjectId,
+                leadLost: true,
+                leadLostDate: { $gte: start, $lte: end }
+              }
+            },
+            {
+              $group: {
+                _id: null,
+                count: { $sum: 1 },
+                value: { $sum: "$netAmount" }
+              }
+            },
+            {
+              $project: {
+                _id: "Lost",
+                count: 1,
+                value: 1
+              }
+            }
+          ]
+        }
+      },
+      // System Study is identified only by its task ID. Its origin does not
+      // matter, so direct allocations are included and every other task
+      // (Demo, Coding, Implementation, etc.) is excluded.
+      {
+        $unionWith: {
+          coll: LeadMaster.collection.name,
+          pipeline: [
+            {
+              $match: {
+                leadBranch: branchObjectId,
+                activityLog: {
+                  $elemMatch: {
+                    taskId: systemStudyTaskId,
+                    submissionDate: { $gte: start, $lte: end }
+                  }
+                }
+              }
+            },
+            {
+              $group: {
+                _id: null,
+                count: { $sum: 1 },
+                value: { $sum: "$netAmount" }
+              }
+            },
+            {
+              $project: {
+                _id: "System Study",
+                count: 1,
+                value: 1
+              }
+            }
+          ]
         }
       }
     ]);
@@ -4210,18 +4393,22 @@ export const Getallsalesfunnels = async (req, res) => {
     }, {});
 
     // 4️⃣ Build final response with default 0 values
-    let previousCount = null;
+    const newLeadCount = stageMap["New Leads"]?.count || 0;
+    const contactedCount = stageMap["Contacted"]?.count || 0;
 
     const formatted = FUNNEL_STAGES.map((stage) => {
       const count = stageMap[stage]?.count || 0;
       const value = stageMap[stage]?.value || 0;
-
+      const conversionBase =
+        stage === "Contacted"
+          ? newLeadCount
+          : ["System Study", "Lost", "Converted"].includes(stage)
+            ? contactedCount
+            : 0;
       const conversion =
-        previousCount === null || previousCount === 0
-          ? "0%"
-          : `${((count / previousCount) * 100).toFixed(1)}%`;
-
-      previousCount = count;
+        conversionBase > 0
+          ? `${((count / conversionBase) * 100).toFixed(1)}%`
+          : "0%";
 
       return {
         stage,
@@ -11925,7 +12112,15 @@ const buildMap = (docs) =>
 
 export const GetrespectedleadTask = async (req, res) => {
   try {
-    const { userid, branchSelected, role, ownTask, taskStatus } = req.query;
+    const {
+      userid,
+      branchSelected,
+      role,
+      ownTask,
+      taskStatus,
+      startDate,
+      endDate,
+    } = req.query;
     const codingAndQcTaskId = "689c23493e94902039b97743";
 
     const userObjectId = toObjectId(userid);
@@ -11948,6 +12143,21 @@ export const GetrespectedleadTask = async (req, res) => {
     const isOwnTask = ownTask === "true";
     const isPendingTask = taskStatus === "pending";
     const isClearedTask = taskStatus === "cleared";
+
+    const parsedStartDate = startDate ? new Date(startDate) : null;
+    const parsedEndDate = endDate ? new Date(endDate) : null;
+    const hasClearedDateRange = Boolean(
+      isClearedTask &&
+        parsedStartDate &&
+        parsedEndDate &&
+        !Number.isNaN(parsedStartDate.getTime()) &&
+        !Number.isNaN(parsedEndDate.getTime())
+    );
+
+    if (hasClearedDateRange) {
+      parsedStartDate.setHours(0, 0, 0, 0);
+      parsedEndDate.setHours(23, 59, 59, 999);
+    }
 
     if (taskStatus && !isPendingTask && !isClearedTask) {
       return res.status(400).json({ message: "Invalid taskStatus" });
@@ -12007,6 +12217,24 @@ export const GetrespectedleadTask = async (req, res) => {
         ? { taskId: { $ne: new mongoose.Types.ObjectId(codingAndQcTaskId) } }
         : {}),
       ...(isClearedTask ? { taskClosed: true } : {}),
+      ...(hasClearedDateRange
+        ? {
+            $or: [
+              {
+                taskCompletedAt: {
+                  $gte: parsedStartDate,
+                  $lte: parsedEndDate,
+                },
+              },
+              {
+                taskSubmissionDate: {
+                  $gte: parsedStartDate,
+                  $lte: parsedEndDate,
+                },
+              },
+            ],
+          }
+        : {}),
       ...(allowedUserIds
         ? {
           taskallocatedTo: {
@@ -12256,6 +12484,22 @@ export const GetrespectedleadTask = async (req, res) => {
 
       if (isClearedTask && log?.taskClosed !== true) {
         return false;
+      }
+
+      // Cleared tasks must be listed by the date they were completed or
+      // submitted, never by their original allocation date.
+      if (hasClearedDateRange) {
+        const clearedAt = log?.taskCompletedAt || log?.taskSubmissionDate;
+        if (!clearedAt) return false;
+
+        const clearedDate = new Date(clearedAt);
+        if (
+          Number.isNaN(clearedDate.getTime()) ||
+          clearedDate < parsedStartDate ||
+          clearedDate > parsedEndDate
+        ) {
+          return false;
+        }
       }
 
       // Highest priority: ownTask returns only the logged-in user's tasks.
@@ -15574,7 +15818,15 @@ export const GetallproductwiseReport = async (req, res) => {
 };
 export const GetownLeadList = async (req, res) => {
   try {
-    const { userId, selectedBranch, role, ownlead, startDate, endDate, newLeadOnly } = req.query;
+    const {
+      userId,
+      selectedBranch,
+      role,
+      ownlead,
+      startDate,
+      endDate,
+      salesFunnelStage,
+    } = req.query;
     if (
       !mongoose.Types.ObjectId.isValid(userId) ||
       !mongoose.Types.ObjectId.isValid(selectedBranch)
@@ -15595,22 +15847,58 @@ export const GetownLeadList = async (req, res) => {
     const parsedStart = startDate ? new Date(startDate) : null
     const parsedEnd = endDate ? new Date(endDate) : null
 
-    if (parsedStart && !isNaN(parsedStart.getTime()) && parsedEnd && !isNaN(parsedEnd.getTime())) {
+    const hasDateRange =
+      parsedStart &&
+      !isNaN(parsedStart.getTime()) &&
+      parsedEnd &&
+      !isNaN(parsedEnd.getTime());
+
+    if (hasDateRange) {
       parsedStart.setHours(0, 0, 0, 0)
       parsedEnd.setHours(0, 0, 0, 0)
       parsedEnd.setDate(parsedEnd.getDate() + 1)
 
-      query.leadDate = {
-        $gte: parsedStart,
-        $lt: parsedEnd,
+      const dateRange = { $gte: parsedStart, $lt: parsedEnd };
+      const systemStudyTaskId = new mongoose.Types.ObjectId(
+        "689c23613e94902039b9774b"
+      );
+
+      switch (salesFunnelStage) {
+        case "Contacted":
+          query.activityLog = {
+            $elemMatch: {
+              taskTo: "followup",
+              submissionDate: dateRange,
+            },
+          };
+          break;
+        case "System Study":
+          query.activityLog = {
+            $elemMatch: {
+              taskId: systemStudyTaskId,
+              submissionDate: dateRange,
+            },
+          };
+          break;
+        case "Lost":
+          query.leadLost = true;
+          query.leadLostDate = dateRange;
+          break;
+        case "Converted":
+          query.leadConvertedDate = dateRange;
+          query.activityLog = { $elemMatch: { followupClosed: true } };
+          break;
+        case "New Leads":
+        default:
+          query.leadDate = dateRange;
+          break;
       }
     }
 
-    if (newLeadOnly === "true") {
-      query.$expr = {
-        $eq: [{ $size: { $ifNull: ["$activityLog", []] } }, 1]
-      }
-    }
+    // Dashboard Sales Funnel New Leads is defined only by leadDate in the
+    // selected range. Do not add an activity-log-length restriction here,
+    // otherwise leads that already received follow-up activity disappear
+    // from the drill-down even though they are counted in the funnel.
     const matchedLead = await LeadMaster.find(query)
       .select(
         "leadId leadDate customerName leadBy leadByModel leadFor activityLog netAmount leadConfirmed leadLost reallocatedTo"

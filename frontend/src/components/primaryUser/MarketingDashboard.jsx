@@ -85,19 +85,17 @@ const getBarStyle = (value, colorA, colorB) => ({
 })
 
 const SalesFunnel = ({ stages, onStageClick }) => {
-  const firstStageCount = Math.max(Number(stages?.[0]?.value) || 0, 1)
-
   return (
-    <div className="rounded-xl border border-slate-200/90 bg-white p-3.5 sm:p-4" style={{ boxShadow: "0 4px 12px rgba(15,23,42,0.05), inset 0 1px 0 rgba(255,255,255,0.85)" }}>
-      <div className="mb-3">
+    <div className="rounded-xl border border-slate-200/90 bg-white p-3 sm:p-3.5" style={{ boxShadow: "0 4px 12px rgba(15,23,42,0.05), inset 0 1px 0 rgba(255,255,255,0.85)" }}>
+      <div className="mb-2">
         <h2 className="text-base font-bold text-slate-900">Sales Funnel</h2>
         <p className="mt-0.5 text-xs text-slate-500">Current month lead progression from initial contact to conversion</p>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-[minmax(160px,0.8fr)_minmax(220px,1.2fr)] md:items-center">
-        <div className="flex min-h-[210px] flex-col items-center justify-center gap-1">
+      <div className="grid gap-2.5 md:grid-cols-[minmax(140px,0.72fr)_minmax(220px,1.28fr)] md:items-center">
+        <div className="flex min-h-[160px] flex-col items-center justify-center gap-1">
           {stages.map((stage) => {
-            const isClickable = stage.value > 0 && ["New Leads", "Contacted", "Converted"].includes(stage.label)
+            const isClickable = stage.value > 0
             return (
             <div
               key={stage.label}
@@ -107,13 +105,13 @@ const SalesFunnel = ({ stages, onStageClick }) => {
               onKeyDown={(event) => {
                 if (isClickable && (event.key === "Enter" || event.key === " ")) onStageClick?.(stage)
               }}
-              className={`flex h-10 items-center justify-center rounded-md text-base font-bold text-white shadow-sm ${
+              className={`flex h-7.5 items-center justify-center rounded-md text-sm font-bold text-white shadow-sm ${
                 isClickable ? "cursor-pointer transition-transform hover:-translate-y-0.5 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" : "cursor-default"
               }`}
               style={{
                 width: `${stage.width}%`,
                 background: stage.color,
-                clipPath: "polygon(0 0, 100% 0, calc(100% - 12px) 100%, 12px 100%)"
+                clipPath: "polygon(0 0, 100% 0, calc(100% - 10px) 100%, 10px 100%)"
               }}
             >
               {stage.value}
@@ -124,8 +122,8 @@ const SalesFunnel = ({ stages, onStageClick }) => {
 
         <div className="divide-y divide-slate-100">
           {stages.map((stage) => {
-            const percentage = Math.round((Number(stage.value || 0) / firstStageCount) * 100)
-            const isClickable = stage.value > 0 && ["New Leads", "Contacted", "Converted"].includes(stage.label)
+            const percentage = stage.conversion || "0%"
+            const isClickable = stage.value > 0
 
             return (
               <div
@@ -136,22 +134,22 @@ const SalesFunnel = ({ stages, onStageClick }) => {
                 onKeyDown={(event) => {
                   if (isClickable && (event.key === "Enter" || event.key === " ")) onStageClick?.(stage)
                 }}
-                className={`flex items-center gap-2.5 py-2 first:pt-0 last:pb-0 ${
+                className={`flex items-center gap-2 py-1.5 first:pt-0 last:pb-0 ${
                   isClickable ? "cursor-pointer rounded-md transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400" : ""
                 }`}
               >
-                <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: stage.dotColor }} />
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: stage.dotColor }} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-slate-700">{stage.label}</p>
-                  <p className="mt-0.5 flex items-center gap-1 text-xs font-medium text-slate-500">
+                  <p className="text-[13px] font-semibold text-slate-700">{stage.label}</p>
+                  <p className="mt-px flex items-center gap-1 text-[11px] font-medium text-slate-500">
                     <span>{stage.value}</span>
                     <span>|</span>
-                    <IndianRupee className="h-3 w-3" />
+                    <IndianRupee className="h-2.5 w-2.5" />
                     <span>{formatINR(stage.amount)}</span>
                   </p>
                 </div>
-                <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                  {percentage}%
+                <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-semibold text-blue-700">
+                  {percentage}
                 </span>
               </div>
             )
@@ -185,6 +183,7 @@ const MarketingDashboard = () => {
   const [selectedPeriod, setselectedPeriod] = useState("")
   const [showNotification, setShowNotification] = useState(false)
   const [cardDisplay, setcardDisplay] = useState([])
+  const [leadCountScope, setLeadCountScope] = useState("owned")
   const [selectedBranch, setselectedBranch] = useState(null)
   console.log(selectedBranch)
   const [achievedPoints, setachievedPoints] = useState(0)
@@ -295,13 +294,38 @@ const MarketingDashboard = () => {
   }, [])
 
   useEffect(() => {
-    if (followup && followup.length && user) {
-      const filteredleadcounts = followup.filter(
-        (item) => item.staffId === user._id
+    if (Array.isArray(followup) && user) {
+      const metrics = [
+        "leadCount",
+        "lost",
+        "leadAmount",
+        "neverFollowup",
+        "neverFollowupAmount",
+        "dueToday",
+        "dueTodayAmount",
+        "overDue",
+        "overDueAmount",
+        "future",
+        "futureAmount",
+        "converted",
+        "convertedAmount"
+      ]
+      const emptySummary = metrics.reduce((summary, metric) => {
+        summary[metric] = 0
+        return summary
+      }, {})
+      const ownedSummary = followup.find(
+        (item) => String(item.staffId) === String(user._id)
       )
-      console.log(followup)
-      console.log(filteredleadcounts)
-      const item = filteredleadcounts?.[0]
+      const item =
+        leadCountScope === "all"
+          ? followup.reduce((summary, row) => {
+              metrics.forEach((metric) => {
+                summary[metric] += Number(row?.[metric] || 0)
+              })
+              return summary
+            }, emptySummary)
+          : ownedSummary
 
       if (item) {
         setcardDisplay([
@@ -412,7 +436,7 @@ const MarketingDashboard = () => {
         ])
       }
     }
-  }, [followup])
+  }, [followup, user, leadCountScope])
 
   useEffect(() => {
     if (data?.userWiseResults && data?.userWiseResults.length) {
@@ -597,6 +621,14 @@ const MarketingDashboard = () => {
       },
       { label: "Lead Follow-Up", path: "" }
     ]
+    const isAllBranchScope = leadCountScope === "all"
+    const followupScope = {
+      staffId: user?._id,
+      staffRole: isAllBranchScope ? "Admin" : undefined,
+      ownlead: !isAllBranchScope,
+      branchId: reduxselectedBranch,
+      from: isAllBranchScope ? "dashboardAll" : "followupReport"
+    }
     if (header === "Lead Count") {
       navigate(
         `/${user.role === "Admin" ? "admin" : "staff"}/transaction/lead/allLeads`,
@@ -609,12 +641,9 @@ const MarketingDashboard = () => {
         `/${user.role === "Admin" ? "admin" : "staff"}/transaction/lead/leadFollowUp`,
         {
           state: {
-            staffId: user?._id,
+            ...followupScope,
             dueToday: true,
-            ownlead: true,
-            branchId: reduxselectedBranch,
             viewMode: "dueToday",
-            from: "followupReport",
             istotal: true,
             filterRange: date,
             breadcrumb,
@@ -627,12 +656,9 @@ const MarketingDashboard = () => {
         `/${user.role === "Admin" ? "admin" : "staff"}/transaction/lead/leadFollowUp`,
         {
           state: {
-            staffId: user?._id,
+            ...followupScope,
             overdue: true,
-            ownlead: true,
-            branchId: reduxselectedBranch,
             viewMode: "overDue",
-            from: "followupReport",
             istotal: true,
             filterRange: date,
             breadcrumb,
@@ -645,13 +671,9 @@ const MarketingDashboard = () => {
         `/${user.role === "Admin" ? "admin" : "staff"}/transaction/lead/leadFollowUp`,
         {
           state: {
-            staffId: user?._id,
+            ...followupScope,
             future: true,
-            ownlead: true,
-
-            branchId: reduxselectedBranch,
             viewMode: "future",
-            from: "followupReport",
             istotal: true,
             filterRange: date,
             breadcrumb,
@@ -664,12 +686,9 @@ const MarketingDashboard = () => {
         `/${user.role === "Admin" ? "admin" : "staff"}/transaction/lead/leadFollowUp`,
         {
           state: {
-            staffId: user?._id,
+            ...followupScope,
             converted: true,
-            branchId: reduxselectedBranch,
             viewMode: "converted",
-            from: "followupReport",
-            ownlead: true,
             header: "Converted",
             pending: false,
             istotal: true,
@@ -684,13 +703,9 @@ const MarketingDashboard = () => {
         `/${user.role === "Admin" ? "admin" : "staff"}/transaction/lead/leadFollowUp`,
         {
           state: {
-            staffId: user?._id,
+            ...followupScope,
             neverfollowup: true,
-            branchId: reduxselectedBranch,
             viewMode: "neverfollowup",
-            from: "followupReport",
-            ownlead: true,
-
             istotal: true,
             filterRange: date,
             breadcrumb,
@@ -699,17 +714,13 @@ const MarketingDashboard = () => {
         }
       )
     } else if (header === "All Leads" && count > 0) {
-      navigate("/staff/transaction/lead/leadFollowUp", {
+      navigate(`/${user.role === "Admin" ? "admin" : "staff"}/transaction/lead/leadFollowUp`, {
         state: {
-          staffId: user?._id,
+          ...followupScope,
           filterRange: date,
-          from: "followupReport",
           viewMode: "followup",
           istotal: true,
           header: "Total Leads",
-          ownlead: true,
-
-          branchId: reduxselectedBranch,
           breadcrumb,
           isReadOnly: false
         }
@@ -778,6 +789,7 @@ const MarketingDashboard = () => {
     label,
     value: funnelNumber(salesFunnelStageMap[label]?.count),
     amount: funnelNumber(salesFunnelStageMap[label]?.value),
+    conversion: salesFunnelStageMap[label]?.conversion || "0%",
     width,
     color,
     dotColor
@@ -785,40 +797,21 @@ const MarketingDashboard = () => {
   const handleSalesFunnelStageClick = (stage) => {
     if (stage?.value <= 0) return
 
-    if (stage.label === "New Leads") {
-      navigate(`/${user?.role === "Admin" ? "admin" : "staff"}/transaction/lead/ownedLeadlist`, {
+    navigate(
+      `/${user?.role === "Admin" ? "admin" : "staff"}/transaction/lead/ownedLeadlist`,
+      {
         state: {
+          // Sales Funnel stages are branch-wide metrics, so retain the
+          // existing branch-wide access mode while keeping the URL role-safe.
           role: "Admin",
           dates: {
             startDate: defaultStartDate,
             endDate: salesFunnelEndDate
           },
-          newLeadOnly: true
+          salesFunnelStage: stage.label
         }
-      })
-    } else if (stage.label === "Contacted") {
-      navigate("/admin/transaction/lead/leadFollowUp", {
-        state: { pending: true }
-      })
-    } else if (stage.label === "Converted") {
-      navigate(`/${user?.role === "Admin" ? "admin" : "staff"}/transaction/lead/leadFollowUp`, {
-        state: {
-          staffId: user?._id,
-          staffRole: user?.role,
-          branchId: reduxselectedBranch,
-          viewMode: "converted",
-          header: "Converted",
-          pending: false,
-          ownlead: false,
-          istotal: true,
-          from: "salesFunnel",
-          filterRange: {
-            startDate: defaultStartDate,
-            endDate: salesFunnelEndDate
-          }
-        }
-      })
-    }
+      }
+    )
   }
   const handleMoreClick = (id, name) => {
     console.log("hh")
@@ -1075,40 +1068,62 @@ const MarketingDashboard = () => {
           <BirthdayGreetingPopup />
           <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
             <section className="mx-auto w-full max-w-[1800px] p-2.5 sm:p-3 lg:p-4">
-              <div className="grid grid-cols-1 gap-2.5 min-[420px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-6">
                 {cardDisplay.slice(0, 6).map((card) => (
                   <div
                     key={card.title}
                     onClick={() =>
                       handleFollowupCellClick(card.title, card.value)
                     }
-                    className="min-w-0 cursor-pointer rounded-lg border border-slate-200/90 bg-white px-3 py-2.5 shadow-sm transition hover:shadow-md"
+                    className="min-w-0 cursor-pointer rounded-lg border border-slate-200/90 bg-white px-2 py-2 shadow-sm transition hover:shadow-md"
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex min-w-0 items-center gap-2">
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-50">
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1.5">
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-50">
                           {card.icon}
                         </div>
 
-                        <h3 className="text-[22px] font-bold leading-none text-slate-900">
+                        <h3 className="truncate text-xl font-bold leading-none text-slate-900">
                           {card.value}
                         </h3>
                       </div>
 
-                      <div className="text-right text-[12px] font-semibold leading-4 text-slate-900 tabular-nums whitespace-nowrap">
+                      <div className="text-right text-[10px] font-semibold leading-3 text-slate-900 tabular-nums whitespace-nowrap">
                         {card.right}
                       </div>
                     </div>
 
-                    <p className="mt-2 text-[13px] font-semibold leading-4 text-slate-700">
+                    <p className="mt-1.5 text-[12px] font-semibold leading-3.5 text-slate-700">
                       {card.title}
                     </p>
 
-                    <p className="mt-0.5 line-clamp-2 text-[10px] leading-3.5 text-slate-500">
+                    <p className="mt-0.5 line-clamp-2 text-[9px] leading-3 text-slate-500">
                       {card.detail}
                     </p>
                   </div>
                 ))}
+              </div>
+              <div className="mt-2.5 flex justify-end">
+                <label className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 shadow-sm">
+                  <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                    Lead view
+                  </span>
+                  <span className="relative">
+                    <select
+                      value={leadCountScope}
+                      onChange={(event) => setLeadCountScope(event.target.value)}
+                      className="appearance-none rounded-md bg-slate-50 py-1 pl-2.5 pr-7 text-xs font-semibold text-slate-700 outline-none transition hover:bg-slate-100 focus:ring-2 focus:ring-blue-200"
+                      aria-label="Lead count view"
+                    >
+                      <option value="owned">Owned</option>
+                      <option value="all">All branch leads</option>
+                    </select>
+                    <ChevronDown
+                      size={14}
+                      className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+                  </span>
+                </label>
               </div>
               <div
                 className="
