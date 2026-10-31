@@ -2602,7 +2602,7 @@ const LeadFollowUp = () => {
     setselectedDocid(Item._id)
     setSelectedLeadId(Item.leadId)
   }
-
+console.log("hhh")
   console.log(!!safeState.staffId || !!safeState?.viewdate)
   const handleeditcollection = () => {
     console.log("dd")
