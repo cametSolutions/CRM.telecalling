@@ -1667,30 +1667,36 @@ const LeadFollowUp = () => {
       if (safeState?.header === "Total Leads") {
         const lea = leads.map((item) => item.leadId)
 
-        const filteredLeads = leads.filter((lead) => {
-          // 1️⃣ Get only followup allocation logs
-          const followupAllocations = lead.activityLog.filter(
-            (log) =>
-              log.taskTo === "followup" &&
-              log.taskallocatedTo && // must exist
-              log.allocationChanged === false
-          )
+        // The dashboard's "All branch leads" scope has already been
+        // restricted to the selected branch by the API. Do not apply the
+        // selected staff member filter a second time, otherwise every lead
+        // assigned to another staff member disappears from this drill-down.
+        const filteredLeads = safeState?.from === "dashboardAll"
+          ? leads
+          : leads.filter((lead) => {
+              // 1️⃣ Get only followup allocation logs
+              const followupAllocations = lead.activityLog.filter(
+                (log) =>
+                  log.taskTo === "followup" &&
+                  log.taskallocatedTo && // must exist
+                  log.allocationChanged === false
+              )
 
-          // 2️⃣ If no followup allocations → skip
-          if (followupAllocations.length === 0) return false
+              // 2️⃣ If no followup allocations → skip
+              if (followupAllocations.length === 0) return false
 
-          // 3️⃣ Take LAST followup allocation
-          const lastFollowupAllocation =
-            followupAllocations[followupAllocations.length - 1]
+              // 3️⃣ Take LAST followup allocation
+              const lastFollowupAllocation =
+                followupAllocations[followupAllocations.length - 1]
 
-          // 4️⃣ Match with user
-          return (
-            (
-              lastFollowupAllocation.taskallocatedTo?._id ||
-              lastFollowupAllocation.taskallocatedTo
-            ).toString() === safeState?.staffId?.toString()
-          )
-        })
+              // 4️⃣ Match with user
+              return (
+                (
+                  lastFollowupAllocation.taskallocatedTo?._id ||
+                  lastFollowupAllocation.taskallocatedTo
+                ).toString() === safeState?.staffId?.toString()
+              )
+            })
 
         const groupedLeads = {}
         console.log(filteredLeads)
@@ -1841,11 +1847,17 @@ const LeadFollowUp = () => {
               const end = new Date(dates.endDate)
               end.setHours(23, 59, 59, 999)
 
-              return !lead.leadLost && (lead.activityLog || []).some((log) => {
-                if (!log?.followupClosed || !log?.submissionDate) return false
-                const submittedAt = new Date(log.submissionDate)
-                return submittedAt >= start && submittedAt <= end
-              })
+              const convertedAt = new Date(lead.leadConvertedDate)
+              const isConvertedInRange =
+                !Number.isNaN(convertedAt.getTime()) &&
+                convertedAt >= start &&
+                convertedAt <= end
+
+              return (
+                !lead.leadLost &&
+                isConvertedInRange &&
+                (lead.activityLog || []).some((log) => log?.followupClosed)
+              )
             }
 
             return lead.leadConvertedDate && !lead.leadLost
