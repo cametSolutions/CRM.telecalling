@@ -108,7 +108,8 @@ export default function OwnLeadList() {
         dates?.endDate,
         ownLead,
         location?.state?.role,
-        location?.state?.newLeadOnly
+        location?.state?.newLeadOnly,
+        location?.state?.salesFunnelStage
       ],
       queryFn: async () => {
         const res = await api.get(`/lead/ownregisteredLead`, {
@@ -121,7 +122,8 @@ export default function OwnLeadList() {
             ownlead: location?.state?.role ? false : ownLead,
             startDate: dates.startDate,
             endDate: dates.endDate,
-            newLeadOnly: location?.state?.newLeadOnly === true
+            newLeadOnly: location?.state?.newLeadOnly === true,
+            salesFunnelStage: location?.state?.salesFunnelStage || ""
           }
         })
         console.log(res.data.data)
